@@ -39,3 +39,11 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# testing artifacts
+/test-results
+/playwright-report
+/playwright/.cache
+
+# pnpm
+.pnpm-store/

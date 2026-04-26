@@ -1,36 +1,37 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Biringas
 
-## Getting Started
+Marketplace de servicios de acompañamiento para eventos y viajes.
+Proyecto Next.js (App Router) operado bajo el **Next Greenfield System v3**.
 
-First, run the development server:
+## Documentación obligatoria antes de tocar código
+
+1. `AGENTS.md` (orden de lectura para agentes / contributors).
+2. PDFs de gobernanza: Blueprint Maestro, Project Intake + Brand Handshake, Addendum 001 (SEO + Agents + Design), Addendum 002 (Patterns + Responsive).
+3. Documentación oficial de Next instalada en `node_modules/next/dist/docs/01-app/`.
+4. ADRs en `docs/adr/` y reglas en `.claude/rules/`.
+
+## Comandos
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+pnpm install
+pnpm dev              # http://localhost:3000
+pnpm typecheck
+pnpm lint
+pnpm test             # Vitest unit + integration
+pnpm test:e2e         # Playwright (desktop)
+pnpm responsive:e2e   # Playwright cross-viewport
+pnpm build
+
+# Documentary gates (TODO: AST validations en F4+)
+pnpm seo:audit
+pnpm design:audit
+pnpm security:audit
+pnpm patterns:audit
+pnpm responsive:audit
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Estado actual
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Foundation técnica + gobernanza completas. Páginas finales y features de negocio quedan **bloqueadas** hasta cerrar el Brand Handshake (logo, paleta final, referencias visuales) — ver `docs/branding/brand-intake.md` y `docs/seo/public-routes-brief.md`.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Indexación SEO está globalmente desactivada (`src/core/seo/seo-config.ts → indexingEnabled = false`). Se abre sólo después del release-hardening.

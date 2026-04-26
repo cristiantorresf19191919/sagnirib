@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pnpm seo:audit)",
+      "Bash(pnpm design:audit)",
+      "Bash(pnpm security:audit)",
+      "Bash(pnpm patterns:audit)",
+      "Bash(pnpm responsive:audit)",
+      "Bash(pnpm dev *)",
+      "Bash(curl -sS -o /tmp/biringas-home.html -w \"HTTP=%{http_code} TIME=%{time_total}s SIZE=%{size_download}\\\\n\" http://localhost:3000/)",
+      "Bash(curl -sS http://localhost:3000/robots.txt)",
+      "Bash(curl -sS http://localhost:3000/sitemap.xml)"
+    ]
+  }
+}

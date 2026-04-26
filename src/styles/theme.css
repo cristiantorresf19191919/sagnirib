@@ -1,0 +1,61 @@
+/*
+ * Tailwind v4 theme mapped from src/shared/design-system/tokens/*.
+ *
+ * Source of truth = the TS tokens. Values here MUST match those tokens.
+ * TODO(F2.1): generate this file from tokens via scripts/generate-theme.mjs
+ * to remove the manual mirror.
+ */
+
+@theme {
+  /* colors — locked against founder logo art */
+  --color-background: #08060C;
+  --color-background-elevated: #0F0B17;
+  --color-surface: #13101F;
+  --color-surface-muted: #1B1530;
+  --color-border: #2C2148;
+
+  --color-brand-primary: #FF2BB5;
+  --color-brand-primary-strong: #FF5DCB;
+  --color-brand-primary-soft: #FFA3E0;
+
+  --color-brand-secondary: #7A2BFF;
+  --color-brand-secondary-strong: #9D5BFF;
+
+  --color-brand-accent: #1FA8FF;
+  --color-brand-accent-strong: #5BC8FF;
+
+  --color-brand-highlight: #FF3B5C;
+  --color-brand-warn: #FFE45E;
+
+  --color-foreground: #F6F2FF;
+  --color-text-muted: #B5A8D6;
+  --color-text-subtle: #7E7196;
+
+  /* radius */
+  --radius-xs: 0.25rem;
+  --radius-sm: 0.5rem;
+  --radius-md: 0.75rem;
+  --radius-lg: 1rem;
+  --radius-xl: 1.5rem;
+  --radius-2xl: 2rem;
+
+  /* shadows */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.45);
+  --shadow-md: 0 4px 14px rgba(0, 0, 0, 0.5);
+  --shadow-lg: 0 14px 36px rgba(0, 0, 0, 0.6);
+  --shadow-glow-primary: 0 0 24px rgba(255, 43, 181, 0.55), 0 0 56px rgba(255, 43, 181, 0.25);
+  --shadow-glow-secondary: 0 0 24px rgba(122, 43, 255, 0.5), 0 0 56px rgba(122, 43, 255, 0.22);
+  --shadow-glow-accent: 0 0 24px rgba(31, 168, 255, 0.5), 0 0 56px rgba(31, 168, 255, 0.22);
+
+  /* motion */
+  --ease-standard: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --ease-enter: cubic-bezier(0, 0, 0.2, 1);
+  --ease-exit: cubic-bezier(0.4, 0, 1, 1);
+
+  /* breakpoints */
+  --breakpoint-sm: 390px;
+  --breakpoint-md: 768px;
+  --breakpoint-lg: 1024px;
+  --breakpoint-xl: 1280px;
+  --breakpoint-2xl: 1440px;
+}
