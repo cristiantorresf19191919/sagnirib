@@ -14,8 +14,9 @@ import {
 } from "lucide-react";
 
 import { buildPageMetadata } from "@/core/seo/build-page-metadata";
-import { findBySlug } from "@/server/biringas";
+import { findBySlug, getListingReviews } from "@/server/biringas";
 import { CardStackGallery } from "@/features/biringas/components/CardStackGallery";
+import { ReviewsSection } from "@/features/biringas/components/ReviewsSection";
 import { formatPricePerHour } from "@/features/biringas/format";
 import { Button } from "@/shared/design-system/components/Button";
 import { Container } from "@/shared/design-system/components/Container";
@@ -61,7 +62,10 @@ function formatViews(value: number): string {
 
 export default async function ProfilePage({ params }: Readonly<ProfilePageProps>) {
   const { slug } = await params;
-  const listing = await findBySlug(slug);
+  const [listing, reviews] = await Promise.all([
+    findBySlug(slug),
+    getListingReviews(slug),
+  ]);
   if (!listing) notFound();
 
   const galleryImages =
@@ -298,6 +302,10 @@ export default async function ProfilePage({ params }: Readonly<ProfilePageProps>
             </div>
           </aside>
         </Container>
+
+        {reviews && (
+          <ReviewsSection listingName={listing.name} reviews={reviews} />
+        )}
       </main>
       <Footer />
     </>
