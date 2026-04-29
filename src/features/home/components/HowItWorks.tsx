@@ -162,16 +162,6 @@ function Receipt({ step }: Readonly<ReceiptProps>) {
       <ZigzagBand variant="top" />
 
       <div className="relative flex flex-1 flex-col bg-[var(--color-surface)] px-6 pt-5 pb-7 sm:px-7">
-        {/* Subtle paper texture lines */}
-        <span
-          aria-hidden
-          className="pointer-events-none absolute inset-0 opacity-[0.06]"
-          style={{
-            backgroundImage:
-              "repeating-linear-gradient(to bottom, transparent 0 22px, rgba(255,255,255,0.6) 22px 23px)",
-          }}
-        />
-
         {/* Header strip */}
         <div className="relative flex items-center justify-between gap-3">
           <span className="text-[10px] font-semibold uppercase tracking-[0.32em] text-[var(--color-text-subtle)]">

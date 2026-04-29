@@ -23,11 +23,11 @@ export function CategoryBar({ filters }: CategoryBarProps) {
   return (
     <section
       aria-label="Filtros principales"
-      className="relative border-b border-[var(--color-border)]/40 bg-[var(--color-background-elevated)]/60 backdrop-blur-sm"
+      className="relative bg-[var(--color-background-elevated)]/40 backdrop-blur-sm"
     >
       <Container
         width="wide"
-        className="flex flex-col gap-4 py-4 sm:flex-row sm:items-center sm:gap-8 sm:py-5"
+        className="flex flex-col gap-3 py-4 sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-6 sm:gap-y-3"
       >
         <Group label="Categoría">
           <Pill
@@ -49,8 +49,17 @@ export function CategoryBar({ filters }: CategoryBarProps) {
           ))}
         </Group>
 
+        <span
+          aria-hidden
+          className="hidden h-5 w-px bg-[var(--color-border)]/60 sm:inline-block"
+        />
+
         <Group label="Sexo">
-          <Pill href={withFilter(filters, "sex", "mujeres")} active tone="secondary">
+          <Pill
+            href={withFilter(filters, "sex", "mujeres")}
+            active
+            tone="secondary"
+          >
             Mujeres
           </Pill>
         </Group>
@@ -66,11 +75,11 @@ interface GroupProps {
 
 function Group({ label, children }: GroupProps) {
   return (
-    <div className="flex flex-wrap items-center gap-2">
-      <span className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--color-text-subtle)]">
-        {label}:
+    <div className="flex flex-wrap items-center gap-2.5">
+      <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--color-text-subtle)]">
+        {label}
       </span>
-      <div className="flex flex-wrap items-center gap-2">{children}</div>
+      <div className="flex flex-wrap items-center gap-1.5">{children}</div>
     </div>
   );
 }
@@ -98,7 +107,7 @@ function Pill({ href, active, tone, children }: PillProps) {
     <Link
       href={href}
       aria-current={active ? "true" : undefined}
-      className={`inline-flex h-9 items-center rounded-full px-4 text-sm font-medium transition-[background,border-color,color,box-shadow] duration-200 ease-[var(--ease-standard)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-background)] ${cn}`}
+      className={`inline-flex h-8 items-center rounded-full px-3.5 text-xs font-semibold tracking-tight transition-[background,border-color,color,box-shadow] duration-200 ease-[var(--ease-standard)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-background)] ${cn}`}
     >
       {children}
     </Link>

@@ -25,23 +25,22 @@ export async function CatalogGrid({ filters }: CatalogGridProps) {
   return (
     <section
       aria-labelledby="catalog-title"
-      className="relative py-10 sm:py-14 lg:py-16"
+      className="relative pb-12 pt-6 sm:pb-16 sm:pt-8 lg:pb-20"
     >
       <Container width="wide">
         <header className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between sm:gap-6">
           <div>
-            <span className="text-xs uppercase tracking-[0.32em] text-[var(--color-text-subtle)]">
-              Catálogo
-            </span>
             <h2
               id="catalog-title"
-              className="mt-2 max-w-3xl text-3xl font-bold leading-tight text-[var(--color-foreground)] sm:text-4xl"
+              className="max-w-3xl text-2xl font-bold leading-tight tracking-tight text-[var(--color-foreground)] sm:text-3xl"
             >
               Biringas verificadas en {filters.city ?? "Colombia"}
+              <span className="ml-3 align-middle text-base font-medium text-[var(--color-text-subtle)] sm:text-lg">
+                ({meta.total})
+              </span>
             </h2>
-            <p className="mt-2 max-w-xl text-sm text-[var(--color-text-muted)]">
-              {meta.total} {meta.total === 1 ? "perfil" : "perfiles"} encontrados
-              · ordenados por actividad reciente.
+            <p className="mt-1.5 text-xs uppercase tracking-[0.18em] text-[var(--color-text-subtle)]">
+              Ordenadas por actividad reciente
             </p>
           </div>
         </header>

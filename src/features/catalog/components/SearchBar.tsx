@@ -18,23 +18,23 @@ export function SearchBar({ filters }: SearchBarProps) {
       aria-label="Buscador del catálogo"
       className="border-b border-[var(--color-border)]/40 bg-[var(--color-background)]"
     >
-      <Container width="wide" className="py-5 sm:py-6">
+      <Container width="wide" className="py-3 sm:py-4">
         <form
           action="/"
           method="get"
-          className="flex flex-col gap-3 sm:flex-row sm:items-stretch sm:gap-3"
+          className="flex flex-col gap-2 sm:flex-row sm:items-stretch sm:gap-2"
         >
           {/* Preserve filters this form does not own. */}
           <PreservedFilters filters={filters} omit={["q", "city"]} />
 
-          <label className="relative flex-1">
+          <label className="relative sm:w-[260px] sm:shrink-0">
             <span className="sr-only">¿Dónde estás?</span>
             <select
               name="city"
               defaultValue={filters.city ?? ""}
-              className="h-12 w-full appearance-none rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-surface)]/80 px-4 pr-10 text-sm text-[var(--color-foreground)] focus:border-[var(--color-brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)]/50"
+              className="h-11 w-full appearance-none rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)]/80 px-3.5 pr-10 text-sm text-[var(--color-foreground)] focus:border-[var(--color-brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)]/50"
             >
-              <option value="">¿Dónde estás? · Toda Colombia</option>
+              <option value="">Toda Colombia</option>
               {SUPPORTED_CITIES.map((city) => (
                 <option key={city} value={city}>
                   {city}
@@ -44,23 +44,26 @@ export function SearchBar({ filters }: SearchBarProps) {
             <ChevronTrailing />
           </label>
 
-          <label className="relative flex-[1.5]">
+          <label className="relative flex-1">
             <span className="sr-only">¿Qué buscas?</span>
+            <Search
+              className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--color-text-subtle)]"
+              aria-hidden
+            />
             <input
               name="q"
               defaultValue={filters.search ?? ""}
               type="search"
               inputMode="search"
-              placeholder="¿Qué buscas? — nombre, ciudad, plan…"
-              className="h-12 w-full rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-surface)]/80 px-4 text-sm text-[var(--color-foreground)] placeholder:text-[var(--color-text-subtle)] focus:border-[var(--color-brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)]/50"
+              placeholder="Buscar por nombre, plan o servicio…"
+              className="h-11 w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)]/80 pl-10 pr-3.5 text-sm text-[var(--color-foreground)] placeholder:text-[var(--color-text-subtle)] focus:border-[var(--color-brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)]/50"
             />
           </label>
 
           <button
             type="submit"
-            className="inline-flex h-12 items-center justify-center gap-2 rounded-[var(--radius-lg)] bg-[var(--color-brand-primary)] px-6 text-sm font-semibold text-[var(--color-background)] shadow-[0_0_0_1px_rgba(255,93,203,0.45),0_10px_28px_-12px_rgba(255,43,181,0.7)] transition-colors hover:bg-[var(--color-brand-primary-strong)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary-strong)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-background)]"
+            className="inline-flex h-11 items-center justify-center gap-1.5 rounded-[var(--radius-md)] bg-[var(--color-brand-primary)] px-5 text-sm font-semibold text-[var(--color-background)] shadow-[0_0_0_1px_rgba(255,93,203,0.45),0_10px_28px_-12px_rgba(255,43,181,0.7)] transition-colors hover:bg-[var(--color-brand-primary-strong)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary-strong)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-background)]"
           >
-            <Search className="h-4 w-4" aria-hidden />
             Buscar
           </button>
         </form>

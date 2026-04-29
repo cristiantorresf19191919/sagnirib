@@ -29,31 +29,68 @@ const APPEARANCE_LABELS: Record<keyof typeof APPEARANCE_CATALOG, string> = {
 };
 
 /**
+ * Counts how many filter knobs are active right now. Used for the badge on
+ * the panel summary so it's obvious from a glance whether anything is
+ * currently filtering the catalog.
+ */
+function countActiveFilters(filters: ListingsFilters): number {
+  let n = 0;
+  if (filters.priceMin !== undefined) n += 1;
+  if (filters.priceMax !== undefined) n += 1;
+  if (filters.ageMin !== undefined) n += 1;
+  if (filters.ageMax !== undefined) n += 1;
+  if (filters.verifiedOnly) n += 1;
+  if (filters.withVideo) n += 1;
+  if (filters.withAudio) n += 1;
+  if (filters.withReviews) n += 1;
+  if (filters.faceVisible) n += 1;
+  if (filters.paymentByCard) n += 1;
+  if (filters.availableNow) n += 1;
+  n += filters.attention?.length ?? 0;
+  n += filters.contactChannels?.length ?? 0;
+  n += filters.services?.length ?? 0;
+  n += filters.specialServices?.length ?? 0;
+  n += filters.meetingContexts?.length ?? 0;
+  if (filters.attributes) {
+    for (const v of Object.values(filters.attributes)) n += v.length;
+  }
+  return n;
+}
+
+/**
  * Collapsible mega-form that lives below the search bar. All inputs share a
  * single `<form action="/" method="get">`, so a submit re-renders the page
  * with the new filter combo. Each input pre-selects from the active
  * `filters` so an open panel reflects the URL state.
  */
 export function FiltersPanel({ filters }: FiltersPanelProps) {
+  const active = countActiveFilters(filters);
+
   return (
     <section className="border-b border-[var(--color-border)]/40 bg-[var(--color-background)]">
-      <Container width="wide" className="py-3 sm:py-4">
+      <Container width="wide" className="py-2.5 sm:py-3">
         <details className="group">
-          <summary className="flex cursor-pointer list-none items-center justify-between gap-3 [&::-webkit-details-marker]:hidden">
-            <span className="inline-flex items-center gap-2 text-sm font-medium text-[var(--color-foreground)]">
-              <SlidersHorizontal
-                className="h-4 w-4 text-[var(--color-brand-primary-strong)]"
-                aria-hidden
-              />
-              Filtros de búsqueda
+          <summary className="flex cursor-pointer list-none items-center gap-2 rounded-full border border-transparent px-2 py-1 [&::-webkit-details-marker]:hidden">
+            <SlidersHorizontal
+              className="h-3.5 w-3.5 text-[var(--color-brand-primary-strong)]"
+              aria-hidden
+            />
+            <span className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-text-muted)]">
+              Filtros
             </span>
-            <span className="inline-flex items-center gap-1 text-xs text-[var(--color-text-subtle)]">
-              Toca para
-              <ChevronDown
-                className="h-4 w-4 transition-transform duration-200 group-open:rotate-180"
-                aria-hidden
-              />
-            </span>
+            {active > 0 ? (
+              <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-[var(--color-brand-primary)] px-1.5 text-[10px] font-bold text-[var(--color-background)]">
+                {active}
+              </span>
+            ) : (
+              <span className="text-xs text-[var(--color-text-subtle)] normal-case tracking-tight">
+                Sin aplicar
+              </span>
+            )}
+            <ChevronDown
+              className="ml-auto h-4 w-4 text-[var(--color-text-subtle)] transition-transform duration-200 group-open:rotate-180"
+              aria-hidden
+            />
           </summary>
 
           <form
