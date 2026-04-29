@@ -1,33 +1,50 @@
 import type { Metadata } from "next";
 
 import { buildPageMetadata } from "@/core/seo/build-page-metadata";
-import { FeaturedBiringas } from "@/features/biringas/components/FeaturedBiringas";
-import { Hero } from "@/features/home/components/Hero";
+import { CatalogGrid } from "@/features/catalog/components/CatalogGrid";
+import { CategoryBar } from "@/features/catalog/components/CategoryBar";
+import { CityChips } from "@/features/catalog/components/CityChips";
+import { FiltersPanel } from "@/features/catalog/components/FiltersPanel";
+import { SearchBar } from "@/features/catalog/components/SearchBar";
+import {
+  parseFilters,
+  type RawSearchParams,
+} from "@/features/catalog/lib/parse-filters";
 import { HowItWorks } from "@/features/home/components/HowItWorks";
 import { Footer } from "@/shared/layout/Footer";
 import { Header } from "@/shared/layout/Header";
 
+interface HomePageProps {
+  searchParams: Promise<RawSearchParams>;
+}
+
 /**
- * Home — `/`. Metadata values come from the approved Route Contract at
- * `docs/seo/routes/home.md`. Indexability still inherits the global
- * switch (`seoConfig.indexingEnabled`), which stays off until release-
- * hardening.
+ * Home `/` is the catalog itself (per founder direction 2026-04-29).
+ * Header / Footer / CardStackGallery / HowItWorks were rebuilt in commit
+ * 5f085bf and stay untouched. HowItWorks lives below the catalog so the
+ * Header `#como-funciona` anchor still resolves on home.
  */
 export const metadata: Metadata = buildPageMetadata({
-  title: "Biringas — Consigue lo que quieres en el momento que quieres",
+  title: "Biringas — Catálogo de acompañantes en Colombia",
   description:
-    "Marketplace de Biringas para reservar compañía verificada para eventos, viajes y salidas. Explora perfiles y contrata directo.",
+    "Biringas verificadas en Colombia. Filtra por ciudad, categoría (prepagos · masajes · videollamadas), precio, edad y disponibilidad.",
   path: "/",
 });
 
-export default function HomePage() {
+export default async function HomePage({ searchParams }: HomePageProps) {
+  const params = await searchParams;
+  const filters = parseFilters(params);
+
   return (
     <>
-      <Header />
+      <Header hideCatalogCta />
       <main className="flex flex-col">
-        <Hero />
+        <CategoryBar filters={filters} />
+        <SearchBar filters={filters} />
+        <CityChips filters={filters} />
+        <FiltersPanel filters={filters} />
+        <CatalogGrid filters={filters} />
         <HowItWorks />
-        <FeaturedBiringas />
       </main>
       <Footer />
     </>

@@ -1,9 +1,14 @@
 import "server-only";
 
 import {
+  APPEARANCE_CATALOG,
+  ATTENTION_CATALOG,
   BIRINGA_LISTINGS,
+  CATEGORIES,
+  CONTACT_CATALOG,
   MEETING_CONTEXT_CATALOG,
   SERVICE_CATALOG,
+  SPECIAL_SERVICE_CATALOG,
   SUPPORTED_CITIES,
 } from "./data";
 import type {
@@ -12,7 +17,12 @@ import type {
   PaginatedListings,
 } from "./types";
 
-const DEFAULT_PAGE_SIZE = 20;
+const DEFAULT_PAGE_SIZE = 24;
+
+function intersects<T>(a: ReadonlyArray<T>, b: ReadonlyArray<T>): boolean {
+  if (a.length === 0 || b.length === 0) return false;
+  return a.some((value) => b.includes(value));
+}
 
 function applyFilters(
   source: ReadonlyArray<BiringaListing>,
@@ -20,36 +30,39 @@ function applyFilters(
 ): BiringaListing[] {
   let results = [...source];
 
+  if (filters.category) {
+    results = results.filter((ad) => ad.category === filters.category);
+  }
+  if (filters.sex) {
+    results = results.filter((ad) => ad.sex === filters.sex);
+  }
   if (filters.city) {
     const needle = filters.city.toLowerCase();
     results = results.filter((ad) => ad.city.toLowerCase() === needle);
   }
-
   if (filters.search) {
     const needle = filters.search.toLowerCase();
     results = results.filter(
       (ad) =>
         ad.name.toLowerCase().includes(needle) ||
         ad.bio.toLowerCase().includes(needle) ||
+        ad.shortBio.toLowerCase().includes(needle) ||
         ad.tags.some((t) => t.toLowerCase().includes(needle)) ||
         ad.services.some((s) => s.toLowerCase().includes(needle)),
     );
   }
-
   if (filters.priceMin !== undefined) {
     results = results.filter((ad) => ad.pricePerHour >= filters.priceMin!);
   }
   if (filters.priceMax !== undefined) {
     results = results.filter((ad) => ad.pricePerHour <= filters.priceMax!);
   }
-
   if (filters.ageMin !== undefined) {
     results = results.filter((ad) => ad.age >= filters.ageMin!);
   }
   if (filters.ageMax !== undefined) {
     results = results.filter((ad) => ad.age <= filters.ageMax!);
   }
-
   if (filters.verifiedOnly) {
     results = results.filter((ad) => ad.verified);
   }
@@ -59,14 +72,42 @@ function applyFilters(
   if (filters.withAudio) {
     results = results.filter((ad) => ad.hasAudio);
   }
-
+  if (filters.withReviews) {
+    results = results.filter((ad) => ad.reputation.reviewCount > 0);
+  }
+  if (filters.faceVisible) {
+    results = results.filter((ad) => ad.faceVisible);
+  }
+  if (filters.paymentByCard) {
+    results = results.filter((ad) => ad.paymentByCard);
+  }
+  if (filters.availableNow) {
+    results = results.filter((ad) => ad.availableNow);
+  }
+  if (filters.attention && filters.attention.length > 0) {
+    const wanted = filters.attention;
+    results = results.filter((ad) => intersects(ad.attention, wanted));
+  }
+  if (filters.contactChannels && filters.contactChannels.length > 0) {
+    const wanted = filters.contactChannels;
+    results = results.filter((ad) =>
+      intersects(ad.contactChannels, wanted),
+    );
+  }
   if (filters.services && filters.services.length > 0) {
     const wanted = filters.services.map((s) => s.toLowerCase());
     results = results.filter((ad) =>
-      wanted.some((w) => ad.services.some((s) => s.toLowerCase().includes(w))),
+      wanted.some((w) => ad.services.some((s) => s.toLowerCase() === w)),
     );
   }
-
+  if (filters.specialServices && filters.specialServices.length > 0) {
+    const wanted = filters.specialServices.map((s) => s.toLowerCase());
+    results = results.filter((ad) =>
+      wanted.some((w) =>
+        ad.specialServices.some((s) => s.toLowerCase() === w),
+      ),
+    );
+  }
   if (filters.meetingContexts && filters.meetingContexts.length > 0) {
     const wanted = filters.meetingContexts.map((s) => s.toLowerCase());
     results = results.filter((ad) =>
@@ -75,7 +116,6 @@ function applyFilters(
       ),
     );
   }
-
   if (filters.attributes) {
     for (const [key, values] of Object.entries(filters.attributes)) {
       if (!values || values.length === 0) continue;
@@ -100,19 +140,17 @@ function applyFilters(
       break;
     case "recent":
     default:
-      results.sort(
-        (a, b) =>
-          new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime(),
-      );
+      results.sort((a, b) => {
+        // Prioritize storyAt if present, otherwise updatedAt.
+        const aTs = new Date(a.storyAt ?? a.updatedAt).getTime();
+        const bTs = new Date(b.storyAt ?? b.updatedAt).getTime();
+        return bTs - aTs;
+      });
   }
 
   return results;
 }
 
-/**
- * Paginated catalog query. The signature is what the future Firebase
- * adapter must implement — keep it stable.
- */
 export async function listAll(
   filters: ListingsFilters = {},
 ): Promise<PaginatedListings> {
@@ -124,21 +162,19 @@ export async function listAll(
   const start = (page - 1) * pageSize;
   const data = filtered.slice(start, start + pageSize);
 
-  return {
-    data,
-    meta: { total, page, pageSize, totalPages },
-  };
+  return { data, meta: { total, page, pageSize, totalPages } };
 }
 
 /**
- * Featured listings for the home hero / carousel. Sorted by daysFeatured
- * (descending) among verified, well-rated entries. The home contract
- * requires "featured listings" content.
+ * Featured listings — verified + high score, sorted by daysFeatured.
+ * Used by surfaces that want a curated list (home hero, OG previews, etc.).
  */
 export async function listFeatured(
   limit = 8,
 ): Promise<ReadonlyArray<BiringaListing>> {
-  return BIRINGA_LISTINGS.filter((ad) => ad.verified && ad.reputation.score >= 4.5)
+  return BIRINGA_LISTINGS.filter(
+    (ad) => ad.verified && ad.reputation.score >= 4.5,
+  )
     .slice()
     .sort((a, b) => b.reputation.daysFeatured - a.reputation.daysFeatured)
     .slice(0, limit);
@@ -162,10 +198,26 @@ export async function listMeetingContextCatalog(): Promise<
   return MEETING_CONTEXT_CATALOG;
 }
 
+export {
+  APPEARANCE_CATALOG,
+  ATTENTION_CATALOG,
+  BIRINGA_LISTINGS,
+  CATEGORIES,
+  CONTACT_CATALOG,
+  MEETING_CONTEXT_CATALOG,
+  SERVICE_CATALOG,
+  SPECIAL_SERVICE_CATALOG,
+  SUPPORTED_CITIES,
+};
+
 export type {
+  AttentionTarget,
   BiringaAttributes,
   BiringaListing,
   BiringaReputation,
+  Category,
+  ContactChannel,
   ListingsFilters,
   PaginatedListings,
+  Sex,
 } from "./types";

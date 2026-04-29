@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { ShieldCheck, MapPin } from "lucide-react";
 
 import { brandConfig } from "@/core/branding/brand-config";
@@ -49,20 +50,20 @@ export function Footer() {
             </h3>
             <ul className="mt-4 space-y-2.5 text-sm">
               <li>
-                <a
+                <Link
                   href="/explorar"
                   className="text-[var(--color-text-muted)] transition-colors hover:text-[var(--color-foreground)]"
                 >
                   Explorar
-                </a>
+                </Link>
               </li>
               <li>
-                <a
+                <Link
                   href="/#como-funciona"
                   className="text-[var(--color-text-muted)] transition-colors hover:text-[var(--color-foreground)]"
                 >
                   Cómo funciona
-                </a>
+                </Link>
               </li>
             </ul>
           </div>

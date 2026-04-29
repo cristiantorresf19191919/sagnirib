@@ -6,42 +6,44 @@ import "server-only";
  * This is the contract that features import — the same shape the eventual
  * Firebase adapter (src/server/adapters/firebase/biringas/) will return.
  * Provider types must NOT leak through here (Addendum 001 §15 + ADR-009).
- *
- * Adapted from the legacy mock model with intake-driven changes:
- *   - `slug` is the canonical handle in URLs (`/p/[slug]`); legacy `id` was
- *     numeric.
- *   - `services` = companion / event / travel catalog (per intake Bloque A).
- *   - `meetingContexts` replaces legacy `meetingPlaces` to match real product
- *     framing (eventos, viajes, hoteles, salidas).
- *   - `attributes` drops the legacy `pubis` field — it added no signal to the
- *     surfaces we plan to ship and reintroducing it requires an explicit
- *     contract change.
- *   - Private contact fields (`phone`, `whatsapp`) live in the type but MUST
- *     never be serialized into HTML responses (p-slug.md contract).
  */
+
+export type Category = "prepagos" | "masajes" | "videollamadas";
+
+/**
+ * Per founder direction (2026-04-29) the catalog is filtered to women only;
+ * the union is open so future categories can be added without a type rename.
+ */
+export type Sex = "mujeres" | "hombres" | "travestis";
+
+export type AttentionTarget =
+  | "hombres"
+  | "mujeres"
+  | "parejas"
+  | "discapacitados";
+
+export type ContactChannel = "llamada" | "whatsapp" | "telegram";
+
 export interface BiringaAttributes {
   ethnicity?: string;
   hair?: string;
   height?: string;
   body?: string;
   breast?: string;
+  pubis?: string;
   country?: string;
   languages?: ReadonlyArray<string>;
 }
 
 export interface BiringaReputation {
-  /** Days the listing has been live. */
   daysAdvertised: number;
-  /** Days since the last verification check. */
   daysSinceVerification: number;
-  /** Number of approved video stories. */
   storiesRecorded: number;
-  /** Aggregate review score (0–5). */
   score: number;
-  /** Cumulative views across surfaces. */
   totalViews: number;
-  /** Days the listing has been promoted. */
   daysFeatured: number;
+  /** Public review count — drives the "Con experiencias" content filter. */
+  reviewCount: number;
 }
 
 export interface BiringaListing {
@@ -51,7 +53,6 @@ export interface BiringaListing {
   age: number;
   city: string;
   neighborhood?: string;
-  /** Hourly rate in COP (Colombian pesos). */
   pricePerHour: number;
   mainImage: string;
   gallery: ReadonlyArray<string>;
@@ -60,20 +61,47 @@ export interface BiringaListing {
   hasAudio: boolean;
   tags: ReadonlyArray<string>;
   bio: string;
+  /** Surfaced in the catalog header strip — short bio. */
+  shortBio: string;
+
+  /** Catalog routing — `prepagos | masajes | videollamadas`. */
+  category: Category;
+  /** All current listings are `mujeres`; field stays for future variants. */
+  sex: Sex;
+  /** Audiences this listing accepts. */
+  attention: ReadonlyArray<AttentionTarget>;
+  /** Channels through which the listing accepts contact. */
+  contactChannels: ReadonlyArray<ContactChannel>;
+  /** True when the listing accepts card payments. */
+  paymentByCard: boolean;
+  /** True when face is visible in the public photos. */
+  faceVisible: boolean;
+  /** True when the listing flagged immediate availability. */
+  availableNow: boolean;
+  /** ISO time of the most recent story; drives "Grabada a las HH:MM". */
+  storyAt?: string;
+
   /** NEVER render in HTML — contracted via authenticated backend only. */
   privatePhone?: string;
   /** NEVER render in HTML — contracted via authenticated backend only. */
   privateWhatsapp?: string;
+
   reputation: BiringaReputation;
   attributes: BiringaAttributes;
+
   services: ReadonlyArray<string>;
+  /** Niche / special services. */
+  specialServices: ReadonlyArray<string>;
   meetingContexts: ReadonlyArray<string>;
+
   coords: { lat: number; lng: number };
   createdAt: string;
   updatedAt: string;
 }
 
 export interface ListingsFilters {
+  category?: Category;
+  sex?: Sex;
   city?: string;
   search?: string;
   priceMin?: number;
@@ -83,8 +111,16 @@ export interface ListingsFilters {
   verifiedOnly?: boolean;
   withVideo?: boolean;
   withAudio?: boolean;
+  withReviews?: boolean;
+  faceVisible?: boolean;
+  paymentByCard?: boolean;
+  availableNow?: boolean;
+  attention?: ReadonlyArray<AttentionTarget>;
+  contactChannels?: ReadonlyArray<ContactChannel>;
   services?: ReadonlyArray<string>;
+  specialServices?: ReadonlyArray<string>;
   meetingContexts?: ReadonlyArray<string>;
+  /** Free-form attribute filters: `attributes.country`, `attributes.pubis`, etc. */
   attributes?: Readonly<Record<string, ReadonlyArray<string>>>;
   sortBy?: "recent" | "price_asc" | "price_desc" | "rating";
   page?: number;
