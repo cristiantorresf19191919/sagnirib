@@ -62,9 +62,11 @@ function formatViews(value: number): string {
 
 export default async function ProfilePage({ params }: Readonly<ProfilePageProps>) {
   const { slug } = await params;
+  // Reviews are auxiliary content — degrade to null on failure so the
+  // profile keeps rendering. ReviewsSection is conditionally mounted below.
   const [listing, reviews] = await Promise.all([
     findBySlug(slug),
-    getListingReviews(slug),
+    getListingReviews(slug).catch(() => null),
   ]);
   if (!listing) notFound();
 
