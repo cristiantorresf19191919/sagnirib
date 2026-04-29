@@ -8,6 +8,20 @@ const nextConfig: NextConfig = {
   turbopack: {
     root: path.resolve(__dirname),
   },
+  images: {
+    // Mock-only catalog points at Unsplash hot-links during F3. Production
+    // catalog will replace this with an asset provider that documents
+    // consent per-image (project-intake.md "Pendientes" + ADR-009).
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "images.unsplash.com",
+        port: "",
+        pathname: "/**",
+        search: "",
+      },
+    ],
+  },
 };
 
 export default nextConfig;

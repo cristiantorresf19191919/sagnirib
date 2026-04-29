@@ -1,43 +1,35 @@
 import type { Metadata } from "next";
 
-import { brandConfig } from "@/core/branding/brand-config";
-import { brandCopy } from "@/core/branding/brand-copy";
 import { buildPageMetadata } from "@/core/seo/build-page-metadata";
+import { FeaturedBiringas } from "@/features/biringas/components/FeaturedBiringas";
+import { Hero } from "@/features/home/components/Hero";
+import { HowItWorks } from "@/features/home/components/HowItWorks";
+import { Footer } from "@/shared/layout/Footer";
+import { Header } from "@/shared/layout/Header";
 
 /**
- * Foundation placeholder — explicitly noindex.
- * Real home page will be implemented after the Project Intake + Brand
- * Handshake closes (see docs/project/project-intake.md).
+ * Home — `/`. Metadata values come from the approved Route Contract at
+ * `docs/seo/routes/home.md`. Indexability still inherits the global
+ * switch (`seoConfig.indexingEnabled`), which stays off until release-
+ * hardening.
  */
 export const metadata: Metadata = buildPageMetadata({
-  title: `${brandConfig.name} — En construcción`,
-  description: brandConfig.description,
+  title: "Biringas — Consigue lo que quieres en el momento que quieres",
+  description:
+    "Marketplace de Biringas para reservar compañía verificada para eventos, viajes y salidas. Explora perfiles y contrata directo.",
   path: "/",
-  indexable: false,
 });
 
-export default function HomePlaceholder() {
+export default function HomePage() {
   return (
-    <main className="flex flex-1 flex-col items-center justify-center gap-6 px-6 py-24 text-center">
-      <span className="text-xs uppercase tracking-[0.4em] text-[var(--color-text-subtle)]">
-        Foundation · Greenfield
-      </span>
-      <h1
-        className="text-4xl font-semibold leading-tight sm:text-5xl"
-        style={{
-          color: "var(--color-brand-primary-strong)",
-          textShadow: "var(--shadow-glow-primary)",
-        }}
-      >
-        {brandConfig.name}
-      </h1>
-      <p className="max-w-md text-base text-[var(--color-text-muted)]">
-        {brandCopy.slogan}
-      </p>
-      <p className="max-w-md text-xs text-[var(--color-text-subtle)]">
-        Project Intake + Brand Handshake en curso. Esta ruta es un placeholder
-        no indexable hasta cerrar el contrato SEO.
-      </p>
-    </main>
+    <>
+      <Header />
+      <main className="flex flex-col">
+        <Hero />
+        <HowItWorks />
+        <FeaturedBiringas />
+      </main>
+      <Footer />
+    </>
   );
 }
