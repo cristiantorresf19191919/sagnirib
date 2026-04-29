@@ -8,7 +8,7 @@ import { Logo } from "@/shared/design-system/components/Logo";
 export function Footer() {
   const year = new Date().getFullYear();
   return (
-    <footer className="relative mt-24 isolate overflow-hidden border-t border-[var(--color-border)]/60 bg-[var(--color-background-elevated)]">
+    <footer className="relative isolate overflow-hidden border-t border-[var(--color-border)]/60 bg-[var(--color-background-elevated)]">
       <div
         aria-hidden
         className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[var(--color-brand-primary)]/70 to-transparent"
