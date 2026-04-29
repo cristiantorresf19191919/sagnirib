@@ -11,6 +11,7 @@ import {
   type ListingsFilters,
 } from "@/server/biringas";
 import { Container } from "@/shared/design-system/components/Container";
+import { Disclosure } from "@/shared/motion/Disclosure";
 
 import { PreservedFilters } from "./SearchBar";
 
@@ -69,34 +70,38 @@ export function FiltersPanel({ filters }: FiltersPanelProps) {
   return (
     <section className="border-b border-[var(--color-border)]/40 bg-[var(--color-background)]">
       <Container width="wide" className="py-2.5 sm:py-3">
-        <details className="group">
-          <summary className="flex cursor-pointer list-none items-center gap-2 rounded-full border border-transparent px-2 py-1 [&::-webkit-details-marker]:hidden">
-            <SlidersHorizontal
-              className="h-3.5 w-3.5 text-[var(--color-brand-primary-strong)]"
-              aria-hidden
-            />
-            <span className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-text-muted)]">
-              Filtros
-            </span>
-            {active > 0 ? (
-              <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-[var(--color-brand-primary)] px-1.5 text-[10px] font-bold text-[var(--color-background)]">
-                {active}
+        <Disclosure
+          ariaLabel="Filtros de búsqueda"
+          triggerClassName="group flex w-full cursor-pointer items-center gap-2 rounded-full border border-transparent px-2 py-1 text-left transition-colors hover:bg-[var(--color-surface)]/50 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-background)]"
+          summary={
+            <>
+              <SlidersHorizontal
+                className="h-3.5 w-3.5 text-[var(--color-brand-primary-strong)]"
+                aria-hidden
+              />
+              <span className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-text-muted)]">
+                Filtros
               </span>
-            ) : (
-              <span className="text-xs text-[var(--color-text-subtle)] normal-case tracking-tight">
-                Sin aplicar
-              </span>
-            )}
-            <ChevronDown
-              className="ml-auto h-4 w-4 text-[var(--color-text-subtle)] transition-transform duration-200 group-open:rotate-180"
-              aria-hidden
-            />
-          </summary>
-
+              {active > 0 ? (
+                <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-[var(--color-brand-primary)] px-1.5 text-[10px] font-bold text-[var(--color-background)] shadow-[0_4px_14px_-4px_rgba(255,43,181,0.7)]">
+                  {active}
+                </span>
+              ) : (
+                <span className="text-xs normal-case tracking-tight text-[var(--color-text-subtle)]">
+                  Sin aplicar
+                </span>
+              )}
+              <ChevronDown
+                className="ml-auto h-4 w-4 text-[var(--color-text-subtle)] transition-transform duration-300 ease-[var(--ease-standard)] group-aria-expanded:rotate-180"
+                aria-hidden
+              />
+            </>
+          }
+        >
           <form
             action="/"
             method="get"
-            className="mt-5 grid gap-8 rounded-[var(--radius-xl)] border border-[var(--color-border)]/60 bg-[var(--color-background-elevated)]/60 p-5 sm:p-7 lg:grid-cols-2 lg:gap-10"
+            className="mt-3 grid gap-8 rounded-[var(--radius-xl)] border border-[var(--color-border)]/60 bg-[var(--color-background-elevated)]/60 p-5 sm:p-7 lg:grid-cols-2 lg:gap-10"
           >
             <PreservedFilters
               filters={filters}
@@ -345,7 +350,7 @@ export function FiltersPanel({ filters }: FiltersPanelProps) {
               </button>
             </div>
           </form>
-        </details>
+        </Disclosure>
       </Container>
     </section>
   );

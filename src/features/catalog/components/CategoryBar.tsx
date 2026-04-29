@@ -1,7 +1,6 @@
-import Link from "next/link";
-
 import { CATEGORIES, type ListingsFilters } from "@/server/biringas";
 import { Container } from "@/shared/design-system/components/Container";
+import { MotionPill } from "@/shared/motion/MotionPill";
 
 import { withFilter } from "../lib/parse-filters";
 
@@ -104,12 +103,13 @@ const INACTIVE =
 function Pill({ href, active, tone, children }: PillProps) {
   const cn = active ? TONE_ACTIVE[tone] : INACTIVE;
   return (
-    <Link
+    <MotionPill
       href={href}
       aria-current={active ? "true" : undefined}
+      active={active}
       className={`inline-flex h-8 items-center rounded-full px-3.5 text-xs font-semibold tracking-tight transition-[background,border-color,color,box-shadow] duration-200 ease-[var(--ease-standard)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-background)] ${cn}`}
     >
       {children}
-    </Link>
+    </MotionPill>
   );
 }

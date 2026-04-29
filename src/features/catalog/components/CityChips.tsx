@@ -3,6 +3,7 @@ import { ChevronDown, MapPin } from "lucide-react";
 
 import { SUPPORTED_CITIES, type ListingsFilters } from "@/server/biringas";
 import { Container } from "@/shared/design-system/components/Container";
+import { Disclosure } from "@/shared/motion/Disclosure";
 
 import { withFilter } from "../lib/parse-filters";
 
@@ -12,7 +13,6 @@ interface CityChipsProps {
 
 export function CityChips({ filters }: CityChipsProps) {
   const active = filters.city;
-
   const activeLabel = active ?? "Toda Colombia";
 
   return (
@@ -21,21 +21,26 @@ export function CityChips({ filters }: CityChipsProps) {
       className="bg-[var(--color-background)]"
     >
       <Container width="wide" className="py-2.5 sm:py-3">
-        <details className="group">
-          <summary className="inline-flex cursor-pointer list-none items-center gap-2 rounded-full border border-transparent px-2 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-text-muted)] transition-colors hover:text-[var(--color-foreground)] [&::-webkit-details-marker]:hidden">
-            <MapPin
-              className="h-3.5 w-3.5 text-[var(--color-brand-primary-strong)]"
-              aria-hidden
-            />
-            <span>Ciudad:</span>
-            <span className="font-bold text-[var(--color-foreground)] normal-case tracking-tight">
-              {activeLabel}
-            </span>
-            <ChevronDown
-              className="h-4 w-4 text-[var(--color-text-subtle)] transition-transform duration-200 group-open:rotate-180"
-              aria-hidden
-            />
-          </summary>
+        <Disclosure
+          ariaLabel="Listado de ciudades"
+          triggerClassName="group inline-flex items-center gap-2 rounded-full border border-transparent px-2 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-text-muted)] transition-colors hover:bg-[var(--color-surface)]/50 hover:text-[var(--color-foreground)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-background)]"
+          summary={
+            <>
+              <MapPin
+                className="h-3.5 w-3.5 text-[var(--color-brand-primary-strong)]"
+                aria-hidden
+              />
+              <span>Ciudad:</span>
+              <span className="font-bold normal-case tracking-tight text-[var(--color-foreground)]">
+                {activeLabel}
+              </span>
+              <ChevronDown
+                className="h-4 w-4 text-[var(--color-text-subtle)] transition-transform duration-300 ease-[var(--ease-standard)] group-aria-expanded:rotate-180"
+                aria-hidden
+              />
+            </>
+          }
+        >
           <div className="mt-2.5 flex flex-wrap items-center gap-1.5 pl-1">
             <CityChip
               href={withFilter(filters, "city", undefined)}
@@ -53,7 +58,7 @@ export function CityChips({ filters }: CityChipsProps) {
               </CityChip>
             ))}
           </div>
-        </details>
+        </Disclosure>
       </Container>
     </section>
   );
@@ -67,9 +72,9 @@ interface CityChipProps {
 
 function CityChip({ href, active, children }: CityChipProps) {
   const base =
-    "inline-flex h-8 items-center rounded-full border px-3 text-xs font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-background)]";
+    "inline-flex h-8 items-center rounded-full border px-3 text-xs font-medium transition-[background,border-color,color,transform] duration-200 ease-[var(--ease-standard)] hover:-translate-y-px focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-background)]";
   const cn = active
-    ? "bg-[var(--color-brand-primary)] text-[var(--color-background)] border-[var(--color-brand-primary)]"
+    ? "bg-[var(--color-brand-primary)] text-[var(--color-background)] border-[var(--color-brand-primary)] shadow-[0_4px_14px_-4px_rgba(255,43,181,0.6)]"
     : "bg-[var(--color-surface)]/60 text-[var(--color-text-muted)] border-[var(--color-border)] hover:text-[var(--color-foreground)] hover:border-[var(--color-brand-primary)]/50";
   return (
     <Link

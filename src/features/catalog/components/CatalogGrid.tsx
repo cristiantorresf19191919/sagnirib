@@ -2,6 +2,7 @@ import Link from "next/link";
 
 import { listAll, type ListingsFilters } from "@/server/biringas";
 import { Container } from "@/shared/design-system/components/Container";
+import { Reveal, RevealItem } from "@/shared/motion/Reveal";
 
 import { encodeFilters } from "../lib/parse-filters";
 import { CatalogCard } from "./CatalogCard";
@@ -48,26 +49,28 @@ export async function CatalogGrid({ filters }: CatalogGridProps) {
         {data.length === 0 ? (
           <EmptyState />
         ) : (
-          <ul
+          <Reveal
+            as="ul"
             aria-label="Biringas en el catálogo"
             className="mt-8 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
+            whenInView={false}
           >
-            <li>
+            <RevealItem as="li">
               <HistoriasTopTile href="/?reviews=1" />
-            </li>
+            </RevealItem>
             {data.map((listing, index) => (
-              <li key={listing.id}>
+              <RevealItem key={listing.id} as="li">
                 <CatalogCard
                   listing={listing}
                   priority={index === 0}
                   featured={listing.reputation.score >= FEATURED_THRESHOLD}
                 />
-              </li>
+              </RevealItem>
             ))}
-            <li>
+            <RevealItem as="li">
               <DisponiblesAhoraTile href={nowFilterHref(filters)} />
-            </li>
-          </ul>
+            </RevealItem>
+          </Reveal>
         )}
       </Container>
     </section>
