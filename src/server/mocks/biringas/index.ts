@@ -221,3 +221,10 @@ export type {
   PaginatedListings,
   Sex,
 } from "./types";
+
+export { getListingReviews } from "./reviews";
+export type {
+  ReviewBreakdown,
+  ReviewItem,
+  ReviewsAggregate,
+} from "./reviews";
