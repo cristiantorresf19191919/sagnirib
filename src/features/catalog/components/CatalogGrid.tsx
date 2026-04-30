@@ -2,12 +2,12 @@ import { listAll, type ListingsFilters } from "@/server/biringas";
 import { Button } from "@/shared/design-system/components/Button";
 import { Container } from "@/shared/design-system/components/Container";
 import { Sparkle } from "@/shared/design-system/components/Sparkle";
-import { CountUp } from "@/shared/motion/CountUp";
 import { FadeIn } from "@/shared/motion/FadeIn";
 import { Reveal, RevealItem } from "@/shared/motion/Reveal";
 
 import { encodeFilters, type CatalogView } from "../lib/parse-filters";
 import { CatalogCard } from "./CatalogCard";
+import { ResultsToolbar } from "./ResultsToolbar";
 import { DisponiblesAhoraTile, HistoriasTopTile } from "./SpecialTiles";
 import { ViewSwitcher } from "./ViewSwitcher";
 
@@ -36,14 +36,25 @@ export async function CatalogGrid({
   view = "grid3",
 }: CatalogGridProps) {
   const { data, meta } = await listAll(filters);
+  // Total in the unfiltered catalog (excludes the city scope so the toolbar
+  // can show "X de Y" when filters narrow the result).
+  const { meta: cityMeta } = await listAll(
+    filters.city ? { city: filters.city } : {},
+  );
   const showSpecialTiles = view !== "list";
 
   return (
     <section
       aria-labelledby="catalog-title"
-      className="relative pb-12 pt-8 sm:pb-16 sm:pt-10 lg:pb-20"
+      className="relative pb-12 pt-4 sm:pb-16 sm:pt-6 lg:pb-20"
     >
       <Container width="wide">
+        <ResultsToolbar
+          filters={filters}
+          view={view}
+          resultCount={meta.total}
+          totalCount={cityMeta.total}
+        />
         <FadeIn>
           <header className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between sm:gap-6">
             <div className="relative">
@@ -57,13 +68,7 @@ export async function CatalogGrid({
                 className="max-w-3xl text-2xl font-bold leading-tight tracking-tight text-[var(--color-foreground)] sm:text-3xl"
               >
                 Biringas verificadas en {filters.city ?? "Colombia"}
-                <span className="ml-3 align-middle text-base font-medium text-[var(--color-text-subtle)] sm:text-lg">
-                  (<CountUp to={meta.total} />)
-                </span>
               </h2>
-              <p className="mt-1.5 text-xs uppercase tracking-[0.18em] text-[var(--color-text-subtle)]">
-                Ordenadas por actividad reciente
-              </p>
             </div>
             <div className="self-start sm:self-end">
               <ViewSwitcher filters={filters} current={view} />

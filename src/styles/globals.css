@@ -27,6 +27,75 @@ body {
 }
 
 /*
+ * Dual-thumb range slider styling. The two stacked native <input type="range">
+ * elements are transparent; we only style the thumbs so they read as a
+ * single connected control over the shared track + fill rendered behind
+ * them in RangeSlider.tsx.
+ */
+.range-slider-thumb {
+  pointer-events: none;
+}
+.range-slider-thumb::-webkit-slider-runnable-track {
+  background: transparent;
+  height: 100%;
+}
+.range-slider-thumb::-moz-range-track {
+  background: transparent;
+  height: 100%;
+}
+.range-slider-thumb::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  pointer-events: auto;
+  width: 18px;
+  height: 18px;
+  border-radius: 9999px;
+  background: var(--color-surface);
+  border: 2px solid var(--color-brand-primary);
+  box-shadow: var(--shadow-sm);
+  cursor: grab;
+  transition:
+    transform 150ms var(--ease-standard),
+    box-shadow 150ms var(--ease-standard),
+    border-color 150ms var(--ease-standard);
+}
+.range-slider-thumb::-moz-range-thumb {
+  pointer-events: auto;
+  width: 18px;
+  height: 18px;
+  border-radius: 9999px;
+  background: var(--color-surface);
+  border: 2px solid var(--color-brand-primary);
+  box-shadow: var(--shadow-sm);
+  cursor: grab;
+  transition:
+    transform 150ms var(--ease-standard),
+    box-shadow 150ms var(--ease-standard),
+    border-color 150ms var(--ease-standard);
+}
+.range-slider-thumb:hover::-webkit-slider-thumb,
+.range-slider-thumb:focus-visible::-webkit-slider-thumb {
+  transform: scale(1.1);
+  border-color: var(--color-brand-primary-strong);
+  box-shadow: 0 0 0 4px rgba(47, 93, 67, 0.18);
+}
+.range-slider-thumb:hover::-moz-range-thumb,
+.range-slider-thumb:focus-visible::-moz-range-thumb {
+  transform: scale(1.1);
+  border-color: var(--color-brand-primary-strong);
+  box-shadow: 0 0 0 4px rgba(47, 93, 67, 0.18);
+}
+.range-slider-thumb:active::-webkit-slider-thumb {
+  cursor: grabbing;
+}
+.range-slider-thumb:active::-moz-range-thumb {
+  cursor: grabbing;
+}
+.range-slider-thumb:focus {
+  outline: none;
+}
+
+/*
  * Atmosphere keyframes for the catalog polish pass.
  * Only consumed via `motion-safe:animate-*` utilities — users with
  * `prefers-reduced-motion: reduce` see static surfaces.
