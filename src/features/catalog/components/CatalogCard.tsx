@@ -77,7 +77,7 @@ export function CatalogCard({
     <Card
       tone="surface"
       interactive
-      className={`group flex flex-col p-3 ${featuredCls}`.trim()}
+      className={`group flex h-full flex-col p-3 ${featuredCls}`.trim()}
     >
       <Link
         href={HREF(listing.slug)}
@@ -135,7 +135,7 @@ export function CatalogCard({
         </div>
 
         <div className="absolute right-3 top-3 z-30">
-          <HeartButton />
+          <HeartButton listingId={listing.id} />
         </div>
 
         <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center">
@@ -181,7 +181,7 @@ export function CatalogCard({
           count={listing.reputation.reviewCount}
           size="sm"
         />
-        <p className="line-clamp-2 text-xs leading-relaxed text-[var(--color-text-muted)]">
+        <p className="line-clamp-2 min-h-[2.5rem] text-xs leading-relaxed text-[var(--color-text-muted)]">
           {listing.shortBio}
         </p>
         <div className="mt-1 flex items-center justify-between gap-2">
@@ -270,7 +270,7 @@ function ListCard({
               </span>
             </h3>
             <div className="z-30 shrink-0">
-              <HeartButton />
+              <HeartButton listingId={listing.id} />
             </div>
           </header>
           <div className="flex items-center gap-2">
