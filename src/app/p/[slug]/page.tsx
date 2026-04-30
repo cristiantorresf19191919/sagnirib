@@ -23,6 +23,8 @@ import { Container } from "@/shared/design-system/components/Container";
 import { VerifiedBadge } from "@/shared/design-system/components/VerifiedBadge";
 import { Footer } from "@/shared/layout/Footer";
 import { Header } from "@/shared/layout/Header";
+import { FadeIn } from "@/shared/motion/FadeIn";
+import { Reveal, RevealItem } from "@/shared/motion/Reveal";
 import { PriceTag } from "@/shared/ui/PriceTag";
 import { RatingBadge } from "@/shared/ui/RatingBadge";
 import { Tag } from "@/shared/ui/Tag";
@@ -108,7 +110,9 @@ export default async function ProfilePage({ params }: Readonly<ProfilePageProps>
           className="grid grid-cols-1 gap-12 py-10 sm:py-12 lg:grid-cols-12 lg:gap-14 lg:py-16"
         >
           {/* Gallery */}
-          <section
+          <FadeIn
+            delay={0.05}
+            y={12}
             aria-label={`Galería de ${listing.name}`}
             className="lg:col-span-6 xl:col-span-7"
           >
@@ -144,12 +148,12 @@ export default async function ProfilePage({ params }: Readonly<ProfilePageProps>
                 {listing.reputation.storiesRecorded} historias
               </span>
             </div>
-          </section>
+          </FadeIn>
 
           {/* Profile dossier */}
           <aside className="lg:col-span-6 xl:col-span-5">
-            <div className="lg:sticky lg:top-24 flex flex-col gap-7">
-              <div>
+            <Reveal as="div" className="lg:sticky lg:top-24 flex flex-col gap-7">
+              <RevealItem>
                 <span className="text-xs uppercase tracking-[0.32em] text-[var(--color-text-subtle)]">
                   Perfil
                 </span>
@@ -178,14 +182,17 @@ export default async function ProfilePage({ params }: Readonly<ProfilePageProps>
                     </Tag>
                   ))}
                 </div>
-              </div>
+              </RevealItem>
 
-              <p className="text-base leading-relaxed text-[var(--color-text-muted)]">
-                {listing.bio}
-              </p>
+              <RevealItem>
+                <p className="text-base leading-relaxed text-[var(--color-text-muted)]">
+                  {listing.bio}
+                </p>
+              </RevealItem>
 
               {/* Stats grid */}
-              <dl className="grid grid-cols-3 gap-3">
+              <RevealItem as="div">
+                <dl className="grid grid-cols-3 gap-3">
                 <StatTile
                   label="Vistas"
                   value={formatViews(listing.reputation.totalViews)}
@@ -207,10 +214,12 @@ export default async function ProfilePage({ params }: Readonly<ProfilePageProps>
                     />
                   }
                 />
-              </dl>
+                </dl>
+              </RevealItem>
 
               {/* Price + CTA card */}
-              <Card tone="surface" padding="lg" className="shadow-[var(--shadow-md)]">
+              <RevealItem>
+                <Card tone="surface" padding="lg" className="shadow-[var(--shadow-md)]">
                 <div className="flex items-end justify-between gap-4">
                   <div>
                     <span className="text-xs uppercase tracking-[0.22em] text-[var(--color-text-subtle)]">
@@ -248,10 +257,12 @@ export default async function ProfilePage({ params }: Readonly<ProfilePageProps>
                   El contacto directo se libera tras verificar tu cuenta. La
                   pasarela de contratación llega en la próxima versión.
                 </p>
-              </Card>
+                </Card>
+              </RevealItem>
 
               {/* Attributes */}
-              <Section title="Características">
+              <RevealItem>
+                <Section title="Características">
                 <dl className="grid grid-cols-2 gap-x-6 gap-y-3 text-sm">
                   {attributeEntries.map(([label, value]) => (
                     <div key={label} className="flex flex-col">
@@ -276,28 +287,33 @@ export default async function ProfilePage({ params }: Readonly<ProfilePageProps>
                     ))}
                   </div>
                 )}
-              </Section>
+                </Section>
+              </RevealItem>
 
-              <Section title="Servicios">
-                <div className="flex flex-wrap gap-2">
-                  {listing.services.map((s) => (
-                    <Tag key={s} tone="secondary">
-                      {s}
-                    </Tag>
-                  ))}
-                </div>
-              </Section>
+              <RevealItem>
+                <Section title="Servicios">
+                  <div className="flex flex-wrap gap-2">
+                    {listing.services.map((s) => (
+                      <Tag key={s} tone="secondary">
+                        {s}
+                      </Tag>
+                    ))}
+                  </div>
+                </Section>
+              </RevealItem>
 
-              <Section title="Lugares de encuentro">
-                <div className="flex flex-wrap gap-2">
-                  {listing.meetingContexts.map((m) => (
-                    <Tag key={m} tone="neutral">
-                      {m}
-                    </Tag>
-                  ))}
-                </div>
-              </Section>
-            </div>
+              <RevealItem>
+                <Section title="Lugares de encuentro">
+                  <div className="flex flex-wrap gap-2">
+                    {listing.meetingContexts.map((m) => (
+                      <Tag key={m} tone="neutral">
+                        {m}
+                      </Tag>
+                    ))}
+                  </div>
+                </Section>
+              </RevealItem>
+            </Reveal>
           </aside>
         </Container>
 

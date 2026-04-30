@@ -1,6 +1,8 @@
 import { listAll, type ListingsFilters } from "@/server/biringas";
 import { Button } from "@/shared/design-system/components/Button";
 import { Container } from "@/shared/design-system/components/Container";
+import { Sparkle } from "@/shared/design-system/components/Sparkle";
+import { FadeIn } from "@/shared/motion/FadeIn";
 import { Reveal, RevealItem } from "@/shared/motion/Reveal";
 
 import { encodeFilters } from "../lib/parse-filters";
@@ -28,22 +30,29 @@ export async function CatalogGrid({ filters }: CatalogGridProps) {
       className="relative pb-12 pt-8 sm:pb-16 sm:pt-10 lg:pb-20"
     >
       <Container width="wide">
-        <header className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between sm:gap-6">
-          <div>
-            <h2
-              id="catalog-title"
-              className="max-w-3xl text-2xl font-bold leading-tight tracking-tight text-[var(--color-foreground)] sm:text-3xl"
-            >
-              Biringas verificadas en {filters.city ?? "Colombia"}
-              <span className="ml-3 align-middle text-base font-medium text-[var(--color-text-subtle)] sm:text-lg">
-                ({meta.total})
-              </span>
-            </h2>
-            <p className="mt-1.5 text-xs uppercase tracking-[0.18em] text-[var(--color-text-subtle)]">
-              Ordenadas por actividad reciente
-            </p>
-          </div>
-        </header>
+        <FadeIn>
+          <header className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between sm:gap-6">
+            <div className="relative">
+              <Sparkle
+                tone="muted"
+                size={18}
+                className="absolute -left-6 -top-1 hidden sm:block"
+              />
+              <h2
+                id="catalog-title"
+                className="max-w-3xl text-2xl font-bold leading-tight tracking-tight text-[var(--color-foreground)] sm:text-3xl"
+              >
+                Biringas verificadas en {filters.city ?? "Colombia"}
+                <span className="ml-3 align-middle text-base font-medium text-[var(--color-text-subtle)] sm:text-lg">
+                  ({meta.total})
+                </span>
+              </h2>
+              <p className="mt-1.5 text-xs uppercase tracking-[0.18em] text-[var(--color-text-subtle)]">
+                Ordenadas por actividad reciente
+              </p>
+            </div>
+          </header>
+        </FadeIn>
 
         {data.length === 0 ? (
           <EmptyState />

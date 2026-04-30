@@ -1,5 +1,7 @@
 import type { HTMLAttributes } from "react";
 
+import { MotionCard } from "@/shared/motion/MotionCard";
+
 type Tone = "surface" | "elevated" | "muted";
 type Padding = "none" | "sm" | "md" | "lg";
 
@@ -20,14 +22,15 @@ const PADDING: Record<Padding, string> = {
 interface CardProps extends HTMLAttributes<HTMLDivElement> {
   tone?: Tone;
   padding?: Padding;
-  /** Adds a subtle hover lift used in clickable card grids. */
+  /** Adds a spring-eased hover lift used in clickable card grids. */
   interactive?: boolean;
 }
 
 /**
  * Base card primitive. All cards (catalog, profile, listings) share its
  * surface, radius, border and shadow scale so the visual rhythm stays
- * consistent across the app.
+ * consistent. When `interactive`, a Framer Motion spring hover lift is
+ * applied — replaces ad-hoc CSS translates.
  */
 export function Card({
   tone = "surface",
@@ -38,9 +41,18 @@ export function Card({
   ...rest
 }: CardProps) {
   const interactiveCls = interactive
-    ? "transition-[transform,box-shadow,border-color] duration-200 ease-[var(--ease-standard)] hover:-translate-y-0.5 hover:shadow-[var(--shadow-md)] hover:border-[var(--color-brand-primary-soft)]"
+    ? "transition-[box-shadow,border-color] duration-200 ease-[var(--ease-standard)] hover:shadow-[var(--shadow-md)] hover:border-[var(--color-brand-primary-soft)]"
     : "";
   const merged = `relative overflow-hidden rounded-[var(--radius-xl)] shadow-[var(--shadow-sm)] ${TONE[tone]} ${PADDING[padding]} ${interactiveCls} ${className}`.trim();
+
+  if (interactive) {
+    return (
+      <MotionCard className={merged} {...(rest as Record<string, unknown>)}>
+        {children}
+      </MotionCard>
+    );
+  }
+
   return (
     <div className={merged} {...rest}>
       {children}

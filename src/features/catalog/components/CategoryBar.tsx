@@ -1,6 +1,6 @@
 import { CATEGORIES, type ListingsFilters } from "@/server/biringas";
 import { Container } from "@/shared/design-system/components/Container";
-import { MotionPill } from "@/shared/motion/MotionPill";
+import { AnimatedTabs } from "@/shared/motion/AnimatedTabs";
 
 import { withFilter } from "../lib/parse-filters";
 
@@ -9,15 +9,36 @@ interface CategoryBarProps {
 }
 
 /**
- * Top-of-catalog selector. Underline-tab style mirrors the spa mockup:
- * inactive tabs sit flush, the active tab is bolder with a forest-green dot
- * underneath. Each tab is a `<Link>` so the URL is the source of truth.
+ * Top-of-catalog selector. Two underline-tab groups; each group's active
+ * indicator is a small forest-green dot that animates between tabs via
+ * `layoutId`. URLs remain the source of truth — page is server-rendered
+ * against the resulting filter state.
  */
 export function CategoryBar({ filters }: CategoryBarProps) {
   const activeCategory = filters.category;
-  const tabs: Array<{ id: string | undefined; label: string }> = [
-    { id: undefined, label: "Todas" },
-    ...CATEGORIES.map((c) => ({ id: c.id as string | undefined, label: c.label })),
+
+  const categoryItems = [
+    {
+      id: "all",
+      href: withFilter(filters, "category", undefined as never),
+      label: "Todas",
+      active: activeCategory === undefined,
+    },
+    ...CATEGORIES.map(({ id, label }) => ({
+      id,
+      href: withFilter(filters, "category", id),
+      label,
+      active: activeCategory === id,
+    })),
+  ];
+
+  const sexItems = [
+    {
+      id: "mujeres",
+      href: withFilter(filters, "sex", "mujeres"),
+      label: "Mujeres",
+      active: true,
+    },
   ];
 
   return (
@@ -27,56 +48,18 @@ export function CategoryBar({ filters }: CategoryBarProps) {
     >
       <Container width="wide" className="py-4">
         <div className="flex flex-wrap items-center gap-x-7 gap-y-3">
-          {tabs.map((tab) => (
-            <Tab
-              key={tab.label}
-              href={withFilter(filters, "category", tab.id as never)}
-              active={activeCategory === tab.id}
-            >
-              {tab.label}
-            </Tab>
-          ))}
+          <AnimatedTabs
+            groupId="category"
+            items={categoryItems}
+            ariaLabel="Categoría"
+          />
           <span
             aria-hidden
             className="hidden h-5 w-px bg-[var(--color-border)] sm:inline-block"
           />
-          <Tab
-            href={withFilter(filters, "sex", "mujeres")}
-            active
-          >
-            Mujeres
-          </Tab>
+          <AnimatedTabs groupId="sex" items={sexItems} ariaLabel="Sexo" />
         </div>
       </Container>
     </section>
-  );
-}
-
-interface TabProps {
-  href: string;
-  active: boolean;
-  children: React.ReactNode;
-}
-
-function Tab({ href, active, children }: TabProps) {
-  const cls = active
-    ? "text-[var(--color-foreground)] font-bold"
-    : "text-[var(--color-text-muted)] font-medium hover:text-[var(--color-foreground)]";
-
-  return (
-    <MotionPill
-      href={href}
-      aria-current={active ? "true" : undefined}
-      active={active}
-      className={`relative inline-flex flex-col items-center gap-1 px-1 py-1 text-sm transition-colors duration-200 ease-[var(--ease-standard)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-background)] ${cls}`}
-    >
-      <span>{children}</span>
-      {active && (
-        <span
-          aria-hidden
-          className="h-1 w-1 rounded-full bg-[var(--color-brand-primary)]"
-        />
-      )}
-    </MotionPill>
   );
 }

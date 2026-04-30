@@ -5,6 +5,7 @@ import { CatalogGrid } from "@/features/catalog/components/CatalogGrid";
 import { CategoryBar } from "@/features/catalog/components/CategoryBar";
 import { CityChips } from "@/features/catalog/components/CityChips";
 import { FiltersPanel } from "@/features/catalog/components/FiltersPanel";
+import { HeroBand } from "@/features/catalog/components/HeroBand";
 import { SearchBar } from "@/features/catalog/components/SearchBar";
 import {
   parseFilters,
@@ -39,6 +40,9 @@ export default async function HomePage({ searchParams }: HomePageProps) {
     <>
       <Header hideCatalogCta />
       <main className="flex flex-col">
+        <HeroBand
+          location={filters.city ? `${filters.city} · Colombia` : "Toda Colombia"}
+        />
         <CategoryBar filters={filters} />
         <SearchBar filters={filters} />
         <CityChips filters={filters} />

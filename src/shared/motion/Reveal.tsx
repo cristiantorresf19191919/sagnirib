@@ -6,16 +6,16 @@ import type { ReactNode } from "react";
 const containerVariants = {
   hidden: {},
   visible: {
-    transition: { staggerChildren: 0.08, delayChildren: 0.08 },
+    transition: { staggerChildren: 0.06, delayChildren: 0.04 },
   },
 };
 
 const itemVariants = {
-  hidden: { opacity: 0, y: 28 },
+  hidden: { opacity: 0, y: 14 },
   visible: {
     opacity: 1,
     y: 0,
-    transition: { duration: 0.55, ease: [0.2, 0.8, 0.2, 1] as const },
+    transition: { duration: 0.42, ease: [0.2, 0.8, 0.2, 1] as const },
   },
 };
 
@@ -28,9 +28,10 @@ interface RevealProps extends HTMLMotionProps<"div"> {
 }
 
 /**
- * Parent reveal — animates children with a staggered fade-up. Wrap each
- * direct child in `<RevealItem>` to receive the staggered animation; plain
- * children render without animation.
+ * Parent reveal — animates children with a tight, professional fade-up.
+ * Subtle by design: 14px travel, 0.42s duration, 0.06s stagger. Wrap each
+ * direct child in `<RevealItem>` to receive the animation; plain children
+ * render without animation.
  */
 export function Reveal({
   children,
@@ -40,7 +41,7 @@ export function Reveal({
 }: RevealProps) {
   const Tag = motion[as] as typeof motion.div;
   const animateProp = whenInView
-    ? { whileInView: "visible" as const, viewport: { once: true, margin: "-80px" } }
+    ? { whileInView: "visible" as const, viewport: { once: true, margin: "-60px" } }
     : { animate: "visible" as const };
 
   return (
