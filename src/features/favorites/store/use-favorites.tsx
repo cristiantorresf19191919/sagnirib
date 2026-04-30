@@ -2,16 +2,21 @@
 
 import {
   createContext,
-  useCallback,
   useContext,
-  useEffect,
   useMemo,
-  useState,
+  useSyncExternalStore,
 } from "react";
 
 const STORAGE_KEY = "biringas:favorites:v1";
 const COMPARE_KEY = "biringas:favorites:compare:v1";
 export const COMPARE_LIMIT = 3;
+
+interface Snapshot {
+  favorites: ReadonlyArray<string>;
+  compare: ReadonlyArray<string>;
+  /** Flips to true once we've read localStorage at least once on the client. */
+  ready: boolean;
+}
 
 interface FavoritesValue {
   favorites: ReadonlyArray<string>;
@@ -20,14 +25,31 @@ interface FavoritesValue {
   isComparing: (id: string) => boolean;
   toggleFavorite: (id: string) => void;
   toggleCompare: (id: string) => void;
-  /** Replace the comparison tray with the given ids (capped at COMPARE_LIMIT). */
   setCompare: (ids: ReadonlyArray<string>) => void;
   clearCompare: () => void;
-  /** True after the first hydration tick — gate UI that depends on store. */
   ready: boolean;
 }
 
-const Ctx = createContext<FavoritesValue | null>(null);
+/* ------------------------------------------------------------------------ */
+/* External store                                                           */
+/*                                                                          */
+/* This file owns the favorites + compare state in a module-level cache so  */
+/* React can subscribe via `useSyncExternalStore`. Why: the React 19        */
+/* `react-hooks/set-state-in-effect` rule rejects the older "hydrate via    */
+/* useEffect → setState" pattern, and useSyncExternalStore is the canonical */
+/* way to subscribe to an external mutable source while keeping SSR snapshots*/
+/* stable.                                                                  */
+/* ------------------------------------------------------------------------ */
+
+const SERVER_SNAPSHOT: Snapshot = Object.freeze({
+  favorites: [],
+  compare: [],
+  ready: false,
+});
+
+let cache: Snapshot = SERVER_SNAPSHOT;
+let storageBound = false;
+const listeners = new Set<() => void>();
 
 function readArray(key: string): string[] {
   if (globalThis.window === undefined) return [];
@@ -47,101 +69,131 @@ function writeArray(key: string, value: ReadonlyArray<string>) {
   try {
     globalThis.localStorage.setItem(key, JSON.stringify(value));
   } catch {
-    // localStorage may be disabled (private mode quota, etc.) — silent no-op
+    // localStorage may be disabled (private mode, quota) — silent no-op.
   }
 }
+
+function ensureHydrated() {
+  if (cache !== SERVER_SNAPSHOT) return;
+  if (globalThis.window === undefined) return;
+  cache = {
+    favorites: readArray(STORAGE_KEY),
+    compare: readArray(COMPARE_KEY),
+    ready: true,
+  };
+  if (!storageBound) {
+    storageBound = true;
+    globalThis.addEventListener("storage", (e) => {
+      if (e.key !== STORAGE_KEY && e.key !== COMPARE_KEY) return;
+      cache = {
+        favorites: readArray(STORAGE_KEY),
+        compare: readArray(COMPARE_KEY),
+        ready: true,
+      };
+      emit();
+    });
+  }
+}
+
+function emit() {
+  for (const listener of listeners) listener();
+}
+
+function subscribe(listener: () => void) {
+  listeners.add(listener);
+  ensureHydrated();
+  return () => {
+    listeners.delete(listener);
+  };
+}
+
+function getSnapshot(): Snapshot {
+  ensureHydrated();
+  return cache;
+}
+
+function getServerSnapshot(): Snapshot {
+  return SERVER_SNAPSHOT;
+}
+
+function commit(next: { favorites?: ReadonlyArray<string>; compare?: ReadonlyArray<string> }) {
+  cache = {
+    favorites: next.favorites ?? cache.favorites,
+    compare: next.compare ?? cache.compare,
+    ready: true,
+  };
+  if (next.favorites !== undefined) writeArray(STORAGE_KEY, next.favorites);
+  if (next.compare !== undefined) writeArray(COMPARE_KEY, next.compare);
+  emit();
+}
+
+function toggleFavoriteValue(id: string) {
+  ensureHydrated();
+  const isFav = cache.favorites.includes(id);
+  const nextFavorites = isFav
+    ? cache.favorites.filter((v) => v !== id)
+    : [...cache.favorites, id];
+  // Removing from favorites also drops it from the compare tray.
+  const nextCompare = cache.compare.includes(id)
+    ? cache.compare.filter((v) => v !== id)
+    : cache.compare;
+  commit({ favorites: nextFavorites, compare: nextCompare });
+}
+
+function toggleCompareValue(id: string) {
+  ensureHydrated();
+  let next: string[];
+  if (cache.compare.includes(id)) {
+    next = cache.compare.filter((v) => v !== id);
+  } else if (cache.compare.length >= COMPARE_LIMIT) {
+    // Drop the oldest, append — keeps the tray in motion when full.
+    next = [...cache.compare.slice(1), id];
+  } else {
+    next = [...cache.compare, id];
+  }
+  commit({ compare: next });
+}
+
+function setCompareValue(ids: ReadonlyArray<string>) {
+  ensureHydrated();
+  commit({ compare: ids.slice(0, COMPARE_LIMIT) });
+}
+
+function clearCompareValue() {
+  ensureHydrated();
+  commit({ compare: [] });
+}
+
+/* ------------------------------------------------------------------------ */
+/* React bindings                                                           */
+/* ------------------------------------------------------------------------ */
+
+const Ctx = createContext<FavoritesValue | null>(null);
 
 interface ProviderProps {
   children: React.ReactNode;
 }
 
 export function FavoritesProvider({ children }: Readonly<ProviderProps>) {
-  const [favorites, setFavorites] = useState<ReadonlyArray<string>>([]);
-  const [compareIds, setCompareIds] = useState<ReadonlyArray<string>>([]);
-  const [ready, setReady] = useState(false);
-
-  // Hydrate from localStorage after mount to keep SSR markup stable.
-  useEffect(() => {
-    setFavorites(readArray(STORAGE_KEY));
-    setCompareIds(readArray(COMPARE_KEY));
-    setReady(true);
-  }, []);
-
-  // Sync favorites across tabs.
-  useEffect(() => {
-    function onStorage(e: StorageEvent) {
-      if (e.key === STORAGE_KEY) setFavorites(readArray(STORAGE_KEY));
-      if (e.key === COMPARE_KEY) setCompareIds(readArray(COMPARE_KEY));
-    }
-    globalThis.addEventListener("storage", onStorage);
-    return () => globalThis.removeEventListener("storage", onStorage);
-  }, []);
-
-  const toggleFavorite = useCallback((id: string) => {
-    setFavorites((prev) => {
-      const next = prev.includes(id)
-        ? prev.filter((v) => v !== id)
-        : [...prev, id];
-      writeArray(STORAGE_KEY, next);
-      return next;
-    });
-    // Removing from favorites also removes from compare tray.
-    setCompareIds((prev) => {
-      if (!prev.includes(id)) return prev;
-      const next = prev.filter((v) => v !== id);
-      writeArray(COMPARE_KEY, next);
-      return next;
-    });
-  }, []);
-
-  const toggleCompare = useCallback((id: string) => {
-    setCompareIds((prev) => {
-      let next: string[];
-      if (prev.includes(id)) {
-        next = prev.filter((v) => v !== id);
-      } else if (prev.length >= COMPARE_LIMIT) {
-        // Drop the oldest, append the new one — keeps the tray in motion.
-        next = [...prev.slice(1), id];
-      } else {
-        next = [...prev, id];
-      }
-      writeArray(COMPARE_KEY, next);
-      return next;
-    });
-  }, []);
-
-  const setCompare = useCallback((ids: ReadonlyArray<string>) => {
-    const next = ids.slice(0, COMPARE_LIMIT);
-    setCompareIds(next);
-    writeArray(COMPARE_KEY, next);
-  }, []);
-
-  const clearCompare = useCallback(() => {
-    setCompareIds([]);
-    writeArray(COMPARE_KEY, []);
-  }, []);
+  const snapshot = useSyncExternalStore(
+    subscribe,
+    getSnapshot,
+    getServerSnapshot,
+  );
 
   const value = useMemo<FavoritesValue>(
     () => ({
-      favorites,
-      compareIds,
-      ready,
-      isFavorite: (id) => favorites.includes(id),
-      isComparing: (id) => compareIds.includes(id),
-      toggleFavorite,
-      toggleCompare,
-      setCompare,
-      clearCompare,
+      favorites: snapshot.favorites,
+      compareIds: snapshot.compare,
+      ready: snapshot.ready,
+      isFavorite: (id) => snapshot.favorites.includes(id),
+      isComparing: (id) => snapshot.compare.includes(id),
+      toggleFavorite: toggleFavoriteValue,
+      toggleCompare: toggleCompareValue,
+      setCompare: setCompareValue,
+      clearCompare: clearCompareValue,
     }),
-    [
-      favorites,
-      compareIds,
-      ready,
-      toggleFavorite,
-      toggleCompare,
-      setCompare,
-      clearCompare,
-    ],
+    [snapshot],
   );
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
