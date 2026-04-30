@@ -87,18 +87,20 @@ export async function CatalogGrid({ filters }: CatalogGridProps) {
 
 function EmptyState() {
   return (
-    <div className="mt-10 flex flex-col items-start gap-3 rounded-[var(--radius-xl)] border border-dashed border-[var(--color-border)] bg-[var(--color-surface)] p-8 shadow-[var(--shadow-sm)]">
-      <span className="text-xs uppercase tracking-[0.28em] text-[var(--color-text-subtle)]">
+    <div className="mx-auto mt-12 flex max-w-xl flex-col items-center gap-4 rounded-[var(--radius-2xl)] border border-[var(--color-border)] bg-[var(--color-surface)] p-10 text-center shadow-[var(--shadow-sm)]">
+      <Sparkle tone="muted" size={32} />
+      <span className="text-[11px] uppercase tracking-[0.28em] text-[var(--color-text-subtle)]">
         Sin resultados
       </span>
-      <p className="text-base text-[var(--color-foreground)]">
-        Ningún perfil coincide con esta combinación de filtros.
+      <h3 className="text-xl font-semibold text-[var(--color-foreground)]">
+        Ningún perfil coincide con esta combinación
+      </h3>
+      <p className="max-w-sm text-sm leading-relaxed text-[var(--color-text-muted)]">
+        Prueba a ampliar la ciudad, soltar la edad o quitar algún chip de
+        servicio. También puedes empezar de cero.
       </p>
-      <p className="text-sm text-[var(--color-text-muted)]">
-        Prueba a ampliar la ciudad, soltar la edad o quitar algún chip de servicio.
-      </p>
-      <Button href="/" variant="primary" size="md" className="mt-2">
-        Borrar filtros
+      <Button href="/" variant="primary" size="md" className="mt-2" glow>
+        Borrar todos los filtros
       </Button>
     </div>
   );

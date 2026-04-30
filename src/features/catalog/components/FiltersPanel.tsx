@@ -1,5 +1,17 @@
 import Link from "next/link";
-import { ChevronDown, Eraser, SlidersHorizontal } from "lucide-react";
+import {
+  ChevronDown,
+  Coins,
+  Eraser,
+  Eye,
+  Film,
+  Heart,
+  MapPinned,
+  ShieldCheck,
+  SlidersHorizontal,
+  Sparkles,
+  UserSquare,
+} from "lucide-react";
 
 import {
   APPEARANCE_CATALOG,
@@ -13,6 +25,8 @@ import {
 import { Container } from "@/shared/design-system/components/Container";
 import { Disclosure } from "@/shared/motion/Disclosure";
 
+import { ActiveFilterChips } from "./ActiveFilterChips";
+import { FilterForm } from "./FilterForm";
 import { PreservedFilters } from "./SearchBar";
 
 interface FiltersPanelProps {
@@ -57,247 +71,277 @@ export function FiltersPanel({ filters }: FiltersPanelProps) {
   const active = countActiveFilters(filters);
 
   return (
-    <section className="border-b border-[var(--color-border)]/60 bg-[var(--color-background)]">
-      <Container width="wide" className="py-2.5 sm:py-3">
+    <section className="bg-[var(--color-background)]">
+      <Container width="wide" className="py-3 sm:py-4">
         <Disclosure
           ariaLabel="Filtros de búsqueda"
-          triggerClassName="group flex w-full cursor-pointer items-center gap-2 rounded-full border border-transparent px-3 py-1.5 text-left transition-colors hover:bg-[var(--color-surface-muted)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-background)]"
+          triggerClassName="group flex w-full cursor-pointer items-center gap-3 rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-3 text-left shadow-[var(--shadow-sm)] transition-[border-color,background,box-shadow] duration-200 ease-[var(--ease-standard)] hover:border-[var(--color-brand-primary-soft)] hover:bg-[var(--color-surface)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-background)]"
           summary={
             <>
-              <SlidersHorizontal
-                className="h-3.5 w-3.5 text-[var(--color-brand-primary)]"
-                aria-hidden
-              />
-              <span className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-text-muted)]">
-                Filtros
+              <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[var(--color-brand-primary)]/10 text-[var(--color-brand-primary)]">
+                <SlidersHorizontal className="h-4 w-4" aria-hidden />
               </span>
-              {active > 0 ? (
-                <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-[var(--color-brand-primary)] px-1.5 text-[10px] font-bold text-[var(--color-surface)]">
-                  {active}
+              <span className="flex flex-col gap-0.5">
+                <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--color-text-muted)]">
+                  Filtros avanzados
                 </span>
-              ) : (
-                <span className="text-xs normal-case tracking-tight text-[var(--color-text-subtle)]">
-                  Sin aplicar
+                <span className="text-sm text-[var(--color-foreground)]">
+                  {active > 0
+                    ? `${active} ${active === 1 ? "filtro aplicado" : "filtros aplicados"}`
+                    : "Refina por precio, edad, servicios y apariencia"}
+                </span>
+              </span>
+              {active > 0 && (
+                <span className="ml-auto inline-flex h-6 min-w-6 items-center justify-center rounded-full bg-[var(--color-brand-primary)] px-2 text-[11px] font-bold text-[var(--color-surface)]">
+                  {active}
                 </span>
               )}
               <ChevronDown
-                className="ml-auto h-4 w-4 text-[var(--color-text-subtle)] transition-transform duration-300 ease-[var(--ease-standard)] group-aria-expanded:rotate-180"
+                className="h-4 w-4 shrink-0 text-[var(--color-text-subtle)] transition-transform duration-300 ease-[var(--ease-standard)] group-aria-expanded:rotate-180"
                 aria-hidden
               />
             </>
           }
         >
-          <form
-            action="/"
-            method="get"
-            className="mt-3 grid gap-8 rounded-[var(--radius-xl)] border border-[var(--color-border)] bg-[var(--color-surface)] p-5 shadow-[var(--shadow-sm)] sm:p-7 lg:grid-cols-2 lg:gap-10"
-          >
-            <PreservedFilters
-              filters={filters}
-              omit={[
-                "priceMin",
-                "priceMax",
-                "ageMin",
-                "ageMax",
-                "verified",
-                "video",
-                "audio",
-                "reviews",
-                "face",
-                "card",
-                "now",
-                "attention",
-                "contact",
-                "service",
-                "special",
-                "place",
-                ...Object.keys(APPEARANCE_CATALOG).map((k) => `attr_${k}`),
-              ]}
-            />
+          <div className="mt-4 flex flex-col gap-4 rounded-[var(--radius-2xl)] border border-[var(--color-border)] bg-[var(--color-background-elevated)] p-5 shadow-[var(--shadow-sm)] sm:p-6 lg:p-8">
+            {active > 0 && (
+              <div className="flex flex-col gap-2 rounded-[var(--radius-lg)] bg-[var(--color-surface)] p-3 sm:p-4">
+                <span className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[var(--color-text-subtle)]">
+                  Filtros activos · toca el chip para quitarlo
+                </span>
+                <ActiveFilterChips filters={filters} />
+              </div>
+            )}
 
-            {/* Left column — Principales + Servicios + Lugar */}
-            <div className="flex flex-col gap-8">
-              <Section title="Principales">
-                <Field label="Precio (COP / hora)">
-                  <RangeInputs
-                    minName="priceMin"
-                    maxName="priceMax"
-                    minValue={filters.priceMin}
-                    maxValue={filters.priceMax}
-                    step={10000}
-                  />
-                  <ChipRow>
-                    <BoolChip
-                      name="priceMax"
-                      value="150000"
-                      hidden
-                      checked={filters.priceMax === 150000}
-                      label="Baratas"
-                    />
-                    <BoolChip
-                      name="priceMin"
-                      value="250000"
-                      hidden
-                      checked={filters.priceMin === 250000}
-                      label="De lujo"
-                    />
-                    <BoolChip
-                      name="card"
-                      value="1"
-                      hidden
-                      checked={filters.paymentByCard ?? false}
-                      label="Pago con tarjeta"
-                    />
-                  </ChipRow>
-                </Field>
+            <FilterForm
+              action="/"
+              method="get"
+              className="grid gap-5 lg:grid-cols-2 lg:gap-6"
+            >
+              <PreservedFilters
+                filters={filters}
+                omit={[
+                  "priceMin",
+                  "priceMax",
+                  "ageMin",
+                  "ageMax",
+                  "verified",
+                  "video",
+                  "audio",
+                  "reviews",
+                  "face",
+                  "card",
+                  "now",
+                  "attention",
+                  "contact",
+                  "service",
+                  "special",
+                  "place",
+                  ...Object.keys(APPEARANCE_CATALOG).map((k) => `attr_${k}`),
+                ]}
+              />
 
-                <Field label="Edad">
-                  <RangeInputs
-                    minName="ageMin"
-                    maxName="ageMax"
-                    minValue={filters.ageMin}
-                    maxValue={filters.ageMax}
-                    step={1}
-                  />
-                  <ChipRow>
-                    <BoolChip
-                      name="ageMax"
-                      value="25"
-                      hidden
-                      checked={filters.ageMax === 25}
-                      label="Jovencitas"
+              {/* Left column */}
+              <div className="flex flex-col gap-5">
+                <SectionCard
+                  title="Precio y edad"
+                  icon={<Coins className="h-4 w-4" aria-hidden />}
+                >
+                  <Field label="Precio (COP / hora)">
+                    <RangeInputs
+                      minName="priceMin"
+                      maxName="priceMax"
+                      minValue={filters.priceMin}
+                      maxValue={filters.priceMax}
+                      step={10000}
+                      placeholderMin="0"
+                      placeholderMax="500.000"
                     />
-                    <BoolChip
-                      name="ageMin"
-                      value="30"
-                      hidden
-                      checked={filters.ageMin === 30}
-                      label="Maduras"
-                    />
-                  </ChipRow>
-                </Field>
+                    <ChipRow>
+                      <PresetChip
+                        name="priceMax"
+                        value="150000"
+                        checked={filters.priceMax === 150000}
+                        label="Baratas"
+                      />
+                      <PresetChip
+                        name="priceMin"
+                        value="250000"
+                        checked={filters.priceMin === 250000}
+                        label="De lujo"
+                      />
+                      <PresetChip
+                        name="card"
+                        value="1"
+                        checked={filters.paymentByCard ?? false}
+                        label="Pago con tarjeta"
+                      />
+                    </ChipRow>
+                  </Field>
 
-                <Field label="Atención a">
+                  <Field label="Edad">
+                    <RangeInputs
+                      minName="ageMin"
+                      maxName="ageMax"
+                      minValue={filters.ageMin}
+                      maxValue={filters.ageMax}
+                      step={1}
+                      placeholderMin="18"
+                      placeholderMax="60"
+                    />
+                    <ChipRow>
+                      <PresetChip
+                        name="ageMax"
+                        value="25"
+                        checked={filters.ageMax === 25}
+                        label="Jovencitas"
+                      />
+                      <PresetChip
+                        name="ageMin"
+                        value="30"
+                        checked={filters.ageMin === 30}
+                        label="Maduras"
+                      />
+                    </ChipRow>
+                  </Field>
+                </SectionCard>
+
+                <SectionCard
+                  title="Atención y contacto"
+                  icon={<Heart className="h-4 w-4" aria-hidden />}
+                >
+                  <Field label="Atención a">
+                    <ChipRow>
+                      {ATTENTION_CATALOG.map(({ id, label }) => (
+                        <CheckChip
+                          key={id}
+                          name="attention"
+                          value={id}
+                          checked={filters.attention?.includes(id) ?? false}
+                          label={label}
+                        />
+                      ))}
+                    </ChipRow>
+                  </Field>
+
+                  <Field label="Canal de contacto">
+                    <ChipRow>
+                      {CONTACT_CATALOG.map(({ id, label }) => (
+                        <CheckChip
+                          key={id}
+                          name="contact"
+                          value={id}
+                          checked={
+                            filters.contactChannels?.includes(id) ?? false
+                          }
+                          label={label}
+                        />
+                      ))}
+                    </ChipRow>
+                  </Field>
+                </SectionCard>
+
+                <SectionCard
+                  title="Lugar de encuentro"
+                  icon={<MapPinned className="h-4 w-4" aria-hidden />}
+                >
                   <ChipRow>
-                    {ATTENTION_CATALOG.map(({ id, label }) => (
+                    {MEETING_CONTEXT_CATALOG.map((place) => (
                       <CheckChip
-                        key={id}
-                        name="attention"
-                        value={id}
-                        checked={filters.attention?.includes(id) ?? false}
-                        label={label}
+                        key={place}
+                        name="place"
+                        value={place}
+                        checked={
+                          filters.meetingContexts?.includes(place) ?? false
+                        }
+                        label={place}
                       />
                     ))}
                   </ChipRow>
-                </Field>
+                </SectionCard>
+              </div>
 
-                <Field label="Contacto">
+              {/* Right column */}
+              <div className="flex flex-col gap-5">
+                <SectionCard
+                  title="Servicios"
+                  icon={<Sparkles className="h-4 w-4" aria-hidden />}
+                >
+                  <Field label="Servicios generales">
+                    <ChipRow>
+                      {SERVICE_CATALOG.map((service) => (
+                        <CheckChip
+                          key={service}
+                          name="service"
+                          value={service}
+                          checked={filters.services?.includes(service) ?? false}
+                          label={service}
+                        />
+                      ))}
+                    </ChipRow>
+                  </Field>
+
+                  <Field label="Servicios especiales">
+                    <ChipRow>
+                      {SPECIAL_SERVICE_CATALOG.map((service) => (
+                        <CheckChip
+                          key={service}
+                          name="special"
+                          value={service}
+                          checked={
+                            filters.specialServices?.includes(service) ?? false
+                          }
+                          label={service}
+                        />
+                      ))}
+                    </ChipRow>
+                  </Field>
+                </SectionCard>
+
+                <SectionCard
+                  title="Contenido"
+                  icon={<Film className="h-4 w-4" aria-hidden />}
+                >
                   <ChipRow>
-                    {CONTACT_CATALOG.map(({ id, label }) => (
-                      <CheckChip
-                        key={id}
-                        name="contact"
-                        value={id}
-                        checked={filters.contactChannels?.includes(id) ?? false}
-                        label={label}
-                      />
-                    ))}
+                    <FlagChip
+                      name="verified"
+                      checked={filters.verifiedOnly ?? false}
+                      label="Fotos verificadas"
+                      icon={<ShieldCheck className="h-3 w-3" aria-hidden />}
+                    />
+                    <FlagChip
+                      name="face"
+                      checked={filters.faceVisible ?? false}
+                      label="Cara visible"
+                      icon={<Eye className="h-3 w-3" aria-hidden />}
+                    />
+                    <FlagChip
+                      name="video"
+                      checked={filters.withVideo ?? false}
+                      label="Con vídeos"
+                    />
+                    <FlagChip
+                      name="audio"
+                      checked={filters.withAudio ?? false}
+                      label="Con audio"
+                    />
+                    <FlagChip
+                      name="reviews"
+                      checked={filters.withReviews ?? false}
+                      label="Con experiencias"
+                    />
+                    <FlagChip
+                      name="now"
+                      checked={filters.availableNow ?? false}
+                      label="Disponible ahora"
+                    />
                   </ChipRow>
-                </Field>
-              </Section>
+                </SectionCard>
 
-              <Section title="Servicios generales">
-                <ChipRow>
-                  {SERVICE_CATALOG.map((service) => (
-                    <CheckChip
-                      key={service}
-                      name="service"
-                      value={service}
-                      checked={filters.services?.includes(service) ?? false}
-                      label={service}
-                    />
-                  ))}
-                </ChipRow>
-              </Section>
-
-              <Section title="Servicios especiales">
-                <ChipRow>
-                  {SPECIAL_SERVICE_CATALOG.map((service) => (
-                    <CheckChip
-                      key={service}
-                      name="special"
-                      value={service}
-                      checked={
-                        filters.specialServices?.includes(service) ?? false
-                      }
-                      label={service}
-                    />
-                  ))}
-                </ChipRow>
-              </Section>
-
-              <Section title="Lugar">
-                <ChipRow>
-                  {MEETING_CONTEXT_CATALOG.map((place) => (
-                    <CheckChip
-                      key={place}
-                      name="place"
-                      value={place}
-                      checked={
-                        filters.meetingContexts?.includes(place) ?? false
-                      }
-                      label={place}
-                    />
-                  ))}
-                </ChipRow>
-              </Section>
-            </div>
-
-            {/* Right column — Contenido + Apariencia */}
-            <div className="flex flex-col gap-8">
-              <Section title="Contenido">
-                <ChipRow>
-                  <BoolChip
-                    name="verified"
-                    value="1"
-                    checked={filters.verifiedOnly ?? false}
-                    label="Fotos verificadas"
-                  />
-                  <BoolChip
-                    name="face"
-                    value="1"
-                    checked={filters.faceVisible ?? false}
-                    label="Cara visible"
-                  />
-                  <BoolChip
-                    name="video"
-                    value="1"
-                    checked={filters.withVideo ?? false}
-                    label="Con vídeos"
-                  />
-                  <BoolChip
-                    name="audio"
-                    value="1"
-                    checked={filters.withAudio ?? false}
-                    label="Con audio"
-                  />
-                  <BoolChip
-                    name="reviews"
-                    value="1"
-                    checked={filters.withReviews ?? false}
-                    label="Con experiencias"
-                  />
-                  <BoolChip
-                    name="now"
-                    value="1"
-                    checked={filters.availableNow ?? false}
-                    label="Disponible ahora"
-                  />
-                </ChipRow>
-              </Section>
-
-              <Section title="Apariencia">
-                <div className="flex flex-col gap-5">
+                <SectionCard
+                  title="Apariencia"
+                  icon={<UserSquare className="h-4 w-4" aria-hidden />}
+                >
                   {(Object.keys(APPEARANCE_CATALOG) as Array<
                     keyof typeof APPEARANCE_CATALOG
                   >).map((key) => (
@@ -318,42 +362,46 @@ export function FiltersPanel({ filters }: FiltersPanelProps) {
                       </ChipRow>
                     </Field>
                   ))}
-                </div>
-              </Section>
-            </div>
+                </SectionCard>
+              </div>
 
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-end lg:col-span-2">
-              <Link
-                href="/"
-                className="inline-flex h-12 items-center justify-center gap-2 rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] px-5 text-sm font-semibold text-[var(--color-text-muted)] transition-colors hover:border-[var(--color-brand-highlight)]/50 hover:text-[var(--color-brand-highlight)]"
-              >
-                <Eraser className="h-4 w-4" aria-hidden />
-                Borrar filtros
-              </Link>
-              <button
-                type="submit"
-                className="inline-flex h-12 items-center justify-center gap-2 rounded-full bg-[var(--color-brand-primary)] px-8 text-sm font-semibold text-[var(--color-surface)] shadow-[var(--shadow-glow-primary)] transition-colors hover:bg-[var(--color-brand-primary-strong)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-background)]"
-              >
-                <SlidersHorizontal className="h-4 w-4" aria-hidden />
-                Filtrar
-              </button>
-            </div>
-          </form>
+              <div className="flex flex-col gap-3 border-t border-[var(--color-border)] pt-5 sm:flex-row sm:items-center sm:justify-between lg:col-span-2">
+                <Link
+                  href="/"
+                  className="inline-flex h-12 items-center justify-center gap-2 rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] px-5 text-sm font-semibold text-[var(--color-text-muted)] transition-[border-color,color,background] duration-200 ease-[var(--ease-standard)] hover:border-[var(--color-brand-highlight)]/50 hover:bg-[var(--color-surface)] hover:text-[var(--color-brand-highlight)]"
+                >
+                  <Eraser className="h-4 w-4" aria-hidden />
+                  Borrar filtros
+                </Link>
+                <button
+                  type="submit"
+                  className="inline-flex h-12 items-center justify-center gap-2 rounded-full bg-[var(--color-brand-primary)] px-8 text-sm font-semibold text-[var(--color-surface)] shadow-[var(--shadow-glow-primary)] transition-colors hover:bg-[var(--color-brand-primary-strong)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-background)]"
+                >
+                  <SlidersHorizontal className="h-4 w-4" aria-hidden />
+                  Aplicar filtros
+                </button>
+              </div>
+            </FilterForm>
+          </div>
         </Disclosure>
       </Container>
     </section>
   );
 }
 
-interface SectionProps {
+interface SectionCardProps {
   title: string;
+  icon: React.ReactNode;
   children: React.ReactNode;
 }
 
-function Section({ title, children }: SectionProps) {
+function SectionCard({ title, icon, children }: SectionCardProps) {
   return (
-    <fieldset className="flex flex-col gap-4">
-      <legend className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--color-brand-primary)]">
+    <fieldset className="flex flex-col gap-4 rounded-[var(--radius-xl)] bg-[var(--color-surface)] p-4 ring-1 ring-[var(--color-border)] sm:p-5">
+      <legend className="float-none flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.22em] text-[var(--color-brand-primary)]">
+        <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-[var(--color-brand-primary)]/10">
+          {icon}
+        </span>
         {title}
       </legend>
       {children}
@@ -369,10 +417,10 @@ interface FieldProps {
 function Field({ label, children }: FieldProps) {
   return (
     <div className="flex flex-col gap-2.5">
-      <span className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-text-subtle)]">
+      <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--color-text-subtle)]">
         {label}
       </span>
-      <div className="flex flex-col gap-2">{children}</div>
+      <div className="flex flex-col gap-2.5">{children}</div>
     </div>
   );
 }
@@ -383,6 +431,8 @@ interface RangeInputsProps {
   minValue?: number;
   maxValue?: number;
   step: number;
+  placeholderMin?: string;
+  placeholderMax?: string;
 }
 
 function RangeInputs({
@@ -391,15 +441,15 @@ function RangeInputs({
   minValue,
   maxValue,
   step,
+  placeholderMin = "—",
+  placeholderMax = "—",
 }: RangeInputsProps) {
-  const cls =
-    "h-11 w-full rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] px-4 text-sm text-[var(--color-foreground)] placeholder:text-[var(--color-text-subtle)] focus:border-[var(--color-brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)]/30";
+  const inputCls =
+    "h-11 w-full rounded-full border border-[var(--color-border)] bg-[var(--color-background)] px-4 text-sm text-[var(--color-foreground)] placeholder:text-[var(--color-text-subtle)] focus:border-[var(--color-brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)]/30 transition-colors";
   return (
-    <div className="grid grid-cols-2 gap-2.5">
-      <label className="flex flex-col gap-1">
-        <span className="text-[10px] font-medium uppercase tracking-[0.2em] text-[var(--color-text-subtle)]">
-          Mín.
-        </span>
+    <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2">
+      <label className="block">
+        <span className="sr-only">Mínimo</span>
         <input
           type="number"
           inputMode="numeric"
@@ -407,14 +457,18 @@ function RangeInputs({
           step={step}
           min={0}
           defaultValue={minValue ?? ""}
-          placeholder="—"
-          className={cls}
+          placeholder={placeholderMin}
+          className={inputCls}
         />
       </label>
-      <label className="flex flex-col gap-1">
-        <span className="text-[10px] font-medium uppercase tracking-[0.2em] text-[var(--color-text-subtle)]">
-          Máx.
-        </span>
+      <span
+        aria-hidden
+        className="text-[var(--color-text-subtle)]"
+      >
+        —
+      </span>
+      <label className="block">
+        <span className="sr-only">Máximo</span>
         <input
           type="number"
           inputMode="numeric"
@@ -422,8 +476,8 @@ function RangeInputs({
           step={step}
           min={0}
           defaultValue={maxValue ?? ""}
-          placeholder="—"
-          className={cls}
+          placeholder={placeholderMax}
+          className={inputCls}
         />
       </label>
     </div>
@@ -434,12 +488,8 @@ function ChipRow({ children }: { children: React.ReactNode }) {
   return <div className="flex flex-wrap items-center gap-2">{children}</div>;
 }
 
-/**
- * Pill-style checkbox. Visual state is driven by `:checked` via Tailwind's
- * `has-checked:` variant — no JS required.
- */
 const CHIP_BASE =
-  "relative inline-flex h-9 cursor-pointer items-center rounded-full border px-3.5 text-xs font-medium transition-[background,border-color,color,box-shadow] duration-150 ease-[var(--ease-standard)] select-none border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text-muted)] hover:text-[var(--color-foreground)] hover:border-[var(--color-brand-primary-soft)] has-checked:border-[var(--color-brand-primary)] has-checked:bg-[var(--color-brand-primary)]/10 has-checked:text-[var(--color-brand-primary)] has-checked:font-semibold";
+  "relative inline-flex h-9 cursor-pointer items-center gap-1.5 rounded-full border px-3.5 text-xs font-medium transition-[background,border-color,color,box-shadow,transform] duration-150 ease-[var(--ease-standard)] select-none border-[var(--color-border)] bg-[var(--color-background)] text-[var(--color-text-muted)] hover:text-[var(--color-foreground)] hover:border-[var(--color-brand-primary-soft)] active:scale-[0.97] has-checked:border-[var(--color-brand-primary)] has-checked:bg-[var(--color-brand-primary)]/10 has-checked:text-[var(--color-brand-primary)] has-checked:font-semibold";
 
 interface CheckChipProps {
   name: string;
@@ -464,16 +514,14 @@ function CheckChip({ name, value, checked, label }: CheckChipProps) {
   );
 }
 
-interface BoolChipProps {
+interface PresetChipProps {
   name: string;
   value: string;
   checked: boolean;
-  /** Reserved for future use — currently the input is always sr-only. */
-  hidden?: boolean;
   label: string;
 }
 
-function BoolChip({ name, value, checked, label }: BoolChipProps) {
+function PresetChip({ name, value, checked, label }: PresetChipProps) {
   return (
     <label className={CHIP_BASE}>
       <input
@@ -484,6 +532,30 @@ function BoolChip({ name, value, checked, label }: BoolChipProps) {
         className="sr-only"
         aria-label={label}
       />
+      {label}
+    </label>
+  );
+}
+
+interface FlagChipProps {
+  name: string;
+  checked: boolean;
+  label: string;
+  icon?: React.ReactNode;
+}
+
+function FlagChip({ name, checked, label, icon }: FlagChipProps) {
+  return (
+    <label className={CHIP_BASE}>
+      <input
+        type="checkbox"
+        name={name}
+        value="1"
+        defaultChecked={checked}
+        className="sr-only"
+        aria-label={label}
+      />
+      {icon}
       {label}
     </label>
   );
