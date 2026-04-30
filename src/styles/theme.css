@@ -31,6 +31,23 @@
   --color-text-muted: #6B6258;
   --color-text-subtle: #9A9189;
 
+  /* editorial scale — used by the cinematic hero (Fraunces + cream paper).
+   * Cream tones are deeper than the default --color-background, ink is
+   * warmer/richer than --color-foreground, gold is the highlight bar.
+   * Kept here so feature components never hardcode hex.
+   */
+  --color-cream: #F2EBDC;
+  --color-cream-deep: #ECE3CF;
+  --color-cream-soft: #F8F2E4;
+  --color-ink: #1A1612;
+  --color-ink-soft: #3B342B;
+  --color-forest: #1F3D2E;
+  --color-forest-deep: #16302A;
+  --color-gold: #C8A676;
+  --color-gold-deep: #A37F4D;
+  --color-line: rgba(26, 22, 18, 0.12);
+  --color-line-soft: rgba(26, 22, 18, 0.06);
+
   /* radius */
   --radius-xs: 0.25rem;
   --radius-sm: 0.5rem;
