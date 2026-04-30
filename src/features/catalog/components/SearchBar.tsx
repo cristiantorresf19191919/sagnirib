@@ -73,7 +73,7 @@ export function SearchBar({ filters, view }: SearchBarProps) {
 
           <button
             type="submit"
-            className="group relative inline-flex h-12 items-center justify-center gap-1.5 overflow-hidden rounded-full bg-[var(--color-brand-primary)] px-7 text-sm font-semibold text-[var(--color-surface)] shadow-[var(--shadow-glow-primary)] transition-[background,box-shadow,transform] duration-200 ease-[var(--ease-standard)] hover:-translate-y-0.5 hover:bg-[var(--color-brand-primary-strong)] hover:shadow-[var(--shadow-lg)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-background)] active:translate-y-0"
+            className="btn-pulse group relative inline-flex h-12 items-center justify-center gap-1.5 overflow-hidden rounded-full bg-[var(--color-brand-primary)] px-7 text-sm font-semibold text-[var(--color-surface)] shadow-[var(--shadow-glow-primary)] hover:-translate-y-0.5 hover:bg-[var(--color-brand-primary-strong)] hover:shadow-[var(--shadow-lg)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-background)]"
           >
             <span
               aria-hidden

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import {
+  Check,
   Coins,
   Eraser,
   Eye,
@@ -44,31 +45,68 @@ const APPEARANCE_LABELS: Record<keyof typeof APPEARANCE_CATALOG, string> = {
   pubis: "Pubis",
 };
 
-function countActiveFilters(filters: ListingsFilters): number {
-  let n = 0;
-  if (filters.priceMin !== undefined) n += 1;
-  if (filters.priceMax !== undefined) n += 1;
-  if (filters.ageMin !== undefined) n += 1;
-  if (filters.ageMax !== undefined) n += 1;
-  if (filters.verifiedOnly) n += 1;
-  if (filters.withVideo) n += 1;
-  if (filters.withAudio) n += 1;
-  if (filters.withReviews) n += 1;
-  if (filters.faceVisible) n += 1;
-  if (filters.paymentByCard) n += 1;
-  if (filters.availableNow) n += 1;
-  n += filters.attention?.length ?? 0;
-  n += filters.contactChannels?.length ?? 0;
-  n += filters.services?.length ?? 0;
-  n += filters.specialServices?.length ?? 0;
-  n += filters.meetingContexts?.length ?? 0;
+interface SectionCounts {
+  priceAge: number;
+  attentionContact: number;
+  meetingContext: number;
+  services: number;
+  content: number;
+  appearance: number;
+}
+
+function buildSectionCounts(filters: ListingsFilters): SectionCounts {
+  let priceAge = 0;
+  if (filters.priceMin !== undefined) priceAge += 1;
+  if (filters.priceMax !== undefined) priceAge += 1;
+  if (filters.ageMin !== undefined) priceAge += 1;
+  if (filters.ageMax !== undefined) priceAge += 1;
+  if (filters.paymentByCard) priceAge += 1;
+
+  const attentionContact =
+    (filters.attention?.length ?? 0) + (filters.contactChannels?.length ?? 0);
+
+  const meetingContext = filters.meetingContexts?.length ?? 0;
+
+  const services =
+    (filters.services?.length ?? 0) + (filters.specialServices?.length ?? 0);
+
+  let content = 0;
+  if (filters.verifiedOnly) content += 1;
+  if (filters.faceVisible) content += 1;
+  if (filters.withVideo) content += 1;
+  if (filters.withAudio) content += 1;
+  if (filters.withReviews) content += 1;
+  if (filters.availableNow) content += 1;
+
+  let appearance = 0;
   if (filters.attributes) {
-    for (const v of Object.values(filters.attributes)) n += v.length;
+    for (const v of Object.values(filters.attributes)) appearance += v.length;
   }
-  return n;
+
+  return {
+    priceAge,
+    attentionContact,
+    meetingContext,
+    services,
+    content,
+    appearance,
+  };
+}
+
+function countActiveFilters(filters: ListingsFilters): number {
+  const c = buildSectionCounts(filters);
+  return (
+    c.priceAge +
+    c.attentionContact +
+    c.meetingContext +
+    c.services +
+    c.content +
+    c.appearance
+  );
 }
 
 export function FiltersPanel({ filters, view }: FiltersPanelProps) {
+  const counts = buildSectionCounts(filters);
   const active = countActiveFilters(filters);
 
   return (
@@ -121,6 +159,7 @@ export function FiltersPanel({ filters, view }: FiltersPanelProps) {
               <SectionCard
                 title="Precio y edad"
                 icon={<Coins className="h-4 w-4" aria-hidden />}
+                count={counts.priceAge}
               >
                 <Field label="Precio (COP / hora)">
                   <RangeInputs
@@ -184,6 +223,7 @@ export function FiltersPanel({ filters, view }: FiltersPanelProps) {
               <SectionCard
                 title="Atención y contacto"
                 icon={<Heart className="h-4 w-4" aria-hidden />}
+                count={counts.attentionContact}
               >
                 <Field label="Atención a">
                   <ChipRow>
@@ -219,6 +259,7 @@ export function FiltersPanel({ filters, view }: FiltersPanelProps) {
               <SectionCard
                 title="Lugar de encuentro"
                 icon={<MapPinned className="h-4 w-4" aria-hidden />}
+                count={counts.meetingContext}
               >
                 <ChipRow>
                   {MEETING_CONTEXT_CATALOG.map((place) => (
@@ -240,6 +281,7 @@ export function FiltersPanel({ filters, view }: FiltersPanelProps) {
               <SectionCard
                 title="Servicios"
                 icon={<Sparkles className="h-4 w-4" aria-hidden />}
+                count={counts.services}
               >
                 <Field label="Servicios generales">
                   <ChipRow>
@@ -275,6 +317,7 @@ export function FiltersPanel({ filters, view }: FiltersPanelProps) {
               <SectionCard
                 title="Contenido"
                 icon={<Film className="h-4 w-4" aria-hidden />}
+                count={counts.content}
               >
                 <ChipRow>
                   <FlagChip
@@ -315,6 +358,7 @@ export function FiltersPanel({ filters, view }: FiltersPanelProps) {
               <SectionCard
                 title="Apariencia"
                 icon={<UserSquare className="h-4 w-4" aria-hidden />}
+                count={counts.appearance}
               >
                 {(Object.keys(APPEARANCE_CATALOG) as Array<
                   keyof typeof APPEARANCE_CATALOG
@@ -349,10 +393,12 @@ export function FiltersPanel({ filters, view }: FiltersPanelProps) {
               </Link>
               <button
                 type="submit"
-                className="inline-flex h-12 items-center justify-center gap-2 rounded-full bg-[var(--color-brand-primary)] px-8 text-sm font-semibold text-[var(--color-surface)] shadow-[var(--shadow-glow-primary)] transition-colors hover:bg-[var(--color-brand-primary-strong)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-background)]"
+                className="btn-pulse inline-flex h-12 items-center justify-center gap-2 rounded-full bg-[var(--color-brand-primary)] px-8 text-sm font-semibold text-[var(--color-surface)] shadow-[var(--shadow-glow-primary)] transition-colors hover:bg-[var(--color-brand-primary-strong)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-background)]"
               >
-                <SlidersHorizontal className="h-4 w-4" aria-hidden />
-                Aplicar filtros
+                <span className="relative z-10 inline-flex items-center gap-2">
+                  <SlidersHorizontal className="h-4 w-4" aria-hidden />
+                  Aplicar filtros
+                </span>
               </button>
             </div>
           </FilterForm>
@@ -394,17 +440,39 @@ function TriggerPill({ active }: TriggerPillProps) {
 interface SectionCardProps {
   title: string;
   icon: React.ReactNode;
+  count?: number;
   children: React.ReactNode;
 }
 
-function SectionCard({ title, icon, children }: SectionCardProps) {
+function SectionCard({ title, icon, count = 0, children }: SectionCardProps) {
+  const isActive = count > 0;
   return (
-    <fieldset className="flex flex-col gap-4 rounded-[var(--radius-xl)] bg-[var(--color-surface)] p-4 ring-1 ring-[var(--color-border)] sm:p-5">
-      <legend className="float-none flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.22em] text-[var(--color-brand-primary)]">
-        <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-[var(--color-brand-primary)]/10">
+    <fieldset
+      className={`flex flex-col gap-4 rounded-[var(--radius-xl)] bg-[var(--color-surface)] p-4 ring-1 transition-[box-shadow,ring-color] duration-200 ease-[var(--ease-standard)] sm:p-5 ${
+        isActive
+          ? "ring-[var(--color-brand-primary)]/40 shadow-[var(--shadow-sm)]"
+          : "ring-[var(--color-border)]"
+      }`}
+    >
+      <legend className="float-none flex w-full items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.22em] text-[var(--color-brand-primary)]">
+        <span
+          className={`inline-flex h-7 w-7 items-center justify-center rounded-full transition-colors duration-200 ${
+            isActive
+              ? "bg-[var(--color-brand-primary)] text-[var(--color-surface)]"
+              : "bg-[var(--color-brand-primary)]/10 text-[var(--color-brand-primary)]"
+          }`}
+        >
           {icon}
         </span>
-        {title}
+        <span>{title}</span>
+        {isActive && (
+          <span
+            aria-hidden
+            className="ml-1 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-[var(--color-brand-primary)] px-1.5 text-[10px] font-bold text-[var(--color-surface)]"
+          >
+            {count}
+          </span>
+        )}
       </legend>
       {children}
     </fieldset>
@@ -491,7 +559,20 @@ function ChipRow({ children }: { children: React.ReactNode }) {
 }
 
 const CHIP_BASE =
-  "relative inline-flex h-9 cursor-pointer items-center gap-1.5 rounded-full border px-3.5 text-xs font-medium transition-[background,border-color,color,box-shadow,transform] duration-150 ease-[var(--ease-standard)] select-none border-[var(--color-border)] bg-[var(--color-background)] text-[var(--color-text-muted)] hover:text-[var(--color-foreground)] hover:border-[var(--color-brand-primary-soft)] active:scale-[0.97] has-checked:border-[var(--color-brand-primary)] has-checked:bg-[var(--color-brand-primary)]/10 has-checked:text-[var(--color-brand-primary)] has-checked:font-semibold";
+  "chip-animated relative inline-flex h-9 cursor-pointer items-center gap-1.5 rounded-full border px-3.5 text-xs font-medium select-none border-[var(--color-border)] bg-[var(--color-background)] text-[var(--color-text-muted)] hover:text-[var(--color-foreground)] hover:border-[var(--color-brand-primary-soft)] focus-within:ring-2 focus-within:ring-[var(--color-brand-primary)]/30 has-checked:border-[var(--color-brand-primary)] has-checked:bg-[var(--color-brand-primary)]/10 has-checked:text-[var(--color-brand-primary)] has-checked:font-semibold";
+
+/**
+ * Inline check icon that smoothly slides + scales in when the chip's
+ * `<input>` becomes `:checked`. Hidden (zero width) by default so the chip
+ * doesn't reflow until the user actually selects it.
+ */
+function ChipCheck() {
+  return (
+    <span aria-hidden className="chip-check">
+      <Check className="h-3 w-3" aria-hidden />
+    </span>
+  );
+}
 
 interface CheckChipProps {
   name: string;
@@ -511,6 +592,7 @@ function CheckChip({ name, value, checked, label }: CheckChipProps) {
         className="sr-only"
         aria-label={label}
       />
+      <ChipCheck />
       {label}
     </label>
   );
@@ -534,6 +616,7 @@ function PresetChip({ name, value, checked, label }: PresetChipProps) {
         className="sr-only"
         aria-label={label}
       />
+      <ChipCheck />
       {label}
     </label>
   );
@@ -557,6 +640,7 @@ function FlagChip({ name, checked, label, icon }: FlagChipProps) {
         className="sr-only"
         aria-label={label}
       />
+      <ChipCheck />
       {icon}
       {label}
     </label>

@@ -271,10 +271,14 @@ export function ActiveFilterChips({ filters }: ActiveFilterChipsProps) {
         aria-label="Filtros aplicados"
         className="flex flex-wrap items-center gap-1.5"
       >
-        {chips.map((chip) => {
+        {chips.map((chip, index) => {
           const Icon = chip.icon;
           return (
-            <li key={chip.key}>
+            <li
+              key={chip.key}
+              className="motion-chip-enter chip-stagger"
+              style={{ ["--chip-i" as string]: index }}
+            >
               <Link
                 href={chipHref(chip.next)}
                 aria-label={`Quitar filtro: ${chip.label}`}
@@ -290,11 +294,14 @@ export function ActiveFilterChips({ filters }: ActiveFilterChipsProps) {
             </li>
           );
         })}
-        <li>
+        <li
+          className="motion-chip-enter chip-stagger"
+          style={{ ["--chip-i" as string]: chips.length }}
+        >
           <Link
             href="/"
             aria-label="Borrar todos los filtros"
-            className="group inline-flex items-center gap-1.5 rounded-full border border-dashed border-[var(--color-border)] bg-transparent px-3 py-1 text-xs font-medium text-[var(--color-text-subtle)] transition-[border-color,color,background] duration-150 ease-[var(--ease-standard)] hover:border-[var(--color-brand-highlight)]/55 hover:bg-[var(--color-brand-highlight)]/8 hover:text-[var(--color-brand-highlight)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-highlight)]"
+            className="group inline-flex items-center gap-1.5 rounded-full border border-dashed border-[var(--color-border)] bg-transparent px-3 py-1 text-xs font-medium text-[var(--color-text-subtle)] transition-[border-color,color,background,transform] duration-150 ease-[var(--ease-standard)] hover:-translate-y-0.5 hover:border-[var(--color-brand-highlight)]/55 hover:bg-[var(--color-brand-highlight)]/8 hover:text-[var(--color-brand-highlight)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-highlight)]"
           >
             <Eraser className="h-3.5 w-3.5 shrink-0 transition-transform duration-150 group-hover:-rotate-12" aria-hidden />
             Borrar todo
