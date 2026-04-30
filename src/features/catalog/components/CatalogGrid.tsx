@@ -5,15 +5,24 @@ import { Sparkle } from "@/shared/design-system/components/Sparkle";
 import { FadeIn } from "@/shared/motion/FadeIn";
 import { Reveal, RevealItem } from "@/shared/motion/Reveal";
 
-import { encodeFilters } from "../lib/parse-filters";
+import { encodeFilters, type CatalogView } from "../lib/parse-filters";
 import { CatalogCard } from "./CatalogCard";
 import { DisponiblesAhoraTile, HistoriasTopTile } from "./SpecialTiles";
+import { ViewSwitcher } from "./ViewSwitcher";
 
 interface CatalogGridProps {
   filters: ListingsFilters;
+  view?: CatalogView;
 }
 
 const FEATURED_THRESHOLD = 4.85;
+
+const GRID_CLASS: Record<CatalogView, string> = {
+  spotlight: "mt-8 grid grid-cols-1 gap-5 sm:gap-6",
+  grid2: "mt-8 grid grid-cols-1 gap-5 sm:grid-cols-2",
+  grid3: "mt-8 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4",
+  list: "mt-8 grid grid-cols-1 gap-3",
+};
 
 function nowFilterHref(filters: ListingsFilters): string {
   const next: ListingsFilters = { ...filters, availableNow: true, page: undefined };
@@ -21,8 +30,12 @@ function nowFilterHref(filters: ListingsFilters): string {
   return qs ? `/?${qs}` : "/?now=1";
 }
 
-export async function CatalogGrid({ filters }: CatalogGridProps) {
+export async function CatalogGrid({
+  filters,
+  view = "grid3",
+}: CatalogGridProps) {
   const { data, meta } = await listAll(filters);
+  const showSpecialTiles = view !== "list";
 
   return (
     <section
@@ -31,7 +44,7 @@ export async function CatalogGrid({ filters }: CatalogGridProps) {
     >
       <Container width="wide">
         <FadeIn>
-          <header className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between sm:gap-6">
+          <header className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between sm:gap-6">
             <div className="relative">
               <Sparkle
                 tone="muted"
@@ -51,6 +64,9 @@ export async function CatalogGrid({ filters }: CatalogGridProps) {
                 Ordenadas por actividad reciente
               </p>
             </div>
+            <div className="self-start sm:self-end">
+              <ViewSwitcher filters={filters} current={view} />
+            </div>
           </header>
         </FadeIn>
 
@@ -60,24 +76,29 @@ export async function CatalogGrid({ filters }: CatalogGridProps) {
           <Reveal
             as="ul"
             aria-label="Biringas en el catálogo"
-            className="mt-8 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
+            className={GRID_CLASS[view]}
             whenInView={false}
           >
-            <RevealItem as="li">
-              <HistoriasTopTile href="/?reviews=1" />
-            </RevealItem>
+            {showSpecialTiles && (
+              <RevealItem as="li">
+                <HistoriasTopTile href="/?reviews=1" />
+              </RevealItem>
+            )}
             {data.map((listing, index) => (
               <RevealItem key={listing.id} as="li">
                 <CatalogCard
                   listing={listing}
                   priority={index === 0}
                   featured={listing.reputation.score >= FEATURED_THRESHOLD}
+                  view={view}
                 />
               </RevealItem>
             ))}
-            <RevealItem as="li">
-              <DisponiblesAhoraTile href={nowFilterHref(filters)} />
-            </RevealItem>
+            {showSpecialTiles && (
+              <RevealItem as="li">
+                <DisponiblesAhoraTile href={nowFilterHref(filters)} />
+              </RevealItem>
+            )}
           </Reveal>
         )}
       </Container>

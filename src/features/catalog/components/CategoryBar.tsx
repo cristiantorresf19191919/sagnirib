@@ -2,10 +2,11 @@ import { CATEGORIES, type ListingsFilters } from "@/server/biringas";
 import { Container } from "@/shared/design-system/components/Container";
 import { AnimatedTabs } from "@/shared/motion/AnimatedTabs";
 
-import { withFilter } from "../lib/parse-filters";
+import { type CatalogView, withFilter } from "../lib/parse-filters";
 
 interface CategoryBarProps {
   filters: ListingsFilters;
+  view?: CatalogView;
 }
 
 /**
@@ -14,19 +15,19 @@ interface CategoryBarProps {
  * `layoutId`. URLs remain the source of truth — page is server-rendered
  * against the resulting filter state.
  */
-export function CategoryBar({ filters }: CategoryBarProps) {
+export function CategoryBar({ filters, view }: CategoryBarProps) {
   const activeCategory = filters.category;
 
   const categoryItems = [
     {
       id: "all",
-      href: withFilter(filters, "category", undefined as never),
+      href: withFilter(filters, "category", undefined as never, view),
       label: "Todas",
       active: activeCategory === undefined,
     },
     ...CATEGORIES.map(({ id, label }) => ({
       id,
-      href: withFilter(filters, "category", id),
+      href: withFilter(filters, "category", id, view),
       label,
       active: activeCategory === id,
     })),
@@ -35,7 +36,7 @@ export function CategoryBar({ filters }: CategoryBarProps) {
   const sexItems = [
     {
       id: "mujeres",
-      href: withFilter(filters, "sex", "mujeres"),
+      href: withFilter(filters, "sex", "mujeres", view),
       label: "Mujeres",
       active: true,
     },

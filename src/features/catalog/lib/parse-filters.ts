@@ -37,6 +37,23 @@ const SPECIAL_SET = new Set(SPECIAL_SERVICE_CATALOG);
 const MEETING_SET = new Set(MEETING_CONTEXT_CATALOG);
 const SORT_VALUES = new Set(["recent", "price_asc", "price_desc", "rating"]);
 
+/**
+ * Catalog grid presentation modes. Lives outside `ListingsFilters` because it
+ * does not affect the dataset — only how cards render.
+ */
+export const CATALOG_VIEWS = ["spotlight", "grid2", "grid3", "list"] as const;
+export type CatalogView = (typeof CATALOG_VIEWS)[number];
+export const DEFAULT_CATALOG_VIEW: CatalogView = "grid3";
+const CATALOG_VIEW_SET = new Set<CatalogView>(CATALOG_VIEWS);
+
+export function parseView(params: RawSearchParams): CatalogView {
+  const raw = single(params.view);
+  if (raw && CATALOG_VIEW_SET.has(raw as CatalogView)) {
+    return raw as CatalogView;
+  }
+  return DEFAULT_CATALOG_VIEW;
+}
+
 function single(value: string | string[] | undefined): string | undefined {
   if (Array.isArray(value)) return value[0];
   return value;
@@ -206,12 +223,15 @@ export function encodeFilters(filters: ListingsFilters): URLSearchParams {
 
 /**
  * Build a relative URL for `/?…` after toggling/setting a single field.
- * Pass `value === undefined` to clear a key.
+ * Pass `value === undefined` to clear a key. The optional `view` is
+ * preserved on the URL when it is non-default — that way category/city
+ * navigation does not silently revert the catalog layout.
  */
 export function withFilter(
   base: ListingsFilters,
   key: "category" | "city" | "sex",
   value: string | undefined,
+  view?: CatalogView,
 ): string {
   const next: ListingsFilters = { ...base, page: undefined };
   switch (key) {
@@ -226,6 +246,7 @@ export function withFilter(
       break;
   }
   const params = encodeFilters(next);
+  if (view && view !== DEFAULT_CATALOG_VIEW) params.set("view", view);
   const qs = params.toString();
   return qs.length > 0 ? `/?${qs}` : "/";
 }
