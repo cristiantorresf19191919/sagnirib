@@ -5,6 +5,8 @@ import { Container } from "@/shared/design-system/components/Container";
 import { Sparkle } from "@/shared/design-system/components/Sparkle";
 import { Reveal, RevealItem } from "@/shared/motion/Reveal";
 
+import { HowItWorksConnector } from "./HowItWorksConnector";
+
 interface Step {
   numeral: string;
   icon: LucideIcon;
@@ -50,12 +52,13 @@ export function HowItWorks() {
       <Sparkle
         tone="primary"
         size={36}
-        className="absolute left-[8%] top-12 hidden md:block"
+        className="absolute left-[8%] top-12 hidden motion-safe:motion-sparkle-float md:block"
       />
       <Sparkle
         tone="primary"
         size={28}
-        className="absolute right-[10%] top-24 hidden md:block"
+        className="absolute right-[10%] top-24 hidden motion-safe:motion-sparkle-float md:block"
+        style={{ animationDelay: "1.6s", animationDuration: "7s" }}
       />
 
       <Container width="wide">
@@ -83,16 +86,19 @@ export function HowItWorks() {
           </p>
         </header>
 
-        <Reveal
-          as="ol"
-          className="relative mt-14 grid gap-6 md:grid-cols-3 lg:mt-20 lg:gap-8"
-        >
-          {STEPS.map((step, index) => (
-            <RevealItem key={step.numeral} as="li">
-              <StepCard step={step} isLast={index === STEPS.length - 1} />
-            </RevealItem>
-          ))}
-        </Reveal>
+        <div className="relative mt-14 lg:mt-20">
+          <HowItWorksConnector />
+          <Reveal
+            as="ol"
+            className="relative grid gap-6 md:grid-cols-3 lg:gap-8"
+          >
+            {STEPS.map((step, index) => (
+              <RevealItem key={step.numeral} as="li">
+                <StepCard step={step} isLast={index === STEPS.length - 1} />
+              </RevealItem>
+            ))}
+          </Reveal>
+        </div>
       </Container>
     </section>
   );

@@ -90,18 +90,34 @@ export function CatalogCard({
       <div
         className={`relative ${imageAspect} w-full overflow-hidden rounded-[var(--radius-lg)] bg-[var(--color-surface-muted)]`}
       >
-        <Image
-          src={listing.mainImage}
-          alt={`${listing.name} en ${listing.city}`}
-          fill
-          sizes={imageSizes}
-          priority={priority}
-          className="object-cover transition-transform duration-500 ease-[var(--ease-standard)] group-hover:scale-[1.04]"
+        <div className="absolute inset-0 motion-safe:motion-ken-burns">
+          <Image
+            src={listing.mainImage}
+            alt={`${listing.name} en ${listing.city}`}
+            fill
+            sizes={imageSizes}
+            priority={priority}
+            className="object-cover transition-[filter] duration-500 ease-[var(--ease-standard)] group-hover:saturate-[1.08]"
+          />
+        </div>
+
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0 z-[5] bg-gradient-to-t from-black/25 via-transparent to-transparent opacity-0 transition-opacity duration-300 ease-[var(--ease-standard)] group-hover:opacity-100"
         />
+
+        {featured && (
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-0 z-[6] overflow-hidden"
+          >
+            <span className="absolute inset-y-0 -left-1/3 block w-1/3 bg-gradient-to-r from-transparent via-[rgba(229,162,58,0.55)] to-transparent opacity-0 group-hover:opacity-100 motion-safe:group-hover:motion-shimmer-sweep" />
+          </div>
+        )}
 
         <div className="absolute left-3 top-3 z-10 flex flex-col gap-1.5">
           {listing.availableNow ? (
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--color-brand-primary)] px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--color-surface)] shadow-[var(--shadow-glow-primary)]">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--color-brand-primary)] px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--color-surface)] shadow-[var(--shadow-glow-primary)] motion-safe:motion-glow-pulse">
               <span
                 aria-hidden
                 className="h-1.5 w-1.5 rounded-full bg-[var(--color-surface)] motion-safe:animate-pulse"
@@ -223,16 +239,18 @@ function ListCard({
       </Link>
 
       <div className="relative aspect-square w-28 shrink-0 overflow-hidden rounded-[var(--radius-lg)] bg-[var(--color-surface-muted)] sm:w-32">
-        <Image
-          src={listing.mainImage}
-          alt={`${listing.name} en ${listing.city}`}
-          fill
-          sizes={SIZES_LIST}
-          priority={priority}
-          className="object-cover transition-transform duration-500 ease-[var(--ease-standard)] group-hover:scale-[1.05]"
-        />
+        <div className="absolute inset-0 motion-safe:motion-ken-burns">
+          <Image
+            src={listing.mainImage}
+            alt={`${listing.name} en ${listing.city}`}
+            fill
+            sizes={SIZES_LIST}
+            priority={priority}
+            className="object-cover transition-[filter] duration-500 ease-[var(--ease-standard)] group-hover:saturate-[1.08]"
+          />
+        </div>
         {listing.availableNow ? (
-          <span className="absolute left-1.5 top-1.5 z-10 inline-flex items-center gap-1 rounded-full bg-[var(--color-brand-primary)] px-1.5 py-0.5 text-[8px] font-semibold uppercase tracking-[0.18em] text-[var(--color-surface)]">
+          <span className="absolute left-1.5 top-1.5 z-10 inline-flex items-center gap-1 rounded-full bg-[var(--color-brand-primary)] px-1.5 py-0.5 text-[8px] font-semibold uppercase tracking-[0.18em] text-[var(--color-surface)] motion-safe:motion-glow-pulse">
             <span
               aria-hidden
               className="h-1 w-1 rounded-full bg-[var(--color-surface)] motion-safe:animate-pulse"

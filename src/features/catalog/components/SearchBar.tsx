@@ -30,12 +30,16 @@ export function SearchBar({ filters, view }: SearchBarProps) {
           {/* Preserve filters this form does not own. */}
           <PreservedFilters filters={filters} view={view} omit={["q", "city"]} />
 
-          <label className="relative sm:w-[260px] sm:shrink-0">
+          <label className="group relative sm:w-[260px] sm:shrink-0">
             <span className="sr-only">¿Dónde estás?</span>
+            <span
+              aria-hidden
+              className="pointer-events-none absolute inset-0 rounded-full ring-0 ring-[var(--color-brand-primary)]/0 transition-[box-shadow] duration-300 ease-[var(--ease-standard)] group-focus-within:ring-4 group-focus-within:ring-[var(--color-brand-primary)]/15"
+            />
             <select
               name="city"
               defaultValue={filters.city ?? ""}
-              className="h-12 w-full appearance-none rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] pl-5 pr-10 text-sm text-[var(--color-foreground)] focus:border-[var(--color-brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)]/30"
+              className="relative h-12 w-full appearance-none rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] pl-5 pr-10 text-sm text-[var(--color-foreground)] transition-colors duration-200 hover:border-[var(--color-brand-primary-soft)] focus:border-[var(--color-brand-primary)] focus:outline-none"
             >
               <option value="">Toda Colombia</option>
               {SUPPORTED_CITIES.map((city) => (
@@ -47,10 +51,14 @@ export function SearchBar({ filters, view }: SearchBarProps) {
             <ChevronTrailing />
           </label>
 
-          <label className="relative flex-1">
+          <label className="group relative flex-1">
             <span className="sr-only">¿Qué buscas?</span>
+            <span
+              aria-hidden
+              className="pointer-events-none absolute inset-0 rounded-full ring-0 ring-[var(--color-brand-primary)]/0 transition-[box-shadow] duration-300 ease-[var(--ease-standard)] group-focus-within:ring-4 group-focus-within:ring-[var(--color-brand-primary)]/15"
+            />
             <Search
-              className="pointer-events-none absolute left-5 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--color-text-subtle)]"
+              className="pointer-events-none absolute left-5 top-1/2 z-10 h-4 w-4 -translate-y-1/2 text-[var(--color-text-subtle)] transition-colors duration-200 group-focus-within:text-[var(--color-brand-primary)]"
               aria-hidden
             />
             <input
@@ -59,15 +67,19 @@ export function SearchBar({ filters, view }: SearchBarProps) {
               type="search"
               inputMode="search"
               placeholder="Buscar por nombre, plan o servicio…"
-              className="h-12 w-full rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] pl-12 pr-5 text-sm text-[var(--color-foreground)] placeholder:text-[var(--color-text-subtle)] focus:border-[var(--color-brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)]/30"
+              className="relative h-12 w-full rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] pl-12 pr-5 text-sm text-[var(--color-foreground)] placeholder:text-[var(--color-text-subtle)] transition-colors duration-200 hover:border-[var(--color-brand-primary-soft)] focus:border-[var(--color-brand-primary)] focus:outline-none"
             />
           </label>
 
           <button
             type="submit"
-            className="inline-flex h-12 items-center justify-center gap-1.5 rounded-full bg-[var(--color-brand-primary)] px-7 text-sm font-semibold text-[var(--color-surface)] shadow-[var(--shadow-glow-primary)] transition-colors hover:bg-[var(--color-brand-primary-strong)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-background)]"
+            className="group relative inline-flex h-12 items-center justify-center gap-1.5 overflow-hidden rounded-full bg-[var(--color-brand-primary)] px-7 text-sm font-semibold text-[var(--color-surface)] shadow-[var(--shadow-glow-primary)] transition-[background,box-shadow,transform] duration-200 ease-[var(--ease-standard)] hover:-translate-y-0.5 hover:bg-[var(--color-brand-primary-strong)] hover:shadow-[var(--shadow-lg)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-background)] active:translate-y-0"
           >
-            Buscar
+            <span
+              aria-hidden
+              className="pointer-events-none absolute inset-y-0 -left-1/3 hidden w-1/3 bg-gradient-to-r from-transparent via-white/30 to-transparent motion-safe:group-hover:motion-shimmer-sweep sm:block"
+            />
+            <span className="relative">Buscar</span>
           </button>
         </form>
       </Container>

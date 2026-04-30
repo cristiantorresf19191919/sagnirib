@@ -31,17 +31,30 @@ export function HeroBand({
     >
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(circle_at_15%_30%,rgba(47,93,67,0.08),transparent_55%),radial-gradient(circle_at_85%_70%,rgba(229,162,58,0.08),transparent_60%)]"
+        className="pointer-events-none absolute inset-0 -z-10 motion-safe:motion-blob-a"
+        style={{
+          background:
+            "radial-gradient(circle at 15% 30%, rgba(47,93,67,0.10), transparent 55%)",
+        }}
+      />
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 -z-10 motion-safe:motion-blob-b"
+        style={{
+          background:
+            "radial-gradient(circle at 85% 70%, rgba(229,162,58,0.10), transparent 60%)",
+        }}
       />
       <Sparkle
         tone="primary"
         size={28}
-        className="pointer-events-none absolute right-[6%] top-10 hidden opacity-70 md:block"
+        className="pointer-events-none absolute right-[6%] top-10 hidden opacity-70 motion-safe:motion-sparkle-float md:block"
       />
       <Sparkle
         tone="muted"
         size={20}
-        className="pointer-events-none absolute right-[14%] bottom-12 hidden opacity-60 lg:block"
+        className="pointer-events-none absolute right-[14%] bottom-12 hidden opacity-60 motion-safe:motion-sparkle-float lg:block"
+        style={{ animationDelay: "1.2s", animationDuration: "8s" }}
       />
 
       <Container width="wide" className="py-10 sm:py-14">
@@ -58,13 +71,17 @@ export function HeroBand({
           <FadeIn delay={0.12} y={10}>
             <h1
               id="hero-band-title"
-              className="text-3xl font-bold leading-[1.05] tracking-tight text-[var(--color-foreground)] sm:text-4xl lg:text-5xl"
+              className="relative text-3xl font-bold leading-[1.05] tracking-tight text-[var(--color-foreground)] sm:text-4xl lg:text-5xl"
             >
               {title}
+              <span
+                aria-hidden
+                className="absolute -bottom-1.5 left-0 block h-[3px] w-24 rounded-full bg-gradient-to-r from-[var(--color-brand-primary)] via-[var(--color-brand-accent)] to-transparent motion-safe:motion-underline-draw sm:w-32"
+              />
             </h1>
           </FadeIn>
           <FadeIn delay={0.2}>
-            <p className="max-w-xl text-sm leading-relaxed text-[var(--color-text-muted)] sm:text-base">
+            <p className="max-w-xl text-sm leading-relaxed text-[var(--color-text-muted)]">
               {description}
             </p>
           </FadeIn>

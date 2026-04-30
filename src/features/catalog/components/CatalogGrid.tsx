@@ -2,6 +2,7 @@ import { listAll, type ListingsFilters } from "@/server/biringas";
 import { Button } from "@/shared/design-system/components/Button";
 import { Container } from "@/shared/design-system/components/Container";
 import { Sparkle } from "@/shared/design-system/components/Sparkle";
+import { CountUp } from "@/shared/motion/CountUp";
 import { FadeIn } from "@/shared/motion/FadeIn";
 import { Reveal, RevealItem } from "@/shared/motion/Reveal";
 
@@ -57,7 +58,7 @@ export async function CatalogGrid({
               >
                 Biringas verificadas en {filters.city ?? "Colombia"}
                 <span className="ml-3 align-middle text-base font-medium text-[var(--color-text-subtle)] sm:text-lg">
-                  ({meta.total})
+                  (<CountUp to={meta.total} />)
                 </span>
               </h2>
               <p className="mt-1.5 text-xs uppercase tracking-[0.18em] text-[var(--color-text-subtle)]">

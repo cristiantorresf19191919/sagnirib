@@ -4,6 +4,8 @@ import { ArrowUpRight } from "lucide-react";
 import { Container } from "@/shared/design-system/components/Container";
 import { Logo } from "@/shared/design-system/components/Logo";
 
+import { HeaderBackdrop } from "./HeaderBackdrop";
+
 interface HeaderProps {
   /**
    * Hide the header CTA when the page itself is the catalog target — keeps
@@ -15,10 +17,7 @@ interface HeaderProps {
 export function Header({ hideCatalogCta = false }: HeaderProps) {
   return (
     <header className="sticky top-0 z-30 isolate">
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-0 -z-10 border-b border-[var(--color-border)]/70 bg-[var(--color-background)]/80 backdrop-blur-xl supports-[backdrop-filter]:bg-[var(--color-background)]/65"
-      />
+      <HeaderBackdrop />
 
       <Container
         width="wide"
