@@ -37,6 +37,13 @@ export function Header({ hideCatalogCta = false }: HeaderProps) {
             Cómo funciona
           </Link>
 
+          <Link
+            href="/publicar"
+            className="hidden sm:inline-flex h-11 items-center rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] px-4 text-sm font-semibold text-[var(--color-foreground)] transition-[border-color,background] duration-200 ease-[var(--ease-standard)] hover:border-[var(--color-brand-primary-soft)] hover:bg-[var(--color-background-elevated)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-background)]"
+          >
+            Publica tu perfil
+          </Link>
+
           {!hideCatalogCta && (
             <Link
               href="/explorar"
