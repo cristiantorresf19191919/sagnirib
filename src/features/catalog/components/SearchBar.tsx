@@ -16,9 +16,9 @@ export function SearchBar({ filters }: SearchBarProps) {
   return (
     <section
       aria-label="Buscador del catálogo"
-      className="border-b border-[var(--color-border)]/40 bg-[var(--color-background)]"
+      className="bg-[var(--color-background)]"
     >
-      <Container width="wide" className="py-3 sm:py-4">
+      <Container width="wide" className="py-4 sm:py-5">
         <form
           action="/"
           method="get"
@@ -32,7 +32,7 @@ export function SearchBar({ filters }: SearchBarProps) {
             <select
               name="city"
               defaultValue={filters.city ?? ""}
-              className="h-11 w-full appearance-none rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)]/80 px-3.5 pr-10 text-sm text-[var(--color-foreground)] focus:border-[var(--color-brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)]/50"
+              className="h-12 w-full appearance-none rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] pl-5 pr-10 text-sm text-[var(--color-foreground)] focus:border-[var(--color-brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)]/30"
             >
               <option value="">Toda Colombia</option>
               {SUPPORTED_CITIES.map((city) => (
@@ -47,7 +47,7 @@ export function SearchBar({ filters }: SearchBarProps) {
           <label className="relative flex-1">
             <span className="sr-only">¿Qué buscas?</span>
             <Search
-              className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--color-text-subtle)]"
+              className="pointer-events-none absolute left-5 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--color-text-subtle)]"
               aria-hidden
             />
             <input
@@ -56,13 +56,13 @@ export function SearchBar({ filters }: SearchBarProps) {
               type="search"
               inputMode="search"
               placeholder="Buscar por nombre, plan o servicio…"
-              className="h-11 w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)]/80 pl-10 pr-3.5 text-sm text-[var(--color-foreground)] placeholder:text-[var(--color-text-subtle)] focus:border-[var(--color-brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)]/50"
+              className="h-12 w-full rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] pl-12 pr-5 text-sm text-[var(--color-foreground)] placeholder:text-[var(--color-text-subtle)] focus:border-[var(--color-brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)]/30"
             />
           </label>
 
           <button
             type="submit"
-            className="inline-flex h-11 items-center justify-center gap-1.5 rounded-[var(--radius-md)] bg-[var(--color-brand-primary)] px-5 text-sm font-semibold text-[var(--color-background)] shadow-[0_0_0_1px_rgba(255,93,203,0.45),0_10px_28px_-12px_rgba(255,43,181,0.7)] transition-colors hover:bg-[var(--color-brand-primary-strong)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary-strong)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-background)]"
+            className="inline-flex h-12 items-center justify-center gap-1.5 rounded-full bg-[var(--color-brand-primary)] px-7 text-sm font-semibold text-[var(--color-surface)] shadow-[var(--shadow-glow-primary)] transition-colors hover:bg-[var(--color-brand-primary-strong)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-background)]"
           >
             Buscar
           </button>
@@ -76,7 +76,7 @@ function ChevronTrailing() {
   return (
     <span
       aria-hidden
-      className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-[var(--color-text-subtle)]"
+      className="pointer-events-none absolute right-5 top-1/2 -translate-y-1/2 text-[var(--color-text-subtle)]"
     >
       ▾
     </span>

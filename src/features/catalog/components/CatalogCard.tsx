@@ -1,17 +1,13 @@
 import Image from "next/image";
 import Link from "next/link";
-import {
-  Eye,
-  Heart,
-  MessageSquare,
-  Mic,
-  Play,
-  Star,
-  Volume2,
-} from "lucide-react";
+import { Eye, MessageSquare, Mic, Play, Volume2 } from "lucide-react";
 
 import type { BiringaListing } from "@/server/biringas";
+import { Card } from "@/shared/design-system/components/Card";
 import { VerifiedBadge } from "@/shared/design-system/components/VerifiedBadge";
+import { HeartButton } from "@/shared/ui/HeartButton";
+import { PriceTag } from "@/shared/ui/PriceTag";
+import { RatingBadge } from "@/shared/ui/RatingBadge";
 
 import { formatPricePerHour } from "@/features/biringas/format";
 
@@ -50,16 +46,16 @@ export function CatalogCard({
   featured = false,
 }: CatalogCardProps) {
   const storyLabel = listing.storyAt ? formatStoryTime(listing.storyAt) : "";
-  const ratingLabel = listing.reputation.score.toFixed(1);
-
-  const wrapperBase =
-    "group relative isolate flex flex-col overflow-hidden rounded-[var(--radius-xl)] border transition-[transform,border-color,box-shadow] duration-200 ease-[var(--ease-standard)] hover:-translate-y-0.5";
-  const wrapperVariant = featured
-    ? "border-[var(--color-brand-warn)]/45 bg-gradient-to-b from-[rgba(255,228,94,0.10)] to-[var(--color-background-elevated)] hover:border-[var(--color-brand-warn)] hover:shadow-[0_18px_48px_-12px_rgba(255,228,94,0.45)]"
-    : "border-[var(--color-border)]/60 bg-[var(--color-background-elevated)] hover:border-[var(--color-brand-primary)]/60 hover:shadow-[0_18px_48px_-12px_rgba(255,43,181,0.45)]";
+  const featuredCls = featured
+    ? "ring-1 ring-[var(--color-brand-warn)]/40"
+    : "";
 
   return (
-    <article className={`${wrapperBase} ${wrapperVariant}`}>
+    <Card
+      tone="surface"
+      interactive
+      className={`group flex flex-col p-3 ${featuredCls}`.trim()}
+    >
       <Link
         href={HREF(listing.slug)}
         aria-label={`${listing.name} en ${listing.city} — ver perfil`}
@@ -68,7 +64,7 @@ export function CatalogCard({
         <span className="sr-only">Ver anuncio</span>
       </Link>
 
-      <div className="relative aspect-[4/5] w-full overflow-hidden bg-[var(--color-surface-muted)]">
+      <div className="relative aspect-[4/5] w-full overflow-hidden rounded-[var(--radius-lg)] bg-[var(--color-surface-muted)]">
         <Image
           src={listing.mainImage}
           alt={`${listing.name} en ${listing.city}`}
@@ -81,15 +77,15 @@ export function CatalogCard({
         {/* Top-left: story timestamp / now */}
         <div className="absolute left-3 top-3 z-10 flex flex-col gap-1.5">
           {listing.availableNow ? (
-            <span className="inline-flex items-center gap-1 rounded-md bg-[var(--color-brand-accent)]/90 px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--color-background)] shadow-[0_6px_18px_-6px_rgba(31,168,255,0.7)]">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--color-brand-primary)] px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--color-surface)] shadow-[var(--shadow-glow-primary)]">
               <span
                 aria-hidden
-                className="h-1.5 w-1.5 rounded-full bg-[var(--color-background)] motion-safe:animate-pulse"
+                className="h-1.5 w-1.5 rounded-full bg-[var(--color-surface)] motion-safe:animate-pulse"
               />
               Disponible ahora
             </span>
           ) : storyLabel ? (
-            <span className="rounded-md bg-[var(--color-background)]/85 px-2 py-1 text-[10px] font-medium uppercase tracking-[0.16em] text-[var(--color-foreground)] backdrop-blur-sm">
+            <span className="rounded-full bg-[var(--color-surface)]/90 px-2.5 py-1 text-[10px] font-medium uppercase tracking-[0.16em] text-[var(--color-foreground)] shadow-[var(--shadow-sm)] backdrop-blur-sm">
               <span className="block text-[8px] tracking-[0.22em] text-[var(--color-text-muted)]">
                 Grabada a las
               </span>
@@ -98,18 +94,14 @@ export function CatalogCard({
           ) : null}
         </div>
 
-        {/* Top-right: heart / favorite (decorative — wired in PR #2 mutations) */}
-        <button
-          type="button"
-          aria-label="Guardar en favoritos"
-          className="absolute right-3 top-3 z-30 inline-flex h-8 w-8 items-center justify-center rounded-full bg-[var(--color-background)]/70 text-[var(--color-text-muted)] backdrop-blur-sm transition-colors hover:text-[var(--color-brand-highlight)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-highlight)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-background)]"
-        >
-          <Heart className="h-4 w-4" aria-hidden />
-        </button>
+        {/* Top-right: heart toggle */}
+        <div className="absolute right-3 top-3 z-30">
+          <HeartButton />
+        </div>
 
-        {/* Center hover overlay: Ver anuncio */}
+        {/* Hover overlay: Ver anuncio */}
         <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center">
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--color-background)]/85 px-3.5 py-1.5 text-xs font-semibold text-[var(--color-foreground)] opacity-0 backdrop-blur-sm transition-opacity duration-200 ease-[var(--ease-standard)] group-hover:opacity-100">
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--color-surface)]/95 px-3.5 py-1.5 text-xs font-semibold text-[var(--color-foreground)] opacity-0 shadow-[var(--shadow-md)] backdrop-blur-sm transition-opacity duration-200 ease-[var(--ease-standard)] group-hover:opacity-100">
             <Eye className="h-3.5 w-3.5" aria-hidden />
             Ver anuncio
           </span>
@@ -119,7 +111,7 @@ export function CatalogCard({
         <div className="absolute right-3 bottom-3 z-10 flex flex-col items-end gap-1.5">
           {listing.hasVideo && (
             <span
-              className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-[var(--color-background)]/85 text-[var(--color-foreground)] backdrop-blur-sm"
+              className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-[var(--color-surface)]/95 text-[var(--color-foreground)] shadow-[var(--shadow-sm)] backdrop-blur-sm"
               aria-label="Con vídeo"
               title="Con vídeo"
             >
@@ -128,7 +120,7 @@ export function CatalogCard({
           )}
           {listing.hasAudio && (
             <span
-              className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-[var(--color-background)]/85 text-[var(--color-foreground)] backdrop-blur-sm"
+              className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-[var(--color-surface)]/95 text-[var(--color-foreground)] shadow-[var(--shadow-sm)] backdrop-blur-sm"
               aria-label="Con audio"
               title="Con audio"
             >
@@ -136,61 +128,49 @@ export function CatalogCard({
             </span>
           )}
         </div>
-
-        {/* Bottom-left rating */}
-        <div className="absolute bottom-3 left-3 z-10 inline-flex items-center gap-1 rounded-md bg-[var(--color-background)]/80 px-2 py-1 text-xs text-[var(--color-foreground)] backdrop-blur-sm">
-          <Star
-            className="h-3 w-3 fill-[var(--color-brand-warn)] text-[var(--color-brand-warn)]"
-            aria-hidden
-          />
-          {ratingLabel}
-        </div>
       </div>
 
       {/* Body */}
-      <div className="relative flex flex-1 flex-col gap-2 p-4">
+      <div className="relative flex flex-1 flex-col gap-1.5 px-1 pt-3">
         <header className="flex items-baseline justify-between gap-2">
-          <h3 className="inline-flex items-baseline gap-1.5 truncate text-base font-semibold text-[var(--color-foreground)]">
-            {featured && (
-              <Star
-                className="h-3.5 w-3.5 shrink-0 translate-y-px fill-[var(--color-brand-warn)] text-[var(--color-brand-warn)]"
-                aria-hidden
-              />
-            )}
-            <span className="truncate">{listing.name}</span>
+          <h3 className="truncate text-base font-semibold text-[var(--color-foreground)]">
+            {listing.name}
           </h3>
           <span className="shrink-0 text-xs text-[var(--color-text-muted)]">
             {listing.age} a.
           </span>
         </header>
+        <RatingBadge
+          score={listing.reputation.score}
+          count={listing.reputation.reviewCount}
+          size="sm"
+        />
         <p className="line-clamp-2 text-xs leading-relaxed text-[var(--color-text-muted)]">
           {listing.shortBio}
         </p>
-        <div className="mt-1 flex flex-wrap items-center gap-1.5 text-[11px]">
-          <span className="rounded bg-[var(--color-surface)]/70 px-2 py-0.5 text-[var(--color-text-muted)]">
+        <div className="mt-1 flex items-center justify-between gap-2">
+          <span className="truncate text-xs text-[var(--color-text-muted)]">
             {listing.city}
             {listing.neighborhood ? ` · ${listing.neighborhood}` : ""}
           </span>
-          <span className="rounded bg-[var(--color-surface)]/70 px-2 py-0.5 font-semibold text-[var(--color-foreground)]">
-            {formatPricePerHour(listing.pricePerHour)}
-          </span>
+          <PriceTag value={formatPricePerHour(listing.pricePerHour)} size="sm" />
         </div>
         <div className="mt-1 flex flex-wrap items-center gap-1.5 text-[10px]">
           {listing.verified && <VerifiedBadge label="Verificada" />}
           {listing.hasAudio && (
-            <span className="inline-flex items-center gap-1 rounded bg-[var(--color-brand-secondary)]/15 px-2 py-0.5 font-medium text-[var(--color-brand-secondary-strong)]">
+            <span className="inline-flex items-center gap-1 rounded-full bg-[var(--color-brand-secondary)]/12 px-2 py-0.5 font-medium text-[var(--color-brand-secondary-strong)]">
               <Volume2 className="h-3 w-3" aria-hidden />
               Audio
             </span>
           )}
           {listing.reputation.reviewCount > 0 && (
-            <span className="inline-flex items-center gap-1 rounded bg-[var(--color-surface)]/70 px-2 py-0.5 text-[var(--color-text-muted)]">
+            <span className="inline-flex items-center gap-1 rounded-full bg-[var(--color-surface-muted)] px-2 py-0.5 text-[var(--color-text-muted)]">
               <MessageSquare className="h-3 w-3" aria-hidden />
               {listing.reputation.reviewCount}
             </span>
           )}
         </div>
       </div>
-    </article>
+    </Card>
   );
 }

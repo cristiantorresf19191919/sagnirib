@@ -4,15 +4,15 @@ type Tone = "neutral" | "primary" | "secondary" | "accent" | "warn";
 
 const TONE: Record<Tone, string> = {
   neutral:
-    "bg-[var(--color-surface)] text-[var(--color-text-muted)] border-[var(--color-border)]",
+    "bg-[var(--color-surface-muted)] text-[var(--color-text-muted)] border-[var(--color-border)]",
   primary:
-    "bg-[var(--color-brand-primary)]/12 text-[var(--color-brand-primary-strong)] border-[var(--color-brand-primary)]/40",
+    "bg-[var(--color-brand-primary)]/10 text-[var(--color-brand-primary)] border-[var(--color-brand-primary)]/30",
   secondary:
-    "bg-[var(--color-brand-secondary)]/15 text-[var(--color-brand-secondary-strong)] border-[var(--color-brand-secondary)]/40",
+    "bg-[var(--color-brand-secondary)]/12 text-[var(--color-brand-secondary-strong)] border-[var(--color-brand-secondary)]/35",
   accent:
-    "bg-[var(--color-brand-accent)]/12 text-[var(--color-brand-accent-strong)] border-[var(--color-brand-accent)]/40",
+    "bg-[var(--color-brand-accent)]/15 text-[var(--color-brand-accent-strong)] border-[var(--color-brand-accent)]/35",
   warn:
-    "bg-[var(--color-brand-warn)]/12 text-[var(--color-brand-warn)] border-[var(--color-brand-warn)]/40",
+    "bg-[var(--color-brand-warn)]/15 text-[var(--color-brand-accent-strong)] border-[var(--color-brand-warn)]/40",
 };
 
 interface TagProps {

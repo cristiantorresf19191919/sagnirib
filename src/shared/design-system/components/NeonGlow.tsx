@@ -4,17 +4,17 @@ type Tone = "primary" | "secondary" | "accent";
 
 const TONE: Record<Tone, string> = {
   primary:
-    "bg-[radial-gradient(closest-side,rgba(255,43,181,0.45),rgba(255,43,181,0.0)_72%)]",
+    "bg-[radial-gradient(closest-side,rgba(47,93,67,0.18),rgba(47,93,67,0)_70%)]",
   secondary:
-    "bg-[radial-gradient(closest-side,rgba(122,43,255,0.40),rgba(122,43,255,0.0)_72%)]",
+    "bg-[radial-gradient(closest-side,rgba(122,140,109,0.16),rgba(122,140,109,0)_70%)]",
   accent:
-    "bg-[radial-gradient(closest-side,rgba(31,168,255,0.35),rgba(31,168,255,0.0)_72%)]",
+    "bg-[radial-gradient(closest-side,rgba(229,162,58,0.18),rgba(229,162,58,0)_70%)]",
 };
 
 interface NeonGlowProps {
-  /** Glow tone — keep to one glow per element per design-direction. */
+  /** Halo tone — keep to one halo per element. */
   tone?: Tone;
-  /** Children sit on top of the glow halo. */
+  /** Children sit on top of the halo. */
   children?: ReactNode;
   /** Adds a `motion-safe:animate-pulse` halo. */
   pulse?: boolean;
@@ -22,9 +22,9 @@ interface NeonGlowProps {
 }
 
 /**
- * Decorative halo wrapper. Intentionally `aria-hidden` for the halo; the
- * children remain in the accessible tree. One halo per element rule lives
- * with the consumer — this component only knows how to draw a single tone.
+ * Decorative ambient halo — soft tinted glow behind a focal element.
+ * Renamed in spirit from "neon" to a calmer sage/forest blur, but the
+ * component name stays for backwards-compat with existing call sites.
  */
 export function NeonGlow({
   tone = "primary",

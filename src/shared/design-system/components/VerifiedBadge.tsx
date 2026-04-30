@@ -13,7 +13,7 @@ export function VerifiedBadge({
 }: VerifiedBadgeProps) {
   return (
     <span
-      className="inline-flex items-center gap-1 rounded-[var(--radius-sm)] bg-[var(--color-surface)]/85 px-2 py-1 text-xs font-medium text-[var(--color-brand-accent-strong)] backdrop-blur-sm"
+      className="inline-flex items-center gap-1 rounded-full bg-[var(--color-brand-primary)]/10 px-2 py-1 text-xs font-medium text-[var(--color-brand-primary)] ring-1 ring-[var(--color-brand-primary)]/20"
       aria-label={label}
       title={label}
     >

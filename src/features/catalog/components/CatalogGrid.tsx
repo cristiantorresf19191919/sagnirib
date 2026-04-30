@@ -1,6 +1,5 @@
-import Link from "next/link";
-
 import { listAll, type ListingsFilters } from "@/server/biringas";
+import { Button } from "@/shared/design-system/components/Button";
 import { Container } from "@/shared/design-system/components/Container";
 import { Reveal, RevealItem } from "@/shared/motion/Reveal";
 
@@ -26,7 +25,7 @@ export async function CatalogGrid({ filters }: CatalogGridProps) {
   return (
     <section
       aria-labelledby="catalog-title"
-      className="relative pb-12 pt-6 sm:pb-16 sm:pt-8 lg:pb-20"
+      className="relative pb-12 pt-8 sm:pb-16 sm:pt-10 lg:pb-20"
     >
       <Container width="wide">
         <header className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between sm:gap-6">
@@ -79,7 +78,7 @@ export async function CatalogGrid({ filters }: CatalogGridProps) {
 
 function EmptyState() {
   return (
-    <div className="mt-10 flex flex-col items-start gap-3 rounded-[var(--radius-xl)] border border-dashed border-[var(--color-border)] bg-[var(--color-background-elevated)]/40 p-8">
+    <div className="mt-10 flex flex-col items-start gap-3 rounded-[var(--radius-xl)] border border-dashed border-[var(--color-border)] bg-[var(--color-surface)] p-8 shadow-[var(--shadow-sm)]">
       <span className="text-xs uppercase tracking-[0.28em] text-[var(--color-text-subtle)]">
         Sin resultados
       </span>
@@ -89,12 +88,9 @@ function EmptyState() {
       <p className="text-sm text-[var(--color-text-muted)]">
         Prueba a ampliar la ciudad, soltar la edad o quitar algún chip de servicio.
       </p>
-      <Link
-        href="/"
-        className="mt-2 inline-flex h-10 items-center rounded-[var(--radius-md)] bg-[var(--color-brand-primary)] px-4 text-sm font-semibold text-[var(--color-background)] hover:bg-[var(--color-brand-primary-strong)]"
-      >
+      <Button href="/" variant="primary" size="md" className="mt-2">
         Borrar filtros
-      </Link>
+      </Button>
     </div>
   );
 }

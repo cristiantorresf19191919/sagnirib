@@ -8,16 +8,7 @@ import { Logo } from "@/shared/design-system/components/Logo";
 export function Footer() {
   const year = new Date().getFullYear();
   return (
-    <footer className="relative isolate overflow-hidden border-t border-[var(--color-border)]/60 bg-[var(--color-background-elevated)]">
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[var(--color-brand-primary)]/70 to-transparent"
-      />
-      <div
-        aria-hidden
-        className="pointer-events-none absolute -top-40 left-1/2 -z-10 h-[420px] w-[820px] -translate-x-1/2 rounded-full bg-[radial-gradient(closest-side,rgba(255,43,181,0.18),rgba(122,43,255,0.10)_45%,rgba(0,0,0,0)_75%)] blur-3xl"
-      />
-
+    <footer className="relative isolate overflow-hidden border-t border-[var(--color-border)] bg-[var(--color-background-elevated)]">
       <Container
         width="wide"
         className="grid grid-cols-1 gap-12 py-16 lg:grid-cols-12"
@@ -32,11 +23,11 @@ export function Footer() {
           </p>
 
           <div className="mt-7 flex flex-wrap items-center gap-3">
-            <span className="inline-flex items-center gap-2 rounded-full border border-[var(--color-brand-accent)]/40 bg-[var(--color-brand-accent)]/8 px-3 py-1.5 text-xs font-medium text-[var(--color-brand-accent-strong)]">
+            <span className="inline-flex items-center gap-2 rounded-full bg-[var(--color-brand-primary)]/10 px-3 py-1.5 text-xs font-medium text-[var(--color-brand-primary)] ring-1 ring-[var(--color-brand-primary)]/20">
               <ShieldCheck className="h-3.5 w-3.5" aria-hidden />
               Perfiles verificados
             </span>
-            <span className="inline-flex items-center gap-2 rounded-full border border-[var(--color-border)] bg-[var(--color-surface)]/60 px-3 py-1.5 text-xs font-medium text-[var(--color-text-muted)]">
+            <span className="inline-flex items-center gap-2 rounded-full bg-[var(--color-surface)] px-3 py-1.5 text-xs font-medium text-[var(--color-text-muted)] ring-1 ring-[var(--color-border)]">
               <MapPin className="h-3.5 w-3.5" aria-hidden />
               Servicio en Colombia
             </span>
@@ -91,7 +82,7 @@ export function Footer() {
         </div>
       </Container>
 
-      <div className="border-t border-[var(--color-border)]/40">
+      <div className="border-t border-[var(--color-border)]/70">
         <Container
           width="wide"
           className="flex flex-col items-start gap-3 py-6 text-xs text-[var(--color-text-subtle)] sm:flex-row sm:items-center sm:justify-between"
@@ -99,7 +90,7 @@ export function Footer() {
           <span>
             © {year} {brandConfig.legalName}. Todos los derechos reservados.
           </span>
-          <span className="inline-flex items-center gap-2 rounded-full border border-[var(--color-brand-highlight)]/30 bg-[var(--color-brand-highlight)]/10 px-3 py-1 font-semibold uppercase tracking-[0.2em] text-[var(--color-brand-primary-soft)]">
+          <span className="inline-flex items-center gap-2 rounded-full bg-[var(--color-brand-highlight)]/10 px-3 py-1 font-semibold uppercase tracking-[0.2em] text-[var(--color-brand-highlight)] ring-1 ring-[var(--color-brand-highlight)]/25">
             <span>+18</span>
             <span className="font-normal normal-case tracking-normal text-[var(--color-text-muted)]">
               Plataforma para personas mayores de edad

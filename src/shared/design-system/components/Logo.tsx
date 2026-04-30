@@ -4,6 +4,8 @@ import Link from "next/link";
 import { brandAssets, hasAsset } from "@/core/branding/brand-assets";
 import { brandConfig } from "@/core/branding/brand-config";
 
+import { Sparkle } from "./Sparkle";
+
 interface LogoProps {
   /** Render the logo as a link to "/". Defaults to true. */
   link?: boolean;
@@ -39,10 +41,7 @@ export function Logo({ link = true, size = "md" }: LogoProps) {
           className="h-auto w-auto"
         />
       ) : (
-        <span
-          aria-hidden
-          className="inline-block h-2.5 w-2.5 rounded-full bg-[var(--color-brand-primary)] shadow-[var(--shadow-glow-primary)]"
-        />
+        <Sparkle tone="primary" size={size === "sm" ? 18 : 22} />
       )}
       <span className={wordmarkClass}>{brandConfig.name}</span>
     </span>

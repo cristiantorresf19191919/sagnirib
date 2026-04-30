@@ -29,11 +29,6 @@ const APPEARANCE_LABELS: Record<keyof typeof APPEARANCE_CATALOG, string> = {
   pubis: "Pubis",
 };
 
-/**
- * Counts how many filter knobs are active right now. Used for the badge on
- * the panel summary so it's obvious from a glance whether anything is
- * currently filtering the catalog.
- */
 function countActiveFilters(filters: ListingsFilters): number {
   let n = 0;
   if (filters.priceMin !== undefined) n += 1;
@@ -58,32 +53,26 @@ function countActiveFilters(filters: ListingsFilters): number {
   return n;
 }
 
-/**
- * Collapsible mega-form that lives below the search bar. All inputs share a
- * single `<form action="/" method="get">`, so a submit re-renders the page
- * with the new filter combo. Each input pre-selects from the active
- * `filters` so an open panel reflects the URL state.
- */
 export function FiltersPanel({ filters }: FiltersPanelProps) {
   const active = countActiveFilters(filters);
 
   return (
-    <section className="border-b border-[var(--color-border)]/40 bg-[var(--color-background)]">
+    <section className="border-b border-[var(--color-border)]/60 bg-[var(--color-background)]">
       <Container width="wide" className="py-2.5 sm:py-3">
         <Disclosure
           ariaLabel="Filtros de búsqueda"
-          triggerClassName="group flex w-full cursor-pointer items-center gap-2 rounded-full border border-transparent px-2 py-1 text-left transition-colors hover:bg-[var(--color-surface)]/50 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-background)]"
+          triggerClassName="group flex w-full cursor-pointer items-center gap-2 rounded-full border border-transparent px-3 py-1.5 text-left transition-colors hover:bg-[var(--color-surface-muted)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-background)]"
           summary={
             <>
               <SlidersHorizontal
-                className="h-3.5 w-3.5 text-[var(--color-brand-primary-strong)]"
+                className="h-3.5 w-3.5 text-[var(--color-brand-primary)]"
                 aria-hidden
               />
               <span className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-text-muted)]">
                 Filtros
               </span>
               {active > 0 ? (
-                <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-[var(--color-brand-primary)] px-1.5 text-[10px] font-bold text-[var(--color-background)] shadow-[0_4px_14px_-4px_rgba(255,43,181,0.7)]">
+                <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-[var(--color-brand-primary)] px-1.5 text-[10px] font-bold text-[var(--color-surface)]">
                   {active}
                 </span>
               ) : (
@@ -101,7 +90,7 @@ export function FiltersPanel({ filters }: FiltersPanelProps) {
           <form
             action="/"
             method="get"
-            className="mt-3 grid gap-8 rounded-[var(--radius-xl)] border border-[var(--color-border)]/60 bg-[var(--color-background-elevated)]/60 p-5 sm:p-7 lg:grid-cols-2 lg:gap-10"
+            className="mt-3 grid gap-8 rounded-[var(--radius-xl)] border border-[var(--color-border)] bg-[var(--color-surface)] p-5 shadow-[var(--shadow-sm)] sm:p-7 lg:grid-cols-2 lg:gap-10"
           >
             <PreservedFilters
               filters={filters}
@@ -128,7 +117,7 @@ export function FiltersPanel({ filters }: FiltersPanelProps) {
 
             {/* Left column — Principales + Servicios + Lugar */}
             <div className="flex flex-col gap-8">
-              <Section title="Principales" tone="primary">
+              <Section title="Principales">
                 <Field label="Precio (COP / hora)">
                   <RangeInputs
                     minName="priceMin"
@@ -217,7 +206,7 @@ export function FiltersPanel({ filters }: FiltersPanelProps) {
                 </Field>
               </Section>
 
-              <Section title="Servicios generales" tone="primary">
+              <Section title="Servicios generales">
                 <ChipRow>
                   {SERVICE_CATALOG.map((service) => (
                     <CheckChip
@@ -231,7 +220,7 @@ export function FiltersPanel({ filters }: FiltersPanelProps) {
                 </ChipRow>
               </Section>
 
-              <Section title="Servicios especiales" tone="secondary">
+              <Section title="Servicios especiales">
                 <ChipRow>
                   {SPECIAL_SERVICE_CATALOG.map((service) => (
                     <CheckChip
@@ -247,7 +236,7 @@ export function FiltersPanel({ filters }: FiltersPanelProps) {
                 </ChipRow>
               </Section>
 
-              <Section title="Lugar" tone="accent">
+              <Section title="Lugar">
                 <ChipRow>
                   {MEETING_CONTEXT_CATALOG.map((place) => (
                     <CheckChip
@@ -266,7 +255,7 @@ export function FiltersPanel({ filters }: FiltersPanelProps) {
 
             {/* Right column — Contenido + Apariencia */}
             <div className="flex flex-col gap-8">
-              <Section title="Contenido" tone="accent">
+              <Section title="Contenido">
                 <ChipRow>
                   <BoolChip
                     name="verified"
@@ -307,7 +296,7 @@ export function FiltersPanel({ filters }: FiltersPanelProps) {
                 </ChipRow>
               </Section>
 
-              <Section title="Apariencia" tone="primary">
+              <Section title="Apariencia">
                 <div className="flex flex-col gap-5">
                   {(Object.keys(APPEARANCE_CATALOG) as Array<
                     keyof typeof APPEARANCE_CATALOG
@@ -336,14 +325,14 @@ export function FiltersPanel({ filters }: FiltersPanelProps) {
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-end lg:col-span-2">
               <Link
                 href="/"
-                className="inline-flex h-12 items-center justify-center gap-2 rounded-[var(--radius-lg)] border border-[var(--color-brand-highlight)]/50 bg-[var(--color-brand-highlight)]/10 px-5 text-sm font-semibold text-[var(--color-brand-highlight)] transition-colors hover:bg-[var(--color-brand-highlight)]/15"
+                className="inline-flex h-12 items-center justify-center gap-2 rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] px-5 text-sm font-semibold text-[var(--color-text-muted)] transition-colors hover:border-[var(--color-brand-highlight)]/50 hover:text-[var(--color-brand-highlight)]"
               >
                 <Eraser className="h-4 w-4" aria-hidden />
                 Borrar filtros
               </Link>
               <button
                 type="submit"
-                className="inline-flex h-12 items-center justify-center gap-2 rounded-[var(--radius-lg)] bg-[var(--color-brand-primary)] px-8 text-sm font-semibold text-[var(--color-background)] shadow-[0_0_0_1px_rgba(255,93,203,0.45),0_10px_28px_-12px_rgba(255,43,181,0.7)] transition-colors hover:bg-[var(--color-brand-primary-strong)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary-strong)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-background)]"
+                className="inline-flex h-12 items-center justify-center gap-2 rounded-full bg-[var(--color-brand-primary)] px-8 text-sm font-semibold text-[var(--color-surface)] shadow-[var(--shadow-glow-primary)] transition-colors hover:bg-[var(--color-brand-primary-strong)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-background)]"
               >
                 <SlidersHorizontal className="h-4 w-4" aria-hidden />
                 Filtrar
@@ -358,22 +347,13 @@ export function FiltersPanel({ filters }: FiltersPanelProps) {
 
 interface SectionProps {
   title: string;
-  tone: "primary" | "secondary" | "accent";
   children: React.ReactNode;
 }
 
-const SECTION_TONE: Record<SectionProps["tone"], string> = {
-  primary: "text-[var(--color-brand-primary-strong)]",
-  secondary: "text-[var(--color-brand-secondary-strong)]",
-  accent: "text-[var(--color-brand-accent-strong)]",
-};
-
-function Section({ title, tone, children }: SectionProps) {
+function Section({ title, children }: SectionProps) {
   return (
     <fieldset className="flex flex-col gap-4">
-      <legend
-        className={`text-xs font-semibold uppercase tracking-[0.28em] ${SECTION_TONE[tone]}`}
-      >
+      <legend className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--color-brand-primary)]">
         {title}
       </legend>
       {children}
@@ -413,7 +393,7 @@ function RangeInputs({
   step,
 }: RangeInputsProps) {
   const cls =
-    "h-10 w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)]/70 px-3 text-sm text-[var(--color-foreground)] placeholder:text-[var(--color-text-subtle)] focus:border-[var(--color-brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)]/50";
+    "h-11 w-full rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] px-4 text-sm text-[var(--color-foreground)] placeholder:text-[var(--color-text-subtle)] focus:border-[var(--color-brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)]/30";
   return (
     <div className="grid grid-cols-2 gap-2.5">
       <label className="flex flex-col gap-1">
@@ -455,15 +435,11 @@ function ChipRow({ children }: { children: React.ReactNode }) {
 }
 
 /**
- * Pill-style checkbox.
- *
- * Visual state is driven by `:checked` on the inner input via Tailwind's
- * `has-checked:` variant — fully CSS, no JS. Active/inactive look matches
- * the catalog brand pills (brand-primary tint when checked, neutral surface
- * when off).
+ * Pill-style checkbox. Visual state is driven by `:checked` via Tailwind's
+ * `has-checked:` variant — no JS required.
  */
 const CHIP_BASE =
-  "relative inline-flex h-9 cursor-pointer items-center rounded-full border px-3.5 text-xs font-medium transition-[background,border-color,color,box-shadow] duration-150 ease-[var(--ease-standard)] select-none border-[var(--color-border)] bg-[var(--color-surface)]/60 text-[var(--color-text-muted)] hover:text-[var(--color-foreground)] hover:border-[var(--color-brand-primary)]/40 has-checked:border-[var(--color-brand-primary)] has-checked:bg-[var(--color-brand-primary)]/15 has-checked:text-[var(--color-brand-primary-strong)] has-checked:shadow-[0_0_0_1px_rgba(255,93,203,0.35)]";
+  "relative inline-flex h-9 cursor-pointer items-center rounded-full border px-3.5 text-xs font-medium transition-[background,border-color,color,box-shadow] duration-150 ease-[var(--ease-standard)] select-none border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text-muted)] hover:text-[var(--color-foreground)] hover:border-[var(--color-brand-primary-soft)] has-checked:border-[var(--color-brand-primary)] has-checked:bg-[var(--color-brand-primary)]/10 has-checked:text-[var(--color-brand-primary)] has-checked:font-semibold";
 
 interface CheckChipProps {
   name: string;

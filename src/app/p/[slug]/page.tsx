@@ -10,7 +10,6 @@ import {
   MapPin,
   ShieldCheck,
   Sparkles,
-  Star,
 } from "lucide-react";
 
 import { buildPageMetadata } from "@/core/seo/build-page-metadata";
@@ -19,10 +18,13 @@ import { CardStackGallery } from "@/features/biringas/components/CardStackGaller
 import { ReviewsSection } from "@/features/biringas/components/ReviewsSection";
 import { formatPricePerHour } from "@/features/biringas/format";
 import { Button } from "@/shared/design-system/components/Button";
+import { Card } from "@/shared/design-system/components/Card";
 import { Container } from "@/shared/design-system/components/Container";
 import { VerifiedBadge } from "@/shared/design-system/components/VerifiedBadge";
 import { Footer } from "@/shared/layout/Footer";
 import { Header } from "@/shared/layout/Header";
+import { PriceTag } from "@/shared/ui/PriceTag";
+import { RatingBadge } from "@/shared/ui/RatingBadge";
 import { Tag } from "@/shared/ui/Tag";
 
 interface ProfilePageProps {
@@ -72,7 +74,6 @@ export default async function ProfilePage({ params }: Readonly<ProfilePageProps>
 
   const galleryImages =
     listing.gallery.length > 0 ? listing.gallery : [listing.mainImage];
-  const ratingLabel = listing.reputation.score.toFixed(1);
   const attributeEntries: Array<[label: string, value: string]> = [
     ["Etnia", listing.attributes.ethnicity ?? "—"],
     ["Cabello", listing.attributes.hair ?? "—"],
@@ -87,10 +88,9 @@ export default async function ProfilePage({ params }: Readonly<ProfilePageProps>
     <>
       <Header />
       <main className="relative isolate flex flex-1 flex-col">
-        {/* Ambient gradient backdrop */}
         <div
           aria-hidden
-          className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-[640px] bg-[radial-gradient(circle_at_20%_0%,rgba(122,43,255,0.18),transparent_55%),radial-gradient(circle_at_80%_10%,rgba(255,43,181,0.16),transparent_60%)]"
+          className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-[640px] bg-[radial-gradient(circle_at_20%_0%,rgba(47,93,67,0.10),transparent_55%),radial-gradient(circle_at_80%_10%,rgba(229,162,58,0.08),transparent_60%)]"
         />
 
         <Container width="wide" className="pt-8 sm:pt-10">
@@ -107,7 +107,7 @@ export default async function ProfilePage({ params }: Readonly<ProfilePageProps>
           width="wide"
           className="grid grid-cols-1 gap-12 py-10 sm:py-12 lg:grid-cols-12 lg:gap-14 lg:py-16"
         >
-          {/* Gallery — naipe stack */}
+          {/* Gallery */}
           <section
             aria-label={`Galería de ${listing.name}`}
             className="lg:col-span-6 xl:col-span-7"
@@ -119,16 +119,16 @@ export default async function ProfilePage({ params }: Readonly<ProfilePageProps>
 
             <div className="mt-6 flex flex-wrap items-center justify-center gap-3 text-xs text-[var(--color-text-muted)]">
               {listing.hasVideo && (
-                <span className="inline-flex items-center gap-1.5 rounded-full border border-[var(--color-border)] bg-[var(--color-surface)]/60 px-3 py-1.5">
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--color-surface)] px-3 py-1.5 ring-1 ring-[var(--color-border)]">
                   <Film
-                    className="h-3.5 w-3.5 text-[var(--color-brand-accent-strong)]"
+                    className="h-3.5 w-3.5 text-[var(--color-brand-primary)]"
                     aria-hidden
                   />
                   Vídeo disponible
                 </span>
               )}
               {listing.hasAudio && (
-                <span className="inline-flex items-center gap-1.5 rounded-full border border-[var(--color-border)] bg-[var(--color-surface)]/60 px-3 py-1.5">
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--color-surface)] px-3 py-1.5 ring-1 ring-[var(--color-border)]">
                   <Mic
                     className="h-3.5 w-3.5 text-[var(--color-brand-secondary-strong)]"
                     aria-hidden
@@ -136,9 +136,9 @@ export default async function ProfilePage({ params }: Readonly<ProfilePageProps>
                   Audio disponible
                 </span>
               )}
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-[var(--color-border)] bg-[var(--color-surface)]/60 px-3 py-1.5">
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--color-surface)] px-3 py-1.5 ring-1 ring-[var(--color-border)]">
                 <Sparkles
-                  className="h-3.5 w-3.5 text-[var(--color-brand-primary-strong)]"
+                  className="h-3.5 w-3.5 text-[var(--color-brand-accent-strong)]"
                   aria-hidden
                 />
                 {listing.reputation.storiesRecorded} historias
@@ -167,13 +167,11 @@ export default async function ProfilePage({ params }: Readonly<ProfilePageProps>
 
                 <div className="mt-5 flex flex-wrap items-center gap-2">
                   {listing.verified && <VerifiedBadge />}
-                  <span className="inline-flex items-center gap-1.5 rounded-full border border-[var(--color-brand-warn)]/40 bg-[var(--color-brand-warn)]/10 px-3 py-1 text-xs font-medium text-[var(--color-brand-warn)]">
-                    <Star
-                      className="h-3 w-3 fill-[var(--color-brand-warn)] text-[var(--color-brand-warn)]"
-                      aria-hidden
-                    />
-                    {ratingLabel}
-                  </span>
+                  <RatingBadge
+                    score={listing.reputation.score}
+                    count={listing.reputation.reviewCount}
+                    size="md"
+                  />
                   {listing.tags.map((t) => (
                     <Tag key={t} tone="primary">
                       {t}
@@ -204,7 +202,7 @@ export default async function ProfilePage({ params }: Readonly<ProfilePageProps>
                   value={`hace ${listing.reputation.daysSinceVerification}d`}
                   icon={
                     <ShieldCheck
-                      className="h-3.5 w-3.5 text-[var(--color-brand-accent-strong)]"
+                      className="h-3.5 w-3.5 text-[var(--color-brand-primary)]"
                       aria-hidden
                     />
                   }
@@ -212,19 +210,17 @@ export default async function ProfilePage({ params }: Readonly<ProfilePageProps>
               </dl>
 
               {/* Price + CTA card */}
-              <div className="relative overflow-hidden rounded-[var(--radius-xl)] border border-[var(--color-border)] bg-[var(--color-surface)]/70 p-5 backdrop-blur-sm">
-                <div
-                  aria-hidden
-                  className="pointer-events-none absolute -top-20 -right-20 h-48 w-48 rounded-full bg-[radial-gradient(closest-side,rgba(255,43,181,0.35),transparent_70%)] blur-2xl"
-                />
+              <Card tone="surface" padding="lg" className="shadow-[var(--shadow-md)]">
                 <div className="flex items-end justify-between gap-4">
                   <div>
                     <span className="text-xs uppercase tracking-[0.22em] text-[var(--color-text-subtle)]">
                       Tarifa
                     </span>
-                    <p className="mt-1 text-2xl font-bold text-[var(--color-foreground)]">
-                      {formatPricePerHour(listing.pricePerHour)}
-                    </p>
+                    <PriceTag
+                      value={formatPricePerHour(listing.pricePerHour)}
+                      size="lg"
+                      className="mt-1"
+                    />
                   </div>
                 </div>
 
@@ -241,7 +237,7 @@ export default async function ProfilePage({ params }: Readonly<ProfilePageProps>
                   </Button>
                   <Button
                     href="/explorar"
-                    variant="secondary"
+                    variant="outline"
                     size="lg"
                     className="w-full sm:w-auto"
                   >
@@ -252,7 +248,7 @@ export default async function ProfilePage({ params }: Readonly<ProfilePageProps>
                   El contacto directo se libera tras verificar tu cuenta. La
                   pasarela de contratación llega en la próxima versión.
                 </p>
-              </div>
+              </Card>
 
               {/* Attributes */}
               <Section title="Características">
@@ -322,7 +318,7 @@ interface StatTileProps {
 
 function StatTile({ label, value, icon }: Readonly<StatTileProps>) {
   return (
-    <div className="rounded-[var(--radius-lg)] border border-[var(--color-border)]/70 bg-[var(--color-background-elevated)] px-3 py-3">
+    <div className="rounded-[var(--radius-lg)] bg-[var(--color-surface)] px-3 py-3 ring-1 ring-[var(--color-border)]">
       <dt className="flex items-center gap-1.5 text-[10px] uppercase tracking-[0.18em] text-[var(--color-text-subtle)]">
         {icon}
         {label}
@@ -342,7 +338,7 @@ interface SectionProps {
 function Section({ title, children }: Readonly<SectionProps>) {
   return (
     <section>
-      <h2 className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--color-text-subtle)]">
+      <h2 className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--color-brand-primary)]">
         {title}
       </h2>
       <div className="mt-3">{children}</div>

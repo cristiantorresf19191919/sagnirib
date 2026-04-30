@@ -11,7 +11,7 @@
  * Vírgenes 2.0") is NOT canonical; the brand name is "Biringas".
  */
 export const brandAssets = {
-  logoPng: "/brand/logo-biringas.png",
+  logoPng: "",
   logoSvg: "",
   logoMonochrome: "",
   favicon: "/favicon.ico",

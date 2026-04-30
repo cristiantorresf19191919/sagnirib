@@ -9,107 +9,74 @@ interface CategoryBarProps {
 }
 
 /**
- * Top-of-catalog selector. Two pill rows:
- *   - Categoría: Prepagos | Masajes | Videollamadas (filterable, single-select).
- *   - Sexo: Mujeres only — locked active per founder direction (2026-04-29).
- *
- * Each pill is a `<Link>` so the URL is the source of truth and the page is
- * server-rendered against the current filter state.
+ * Top-of-catalog selector. Underline-tab style mirrors the spa mockup:
+ * inactive tabs sit flush, the active tab is bolder with a forest-green dot
+ * underneath. Each tab is a `<Link>` so the URL is the source of truth.
  */
 export function CategoryBar({ filters }: CategoryBarProps) {
   const activeCategory = filters.category;
+  const tabs: Array<{ id: string | undefined; label: string }> = [
+    { id: undefined, label: "Todas" },
+    ...CATEGORIES.map((c) => ({ id: c.id as string | undefined, label: c.label })),
+  ];
 
   return (
     <section
-      aria-label="Filtros principales"
-      className="relative bg-[var(--color-background-elevated)]/40 backdrop-blur-sm"
+      aria-label="Categorías"
+      className="border-b border-[var(--color-border)]/60 bg-[var(--color-background)]"
     >
-      <Container
-        width="wide"
-        className="flex flex-col gap-3 py-4 sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-6 sm:gap-y-3"
-      >
-        <Group label="Categoría">
-          <Pill
-            href={withFilter(filters, "category", undefined)}
-            active={activeCategory === undefined}
-            tone="primary"
-          >
-            Todas
-          </Pill>
-          {CATEGORIES.map(({ id, label }) => (
-            <Pill
-              key={id}
-              href={withFilter(filters, "category", id)}
-              active={activeCategory === id}
-              tone="primary"
+      <Container width="wide" className="py-4">
+        <div className="flex flex-wrap items-center gap-x-7 gap-y-3">
+          {tabs.map((tab) => (
+            <Tab
+              key={tab.label}
+              href={withFilter(filters, "category", tab.id as never)}
+              active={activeCategory === tab.id}
             >
-              {label}
-            </Pill>
+              {tab.label}
+            </Tab>
           ))}
-        </Group>
-
-        <span
-          aria-hidden
-          className="hidden h-5 w-px bg-[var(--color-border)]/60 sm:inline-block"
-        />
-
-        <Group label="Sexo">
-          <Pill
+          <span
+            aria-hidden
+            className="hidden h-5 w-px bg-[var(--color-border)] sm:inline-block"
+          />
+          <Tab
             href={withFilter(filters, "sex", "mujeres")}
             active
-            tone="secondary"
           >
             Mujeres
-          </Pill>
-        </Group>
+          </Tab>
+        </div>
       </Container>
     </section>
   );
 }
 
-interface GroupProps {
-  label: string;
-  children: React.ReactNode;
-}
-
-function Group({ label, children }: GroupProps) {
-  return (
-    <div className="flex flex-wrap items-center gap-2.5">
-      <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--color-text-subtle)]">
-        {label}
-      </span>
-      <div className="flex flex-wrap items-center gap-1.5">{children}</div>
-    </div>
-  );
-}
-
-interface PillProps {
+interface TabProps {
   href: string;
   active: boolean;
-  tone: "primary" | "secondary";
   children: React.ReactNode;
 }
 
-const TONE_ACTIVE: Record<PillProps["tone"], string> = {
-  primary:
-    "bg-[var(--color-brand-primary)] text-[var(--color-background)] shadow-[0_0_0_1px_rgba(255,93,203,0.45),0_8px_24px_-10px_rgba(255,43,181,0.65)]",
-  secondary:
-    "bg-[var(--color-brand-secondary)] text-[var(--color-foreground)] shadow-[0_0_0_1px_rgba(157,91,255,0.45),0_8px_24px_-10px_rgba(122,43,255,0.65)]",
-};
+function Tab({ href, active, children }: TabProps) {
+  const cls = active
+    ? "text-[var(--color-foreground)] font-bold"
+    : "text-[var(--color-text-muted)] font-medium hover:text-[var(--color-foreground)]";
 
-const INACTIVE =
-  "bg-[var(--color-surface)]/70 text-[var(--color-text-muted)] border border-[var(--color-border)]/70 hover:text-[var(--color-foreground)] hover:border-[var(--color-brand-primary)]/50";
-
-function Pill({ href, active, tone, children }: PillProps) {
-  const cn = active ? TONE_ACTIVE[tone] : INACTIVE;
   return (
     <MotionPill
       href={href}
       aria-current={active ? "true" : undefined}
       active={active}
-      className={`inline-flex h-8 items-center rounded-full px-3.5 text-xs font-semibold tracking-tight transition-[background,border-color,color,box-shadow] duration-200 ease-[var(--ease-standard)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-background)] ${cn}`}
+      className={`relative inline-flex flex-col items-center gap-1 px-1 py-1 text-sm transition-colors duration-200 ease-[var(--ease-standard)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-background)] ${cls}`}
     >
-      {children}
+      <span>{children}</span>
+      {active && (
+        <span
+          aria-hidden
+          className="h-1 w-1 rounded-full bg-[var(--color-brand-primary)]"
+        />
+      )}
     </MotionPill>
   );
 }
