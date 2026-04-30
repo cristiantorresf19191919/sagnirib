@@ -66,4 +66,13 @@ export const seoRoutes: ReadonlyArray<SeoRouteEntry> = [
     changeFrequency: "weekly",
     priority: 0.6,
   },
+  {
+    path: "/publicar",
+    contractPath: "docs/seo/routes/publicar.md",
+    // Funnel page — never indexable, never in sitemap. Lives here so audits
+    // know it exists and is accounted for.
+    status: "approved",
+    indexable: false,
+    inSitemap: false,
+  },
 ];
