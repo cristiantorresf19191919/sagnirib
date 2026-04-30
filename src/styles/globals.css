@@ -115,3 +115,151 @@ body {
     animation: none !important;
   }
 }
+
+/*
+ * Filter chip micro-interactions.
+ *
+ * Pure CSS, no client component required — keeps the filter form Server
+ * Component. Hover lifts, active presses, and the `has-checked` state
+ * smoothly transitions border + background + the inline check icon.
+ *
+ * The check-icon animation uses a transition (not @keyframes) so initially-
+ * checked chips don't replay the animation on every page load — transitions
+ * only fire when the rule transitions, and rules don't transition on first
+ * paint.
+ */
+.chip-animated {
+  transition:
+    transform 220ms cubic-bezier(0.34, 1.56, 0.64, 1),
+    background-color 200ms var(--ease-standard),
+    border-color 200ms var(--ease-standard),
+    color 200ms var(--ease-standard),
+    box-shadow 200ms var(--ease-standard);
+  will-change: transform, box-shadow;
+}
+.chip-animated:hover {
+  transform: translateY(-1px);
+  box-shadow:
+    0 4px 14px -8px rgba(47, 93, 67, 0.2),
+    0 0 0 1px rgba(47, 93, 67, 0.05);
+}
+.chip-animated:active {
+  transform: translateY(0) scale(0.96);
+  transition-duration: 110ms;
+}
+
+/*
+ * Inline check icon — slides in from the left with a gentle scale when
+ * the input becomes :checked. Hidden (and width-collapsed) when unchecked
+ * so the chip doesn't reflow when the icon mounts.
+ */
+.chip-check {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 0;
+  height: 14px;
+  margin-right: 0;
+  opacity: 0;
+  transform: translateX(-4px) scale(0.6);
+  overflow: hidden;
+  color: currentColor;
+  transition:
+    width 220ms cubic-bezier(0.34, 1.56, 0.64, 1),
+    margin-right 220ms cubic-bezier(0.34, 1.56, 0.64, 1),
+    transform 220ms cubic-bezier(0.34, 1.56, 0.64, 1),
+    opacity 180ms var(--ease-standard);
+}
+label.chip-animated:has(input:checked) .chip-check {
+  width: 14px;
+  margin-right: 4px;
+  opacity: 1;
+  transform: translateX(0) scale(1);
+}
+
+/*
+ * `chip-enter` — applied to active filter chips on mount. Plays once per
+ * page render, with a small per-index delay set inline by the chip
+ * component.
+ */
+@keyframes chip-enter {
+  from {
+    opacity: 0;
+    transform: translateY(4px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+@utility motion-chip-enter {
+  animation: chip-enter 320ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+/*
+ * Subtle, elegant click feedback for primary submit buttons.
+ *
+ * `.btn-pulse` adds a soft scale-down on press with a bouncy spring
+ * release. A `::after` shimmer sweeps once across the button surface
+ * during the press — barely perceptible, but enough to confirm the click
+ * landed even before the form navigates.
+ */
+.btn-pulse {
+  position: relative;
+  overflow: hidden;
+  transition:
+    transform 220ms cubic-bezier(0.34, 1.56, 0.64, 1),
+    box-shadow 220ms var(--ease-standard);
+}
+.btn-pulse::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    105deg,
+    transparent 30%,
+    rgba(255, 255, 255, 0.22) 50%,
+    transparent 70%
+  );
+  transform: translateX(-120%) skewX(-14deg);
+  transition: transform 600ms var(--ease-standard);
+  pointer-events: none;
+}
+.btn-pulse:active {
+  transform: scale(0.97);
+  transition-duration: 110ms;
+  box-shadow:
+    0 0 0 6px rgba(47, 93, 67, 0.16),
+    var(--shadow-glow-primary);
+}
+.btn-pulse:active::after {
+  transform: translateX(120%) skewX(-14deg);
+  transition-duration: 700ms;
+}
+
+/*
+ * Active filter chips need a fade-up on render but the parent ul has a
+ * single `motion-chip-enter` rule. Per-item delay is supplied via the
+ * `--chip-i` custom property on each li.
+ */
+.chip-stagger {
+  animation-delay: calc(var(--chip-i, 0) * 28ms);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .chip-animated,
+  .chip-animated:hover,
+  .chip-animated:active,
+  .chip-check,
+  .btn-pulse,
+  .btn-pulse:active,
+  .btn-pulse::after {
+    transition: none !important;
+    animation: none !important;
+    transform: none !important;
+  }
+  .motion-chip-enter,
+  .chip-stagger {
+    animation: none !important;
+  }
+}
