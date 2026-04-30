@@ -9,6 +9,7 @@ import { HeroBand } from "@/features/catalog/components/HeroBand";
 import { SearchBar } from "@/features/catalog/components/SearchBar";
 import {
   parseFilters,
+  parseView,
   type RawSearchParams,
 } from "@/features/catalog/lib/parse-filters";
 import { HowItWorks } from "@/features/home/components/HowItWorks";
@@ -35,6 +36,7 @@ export const metadata: Metadata = buildPageMetadata({
 export default async function HomePage({ searchParams }: HomePageProps) {
   const params = await searchParams;
   const filters = parseFilters(params);
+  const view = parseView(params);
 
   return (
     <>
@@ -43,11 +45,11 @@ export default async function HomePage({ searchParams }: HomePageProps) {
         <HeroBand
           location={filters.city ? `${filters.city} · Colombia` : "Toda Colombia"}
         />
-        <CategoryBar filters={filters} />
-        <SearchBar filters={filters} />
-        <CityChips filters={filters} />
-        <FiltersPanel filters={filters} />
-        <CatalogGrid filters={filters} />
+        <CategoryBar filters={filters} view={view} />
+        <SearchBar filters={filters} view={view} />
+        <CityChips filters={filters} view={view} />
+        <FiltersPanel filters={filters} view={view} />
+        <CatalogGrid filters={filters} view={view} />
         <HowItWorks />
       </main>
       <Footer />

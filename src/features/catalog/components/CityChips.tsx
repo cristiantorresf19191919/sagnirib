@@ -5,13 +5,14 @@ import { Container } from "@/shared/design-system/components/Container";
 import { Disclosure } from "@/shared/motion/Disclosure";
 import { Chip } from "@/shared/ui/Chip";
 
-import { withFilter } from "../lib/parse-filters";
+import { type CatalogView, withFilter } from "../lib/parse-filters";
 
 interface CityChipsProps {
   filters: ListingsFilters;
+  view?: CatalogView;
 }
 
-export function CityChips({ filters }: CityChipsProps) {
+export function CityChips({ filters, view }: CityChipsProps) {
   const active = filters.city;
   const activeLabel = active ?? "Toda Colombia";
 
@@ -43,7 +44,7 @@ export function CityChips({ filters }: CityChipsProps) {
         >
           <div className="mt-3 flex flex-wrap items-center gap-1.5 pl-1">
             <Chip
-              href={withFilter(filters, "city", undefined)}
+              href={withFilter(filters, "city", undefined, view)}
               active={active === undefined}
               size="sm"
               variant="solid"
@@ -53,7 +54,7 @@ export function CityChips({ filters }: CityChipsProps) {
             {SUPPORTED_CITIES.map((city) => (
               <Chip
                 key={city}
-                href={withFilter(filters, "city", city)}
+                href={withFilter(filters, "city", city, view)}
                 active={active === city}
                 size="sm"
                 variant="solid"

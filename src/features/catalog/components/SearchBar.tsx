@@ -3,8 +3,11 @@ import { Search } from "lucide-react";
 import { SUPPORTED_CITIES, type ListingsFilters } from "@/server/biringas";
 import { Container } from "@/shared/design-system/components/Container";
 
+import { DEFAULT_CATALOG_VIEW, type CatalogView } from "../lib/parse-filters";
+
 interface SearchBarProps {
   filters: ListingsFilters;
+  view?: CatalogView;
 }
 
 /**
@@ -12,7 +15,7 @@ interface SearchBarProps {
  * the new URL with the current filters preserved as hidden inputs (only the
  * fields *this* form does not own).
  */
-export function SearchBar({ filters }: SearchBarProps) {
+export function SearchBar({ filters, view }: SearchBarProps) {
   return (
     <section
       aria-label="Buscador del catálogo"
@@ -25,7 +28,7 @@ export function SearchBar({ filters }: SearchBarProps) {
           className="flex flex-col gap-2 sm:flex-row sm:items-stretch sm:gap-2"
         >
           {/* Preserve filters this form does not own. */}
-          <PreservedFilters filters={filters} omit={["q", "city"]} />
+          <PreservedFilters filters={filters} view={view} omit={["q", "city"]} />
 
           <label className="relative sm:w-[260px] sm:shrink-0">
             <span className="sr-only">¿Dónde estás?</span>
@@ -86,6 +89,8 @@ function ChevronTrailing() {
 interface PreservedFiltersProps {
   filters: ListingsFilters;
   omit: ReadonlyArray<string>;
+  /** Optional catalog view to keep on the URL after submit. */
+  view?: CatalogView;
 }
 
 /**
@@ -93,7 +98,7 @@ interface PreservedFiltersProps {
  * own. Without this, submitting any form on the catalog would drop the rest
  * of the active filters.
  */
-function PreservedFilters({ filters, omit }: PreservedFiltersProps) {
+function PreservedFilters({ filters, omit, view }: PreservedFiltersProps) {
   const skip = new Set(omit);
   const inputs: React.ReactNode[] = [];
 
@@ -156,6 +161,10 @@ function PreservedFilters({ filters, omit }: PreservedFiltersProps) {
         ),
       );
     }
+  }
+
+  if (view && view !== DEFAULT_CATALOG_VIEW && !skip.has("view")) {
+    inputs.push(<input key="view" type="hidden" name="view" value={view} />);
   }
 
   return <>{inputs}</>;
