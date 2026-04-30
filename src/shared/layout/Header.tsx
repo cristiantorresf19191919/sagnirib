@@ -3,6 +3,7 @@ import { ArrowUpRight } from "lucide-react";
 
 import { Container } from "@/shared/design-system/components/Container";
 import { Logo } from "@/shared/design-system/components/Logo";
+import { FavoritesNavLink } from "@/features/favorites/components/FavoritesNavLink";
 
 import { HeaderBackdrop } from "./HeaderBackdrop";
 
@@ -35,6 +36,8 @@ export function Header({ hideCatalogCta = false }: HeaderProps) {
           >
             Cómo funciona
           </Link>
+
+          <FavoritesNavLink />
 
           <Link
             href="/publicar"
