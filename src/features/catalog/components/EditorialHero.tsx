@@ -36,25 +36,49 @@ const TILE_HEIGHTS_A = [240, 320, 240, 320] as const;
 const TILE_HEIGHTS_B = [360, 220, 360, 220] as const;
 const TILE_HEIGHTS_C = [280, 240, 280, 240] as const;
 
+const MOSAIC_TILES_PER_COLUMN = 4;
+const MOSAIC_COL_A_START = 0;
+const MOSAIC_COL_A_END = MOSAIC_COL_A_START + MOSAIC_TILES_PER_COLUMN;
+const MOSAIC_COL_B_START = MOSAIC_COL_A_END;
+const MOSAIC_COL_B_END = MOSAIC_COL_B_START + MOSAIC_TILES_PER_COLUMN;
+const MOSAIC_COL_C_START = MOSAIC_COL_B_END;
+const MOSAIC_COL_C_END = MOSAIC_COL_C_START + MOSAIC_TILES_PER_COLUMN;
+const MOSAIC_TOTAL_TILES = MOSAIC_COL_C_END;
+
+/**
+ * Mosaic columns are absolutely positioned inside the right rail so the
+ * staggered editorial offsets (top: -40 / +60 / -20) sit on `top`/`bottom`
+ * instead of `marginTop`. Widths use `calc()` against the rail width so
+ * the original 28% / 36% / 28% rhythm with 10px gutters is preserved
+ * pixel-for-pixel — only the positioning primitive changed.
+ */
+const MOSAIC_GAP_PX = 10;
+const MOSAIC_COL_A_WIDTH = `calc((100% - ${MOSAIC_GAP_PX * 2}px) * 0.28)`;
+const MOSAIC_COL_B_WIDTH = `calc((100% - ${MOSAIC_GAP_PX * 2}px) * 0.36)`;
+const MOSAIC_COL_C_WIDTH = `calc((100% - ${MOSAIC_GAP_PX * 2}px) * 0.28)`;
+const MOSAIC_COL_B_LEFT = `calc((100% - ${MOSAIC_GAP_PX * 2}px) * 0.28 + ${MOSAIC_GAP_PX}px)`;
+
 interface MosaicColumnProps {
   tiles: ReadonlyArray<BiringaListing>;
   heights: ReadonlyArray<number>;
   drift: "up" | "down";
-  marginTop: number;
-  flexBasis: string;
+  /** Vertical offset; negative pulls the column above the rail for the editorial stagger. */
+  top: number;
+  /** Horizontal placement — `left` + `width`, or `right` + `width`. */
+  position: React.CSSProperties;
 }
 
 function MosaicColumn({
   tiles,
   heights,
   drift,
-  marginTop,
-  flexBasis,
+  top,
+  position,
 }: Readonly<MosaicColumnProps>) {
   return (
     <div
-      className="flex flex-col gap-2.5"
-      style={{ flex: `0 0 ${flexBasis}`, marginTop }}
+      className="absolute flex flex-col gap-2.5"
+      style={{ ...position, top }}
     >
       {tiles.map((listing, idx) => (
         <HeroMosaicCard
@@ -91,11 +115,11 @@ function MosaicColumn({
 export async function EditorialHero({
   location = "Acompañantes verificadas · Colombia",
 }: Readonly<EditorialHeroProps>) {
-  const mosaic = await listHeroMosaic(12);
+  const mosaic = await listHeroMosaic(MOSAIC_TOTAL_TILES);
 
-  const colA = mosaic.slice(0, 4);
-  const colB = mosaic.slice(4, 8);
-  const colC = mosaic.slice(8, 12);
+  const colA = mosaic.slice(MOSAIC_COL_A_START, MOSAIC_COL_A_END);
+  const colB = mosaic.slice(MOSAIC_COL_B_START, MOSAIC_COL_B_END);
+  const colC = mosaic.slice(MOSAIC_COL_C_START, MOSAIC_COL_C_END);
 
   return (
     <section
@@ -106,28 +130,28 @@ export async function EditorialHero({
       {/* Mosaic — desktop only, absolutely placed on the right */}
       <div
         aria-hidden="false"
-        className="pointer-events-none absolute inset-y-0 right-0 hidden w-[62%] gap-2.5 p-2.5 lg:flex"
+        className="pointer-events-none absolute inset-y-0 right-0 hidden w-[62%] lg:block"
       >
         <MosaicColumn
           tiles={colA}
           heights={TILE_HEIGHTS_A}
           drift="up"
-          marginTop={-40}
-          flexBasis="28%"
+          top={-40}
+          position={{ left: 0, width: MOSAIC_COL_A_WIDTH }}
         />
         <MosaicColumn
           tiles={colB}
           heights={TILE_HEIGHTS_B}
           drift="down"
-          marginTop={60}
-          flexBasis="36%"
+          top={60}
+          position={{ left: MOSAIC_COL_B_LEFT, width: MOSAIC_COL_B_WIDTH }}
         />
         <MosaicColumn
           tiles={colC}
           heights={TILE_HEIGHTS_C}
           drift="up"
-          marginTop={-20}
-          flexBasis="28%"
+          top={-20}
+          position={{ right: 0, width: MOSAIC_COL_C_WIDTH }}
         />
       </div>
 
