@@ -27,12 +27,15 @@ import type { CatalogView } from "../lib/parse-filters";
 import { ActiveFilterChips } from "./ActiveFilterChips";
 import { FilterForm } from "./FilterForm";
 import { FilterModal } from "./FilterModal";
+import { RangeSlider } from "./RangeSlider";
 import { PreservedFilters } from "./SearchBar";
 
 interface FiltersPanelProps {
   filters: ListingsFilters;
   view?: CatalogView;
 }
+
+const PRICE_FORMAT = new Intl.NumberFormat("es-CO");
 
 const APPEARANCE_LABELS: Record<keyof typeof APPEARANCE_CATALOG, string> = {
   country: "País",
@@ -122,63 +125,47 @@ export function FiltersPanel({ filters, view }: FiltersPanelProps) {
                 title="Precio y edad"
                 icon={<Coins className="h-4 w-4" aria-hidden />}
               >
-                <Field label="Precio (COP / hora)">
-                  <RangeInputs
-                    minName="priceMin"
-                    maxName="priceMax"
-                    minValue={filters.priceMin}
-                    maxValue={filters.priceMax}
-                    step={10000}
-                    placeholderMin="0"
-                    placeholderMax="500.000"
+                <RangeSlider
+                  label="Precio (COP / hora)"
+                  minName="priceMin"
+                  maxName="priceMax"
+                  min={0}
+                  max={500_000}
+                  step={10_000}
+                  initialMin={filters.priceMin}
+                  initialMax={filters.priceMax}
+                  format={(v) => `$${PRICE_FORMAT.format(v)}`}
+                  presets={[
+                    { label: "Baratas", max: 150_000 },
+                    { label: "Estándar", min: 150_000, max: 250_000 },
+                    { label: "De lujo", min: 250_000 },
+                  ]}
+                />
+                <ChipRow>
+                  <PresetChip
+                    name="card"
+                    value="1"
+                    checked={filters.paymentByCard ?? false}
+                    label="Pago con tarjeta"
                   />
-                  <ChipRow>
-                    <PresetChip
-                      name="priceMax"
-                      value="150000"
-                      checked={filters.priceMax === 150000}
-                      label="Baratas"
-                    />
-                    <PresetChip
-                      name="priceMin"
-                      value="250000"
-                      checked={filters.priceMin === 250000}
-                      label="De lujo"
-                    />
-                    <PresetChip
-                      name="card"
-                      value="1"
-                      checked={filters.paymentByCard ?? false}
-                      label="Pago con tarjeta"
-                    />
-                  </ChipRow>
-                </Field>
+                </ChipRow>
 
-                <Field label="Edad">
-                  <RangeInputs
-                    minName="ageMin"
-                    maxName="ageMax"
-                    minValue={filters.ageMin}
-                    maxValue={filters.ageMax}
-                    step={1}
-                    placeholderMin="18"
-                    placeholderMax="60"
-                  />
-                  <ChipRow>
-                    <PresetChip
-                      name="ageMax"
-                      value="25"
-                      checked={filters.ageMax === 25}
-                      label="Jovencitas"
-                    />
-                    <PresetChip
-                      name="ageMin"
-                      value="30"
-                      checked={filters.ageMin === 30}
-                      label="Maduras"
-                    />
-                  </ChipRow>
-                </Field>
+                <RangeSlider
+                  label="Edad"
+                  minName="ageMin"
+                  maxName="ageMax"
+                  min={18}
+                  max={60}
+                  step={1}
+                  initialMin={filters.ageMin}
+                  initialMax={filters.ageMax}
+                  format={(v) => `${v} años`}
+                  presets={[
+                    { label: "Jovencitas", max: 25 },
+                    { label: "20s", min: 20, max: 29 },
+                    { label: "Maduras", min: 30 },
+                  ]}
+                />
               </SectionCard>
 
               <SectionCard
@@ -423,65 +410,6 @@ function Field({ label, children }: FieldProps) {
         {label}
       </span>
       <div className="flex flex-col gap-2.5">{children}</div>
-    </div>
-  );
-}
-
-interface RangeInputsProps {
-  minName: string;
-  maxName: string;
-  minValue?: number;
-  maxValue?: number;
-  step: number;
-  placeholderMin?: string;
-  placeholderMax?: string;
-}
-
-function RangeInputs({
-  minName,
-  maxName,
-  minValue,
-  maxValue,
-  step,
-  placeholderMin = "—",
-  placeholderMax = "—",
-}: RangeInputsProps) {
-  const inputCls =
-    "h-11 w-full rounded-full border border-[var(--color-border)] bg-[var(--color-background)] px-4 text-sm text-[var(--color-foreground)] placeholder:text-[var(--color-text-subtle)] focus:border-[var(--color-brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)]/30 transition-colors";
-  return (
-    <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2">
-      <label className="block">
-        <span className="sr-only">Mínimo</span>
-        <input
-          type="number"
-          inputMode="numeric"
-          name={minName}
-          step={step}
-          min={0}
-          defaultValue={minValue ?? ""}
-          placeholder={placeholderMin}
-          className={inputCls}
-        />
-      </label>
-      <span
-        aria-hidden
-        className="text-[var(--color-text-subtle)]"
-      >
-        —
-      </span>
-      <label className="block">
-        <span className="sr-only">Máximo</span>
-        <input
-          type="number"
-          inputMode="numeric"
-          name={maxName}
-          step={step}
-          min={0}
-          defaultValue={maxValue ?? ""}
-          placeholder={placeholderMax}
-          className={inputCls}
-        />
-      </label>
     </div>
   );
 }

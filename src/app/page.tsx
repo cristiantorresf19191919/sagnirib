@@ -6,6 +6,7 @@ import { CategoryBar } from "@/features/catalog/components/CategoryBar";
 import { CityChips } from "@/features/catalog/components/CityChips";
 import { FiltersPanel } from "@/features/catalog/components/FiltersPanel";
 import { HeroBand } from "@/features/catalog/components/HeroBand";
+import { QuickPresets } from "@/features/catalog/components/QuickPresets";
 import { SearchBar } from "@/features/catalog/components/SearchBar";
 import {
   parseFilters,
@@ -48,6 +49,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
         <CategoryBar filters={filters} view={view} />
         <SearchBar filters={filters} view={view} />
         <CityChips filters={filters} view={view} />
+        <QuickPresets filters={filters} view={view} />
         <FiltersPanel filters={filters} view={view} />
         <CatalogGrid filters={filters} view={view} />
         <HowItWorks />
