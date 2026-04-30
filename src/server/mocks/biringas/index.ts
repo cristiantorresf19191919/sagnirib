@@ -180,6 +180,60 @@ export async function listFeatured(
     .slice(0, limit);
 }
 
+/**
+ * Editorial hero mosaic — curated mix surfaced on the home hero.
+ * Composition: ~33% "live now" + ~33% top-rated verified + ~33% random.
+ * The mix keeps the hero relevant (live + top) without being predictable.
+ *
+ * Why: founder wants the first surface to feel editorial, not algorithmic;
+ * the curation is deterministic per request so SSR + hydration agree.
+ */
+export async function listHeroMosaic(
+  limit = 12,
+): Promise<ReadonlyArray<BiringaListing>> {
+  const liveTarget = Math.ceil(limit / 3);
+  const topTarget = Math.ceil(limit / 3);
+  const seen = new Set<string>();
+  const pick = (ad: BiringaListing) => {
+    if (seen.has(ad.id)) return false;
+    seen.add(ad.id);
+    return true;
+  };
+
+  const live = BIRINGA_LISTINGS.filter((ad) => ad.verified && ad.availableNow)
+    .slice()
+    .sort((a, b) => {
+      const aTs = new Date(a.storyAt ?? a.updatedAt).getTime();
+      const bTs = new Date(b.storyAt ?? b.updatedAt).getTime();
+      return bTs - aTs;
+    })
+    .filter(pick)
+    .slice(0, liveTarget);
+
+  const topRated = BIRINGA_LISTINGS.filter(
+    (ad) => ad.verified && ad.reputation.score >= 4.7,
+  )
+    .slice()
+    .sort((a, b) => b.reputation.score - a.reputation.score)
+    .filter(pick)
+    .slice(0, topTarget);
+
+  const remaining = limit - live.length - topRated.length;
+  const randomPool = BIRINGA_LISTINGS.filter(
+    (ad) => ad.verified && !seen.has(ad.id),
+  );
+  // Deterministic pick keyed on listing.id length sum so SSR is stable.
+  const seed = randomPool.reduce((acc, ad) => acc + ad.id.length, 0);
+  const random: BiringaListing[] = [];
+  for (let i = 0; i < remaining && randomPool.length > 0; i += 1) {
+    const idx = (seed + i * 13) % randomPool.length;
+    const [item] = randomPool.splice(idx, 1);
+    if (item) random.push(item);
+  }
+
+  return [...live, ...topRated, ...random].slice(0, limit);
+}
+
 export async function findBySlug(slug: string): Promise<BiringaListing | null> {
   return BIRINGA_LISTINGS.find((ad) => ad.slug === slug) ?? null;
 }
