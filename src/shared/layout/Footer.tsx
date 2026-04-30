@@ -9,6 +9,26 @@ export function Footer() {
   const year = new Date().getFullYear();
   return (
     <footer className="relative isolate overflow-hidden border-t border-[var(--color-border)] bg-[var(--color-background-elevated)]">
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-px bg-gradient-to-r from-transparent via-[var(--color-brand-primary)]/40 to-transparent"
+      />
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 -z-10 motion-safe:motion-blob-a"
+        style={{
+          background:
+            "radial-gradient(circle at 12% 100%, rgba(47,93,67,0.08), transparent 45%)",
+        }}
+      />
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 -z-10 motion-safe:motion-blob-b"
+        style={{
+          background:
+            "radial-gradient(circle at 88% 0%, rgba(229,162,58,0.07), transparent 45%)",
+        }}
+      />
       <Container
         width="wide"
         className="grid grid-cols-1 gap-12 py-16 lg:grid-cols-12"
@@ -43,7 +63,7 @@ export function Footer() {
               <li>
                 <Link
                   href="/explorar"
-                  className="text-[var(--color-text-muted)] transition-colors hover:text-[var(--color-foreground)]"
+                  className="group inline-flex items-center gap-1 text-[var(--color-text-muted)] transition-colors hover:text-[var(--color-brand-primary)]"
                 >
                   Explorar
                 </Link>
@@ -51,7 +71,7 @@ export function Footer() {
               <li>
                 <Link
                   href="/#como-funciona"
-                  className="text-[var(--color-text-muted)] transition-colors hover:text-[var(--color-foreground)]"
+                  className="group inline-flex items-center gap-1 text-[var(--color-text-muted)] transition-colors hover:text-[var(--color-brand-primary)]"
                 >
                   Cómo funciona
                 </Link>
