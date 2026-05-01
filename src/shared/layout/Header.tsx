@@ -17,7 +17,7 @@ interface HeaderProps {
 
 export function Header({ hideCatalogCta = false }: HeaderProps) {
   return (
-    <header className="sticky top-0 z-30 isolate">
+    <header data-testid="header" className="sticky top-0 z-30 isolate">
       <HeaderBackdrop />
 
       <Container
@@ -27,10 +27,12 @@ export function Header({ hideCatalogCta = false }: HeaderProps) {
         <Logo size="md" />
 
         <nav
+          data-testid="header-nav"
           aria-label="Navegación principal"
           className="flex items-center gap-1"
         >
           <Link
+            data-testid="header-link-how-it-works"
             href="/#como-funciona"
             className="hidden sm:inline-flex h-11 items-center rounded-full px-4 text-sm font-medium text-[var(--color-text-muted)] transition-colors hover:text-[var(--color-foreground)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-background)]"
           >
@@ -40,6 +42,7 @@ export function Header({ hideCatalogCta = false }: HeaderProps) {
           <FavoritesNavLink />
 
           <Link
+            data-testid="header-link-publish-profile"
             href="/publicar"
             className="hidden sm:inline-flex h-11 items-center rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] px-4 text-sm font-semibold text-[var(--color-foreground)] transition-[border-color,background] duration-200 ease-[var(--ease-standard)] hover:border-[var(--color-brand-primary-soft)] hover:bg-[var(--color-background-elevated)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-background)]"
           >
@@ -48,6 +51,7 @@ export function Header({ hideCatalogCta = false }: HeaderProps) {
 
           {!hideCatalogCta && (
             <Link
+              data-testid="header-cta-explore"
               href="/explorar"
               className="group inline-flex h-11 items-center gap-1.5 rounded-full bg-[var(--color-brand-primary)] px-5 text-sm font-semibold text-[var(--color-surface)] shadow-[var(--shadow-glow-primary)] transition-[background,box-shadow] duration-200 ease-[var(--ease-standard)] hover:bg-[var(--color-brand-primary-strong)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-background)]"
             >

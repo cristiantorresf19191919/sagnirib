@@ -2,6 +2,19 @@
 
 import { useId, useMemo, useState } from "react";
 
+export type RangeFormat = "price-cop" | "age-years";
+
+const PRICE_COP = new Intl.NumberFormat("es-CO");
+
+function formatValue(value: number, format: RangeFormat): string {
+  switch (format) {
+    case "price-cop":
+      return `$${PRICE_COP.format(value)}`;
+    case "age-years":
+      return `${value} años`;
+  }
+}
+
 interface RangeSliderProps {
   label: string;
   /** Hidden input names — the catalog GET form will pick these up. */
@@ -14,8 +27,8 @@ interface RangeSliderProps {
   /** Current bound values from the URL — undefined means "no bound". */
   initialMin?: number;
   initialMax?: number;
-  /** Pretty formatter for the live readout (price, age, etc.). */
-  format: (value: number) => string;
+  /** Serializable formatter discriminator — function props can't cross the server/client boundary. */
+  format: RangeFormat;
   /** Optional preset chips rendered below the track. */
   presets?: ReadonlyArray<{ label: string; min?: number; max?: number }>;
 }
@@ -57,8 +70,20 @@ export function RangeSlider({
     [high, min, max],
   );
 
-  const lowLabel = low > min ? format(low) : "Sin mínimo";
-  const highLabel = high < max ? format(high) : "Sin máximo";
+  const lowLabel = low > min ? formatValue(low, format) : "Sin mínimo";
+  const highLabel = high < max ? formatValue(high, format) : "Sin máximo";
+
+  // Domain hint always shows the absolute bounds so users grok the scale
+  // before touching a thumb.
+  const domainHint = `${formatValue(min, format)} – ${formatValue(max, format)}${
+    format === "price-cop" ? "+" : ""
+  }`;
+
+  // Quartile ticks render under the track for scale reference.
+  const ticks = [0, 0.25, 0.5, 0.75, 1].map((t) => ({
+    pct: t * 100,
+    value: Math.round(min + (max - min) * t),
+  }));
 
   function clampLow(next: number) {
     const ceiling = Math.max(min, high - step);
@@ -79,13 +104,22 @@ export function RangeSlider({
   return (
     <div className="flex flex-col gap-3">
       <div className="flex items-baseline justify-between gap-3">
-        <span className="text-[12px] font-semibold tracking-tight text-[var(--color-foreground)]">
-          {label}
-        </span>
+        <div className="flex flex-col gap-0.5">
+          <span className="text-[12px] font-semibold tracking-tight text-[var(--color-foreground)]">
+            {label}
+          </span>
+          <span className="text-[10px] tabular-nums text-[var(--color-text-subtle)]">
+            {domainHint}
+          </span>
+        </div>
         <span className="text-[11px] tabular-nums text-[var(--color-text-muted)]">
-          <span className="text-[var(--color-foreground)]">{lowLabel}</span>
+          <span className="font-semibold text-[var(--color-foreground)]">
+            {lowLabel}
+          </span>
           <span className="px-1.5 text-[var(--color-text-subtle)]">·</span>
-          <span className="text-[var(--color-foreground)]">{highLabel}</span>
+          <span className="font-semibold text-[var(--color-foreground)]">
+            {highLabel}
+          </span>
         </span>
       </div>
 
@@ -126,6 +160,24 @@ export function RangeSlider({
           className="range-slider-thumb absolute left-0 right-0 top-1/2 h-9 w-full -translate-y-1/2 appearance-none bg-transparent"
           style={{ zIndex: 3 }}
         />
+      </div>
+
+      {/* Tick scale at quartiles — orients the user before they drag. */}
+      <div
+        aria-hidden
+        className="relative -mt-1 mb-1 flex h-3 select-none px-0.5"
+      >
+        {ticks.map((t) => (
+          <span
+            key={t.pct}
+            className="absolute top-0 -translate-x-1/2 text-[9px] font-medium tabular-nums text-[var(--color-text-subtle)]"
+            style={{ left: `${t.pct}%` }}
+          >
+            {format === "price-cop"
+              ? `$${Math.round(t.value / 1000)}k`
+              : t.value}
+          </span>
+        ))}
       </div>
 
       {/* Hidden inputs — only emit when bound is non-default. */}

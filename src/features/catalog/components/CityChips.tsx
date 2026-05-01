@@ -18,6 +18,7 @@ export function CityChips({ filters, view }: CityChipsProps) {
 
   return (
     <section
+      data-testid="city-chips"
       aria-label="Listado de ciudades"
       className="bg-[var(--color-background)]"
     >
@@ -42,7 +43,10 @@ export function CityChips({ filters, view }: CityChipsProps) {
             </>
           }
         >
-          <div className="mt-3 flex flex-wrap items-center gap-1.5 pl-1">
+          <div
+            data-testid="city-chips-list"
+            className="mt-3 flex flex-wrap items-center gap-1.5 pl-1"
+          >
             <Chip
               href={withFilter(filters, "city", undefined, view)}
               active={active === undefined}

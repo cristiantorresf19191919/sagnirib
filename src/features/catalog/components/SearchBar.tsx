@@ -18,11 +18,13 @@ interface SearchBarProps {
 export function SearchBar({ filters, view }: SearchBarProps) {
   return (
     <section
+      data-testid="search-bar"
       aria-label="Buscador del catálogo"
       className="bg-[var(--color-background)]"
     >
       <Container width="wide" className="py-4 sm:py-5">
         <form
+          data-testid="search-bar-form"
           action="/"
           method="get"
           className="flex flex-col gap-2 sm:flex-row sm:items-stretch sm:gap-2"
@@ -37,6 +39,7 @@ export function SearchBar({ filters, view }: SearchBarProps) {
               className="pointer-events-none absolute inset-0 rounded-full ring-0 ring-[var(--color-brand-primary)]/0 transition-[box-shadow] duration-300 ease-[var(--ease-standard)] group-focus-within:ring-4 group-focus-within:ring-[var(--color-brand-primary)]/15"
             />
             <select
+              data-testid="search-bar-city"
               name="city"
               defaultValue={filters.city ?? ""}
               className="relative h-12 w-full appearance-none rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] pl-5 pr-10 text-sm text-[var(--color-foreground)] transition-colors duration-200 hover:border-[var(--color-brand-primary-soft)] focus:border-[var(--color-brand-primary)] focus:outline-none"
@@ -62,6 +65,7 @@ export function SearchBar({ filters, view }: SearchBarProps) {
               aria-hidden
             />
             <input
+              data-testid="search-bar-query"
               name="q"
               defaultValue={filters.search ?? ""}
               type="search"
@@ -72,6 +76,7 @@ export function SearchBar({ filters, view }: SearchBarProps) {
           </label>
 
           <button
+            data-testid="search-bar-submit"
             type="submit"
             className="btn-pulse group relative inline-flex h-12 items-center justify-center gap-1.5 overflow-hidden rounded-full bg-[var(--color-brand-primary)] px-7 text-sm font-semibold text-[var(--color-surface)] shadow-[var(--shadow-glow-primary)] hover:-translate-y-0.5 hover:bg-[var(--color-brand-primary-strong)] hover:shadow-[var(--shadow-lg)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-background)]"
           >

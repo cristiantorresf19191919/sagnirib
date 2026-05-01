@@ -138,6 +138,7 @@ const TONE_ACTIVE: Record<NonNullable<Preset["tone"]>, string> = {
 export function QuickPresets({ filters, view }: QuickPresetsProps) {
   return (
     <section
+      data-testid="quick-presets"
       aria-label="Sugerencias rápidas"
       className="bg-[var(--color-background)]"
     >
@@ -154,6 +155,7 @@ export function QuickPresets({ filters, view }: QuickPresetsProps) {
             Sugerencias
           </span>
           <ul
+            data-testid="quick-presets-list"
             aria-label="Filtros rápidos"
             className="flex flex-1 flex-wrap items-center gap-2"
           >
@@ -167,7 +169,7 @@ export function QuickPresets({ filters, view }: QuickPresetsProps) {
                 ? "border-[var(--color-brand-primary)] bg-[var(--color-brand-primary)]/8 text-[var(--color-brand-primary)] shadow-[var(--shadow-sm)]"
                 : "border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-foreground)] hover:border-[var(--color-brand-primary-soft)] hover:bg-[var(--color-background-elevated)]";
               return (
-                <li key={preset.id}>
+                <li key={preset.id} data-testid={`quick-preset-${preset.id}`}>
                   <Link
                     href={presetHref(next, view)}
                     aria-pressed={active}
