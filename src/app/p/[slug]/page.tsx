@@ -13,9 +13,14 @@ import {
 } from "lucide-react";
 
 import { buildPageMetadata } from "@/core/seo/build-page-metadata";
+import { seoConfig } from "@/core/seo/seo-config";
 import { findBySlug, getListingReviews } from "@/server/biringas";
 import { CardStackGallery } from "@/features/biringas/components/CardStackGallery";
+import { RecentlyViewedStrip } from "@/features/biringas/components/RecentlyViewedStrip";
+import { RecordRecentView } from "@/features/biringas/components/RecordRecentView";
 import { ReviewsSection } from "@/features/biringas/components/ReviewsSection";
+import { ShareMenu } from "@/features/biringas/components/ShareMenu";
+import { SimilarProfiles } from "@/features/biringas/components/SimilarProfiles";
 import { formatPricePerHour } from "@/features/biringas/format";
 import { Button } from "@/shared/design-system/components/Button";
 import { Card } from "@/shared/design-system/components/Card";
@@ -95,7 +100,10 @@ export default async function ProfilePage({ params }: Readonly<ProfilePageProps>
           className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-[640px] bg-[radial-gradient(circle_at_20%_0%,rgba(47,93,67,0.10),transparent_55%),radial-gradient(circle_at_80%_10%,rgba(229,162,58,0.08),transparent_60%)]"
         />
 
-        <Container width="wide" className="pt-8 sm:pt-10">
+        <Container
+          width="wide"
+          className="flex items-center justify-between gap-4 pt-8 sm:pt-10"
+        >
           <Link
             href="/explorar"
             className="inline-flex items-center gap-1.5 text-xs uppercase tracking-[0.28em] text-[var(--color-text-subtle)] transition-colors hover:text-[var(--color-foreground)]"
@@ -103,7 +111,23 @@ export default async function ProfilePage({ params }: Readonly<ProfilePageProps>
             <ArrowLeft className="h-3 w-3" aria-hidden />
             Volver al catálogo
           </Link>
+          <ShareMenu
+            url={new URL(`/p/${listing.slug}`, seoConfig.metadataBase).toString()}
+            name={listing.name}
+          />
         </Container>
+
+        {/* Records the visit in client-side localStorage so the home strip
+            can surface this listing on the user's next session. Renders
+            nothing visible. */}
+        <RecordRecentView
+          id={listing.id}
+          slug={listing.slug}
+          name={listing.name}
+          image={listing.mainImage}
+          city={listing.city}
+          price={formatPricePerHour(listing.pricePerHour)}
+        />
 
         <Container
           width="wide"
@@ -320,6 +344,9 @@ export default async function ProfilePage({ params }: Readonly<ProfilePageProps>
         {reviews && (
           <ReviewsSection listingName={listing.name} reviews={reviews} />
         )}
+
+        <SimilarProfiles slug={listing.slug} />
+        <RecentlyViewedStrip />
       </main>
       <Footer />
     </>

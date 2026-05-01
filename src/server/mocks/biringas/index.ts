@@ -282,3 +282,5 @@ export type {
   ReviewItem,
   ReviewsAggregate,
 } from "./reviews";
+
+export { listSimilar } from "./similar";
