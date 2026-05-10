@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { Eye, MessageSquare, Mic, Play, Volume2 } from "lucide-react";
+import { Eye, MessageSquare, Mic, Play, Star, Volume2 } from "lucide-react";
 
 import type { BiringaListing } from "@/server/biringas";
 import { Card } from "@/shared/design-system/components/Card";
@@ -54,8 +54,10 @@ export function CatalogCard({
   view = "grid3",
 }: CatalogCardProps) {
   const storyLabel = listing.storyAt ? formatStoryTime(listing.storyAt) : "";
+  // Make featured cards visibly distinct — the previous 1px @ 40% opacity ring
+  // was barely perceptible. 2px ring + dedicated pill conveys premium status.
   const featuredCls = featured
-    ? "ring-1 ring-[var(--color-brand-warn)]/40"
+    ? "ring-2 ring-[var(--color-brand-warn)]/65"
     : "";
 
   if (view === "list") {
@@ -75,6 +77,8 @@ export function CatalogCard({
 
   return (
     <Card
+      data-testid="catalog-card"
+      data-listing-id={listing.id}
       tone="surface"
       interactive
       className={`group flex h-full flex-col p-3 ${featuredCls}`.trim()}
@@ -116,6 +120,12 @@ export function CatalogCard({
         )}
 
         <div className="absolute left-3 top-3 z-10 flex flex-col gap-1.5">
+          {featured && (
+            <span className="inline-flex items-center gap-1 rounded-full bg-[var(--color-brand-warn)]/95 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--color-surface)] shadow-[var(--shadow-sm)]">
+              <Star className="h-2.5 w-2.5 fill-current" aria-hidden />
+              Destacada
+            </span>
+          )}
           {listing.availableNow ? (
             <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--color-brand-primary)] px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--color-surface)] shadow-[var(--shadow-glow-primary)] motion-safe:motion-glow-pulse">
               <span
@@ -189,7 +199,13 @@ export function CatalogCard({
             {listing.city}
             {listing.neighborhood ? ` · ${listing.neighborhood}` : ""}
           </span>
-          <PriceTag value={formatPricePerHour(listing.pricePerHour)} size="sm" />
+          {/* Promoted to md size + display font + tabular figures so the
+              price reads as the second-most-scannable element after the name. */}
+          <PriceTag
+            value={formatPricePerHour(listing.pricePerHour)}
+            size="md"
+            className="font-[var(--font-display)] tabular-nums"
+          />
         </div>
         <div className="mt-1 flex flex-wrap items-center gap-1.5 text-[10px]">
           {listing.verified && <VerifiedBadge label="Verificada" />}
@@ -226,6 +242,8 @@ function ListCard({
 }: ListCardProps) {
   return (
     <Card
+      data-testid="catalog-card-list"
+      data-listing-id={listing.id}
       tone="surface"
       interactive
       className={`group relative flex gap-3 p-2.5 sm:gap-4 sm:p-3 ${featuredCls}`.trim()}

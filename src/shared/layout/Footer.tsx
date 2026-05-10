@@ -2,13 +2,14 @@ import Link from "next/link";
 import { ShieldCheck, MapPin } from "lucide-react";
 
 import { brandConfig } from "@/core/branding/brand-config";
+import { SUPPORTED_CITIES } from "@/server/biringas";
 import { Container } from "@/shared/design-system/components/Container";
 import { Logo } from "@/shared/design-system/components/Logo";
 
 export function Footer() {
   const year = new Date().getFullYear();
   return (
-    <footer className="relative isolate overflow-hidden border-t border-[var(--color-border)] bg-[var(--color-background-elevated)]">
+    <footer data-testid="footer" className="relative isolate overflow-hidden border-t border-[var(--color-border)] bg-[var(--color-background-elevated)]">
       <div
         aria-hidden
         className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-px bg-gradient-to-r from-transparent via-[var(--color-brand-primary)]/40 to-transparent"
@@ -99,6 +100,29 @@ export function Footer() {
               <li>Servicio limitado a Colombia</li>
             </ul>
           </div>
+        </div>
+
+        {/* City directory — SEO + UX. Each city is a real anchor that
+            search engines index and humans use to deep-link the catalog. */}
+        <div
+          data-testid="footer-city-directory"
+          className="lg:col-span-12"
+        >
+          <h3 className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-text-subtle)]">
+            Ciudades
+          </h3>
+          <ul className="mt-4 grid grid-cols-2 gap-x-4 gap-y-2.5 text-sm sm:grid-cols-3 lg:grid-cols-6">
+            {SUPPORTED_CITIES.map((city) => (
+              <li key={city}>
+                <Link
+                  href={`/?city=${encodeURIComponent(city)}`}
+                  className="group inline-flex items-center gap-1 text-[var(--color-text-muted)] transition-colors hover:text-[var(--color-brand-primary)]"
+                >
+                  {city}
+                </Link>
+              </li>
+            ))}
+          </ul>
         </div>
       </Container>
 

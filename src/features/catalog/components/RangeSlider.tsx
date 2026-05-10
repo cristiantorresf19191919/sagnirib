@@ -2,28 +2,16 @@
 
 import { useId, useMemo, useState } from "react";
 
-/**
- * Serializable formatter discriminator. The slider runs in a Client
- * Component but its parent is a Server Component — Next 16 forbids passing
- * functions across that boundary unless they are Server Actions. So the
- * parent passes a string token and this component owns the formatting.
- *
- * Add new tokens as needed; keep them stable, named after the intent
- * (`currency`, `age`, `percent`), not the visual output.
- */
-export type RangeSliderFormat = "currency" | "age" | "plain";
+export type RangeFormat = "price-cop" | "age-years";
 
-const PRICE_FORMAT = new Intl.NumberFormat("es-CO");
+const PRICE_COP = new Intl.NumberFormat("es-CO");
 
-function formatValue(value: number, kind: RangeSliderFormat): string {
-  switch (kind) {
-    case "currency":
-      return `$${PRICE_FORMAT.format(value)}`;
-    case "age":
+function formatValue(value: number, format: RangeFormat): string {
+  switch (format) {
+    case "price-cop":
+      return `$${PRICE_COP.format(value)}`;
+    case "age-years":
       return `${value} años`;
-    case "plain":
-    default:
-      return String(value);
   }
 }
 
@@ -39,11 +27,8 @@ interface RangeSliderProps {
   /** Current bound values from the URL — undefined means "no bound". */
   initialMin?: number;
   initialMax?: number;
-  /**
-   * Serializable formatter token. Replaces the prior `format: (n) => string`
-   * which broke Server → Client serialization in Next 16.
-   */
-  format: RangeSliderFormat;
+  /** Serializable formatter discriminator — function props can't cross the server/client boundary. */
+  format: RangeFormat;
   /** Optional preset chips rendered below the track. */
   presets?: ReadonlyArray<{ label: string; min?: number; max?: number }>;
 }
@@ -88,6 +73,18 @@ export function RangeSlider({
   const lowLabel = low > min ? formatValue(low, format) : "Sin mínimo";
   const highLabel = high < max ? formatValue(high, format) : "Sin máximo";
 
+  // Domain hint always shows the absolute bounds so users grok the scale
+  // before touching a thumb.
+  const domainHint = `${formatValue(min, format)} – ${formatValue(max, format)}${
+    format === "price-cop" ? "+" : ""
+  }`;
+
+  // Quartile ticks render under the track for scale reference.
+  const ticks = [0, 0.25, 0.5, 0.75, 1].map((t) => ({
+    pct: t * 100,
+    value: Math.round(min + (max - min) * t),
+  }));
+
   function clampLow(next: number) {
     const ceiling = Math.max(min, high - step);
     setLow(Math.min(Math.max(min, next), ceiling));
@@ -107,13 +104,22 @@ export function RangeSlider({
   return (
     <div className="flex flex-col gap-3">
       <div className="flex items-baseline justify-between gap-3">
-        <span className="text-[12px] font-semibold tracking-tight text-[var(--color-foreground)]">
-          {label}
-        </span>
+        <div className="flex flex-col gap-0.5">
+          <span className="text-[12px] font-semibold tracking-tight text-[var(--color-foreground)]">
+            {label}
+          </span>
+          <span className="text-[10px] tabular-nums text-[var(--color-text-subtle)]">
+            {domainHint}
+          </span>
+        </div>
         <span className="text-[11px] tabular-nums text-[var(--color-text-muted)]">
-          <span className="text-[var(--color-foreground)]">{lowLabel}</span>
+          <span className="font-semibold text-[var(--color-foreground)]">
+            {lowLabel}
+          </span>
           <span className="px-1.5 text-[var(--color-text-subtle)]">·</span>
-          <span className="text-[var(--color-foreground)]">{highLabel}</span>
+          <span className="font-semibold text-[var(--color-foreground)]">
+            {highLabel}
+          </span>
         </span>
       </div>
 
@@ -154,6 +160,24 @@ export function RangeSlider({
           className="range-slider-thumb absolute left-0 right-0 top-1/2 h-9 w-full -translate-y-1/2 appearance-none bg-transparent"
           style={{ zIndex: 3 }}
         />
+      </div>
+
+      {/* Tick scale at quartiles — orients the user before they drag. */}
+      <div
+        aria-hidden
+        className="relative -mt-1 mb-1 flex h-3 select-none px-0.5"
+      >
+        {ticks.map((t) => (
+          <span
+            key={t.pct}
+            className="absolute top-0 -translate-x-1/2 text-[9px] font-medium tabular-nums text-[var(--color-text-subtle)]"
+            style={{ left: `${t.pct}%` }}
+          >
+            {format === "price-cop"
+              ? `$${Math.round(t.value / 1000)}k`
+              : t.value}
+          </span>
+        ))}
       </div>
 
       {/* Hidden inputs — only emit when bound is non-default. */}
