@@ -1,0 +1,43 @@
+rules_version = '2';
+
+// =========================================================================
+//  Biringas Firestore security rules
+// =========================================================================
+//
+//  Default posture: deny everything from the client SDK. ALL data access
+//  goes through the Admin SDK in `src/server/adapters/firebase/`, which
+//  bypasses these rules. The Web SDK in `src/features/auth/lib/` only does
+//  Auth — it never reads or writes Firestore directly.
+//
+//  This is intentional and audit-enforced (ADR-010 §3 + §5):
+//    - Reads from Server Components / Server Actions go through the adapter.
+//    - Writes go through Server Actions (validate + auth + audit).
+//    - The client SDK never touches data, so we don't need rules that try
+//      to mirror the auth + validation logic.
+//
+//  Deploy: `pnpm firebase:deploy:rules`
+//  Reference: docs/architecture/firebase-schema.md § "Security rules"
+// =========================================================================
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Default: deny everything. Each subtree must opt-in below.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // listings/* — public catalog data, but reads still go through the
+    // adapter on the server (Admin SDK). Client SDK reads remain denied.
+    match /listings/{listingId} {
+      allow read, write: if false;
+
+      // listings/{id}/reviews/* — same posture. Reviews are written by the
+      // `submitReview` Server Action, which uses Admin SDK after auth +
+      // validation + audit.
+      match /reviews/{reviewId} {
+        allow read, write: if false;
+      }
+    }
+  }
+}

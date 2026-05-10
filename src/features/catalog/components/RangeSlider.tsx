@@ -2,6 +2,31 @@
 
 import { useId, useMemo, useState } from "react";
 
+/**
+ * Serializable formatter discriminator. The slider runs in a Client
+ * Component but its parent is a Server Component — Next 16 forbids passing
+ * functions across that boundary unless they are Server Actions. So the
+ * parent passes a string token and this component owns the formatting.
+ *
+ * Add new tokens as needed; keep them stable, named after the intent
+ * (`currency`, `age`, `percent`), not the visual output.
+ */
+export type RangeSliderFormat = "currency" | "age" | "plain";
+
+const PRICE_FORMAT = new Intl.NumberFormat("es-CO");
+
+function formatValue(value: number, kind: RangeSliderFormat): string {
+  switch (kind) {
+    case "currency":
+      return `$${PRICE_FORMAT.format(value)}`;
+    case "age":
+      return `${value} años`;
+    case "plain":
+    default:
+      return String(value);
+  }
+}
+
 interface RangeSliderProps {
   label: string;
   /** Hidden input names — the catalog GET form will pick these up. */
@@ -14,8 +39,11 @@ interface RangeSliderProps {
   /** Current bound values from the URL — undefined means "no bound". */
   initialMin?: number;
   initialMax?: number;
-  /** Pretty formatter for the live readout (price, age, etc.). */
-  format: (value: number) => string;
+  /**
+   * Serializable formatter token. Replaces the prior `format: (n) => string`
+   * which broke Server → Client serialization in Next 16.
+   */
+  format: RangeSliderFormat;
   /** Optional preset chips rendered below the track. */
   presets?: ReadonlyArray<{ label: string; min?: number; max?: number }>;
 }
@@ -57,8 +85,8 @@ export function RangeSlider({
     [high, min, max],
   );
 
-  const lowLabel = low > min ? format(low) : "Sin mínimo";
-  const highLabel = high < max ? format(high) : "Sin máximo";
+  const lowLabel = low > min ? formatValue(low, format) : "Sin mínimo";
+  const highLabel = high < max ? formatValue(high, format) : "Sin máximo";
 
   function clampLow(next: number) {
     const ceiling = Math.max(min, high - step);

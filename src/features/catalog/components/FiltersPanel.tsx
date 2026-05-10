@@ -36,8 +36,6 @@ interface FiltersPanelProps {
   view?: CatalogView;
 }
 
-const PRICE_FORMAT = new Intl.NumberFormat("es-CO");
-
 const APPEARANCE_LABELS: Record<keyof typeof APPEARANCE_CATALOG, string> = {
   country: "País",
   ethnicity: "Etnia",
@@ -173,7 +171,7 @@ export function FiltersPanel({ filters, view }: FiltersPanelProps) {
                   step={10_000}
                   initialMin={filters.priceMin}
                   initialMax={filters.priceMax}
-                  format={(v) => `$${PRICE_FORMAT.format(v)}`}
+                  format="currency"
                   presets={[
                     { label: "Baratas", max: 150_000 },
                     { label: "Estándar", min: 150_000, max: 250_000 },
@@ -198,7 +196,7 @@ export function FiltersPanel({ filters, view }: FiltersPanelProps) {
                   step={1}
                   initialMin={filters.ageMin}
                   initialMax={filters.ageMax}
-                  format={(v) => `${v} años`}
+                  format="age"
                   presets={[
                     { label: "Jovencitas", max: 25 },
                     { label: "20s", min: 20, max: 29 },

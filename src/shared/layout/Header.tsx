@@ -3,6 +3,7 @@ import { ArrowUpRight } from "lucide-react";
 
 import { Container } from "@/shared/design-system/components/Container";
 import { Logo } from "@/shared/design-system/components/Logo";
+import { AuthBadge } from "@/features/auth/components/AuthBadge";
 import { FavoritesNavLink } from "@/features/favorites/components/FavoritesNavLink";
 
 import { HeaderBackdrop } from "./HeaderBackdrop";
@@ -38,6 +39,8 @@ export function Header({ hideCatalogCta = false }: HeaderProps) {
           </Link>
 
           <FavoritesNavLink />
+
+          <AuthBadge />
 
           <Link
             href="/publicar"

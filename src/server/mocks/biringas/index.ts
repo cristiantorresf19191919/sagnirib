@@ -282,3 +282,6 @@ export type {
   ReviewItem,
   ReviewsAggregate,
 } from "./reviews";
+
+export { getPrivateContactRaw } from "./private-contact";
+export { submitReviewRaw } from "./submit-review";
