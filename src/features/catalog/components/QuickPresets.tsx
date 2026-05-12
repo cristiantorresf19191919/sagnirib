@@ -108,7 +108,7 @@ function presetHref(
   const params = encodeFilters(next);
   if (view && view !== "grid3") params.set("view", view);
   const qs = params.toString();
-  return qs ? `/?${qs}` : "/";
+  return qs ? `/explorar?${qs}` : "/explorar";
 }
 
 const TONE_INACTIVE: Record<NonNullable<Preset["tone"]>, string> = {

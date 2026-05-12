@@ -28,7 +28,7 @@ const GRID_CLASS: Record<CatalogView, string> = {
 function nowFilterHref(filters: ListingsFilters): string {
   const next: ListingsFilters = { ...filters, availableNow: true, page: undefined };
   const qs = encodeFilters(next).toString();
-  return qs ? `/?${qs}` : "/?now=1";
+  return qs ? `/explorar?${qs}` : "/explorar?now=1";
 }
 
 export async function CatalogGrid({
@@ -87,7 +87,7 @@ export async function CatalogGrid({
           >
             {showSpecialTiles && (
               <RevealItem as="li">
-                <HistoriasTopTile href="/?reviews=1" />
+                <HistoriasTopTile href="/explorar?reviews=1" />
               </RevealItem>
             )}
             {data.map((listing, index) => (
@@ -126,7 +126,7 @@ function EmptyState() {
         Prueba a ampliar la ciudad, soltar la edad o quitar algún chip de
         servicio. También puedes empezar de cero.
       </p>
-      <Button href="/" variant="primary" size="md" className="mt-2" glow>
+      <Button href="/explorar" variant="primary" size="md" className="mt-2" glow>
         Borrar todos los filtros
       </Button>
     </div>

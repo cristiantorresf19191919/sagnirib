@@ -94,7 +94,7 @@ export function ResultsToolbar({
 
           {activeCount > 0 && (
             <Link
-              href="/"
+              href="/explorar"
               className="inline-flex h-8 items-center gap-1.5 rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] px-3 text-[12px] font-semibold text-[var(--color-text-muted)] transition-[border-color,color,background] duration-150 hover:border-[var(--color-brand-highlight)]/45 hover:bg-[var(--color-brand-highlight)]/8 hover:text-[var(--color-brand-highlight)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-highlight)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-background)]"
             >
               <Eraser className="h-3 w-3" aria-hidden />
