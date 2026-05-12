@@ -34,7 +34,10 @@ Image strategy: la galería usa placeholders mock (no `next/image` aún — la s
 Owner: founder.
 Estado: **approved**.
 Notas:
-- Mock-only en este PR. La submission solo simula el guardado (`setTimeout`).
 - Pricing en COP: Esencial $89.000/mes · Destacada $189.000/mes · Premium VIP $349.000/mes. Add-ons one-shot: Boost ciudad 24h $25.000, Posición #1 categoría 7d $79.000, Story banner 7d $59.000, Pack SEO $129.000, Reportaje verificado $250.000.
-- Cuando se conecte el provider de pagos (Stripe / Wompi), la `submit` action vivirá detrás de `src/server/adapters/<provider>/` y será un Server Action `'use server'` con validación + auth + autorización (regla `next-architecture` + `integration-adapters`).
+- **Auth gate (PR2a):** la ruta llama `getSession()` en el Server Component y redirige a `/ingresar?next=/publicar` si la sesión es anónima. La Server Action `createListingDraft` además exige `requireAuth()` server-side.
+- **Persistencia (PR2a, ADR-011):** la `submit` action escribe en `listing_drafts/{auto-id}` con `status: 'pending_review'`. La modelo recibe la pantalla de éxito + audit event `biringa.draft.submitted`. La aprobación es manual (admin via consola de Firestore) hasta que llegue el panel de admin.
+- **Role grant (PR2a):** en el primer draft enviado, el usuario obtiene el rol `'model'` vía Firebase Auth custom claims (merge aditivo). Drafts posteriores son no-op a nivel claims.
+- **Photos (PR2b pendiente):** el campo gallery del wizard sigue sin file input — el draft acepta `gallery: []`. La validación "al menos una foto" del paso "description" está temporalmente relajada. Cuando aterrice el adapter de Firebase Storage el flujo será: upload directo a Storage desde el cliente → URLs públicas → `payload.description.gallery`.
+- **Pagos (futuro):** cuando se conecte el provider (Stripe / Wompi), un segundo Server Action `chargeForPlan` correrá tras `createListingDraft`. El flujo actual no cobra — el draft queda registrado y la admin lo aprueba sin step de pago real todavía.
 - Verificación humana del perfil (KYC) sigue siendo paso obligatorio antes de publicar al catálogo — la pantalla de éxito ya lo comunica.

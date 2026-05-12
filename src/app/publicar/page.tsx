@@ -1,10 +1,12 @@
 import type { Metadata } from "next";
+import { redirect } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 
 import { buildPageMetadata } from "@/core/seo/build-page-metadata";
 import { EnrollmentWizard } from "@/features/enrollment/components/EnrollmentWizard";
 import type { EnrollmentCatalogs } from "@/features/enrollment/lib/catalogs";
+import { getSession } from "@/server/auth";
 import {
   ATTENTION_CATALOG,
   CONTACT_CATALOG,
@@ -25,7 +27,17 @@ export const metadata: Metadata = buildPageMetadata({
   indexable: false,
 });
 
-export default function PublicarPage() {
+export default async function PublicarPage() {
+  // Auth gate. The wizard submits via a Server Action that already calls
+  // `requireAuth()` — this redirect just gives an anonymous user a friendly
+  // entry point instead of letting them fill the entire form and get
+  // rejected at submit time. `next` is read by `/ingresar` once that
+  // ?next= forwarding lands (PR2 follow-up).
+  const session = await getSession().catch(() => null);
+  if (!session) {
+    redirect("/ingresar?next=/publicar");
+  }
+
   const catalogs: EnrollmentCatalogs = {
     cities: SUPPORTED_CITIES,
     services: SERVICE_CATALOG,
