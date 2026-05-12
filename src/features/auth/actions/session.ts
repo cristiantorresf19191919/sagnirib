@@ -60,6 +60,44 @@ export async function loginWithIdToken(
   return { ok: true };
 }
 
+/**
+ * Mirror of `loginWithIdToken` for the signup flow. Same session-cookie
+ * exchange, distinct audit event so the trail can tell first-touch from
+ * recurring logins. The browser-side `onIdTokenChanged` listener will fire
+ * `loginWithIdToken` immediately after, producing a `signup` → `login` pair
+ * on the same `actorId` — that is the intended shape.
+ */
+export async function signUpWithIdToken(
+  idToken: unknown,
+): Promise<ActionResult> {
+  if (typeof idToken !== "string" || idToken.length < 32) {
+    return {
+      ok: false,
+      error: { kind: "invalid-argument", message: "Invalid ID token" },
+    };
+  }
+
+  try {
+    await createSessionImpl(idToken);
+  } catch (err) {
+    if (err instanceof AuthError) {
+      return { ok: false, error: { kind: err.kind, message: err.message } };
+    }
+    return {
+      ok: false,
+      error: { kind: "internal", message: (err as Error).message },
+    };
+  }
+
+  const user = await getSession().catch(() => null);
+  await auditLog({
+    event: "auth.signup",
+    actorId: user?.uid,
+  });
+
+  return { ok: true };
+}
+
 export async function signOut(): Promise<ActionResult> {
   const user = await getSession().catch(() => null);
   await destroySessionImpl();
