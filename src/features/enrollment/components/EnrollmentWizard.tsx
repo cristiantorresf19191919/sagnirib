@@ -4,8 +4,10 @@ import { ArrowLeft, ArrowRight, Loader2, PartyPopper } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 
+import { createListingDraft } from "../actions/create-draft";
 import type { EnrollmentCatalogs } from "../lib/catalogs";
 import { calculateTotal, formatCop } from "../lib/pricing";
+import { humanizeDraftError, toServerPayload } from "../lib/to-server-payload";
 import {
   type DescriptionValues,
   type DetailsValues,
@@ -106,8 +108,8 @@ export function EnrollmentWizard({ catalogs }: EnrollmentWizardProps) {
         return "La descripción larga debe tener al menos 60 caracteres.";
       if (d.services.length === 0)
         return "Selecciona al menos un servicio incluido.";
-      if (d.galleryFileNames.length < 1)
-        return "Sube al menos una foto a tu galería.";
+      // Photo upload lands in PR2b (Firebase Storage). Until then the
+      // gallery is optional — the modelo can attach photos at review time.
       return null;
     }
     if (current === "publish") {
@@ -154,8 +156,16 @@ export function EnrollmentWizard({ catalogs }: EnrollmentWizardProps) {
     }
     setSubmitting(true);
     setErrorBanner(null);
-    await new Promise((res) => setTimeout(res, 900));
+
+    const result = await createListingDraft(toServerPayload(draft));
+
     setSubmitting(false);
+
+    if (!result.ok) {
+      setErrorBanner(humanizeDraftError(result.error));
+      return;
+    }
+
     setSubmitted(true);
     setCompleted((prev) =>
       prev.includes("publish") ? prev : [...prev, "publish"],
@@ -421,7 +431,7 @@ function SubmittedScreen({ draft }: { draft: EnrollmentDraft }) {
         </div>
       </dl>
       <Link
-        href="/"
+        href="/explorar"
         className="inline-flex h-12 items-center justify-center rounded-full bg-[var(--color-brand-primary)] px-6 text-sm font-semibold text-[var(--color-surface)] shadow-[var(--shadow-glow-primary)] transition-colors hover:bg-[var(--color-brand-primary-strong)]"
       >
         Volver al catálogo

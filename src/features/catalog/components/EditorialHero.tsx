@@ -12,11 +12,11 @@ interface EditorialHeroProps {
 }
 
 const SUGGESTED = [
-  { label: "Disponibles ahora", href: "/?available=1" },
-  { label: "Cena Bogotá", href: "/?city=Bogot%C3%A1" },
-  { label: "Fin de semana Cartagena", href: "/?city=Cartagena" },
-  { label: "Videollamada", href: "/?category=videollamadas" },
-  { label: "Top rated", href: "/?sort=rating" },
+  { label: "Disponibles ahora", href: "/explorar?available=1" },
+  { label: "Cena Bogotá", href: "/explorar?city=Bogot%C3%A1" },
+  { label: "Fin de semana Cartagena", href: "/explorar?city=Cartagena" },
+  { label: "Videollamada", href: "/explorar?category=videollamadas" },
+  { label: "Top rated", href: "/explorar?sort=rating" },
 ] as const;
 
 const MARQUEE_ITEMS = [
@@ -269,7 +269,7 @@ export async function EditorialHero({
             style={{ animationDelay: "0.45s" }}
           >
             <form
-              action="/"
+              action="/explorar"
               method="get"
               className="flex max-w-[600px] items-stretch rounded-full border border-[var(--color-line)] bg-[var(--color-cream-soft)] p-1.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.7),0_8px_30px_rgba(31,61,46,0.08)]"
               role="search"

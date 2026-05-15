@@ -9,6 +9,7 @@ is provisioned, the barrel falls back to the in-memory mock.
 ```
 listings/{listingId}
 listings/{listingId}/reviews/{reviewId}
+listing_drafts/{draftId}            # see ADR-011
 ```
 
 `{listingId}` is an opaque Firestore-generated id. The user-facing slug is
@@ -98,6 +99,51 @@ The adapter computes the review aggregate (distribution / breakdown / counts)
 on the fly from the subcollection. When read volume justifies it, replace
 with a Cloud Function-maintained `listings/{id}/aggregates/reviews` doc and
 use `mapReviewsAggregate` from the mapper.
+
+## Collection — `listing_drafts/{draftId}`
+
+Write-only from the `/publicar` wizard. Public catalog reads never touch
+this collection. See ADR-011 for the lifecycle and the moderation flow.
+
+| Field         | Type        | Notes                                                |
+| ------------- | ----------- | ---------------------------------------------------- |
+| `ownerUid`    | string      | Firebase Auth uid of the submitter. Indexed for queue per-user. |
+| `status`      | string      | `pending_review` at write time. Admin tooling flips to `approved` / `rejected`. |
+| `payload`     | map         | The wizard `EnrollmentDraft`, normalized — see below. |
+| `submittedAt` | Timestamp   | Client-supplied; `orderBy('submittedAt', 'desc')` for queues. |
+| `createdAt`   | Timestamp   | `serverTimestamp()` — for audit reconciliation.       |
+
+`payload` mirrors the wizard's `EnrollmentDraft` shape (see
+`src/features/enrollment/lib/types.ts`):
+
+```
+{
+  details: {
+    displayName, age, city, category, phone, preferredSlug, pricePerHour,
+    attention: string[], contactChannels: string[]
+  },
+  description: {
+    shortBio, bio, services: string[], meetingContexts: string[],
+    faceVisible, paymentByCard, availableNow, gallery: string[]
+  },
+  publish: {
+    packageId, addOnIds: string[], billing,
+    acceptsTerms, acceptsAdult
+  }
+}
+```
+
+Notes:
+
+- `phone` lives **inside** the draft on purpose — it is the modelo's private
+  contact for verification. When the draft is approved into `listings/` it
+  moves to the sensitive `privatePhone` field and never enters the public
+  read path.
+- `gallery` is `string[]` of placeholders in MVP. Real photo upload (Firebase
+  Storage) lands in PR2b and replaces these with public storage URLs.
+- The draft is **not** mapped to `BiringaListing` — the wizard payload and
+  the published listing have different fields, and approval is a transform,
+  not a copy.
 
 ## Composite indexes
 

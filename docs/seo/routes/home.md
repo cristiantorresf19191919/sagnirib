@@ -33,4 +33,6 @@ Above-the-fold mobile: nombre Biringas + slogan + CTA primario.
 Image strategy: `next/image` con `priority` solo en hero; resto lazy + `sizes` correctos.
 Owner: founder.
 Estado: **approved**.
-Notas: bloqueada para indexación hasta release-hardening (switch global). El OG image queda como gap conocido.
+Notas:
+- Bloqueada para indexación hasta release-hardening (switch global). El OG image queda como gap conocido.
+- **Split restaurado (PR3, 2026-05-12).** Home dejó de embeber el catálogo; ahora vive sólo en `/explorar`. Home queda como surface de marketing: `EditorialHero` (con search form que submitea a `/explorar`), `FeaturedStrip` (4 perfiles destacados desde `listFeatured()`), CTA "Explorar todo el catálogo" → `/explorar`, y `HowItWorks`. La página NO acepta search params — los filtros viven en `/explorar`.
