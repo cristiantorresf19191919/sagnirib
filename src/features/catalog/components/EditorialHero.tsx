@@ -2,8 +2,8 @@ import Link from "next/link";
 import { ChevronDown, Search } from "lucide-react";
 
 import { listHeroMosaic } from "@/server/biringas";
-import type { BiringaListing } from "@/server/biringas";
 
+import { EditorialHeroMosaicColumn } from "./EditorialHeroMosaicColumn";
 import { HeroMosaicCard } from "./HeroMosaicCard";
 
 interface EditorialHeroProps {
@@ -58,43 +58,6 @@ const MOSAIC_COL_B_WIDTH = `calc((100% - ${MOSAIC_GAP_PX * 2}px) * 0.36)`;
 const MOSAIC_COL_C_WIDTH = `calc((100% - ${MOSAIC_GAP_PX * 2}px) * 0.28)`;
 const MOSAIC_COL_B_LEFT = `calc((100% - ${MOSAIC_GAP_PX * 2}px) * 0.28 + ${MOSAIC_GAP_PX}px)`;
 
-interface MosaicColumnProps {
-  tiles: ReadonlyArray<BiringaListing>;
-  heights: ReadonlyArray<number>;
-  drift: "up" | "down";
-  /** Vertical offset; negative pulls the column above the rail for the editorial stagger. */
-  top: number;
-  /** Horizontal placement — `left` + `width`, or `right` + `width`. */
-  position: React.CSSProperties;
-}
-
-function MosaicColumn({
-  tiles,
-  heights,
-  drift,
-  top,
-  position,
-}: Readonly<MosaicColumnProps>) {
-  return (
-    <div
-      className="absolute flex flex-col gap-2.5"
-      style={{ ...position, top }}
-    >
-      {tiles.map((listing, idx) => (
-        <HeroMosaicCard
-          key={listing.id}
-          listing={listing}
-          height={heights[idx % heights.length] ?? 280}
-          drift={drift}
-          delay={`${idx * 0.4}s`}
-          duration={`${12 + idx}s`}
-          hideLive={idx % 2 === 1}
-        />
-      ))}
-    </div>
-  );
-}
-
 /**
  * Cinematic editorial hero — magazine cover for the catalog.
  *
@@ -123,35 +86,52 @@ export async function EditorialHero({
 
   return (
     <section
+      data-testid="editorial-hero"
       aria-labelledby="editorial-hero-title"
       className="relative isolate overflow-hidden border-b border-[var(--color-line-soft)] bg-[var(--color-cream)] text-[var(--color-ink)]"
       style={{ minHeight: 720 }}
     >
-      {/* Mosaic — desktop only, absolutely placed on the right */}
+      {/* Mosaic — desktop only, absolutely placed on the right.
+          `pointer-events-none` removed so each tile's `Link` is clickable;
+          the column wrappers and their backdrops still pass clicks through
+          via per-element rules where needed. */}
       <div
+        data-testid="editorial-hero-mosaic-desktop"
         aria-hidden="false"
-        className="pointer-events-none absolute inset-y-0 right-0 hidden w-[62%] lg:block"
+        className="absolute inset-y-0 right-0 hidden w-[62%] lg:block"
       >
-        <MosaicColumn
+        <EditorialHeroMosaicColumn
           tiles={colA}
           heights={TILE_HEIGHTS_A}
           drift="up"
           top={-40}
           position={{ left: 0, width: MOSAIC_COL_A_WIDTH }}
+          slideRange={28}
+          slideDuration={14}
+          slideDelay={0}
+          testIdSuffix="a"
         />
-        <MosaicColumn
+        <EditorialHeroMosaicColumn
           tiles={colB}
           heights={TILE_HEIGHTS_B}
           drift="down"
           top={60}
           position={{ left: MOSAIC_COL_B_LEFT, width: MOSAIC_COL_B_WIDTH }}
+          slideRange={-24}
+          slideDuration={18}
+          slideDelay={1.5}
+          testIdSuffix="b"
         />
-        <MosaicColumn
+        <EditorialHeroMosaicColumn
           tiles={colC}
           heights={TILE_HEIGHTS_C}
           drift="up"
           top={-20}
           position={{ right: 0, width: MOSAIC_COL_C_WIDTH }}
+          slideRange={20}
+          slideDuration={12}
+          slideDelay={2.8}
+          testIdSuffix="c"
         />
       </div>
 
@@ -184,9 +164,16 @@ export async function EditorialHero({
       />
 
       {/* Content column */}
-      <div className="relative z-[5] mx-auto w-full max-w-[1440px] px-6 pb-20 pt-16 sm:px-9 sm:pt-20 lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(0,0.85fr)] lg:gap-15 lg:pt-[70px]">
-        <div className="max-w-[600px]">
-          <div className="motion-safe:motion-hero-reveal" style={{ animationDelay: "0.05s" }}>
+      <div
+        data-testid="editorial-hero-content"
+        className="relative z-[5] mx-auto w-full max-w-[1440px] px-6 pb-20 pt-16 sm:px-9 sm:pt-20 lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(0,0.85fr)] lg:gap-15 lg:pt-[70px]"
+      >
+        <div data-testid="editorial-hero-copy" className="max-w-[600px]">
+          <div
+            data-testid="editorial-hero-kicker"
+            className="motion-safe:motion-hero-reveal"
+            style={{ animationDelay: "0.05s" }}
+          >
             <div className="inline-flex items-center gap-3.5">
               <span
                 aria-hidden
@@ -199,6 +186,7 @@ export async function EditorialHero({
           </div>
 
           <h1
+            data-testid="editorial-hero-title"
             id="editorial-hero-title"
             className="motion-safe:motion-hero-reveal mt-6 font-[var(--font-display)] font-[360] tracking-[-0.035em] text-[var(--color-ink)]"
             style={{
@@ -223,6 +211,7 @@ export async function EditorialHero({
           </h1>
 
           <p
+            data-testid="editorial-hero-description"
             className="motion-safe:motion-hero-reveal mt-7 max-w-[480px] font-[var(--font-serif)] text-[18.5px] leading-[1.5] text-[var(--color-ink-soft)]"
             style={{ animationDelay: "0.25s" }}
           >
@@ -232,6 +221,7 @@ export async function EditorialHero({
           </p>
 
           <div
+            data-testid="editorial-hero-stats"
             className="motion-safe:motion-hero-reveal mt-9 flex flex-wrap items-center gap-x-7 gap-y-3"
             style={{ animationDelay: "0.35s" }}
           >
@@ -265,10 +255,12 @@ export async function EditorialHero({
           </div>
 
           <div
+            data-testid="editorial-hero-search"
             className="motion-safe:motion-hero-reveal mt-10"
             style={{ animationDelay: "0.45s" }}
           >
             <form
+              data-testid="editorial-hero-search-form"
               action="/explorar"
               method="get"
               className="flex max-w-[600px] items-stretch rounded-full border border-[var(--color-line)] bg-[var(--color-cream-soft)] p-1.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.7),0_8px_30px_rgba(31,61,46,0.08)]"
@@ -284,6 +276,7 @@ export async function EditorialHero({
                   <ChevronDown className="h-3 w-3" aria-hidden />
                 </span>
                 <select
+                  data-testid="editorial-hero-search-city"
                   name="city"
                   className="sr-only"
                   aria-label="Ciudad"
@@ -303,6 +296,7 @@ export async function EditorialHero({
                   Buscar
                 </span>
                 <input
+                  data-testid="editorial-hero-search-input"
                   type="text"
                   name="q"
                   placeholder="Nombre, plan, servicio…"
@@ -310,6 +304,7 @@ export async function EditorialHero({
                 />
               </label>
               <button
+                data-testid="editorial-hero-search-submit"
                 type="submit"
                 className="inline-flex items-center gap-2 rounded-full bg-[var(--color-forest)] px-6 text-[13.5px] font-medium text-[var(--color-cream)] transition-colors duration-200 hover:bg-[var(--color-forest-deep)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-forest)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-cream)]"
               >
@@ -318,13 +313,17 @@ export async function EditorialHero({
               </button>
             </form>
 
-            <div className="mt-3.5 flex flex-wrap items-center gap-2">
+            <div
+              data-testid="editorial-hero-suggested"
+              className="mt-3.5 flex flex-wrap items-center gap-2"
+            >
               <span className="mr-1 text-[11px] uppercase tracking-[0.14em] text-[var(--color-ink-soft)]">
                 Sugerido
               </span>
               {SUGGESTED.map((chip) => (
                 <Link
                   key={chip.label}
+                  data-testid={`editorial-hero-suggested-${chip.label.toLowerCase().replace(/\s+/g, "-")}`}
                   href={chip.href}
                   className="rounded-full border border-[var(--color-line)] bg-transparent px-3 py-1.5 text-xs text-[var(--color-ink)] transition-colors duration-200 hover:border-[var(--color-ink)] hover:bg-[var(--color-ink)] hover:text-[var(--color-cream)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-forest)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-cream)]"
                 >
@@ -334,8 +333,13 @@ export async function EditorialHero({
             </div>
           </div>
 
+          {/* Trust block — promoted in this iteration so verification reads
+              as the hero's primary value prop. Avatars 2x larger, headline
+              bumped, sub-copy spans wider. Sits inside a soft cream-tinted
+              card so it reads as a discrete editorial unit. */}
           <div
-            className="motion-safe:motion-hero-reveal mt-11 flex items-center gap-6"
+            data-testid="editorial-hero-trust"
+            className="motion-safe:motion-hero-reveal mt-11 flex items-center gap-5 rounded-2xl border border-[var(--color-line-soft)] bg-[var(--color-cream-soft)]/70 p-4 sm:gap-6 sm:p-5"
             style={{ animationDelay: "0.6s" }}
           >
             <div className="flex items-center">
@@ -348,20 +352,21 @@ export async function EditorialHero({
                 <span
                   key={bg}
                   aria-hidden
-                  className="block h-8 w-8 rounded-full border-2 border-[var(--color-cream)]"
+                  className="block h-14 w-14 rounded-full border-[3px] border-[var(--color-cream)] shadow-[0_2px_6px_rgba(31,61,46,0.18)]"
                   style={{
                     background: bg,
-                    marginLeft: i === 0 ? 0 : -10,
+                    marginLeft: i === 0 ? 0 : -16,
                   }}
                 />
               ))}
             </div>
-            <p className="font-[var(--font-serif)] text-[13px] leading-[1.4] text-[var(--color-ink-soft)]">
-              <strong className="font-semibold text-[var(--color-ink)]">
+            <p className="font-[var(--font-serif)] text-[14px] leading-[1.45] text-[var(--color-ink-soft)] sm:text-[15.5px]">
+              <strong className="block font-semibold text-[var(--color-ink)] sm:text-[17px]">
                 Verificación en 2 capas
               </strong>
-              <br />
-              Documento + selfie en vivo. Sin catfish, sin sorpresas.
+              <span className="mt-0.5 block">
+                Documento + selfie en vivo. Sin catfish, sin sorpresas.
+              </span>
             </p>
           </div>
         </div>
@@ -369,8 +374,12 @@ export async function EditorialHero({
       </div>
 
       {/* Mobile / tablet — horizontal snap carousel below the copy */}
-      <div className="relative z-[5] mb-4 lg:hidden">
+      <div
+        data-testid="editorial-hero-mosaic-mobile"
+        className="relative z-[5] mb-4 lg:hidden"
+      >
         <div
+          data-testid="editorial-hero-mosaic-mobile-track"
           className="flex snap-x snap-mandatory gap-2.5 overflow-x-auto px-6 pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
           aria-label="Selección editorial de Biringas"
         >
@@ -394,7 +403,10 @@ export async function EditorialHero({
       </div>
 
       {/* Bottom marquee */}
-      <div className="relative z-[6] overflow-hidden border-y border-[var(--color-line)] bg-[var(--color-cream)] py-4">
+      <div
+        data-testid="editorial-hero-marquee"
+        className="relative z-[6] overflow-hidden border-y border-[var(--color-line)] bg-[var(--color-cream)] py-4"
+      >
         <div
           className="flex w-[200%] gap-15 whitespace-nowrap motion-safe:motion-hero-marquee"
           aria-hidden

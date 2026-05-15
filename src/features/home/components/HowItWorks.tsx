@@ -45,6 +45,7 @@ const STEPS: ReadonlyArray<Step> = [
 export function HowItWorks() {
   return (
     <section
+      data-testid="how-it-works"
       id="como-funciona"
       aria-labelledby="how-title"
       className="relative isolate scroll-mt-24 overflow-hidden border-y border-[var(--color-border)]/60 bg-[var(--color-background-elevated)] py-20 sm:py-24 lg:py-28"
@@ -112,7 +113,10 @@ interface StepCardProps {
 function StepCard({ step, isLast }: StepCardProps) {
   const Icon = step.icon;
   return (
-    <article className="group relative flex h-full flex-col gap-6 overflow-hidden rounded-[var(--radius-2xl)] border border-[var(--color-border)] bg-[var(--color-surface)] p-7 shadow-[var(--shadow-sm)] transition-[border-color,transform,box-shadow] duration-300 ease-[var(--ease-standard)] hover:-translate-y-1 hover:border-[var(--color-brand-primary-soft)] hover:shadow-[var(--shadow-md)] sm:p-8">
+    <article
+      data-testid={`how-it-works-step-${step.numeral}`}
+      className="group relative flex h-full flex-col gap-6 overflow-hidden rounded-[var(--radius-2xl)] border border-[var(--color-border)] bg-[var(--color-surface)] p-7 shadow-[var(--shadow-sm)] transition-[border-color,transform,box-shadow] duration-300 ease-[var(--ease-standard)] hover:-translate-y-1 hover:border-[var(--color-brand-primary-soft)] hover:shadow-[var(--shadow-md)] sm:p-8"
+    >
       <div className="relative flex items-start justify-between gap-4">
         <span
           aria-hidden

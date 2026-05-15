@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 
 import { buildPageMetadata } from "@/core/seo/build-page-metadata";
+import { RecentlyViewedStrip } from "@/features/biringas/components/RecentlyViewedStrip";
 import { CatalogGrid } from "@/features/catalog/components/CatalogGrid";
 import { CategoryBar } from "@/features/catalog/components/CategoryBar";
 import { CityChips } from "@/features/catalog/components/CityChips";
@@ -62,6 +63,7 @@ export default async function ExplorarPage({
         <QuickPresets filters={filters} view={view} />
         <FiltersPanel filters={filters} view={view} />
         <CatalogGrid filters={filters} view={view} />
+        <RecentlyViewedStrip />
       </main>
       <Footer />
     </>

@@ -286,3 +286,4 @@ export type {
 export { getPrivateContactRaw } from "./private-contact";
 export { submitReviewRaw } from "./submit-review";
 export { createListingDraftRaw } from "./create-draft";
+export { listSimilar } from "./similar";

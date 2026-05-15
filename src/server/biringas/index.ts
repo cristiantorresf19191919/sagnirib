@@ -78,6 +78,7 @@ export const listCities = adapter.listCities;
 export const listServiceCatalog = adapter.listServiceCatalog;
 export const listMeetingContextCatalog = adapter.listMeetingContextCatalog;
 export const getListingReviews = adapter.getListingReviews;
+export const listSimilar = adapter.listSimilar;
 
 export type { PrivateContact } from "./private-contact-types";
 export type { SubmitReviewInput } from "./review-types";

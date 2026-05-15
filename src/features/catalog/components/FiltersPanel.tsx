@@ -1,16 +1,20 @@
 import Link from "next/link";
 import {
   Check,
+  Clock,
   Coins,
   Eraser,
   Eye,
   Film,
   Heart,
   MapPinned,
+  MessageSquare,
+  Mic,
   ShieldCheck,
   SlidersHorizontal,
   Sparkles,
   UserSquare,
+  Video,
 } from "lucide-react";
 
 import {
@@ -24,7 +28,11 @@ import {
 } from "@/server/biringas";
 import { Container } from "@/shared/design-system/components/Container";
 
-import type { CatalogView } from "../lib/parse-filters";
+import {
+  DEFAULT_CATALOG_VIEW,
+  encodeFilters,
+  type CatalogView,
+} from "../lib/parse-filters";
 import { ActiveFilterChips } from "./ActiveFilterChips";
 import { FilterForm } from "./FilterForm";
 import { FilterModal } from "./FilterModal";
@@ -106,12 +114,68 @@ function countActiveFilters(filters: ListingsFilters): number {
   );
 }
 
+type FilterSection =
+  | "priceAge"
+  | "attentionContact"
+  | "meetingContext"
+  | "services"
+  | "content"
+  | "appearance";
+
+/**
+ * Build a `/?…` href that strips every key owned by `section` while
+ * preserving the rest of the active filters. Used by per-section "Limpiar"
+ * links inside each `SectionCard`.
+ */
+function sectionResetHref(
+  filters: ListingsFilters,
+  section: FilterSection,
+  view?: CatalogView,
+): string {
+  const next: ListingsFilters = { ...filters, page: undefined };
+  switch (section) {
+    case "priceAge":
+      next.priceMin = undefined;
+      next.priceMax = undefined;
+      next.ageMin = undefined;
+      next.ageMax = undefined;
+      next.paymentByCard = undefined;
+      break;
+    case "attentionContact":
+      next.attention = undefined;
+      next.contactChannels = undefined;
+      break;
+    case "meetingContext":
+      next.meetingContexts = undefined;
+      break;
+    case "services":
+      next.services = undefined;
+      next.specialServices = undefined;
+      break;
+    case "content":
+      next.verifiedOnly = undefined;
+      next.faceVisible = undefined;
+      next.withVideo = undefined;
+      next.withAudio = undefined;
+      next.withReviews = undefined;
+      next.availableNow = undefined;
+      break;
+    case "appearance":
+      next.attributes = undefined;
+      break;
+  }
+  const params = encodeFilters(next);
+  if (view && view !== DEFAULT_CATALOG_VIEW) params.set("view", view);
+  const qs = params.toString();
+  return qs.length > 0 ? `/?${qs}` : "/";
+}
+
 export function FiltersPanel({ filters, view }: FiltersPanelProps) {
   const counts = buildSectionCounts(filters);
   const active = countActiveFilters(filters);
 
   return (
-    <section className="bg-[var(--color-background)]">
+    <section data-testid="filters-panel" className="bg-[var(--color-background)]">
       <Container width="wide" className="py-3 sm:py-4">
         <FilterModal
           title="Filtros avanzados"
@@ -159,8 +223,10 @@ export function FiltersPanel({ filters, view }: FiltersPanelProps) {
             <div className="flex flex-col gap-5">
               <SectionCard
                 title="Precio y edad"
+                eyebrow="Refina por presupuesto y franja de edad."
                 icon={<Coins className="h-4 w-4" aria-hidden />}
                 count={counts.priceAge}
+                resetHref={sectionResetHref(filters, "priceAge", view)}
               >
                 <RangeSlider
                   label="Precio (COP / hora)"
@@ -171,7 +237,7 @@ export function FiltersPanel({ filters, view }: FiltersPanelProps) {
                   step={10_000}
                   initialMin={filters.priceMin}
                   initialMax={filters.priceMax}
-                  format="currency"
+                  format="price-cop"
                   presets={[
                     { label: "Baratas", max: 150_000 },
                     { label: "Estándar", min: 150_000, max: 250_000 },
@@ -196,7 +262,7 @@ export function FiltersPanel({ filters, view }: FiltersPanelProps) {
                   step={1}
                   initialMin={filters.ageMin}
                   initialMax={filters.ageMax}
-                  format="age"
+                  format="age-years"
                   presets={[
                     { label: "Jovencitas", max: 25 },
                     { label: "20s", min: 20, max: 29 },
@@ -207,8 +273,10 @@ export function FiltersPanel({ filters, view }: FiltersPanelProps) {
 
               <SectionCard
                 title="Atención y contacto"
+                eyebrow="A quién atiende y cómo prefiere que la contacten."
                 icon={<Heart className="h-4 w-4" aria-hidden />}
                 count={counts.attentionContact}
+                resetHref={sectionResetHref(filters, "attentionContact", view)}
               >
                 <Field label="Atención a">
                   <ChipRow>
@@ -243,8 +311,10 @@ export function FiltersPanel({ filters, view }: FiltersPanelProps) {
 
               <SectionCard
                 title="Lugar de encuentro"
+                eyebrow="Dónde se da la cita."
                 icon={<MapPinned className="h-4 w-4" aria-hidden />}
                 count={counts.meetingContext}
+                resetHref={sectionResetHref(filters, "meetingContext", view)}
               >
                 <ChipRow>
                   {MEETING_CONTEXT_CATALOG.map((place) => (
@@ -265,8 +335,10 @@ export function FiltersPanel({ filters, view }: FiltersPanelProps) {
             <div className="flex flex-col gap-5">
               <SectionCard
                 title="Servicios"
+                eyebrow="Lo que ofrece — generales y especiales."
                 icon={<Sparkles className="h-4 w-4" aria-hidden />}
                 count={counts.services}
+                resetHref={sectionResetHref(filters, "services", view)}
               >
                 <Field label="Servicios generales">
                   <ChipRow>
@@ -301,8 +373,10 @@ export function FiltersPanel({ filters, view }: FiltersPanelProps) {
 
               <SectionCard
                 title="Contenido"
+                eyebrow="Verificación, vídeo, audio y reseñas reales."
                 icon={<Film className="h-4 w-4" aria-hidden />}
                 count={counts.content}
+                resetHref={sectionResetHref(filters, "content", view)}
               >
                 <ChipRow>
                   <FlagChip
@@ -321,29 +395,35 @@ export function FiltersPanel({ filters, view }: FiltersPanelProps) {
                     name="video"
                     checked={filters.withVideo ?? false}
                     label="Con vídeos"
+                    icon={<Video className="h-3 w-3" aria-hidden />}
                   />
                   <FlagChip
                     name="audio"
                     checked={filters.withAudio ?? false}
                     label="Con audio"
+                    icon={<Mic className="h-3 w-3" aria-hidden />}
                   />
                   <FlagChip
                     name="reviews"
                     checked={filters.withReviews ?? false}
                     label="Con experiencias"
+                    icon={<MessageSquare className="h-3 w-3" aria-hidden />}
                   />
                   <FlagChip
                     name="now"
                     checked={filters.availableNow ?? false}
                     label="Disponible ahora"
+                    icon={<Clock className="h-3 w-3" aria-hidden />}
                   />
                 </ChipRow>
               </SectionCard>
 
               <SectionCard
                 title="Apariencia"
+                eyebrow="Atributos físicos: país, etnia, cuerpo."
                 icon={<UserSquare className="h-4 w-4" aria-hidden />}
                 count={counts.appearance}
+                resetHref={sectionResetHref(filters, "appearance", view)}
               >
                 {(Object.keys(APPEARANCE_CATALOG) as Array<
                   keyof typeof APPEARANCE_CATALOG
@@ -368,14 +448,29 @@ export function FiltersPanel({ filters, view }: FiltersPanelProps) {
               </SectionCard>
             </div>
 
-            <div className="flex flex-col gap-3 border-t border-[var(--color-border)] pt-5 sm:flex-row sm:items-center sm:justify-between lg:col-span-2">
-              <Link
-                href="/explorar"
-                className="inline-flex h-12 items-center justify-center gap-2 rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] px-5 text-sm font-semibold text-[var(--color-text-muted)] transition-[border-color,color,background] duration-200 ease-[var(--ease-standard)] hover:border-[var(--color-brand-highlight)]/50 hover:bg-[var(--color-surface)] hover:text-[var(--color-brand-highlight)]"
-              >
-                <Eraser className="h-4 w-4" aria-hidden />
-                Borrar filtros
-              </Link>
+            {/* Sticky action bar — anchored at the bottom of the modal so the
+                primary CTA is always reachable, and the live filter count
+                stays visible while the user picks chips. */}
+            <div
+              data-testid="filters-sticky-bar"
+              className="sticky bottom-0 z-10 -mx-4 -mb-4 flex flex-col gap-3 border-t border-[var(--color-border)] bg-[var(--color-surface)]/95 px-4 py-4 backdrop-blur-md sm:-mx-6 sm:-mb-6 sm:flex-row sm:items-center sm:justify-between sm:px-6 sm:py-4 lg:col-span-2"
+            >
+              <div className="flex items-center gap-3">
+                <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--color-text-muted)]">
+                  {active > 0
+                    ? `${active} ${active === 1 ? "filtro activo" : "filtros activos"}`
+                    : "Sin filtros aplicados"}
+                </span>
+                {active > 0 && (
+                  <Link
+                    href="/explorar"
+                    className="inline-flex items-center gap-1 rounded-full px-2 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-[var(--color-text-muted)] transition-colors hover:bg-[var(--color-background)] hover:text-[var(--color-brand-highlight)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)]"
+                  >
+                    <Eraser className="h-3 w-3" aria-hidden />
+                    Limpiar todo
+                  </Link>
+                )}
+              </div>
               <button
                 type="submit"
                 className="btn-pulse inline-flex h-12 items-center justify-center gap-2 rounded-full bg-[var(--color-brand-primary)] px-8 text-sm font-semibold text-[var(--color-surface)] shadow-[var(--shadow-glow-primary)] transition-colors hover:bg-[var(--color-brand-primary-strong)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-background)]"
@@ -424,16 +519,36 @@ function TriggerPill({ active }: TriggerPillProps) {
 
 interface SectionCardProps {
   title: string;
+  /** Italic editorial subtitle — sets tone alongside the brand voice. */
+  eyebrow?: string;
   icon: React.ReactNode;
   count?: number;
+  /** When provided AND count > 0, renders a "Limpiar" link top-right. */
+  resetHref?: string;
   children: React.ReactNode;
 }
 
-function SectionCard({ title, icon, count = 0, children }: SectionCardProps) {
+function SectionCard({
+  title,
+  eyebrow,
+  icon,
+  count = 0,
+  resetHref,
+  children,
+}: SectionCardProps) {
   const isActive = count > 0;
+  const testId = `filters-section-${title
+    .toLowerCase()
+    .replaceAll("á", "a")
+    .replaceAll("é", "e")
+    .replaceAll("í", "i")
+    .replaceAll("ó", "o")
+    .replaceAll("ú", "u")
+    .replaceAll(/\s+/g, "-")}`;
   return (
     <fieldset
-      className={`flex flex-col gap-4 rounded-[var(--radius-xl)] bg-[var(--color-surface)] p-4 ring-1 transition-[box-shadow,ring-color] duration-200 ease-[var(--ease-standard)] sm:p-5 ${
+      data-testid={testId}
+      className={`relative flex flex-col gap-4 rounded-[var(--radius-xl)] bg-[var(--color-surface)] p-4 ring-1 transition-[box-shadow,ring-color] duration-200 ease-[var(--ease-standard)] sm:p-5 ${
         isActive
           ? "ring-[var(--color-brand-primary)]/40 shadow-[var(--shadow-sm)]"
           : "ring-[var(--color-border)]"
@@ -449,7 +564,9 @@ function SectionCard({ title, icon, count = 0, children }: SectionCardProps) {
         >
           {icon}
         </span>
-        <span>{title}</span>
+        <span className="font-[var(--font-display)] text-[14px] font-[420] tracking-[0.04em] normal-case">
+          {title}
+        </span>
         {isActive && (
           <span
             aria-hidden
@@ -459,6 +576,28 @@ function SectionCard({ title, icon, count = 0, children }: SectionCardProps) {
           </span>
         )}
       </legend>
+      {eyebrow ? (
+        <span className="-mt-2 font-[var(--font-serif)] text-[12px] italic leading-tight text-[var(--color-text-muted)]">
+          {eyebrow}
+        </span>
+      ) : null}
+      {/* Hairline gold rule under the legend when active — editorial accent. */}
+      {isActive ? (
+        <span
+          aria-hidden
+          className="absolute left-4 right-4 top-[64px] block h-px bg-gradient-to-r from-transparent via-[var(--color-brand-warn)]/40 to-transparent sm:left-5 sm:right-5"
+        />
+      ) : null}
+      {/* Per-section reset link, anchored top-right when filters are active. */}
+      {isActive && resetHref ? (
+        <Link
+          href={resetHref}
+          className="absolute right-4 top-4 inline-flex items-center gap-1 rounded-full px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--color-text-muted)] transition-colors hover:bg-[var(--color-surface-muted)] hover:text-[var(--color-brand-highlight)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)] sm:right-5 sm:top-5"
+          data-testid={`${testId}-reset`}
+        >
+          Limpiar
+        </Link>
+      ) : null}
       {children}
     </fieldset>
   );
@@ -485,7 +624,7 @@ function ChipRow({ children }: { children: React.ReactNode }) {
 }
 
 const CHIP_BASE =
-  "chip-animated relative inline-flex h-9 cursor-pointer items-center gap-1.5 rounded-full border px-3.5 text-xs font-medium select-none border-[var(--color-border)] bg-[var(--color-background)] text-[var(--color-text-muted)] hover:text-[var(--color-foreground)] hover:border-[var(--color-brand-primary-soft)] focus-within:ring-2 focus-within:ring-[var(--color-brand-primary)]/30 has-checked:border-[var(--color-brand-primary)] has-checked:bg-[var(--color-brand-primary)]/10 has-checked:text-[var(--color-brand-primary)] has-checked:font-semibold";
+  "chip-animated relative inline-flex h-11 sm:h-9 cursor-pointer items-center gap-1.5 rounded-full border px-3.5 text-xs font-medium select-none border-[var(--color-border)] bg-[var(--color-background)] text-[var(--color-text-muted)] hover:text-[var(--color-foreground)] hover:border-[var(--color-brand-primary-soft)] focus-within:ring-2 focus-within:ring-[var(--color-brand-primary)]/30 has-checked:border-[var(--color-brand-primary)] has-checked:bg-[var(--color-brand-primary)]/10 has-checked:text-[var(--color-brand-primary)] has-checked:font-semibold";
 
 /**
  * Inline check icon that smoothly slides + scales in when the chip's

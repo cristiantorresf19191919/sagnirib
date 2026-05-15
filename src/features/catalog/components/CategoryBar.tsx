@@ -44,11 +44,15 @@ export function CategoryBar({ filters, view }: CategoryBarProps) {
 
   return (
     <section
+      data-testid="category-bar"
       aria-label="Categorías"
       className="border-b border-[var(--color-border)]/60 bg-[var(--color-background)]"
     >
       <Container width="wide" className="py-4">
-        <div className="flex flex-wrap items-center gap-x-7 gap-y-3">
+        <div
+          data-testid="category-bar-tabs"
+          className="flex flex-wrap items-center gap-x-7 gap-y-3"
+        >
           <AnimatedTabs
             groupId="category"
             items={categoryItems}
