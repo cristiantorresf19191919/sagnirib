@@ -57,8 +57,8 @@ export function encodeFilters(filters: ListingsFilters): URLSearchParams {
 }
 
 /**
- * Build a relative URL for `/?…` after toggling/setting a single field.
- * Pass `value === undefined` to clear a key. The optional `view` is
+ * Build a relative URL for `/explorar?…` after toggling/setting a single
+ * field. Pass `value === undefined` to clear a key. The optional `view` is
  * preserved on the URL when it is non-default.
  */
 export function withFilter(
@@ -84,5 +84,5 @@ export function withFilter(
   const params = encodeFilters(next);
   if (view && view !== DEFAULT_CATALOG_VIEW) params.set("view", view);
   const qs = params.toString();
-  return qs.length > 0 ? `/?${qs}` : "/";
+  return qs.length > 0 ? `/explorar?${qs}` : "/explorar";
 }

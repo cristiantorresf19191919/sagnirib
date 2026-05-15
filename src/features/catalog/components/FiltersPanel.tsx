@@ -463,7 +463,7 @@ export function FiltersPanel({ filters, view }: FiltersPanelProps) {
                 </span>
                 {active > 0 && (
                   <Link
-                    href="/"
+                    href="/explorar"
                     className="inline-flex items-center gap-1 rounded-full px-2 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-[var(--color-text-muted)] transition-colors hover:bg-[var(--color-background)] hover:text-[var(--color-brand-highlight)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)]"
                   >
                     <Eraser className="h-3 w-3" aria-hidden />

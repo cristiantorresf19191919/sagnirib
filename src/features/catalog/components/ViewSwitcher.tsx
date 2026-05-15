@@ -39,7 +39,7 @@ function hrefForView(filters: ListingsFilters, view: CatalogView): string {
   if (view !== DEFAULT_CATALOG_VIEW) params.set("view", view);
   else params.delete("view");
   const qs = params.toString();
-  return qs.length > 0 ? `/?${qs}` : "/";
+  return qs.length > 0 ? `/explorar?${qs}` : "/explorar";
 }
 
 /**

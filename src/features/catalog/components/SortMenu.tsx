@@ -60,7 +60,7 @@ function buildHref(
   const params = encodeFilters(copy);
   if (view && view !== "grid3") params.set("view", view);
   const qs = params.toString();
-  return qs ? `/?${qs}` : "/";
+  return qs ? `/explorar?${qs}` : "/explorar";
 }
 
 const SPRING = { type: "spring", stiffness: 300, damping: 26, mass: 0.5 } as const;

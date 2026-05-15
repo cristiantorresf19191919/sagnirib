@@ -3,11 +3,14 @@ import "server-only";
 import { updateTag } from "next/cache";
 
 import { isFirebaseConfigured } from "@/core/config/firebase";
+import { grantRole } from "@/server/auth";
 import { auditLog } from "@/server/security/audit-log";
 import { requireAuth } from "@/server/security/require-auth";
 import { validateActionInput } from "@/server/security/validate-action-input";
 
 import { CACHE_TAGS } from "./cache-tags";
+import { createListingDraftSchema } from "./create-draft-schema";
+import type { CreateListingDraftInput } from "./draft-types";
 import type { PrivateContact } from "./private-contact-types";
 import type { SubmitReviewInput } from "./review-types";
 import { submitReviewSchema } from "./submit-review-schema";
@@ -81,6 +84,15 @@ export type { PrivateContact } from "./private-contact-types";
 export type { SubmitReviewInput } from "./review-types";
 export { REVIEW_LIMITS } from "./review-types";
 export { CACHE_TAGS } from "./cache-tags";
+export type {
+  CreateListingDraftInput,
+  ListingDraftPayload,
+  ListingDraftPayloadDetails,
+  ListingDraftPayloadDescription,
+  ListingDraftPayloadPublish,
+  ListingDraftStatus,
+} from "./draft-types";
+export { DRAFT_LIMITS } from "./draft-types";
 
 /**
  * Returns the private contact channel of a listing.
@@ -142,4 +154,59 @@ export async function submitReview(
   updateTag(CACHE_TAGS.listings);
 
   return result;
+}
+
+/**
+ * Persists a `listing_drafts/{id}` row submitted from the `/publicar` wizard.
+ *
+ * Standard mutation contract (ADR-010 §5):
+ *
+ *   1. Validate input via `createListingDraftSchema`.
+ *   2. Authenticate — anonymous submissions are refused.
+ *   3. Adapter call — writes `listing_drafts/{auto-id}`. Adapter returns
+ *      whether the user already had prior drafts.
+ *   4. Audit — `biringa.draft.submitted` with the new draft id.
+ *   5. Role grant — first draft promotes the user to `roles: ['model']`
+ *      via additive custom claims. Subsequent drafts are a no-op (audit
+ *      event is emitted regardless, which is fine for the trail).
+ *   6. Revalidate — none today: drafts are not on any cached read path.
+ *      When the admin queue / "mis publicaciones" surface lands, add the
+ *      relevant cache tag here.
+ *
+ * Returns the new draft id so the action layer can surface a confirmation
+ * code in the UI if desired.
+ */
+export async function createListingDraft(
+  rawInput: unknown,
+): Promise<{ id: string }> {
+  const input: CreateListingDraftInput = validateActionInput(
+    createListingDraftSchema,
+    rawInput,
+  );
+  const user = await requireAuth();
+
+  const result = await adapter.createListingDraftRaw({
+    ownerUid: user.uid,
+    payload: input.payload,
+  });
+
+  await auditLog({
+    event: "biringa.draft.submitted",
+    actorId: user.uid,
+    resource: `draft:${result.id}`,
+    metadata: {
+      preferredSlug: input.payload.details.preferredSlug,
+      city: input.payload.details.city,
+      category: input.payload.details.category,
+    },
+  });
+
+  if (!result.hasOtherDrafts) {
+    // First-publish role grant. `grantRole` is idempotent at the claims
+    // level — if the user already has `model` for any reason, the merge is
+    // a no-op. The audit event still fires; that is intentional.
+    await grantRole(user.uid, "model", user.uid);
+  }
+
+  return { id: result.id };
 }

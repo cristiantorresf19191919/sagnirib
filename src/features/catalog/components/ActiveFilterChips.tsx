@@ -249,7 +249,7 @@ function buildChips(filters: ListingsFilters): Array<ActiveChip> {
 
 function chipHref(next: ListingsFilters): string {
   const qs = encodeFilters(next).toString();
-  return qs.length > 0 ? `/?${qs}` : "/";
+  return qs.length > 0 ? `/explorar?${qs}` : "/explorar";
 }
 
 const CHIP_BASE =
@@ -299,7 +299,7 @@ export function ActiveFilterChips({ filters }: ActiveFilterChipsProps) {
           style={{ ["--chip-i" as string]: chips.length }}
         >
           <Link
-            href="/"
+            href="/explorar"
             aria-label="Borrar todos los filtros"
             className="group inline-flex items-center gap-1.5 rounded-full border border-dashed border-[var(--color-border)] bg-transparent px-3 py-1 text-xs font-medium text-[var(--color-text-subtle)] transition-[border-color,color,background,transform] duration-150 ease-[var(--ease-standard)] hover:-translate-y-0.5 hover:border-[var(--color-brand-highlight)]/55 hover:bg-[var(--color-brand-highlight)]/8 hover:text-[var(--color-brand-highlight)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-highlight)]"
           >
