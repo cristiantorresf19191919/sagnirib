@@ -54,7 +54,7 @@ export default async function PublicarPage() {
           <header className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
             <div className="flex flex-col gap-2">
               <Link
-                href="/"
+                href="/explorar"
                 className="inline-flex w-fit items-center gap-1.5 text-[12px] font-semibold uppercase tracking-[0.22em] text-[var(--color-brand-primary)] transition-colors hover:text-[var(--color-brand-primary-strong)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-background)]"
               >
                 <ArrowLeft className="h-3.5 w-3.5" aria-hidden />

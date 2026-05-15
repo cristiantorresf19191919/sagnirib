@@ -1,57 +1,47 @@
 import type { Metadata } from "next";
+import Link from "next/link";
+import { ArrowRight } from "lucide-react";
 
 import { buildPageMetadata } from "@/core/seo/build-page-metadata";
-import { CatalogGrid } from "@/features/catalog/components/CatalogGrid";
-import { CategoryBar } from "@/features/catalog/components/CategoryBar";
-import { CityChips } from "@/features/catalog/components/CityChips";
 import { EditorialHero } from "@/features/catalog/components/EditorialHero";
-import { FiltersPanel } from "@/features/catalog/components/FiltersPanel";
-import { QuickPresets } from "@/features/catalog/components/QuickPresets";
-import { SearchBar } from "@/features/catalog/components/SearchBar";
-import {
-  parseFilters,
-  parseView,
-  type RawSearchParams,
-} from "@/features/catalog/lib/parse-filters";
+import { FeaturedStrip } from "@/features/home/components/FeaturedStrip";
 import { HowItWorks } from "@/features/home/components/HowItWorks";
+import { Container } from "@/shared/design-system/components/Container";
 import { Footer } from "@/shared/layout/Footer";
 import { Header } from "@/shared/layout/Header";
 
-interface HomePageProps {
-  searchParams: Promise<RawSearchParams>;
-}
-
 /**
- * Home `/` is the catalog itself (per founder direction 2026-04-29).
- * Header / Footer / CardStackGallery / HowItWorks were rebuilt in commit
- * 5f085bf and stay untouched. HowItWorks lives below the catalog so the
- * Header `#como-funciona` anchor still resolves on home.
+ * Home `/` is the marketing surface — editorial hero, featured profiles,
+ * "cómo funciona". The catalog itself lives at `/explorar` (split restored
+ * 2026-05-12 to match the SEO contract pair). The hero's search form and
+ * suggested chips are entry points to the catalog.
  */
 export const metadata: Metadata = buildPageMetadata({
-  title: "Biringas — Catálogo de acompañantes en Colombia",
+  title: "Biringas — Consigue lo que quieres en el momento que quieres",
   description:
-    "Biringas verificadas en Colombia. Filtra por ciudad, categoría (prepagos · masajes · videollamadas), precio, edad y disponibilidad.",
+    "Marketplace de Biringas verificadas en Colombia. Reserva compañía para eventos, viajes y salidas — perfiles auténticos, sin bots ni catfish.",
   path: "/",
 });
 
-export default async function HomePage({ searchParams }: HomePageProps) {
-  const params = await searchParams;
-  const filters = parseFilters(params);
-  const view = parseView(params);
-
+export default async function HomePage() {
   return (
     <>
-      <Header hideCatalogCta />
+      <Header />
       <main className="flex flex-col">
-        <EditorialHero
-          location={filters.city ? `${filters.city} · Colombia` : "Toda Colombia"}
-        />
-        <CategoryBar filters={filters} view={view} />
-        <SearchBar filters={filters} view={view} />
-        <CityChips filters={filters} view={view} />
-        <QuickPresets filters={filters} view={view} />
-        <FiltersPanel filters={filters} view={view} />
-        <CatalogGrid filters={filters} view={view} />
+        <EditorialHero location="Acompañantes verificadas · Colombia" />
+        <FeaturedStrip />
+        <Container width="wide" className="flex justify-center py-10 sm:py-12">
+          <Link
+            href="/explorar"
+            className="group inline-flex h-12 items-center gap-2 rounded-full bg-[var(--color-brand-primary)] px-7 text-sm font-semibold text-[var(--color-surface)] shadow-[var(--shadow-glow-primary)] transition-[background,box-shadow] duration-200 ease-[var(--ease-standard)] hover:bg-[var(--color-brand-primary-strong)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-background)]"
+          >
+            Explorar todo el catálogo
+            <ArrowRight
+              className="h-4 w-4 transition-transform duration-200 ease-[var(--ease-standard)] group-hover:translate-x-px"
+              aria-hidden
+            />
+          </Link>
+        </Container>
         <HowItWorks />
       </main>
       <Footer />

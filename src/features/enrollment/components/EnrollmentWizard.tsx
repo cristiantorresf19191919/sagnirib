@@ -431,7 +431,7 @@ function SubmittedScreen({ draft }: { draft: EnrollmentDraft }) {
         </div>
       </dl>
       <Link
-        href="/"
+        href="/explorar"
         className="inline-flex h-12 items-center justify-center rounded-full bg-[var(--color-brand-primary)] px-6 text-sm font-semibold text-[var(--color-surface)] shadow-[var(--shadow-glow-primary)] transition-colors hover:bg-[var(--color-brand-primary-strong)]"
       >
         Volver al catálogo

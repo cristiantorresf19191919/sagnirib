@@ -370,7 +370,7 @@ export function FiltersPanel({ filters, view }: FiltersPanelProps) {
 
             <div className="flex flex-col gap-3 border-t border-[var(--color-border)] pt-5 sm:flex-row sm:items-center sm:justify-between lg:col-span-2">
               <Link
-                href="/"
+                href="/explorar"
                 className="inline-flex h-12 items-center justify-center gap-2 rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] px-5 text-sm font-semibold text-[var(--color-text-muted)] transition-[border-color,color,background] duration-200 ease-[var(--ease-standard)] hover:border-[var(--color-brand-highlight)]/50 hover:bg-[var(--color-surface)] hover:text-[var(--color-brand-highlight)]"
               >
                 <Eraser className="h-4 w-4" aria-hidden />
