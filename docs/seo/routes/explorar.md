@@ -33,4 +33,6 @@ Above-the-fold mobile: filtros colapsables + primeras 2 cards visibles.
 Image strategy: `next/image` con `sizes` por viewport; sólo el primer card con `priority`.
 Owner: founder.
 Estado: **approved**.
-Notas: la paginación NO se incluye en sitemap. Los filtros generan params, no rutas indexables nuevas.
+Notas:
+- La paginación NO se incluye en sitemap. Los filtros generan params, no rutas indexables nuevas.
+- **Restaurada como página propia (PR3, 2026-05-12).** Reemplazó el redirect previo a `/`. Toda la UI de filtros + grilla + paginación vive aquí. El `Header` se renderiza con `hideCatalogCta` porque ya estamos en el destino del CTA "Explorar".

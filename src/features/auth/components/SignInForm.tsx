@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useState, type FormEvent } from "react";
 
 import { useAuthSession } from "../lib/use-auth-session";
 
@@ -106,13 +107,22 @@ export function SignInForm() {
       </div>
 
       <div className="flex flex-col gap-1.5">
-        <label
-          htmlFor="auth-password"
-          className="text-xs font-medium uppercase tracking-wide text-[var(--color-text-muted)]"
-        >
-          {/* BRAND_HANDSHAKE_TODO: password field label */}
-          Contraseña
-        </label>
+        <div className="flex items-center justify-between gap-3">
+          <label
+            htmlFor="auth-password"
+            className="text-xs font-medium uppercase tracking-wide text-[var(--color-text-muted)]"
+          >
+            {/* BRAND_HANDSHAKE_TODO: password field label */}
+            Contraseña
+          </label>
+          <Link
+            href="/recuperar"
+            className="text-xs font-semibold text-[var(--color-brand-primary)] hover:text-[var(--color-brand-primary-strong)]"
+          >
+            {/* BRAND_HANDSHAKE_TODO */}
+            ¿Olvidaste tu contraseña?
+          </Link>
+        </div>
         <input
           id="auth-password"
           type="password"
@@ -163,6 +173,17 @@ export function SignInForm() {
         {/* BRAND_HANDSHAKE_TODO: Google CTA copy */}
         Continuar con Google
       </button>
+
+      <p className="text-center text-xs text-[var(--color-text-muted)]">
+        {/* BRAND_HANDSHAKE_TODO */}
+        ¿No tenés cuenta?{" "}
+        <Link
+          href="/registrarse"
+          className="font-semibold text-[var(--color-brand-primary)] hover:text-[var(--color-brand-primary-strong)]"
+        >
+          Crear cuenta
+        </Link>
+      </p>
     </form>
   );
 }

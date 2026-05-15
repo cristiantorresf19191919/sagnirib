@@ -30,7 +30,7 @@ const GRID_CLASS: Record<CatalogView, string> = {
 function nowFilterHref(filters: ListingsFilters): string {
   const next: ListingsFilters = { ...filters, availableNow: true, page: undefined };
   const qs = encodeFilters(next).toString();
-  return qs ? `/?${qs}` : "/?now=1";
+  return qs ? `/explorar?${qs}` : "/explorar?now=1";
 }
 
 export async function CatalogGrid({
@@ -92,7 +92,7 @@ export async function CatalogGrid({
                 index={0}
                 data-testid="catalog-tile-stories-top"
               >
-                <HistoriasTopTile href="/?reviews=1" />
+                <HistoriasTopTile href="/explorar?reviews=1" />
               </CardReveal>
             )}
             {data.map((listing, index) => {
@@ -130,10 +130,10 @@ export async function CatalogGrid({
 }
 
 const EMPTY_STATE_SHORTCUTS = [
-  { label: "Disponibles ahora · Bogotá", href: "/?now=1&city=Bogot%C3%A1" },
-  { label: "Verificadas · Medellín", href: "/?verified=1&city=Medell%C3%ADn" },
-  { label: "Videollamada", href: "/?category=videollamadas" },
-  { label: "Top calificadas", href: "/?sort=rating&reviews=1" },
+  { label: "Disponibles ahora · Bogotá", href: "/explorar?now=1&city=Bogot%C3%A1" },
+  { label: "Verificadas · Medellín", href: "/explorar?verified=1&city=Medell%C3%ADn" },
+  { label: "Videollamada", href: "/explorar?category=videollamadas" },
+  { label: "Top calificadas", href: "/explorar?sort=rating&reviews=1" },
 ] as const;
 
 function EmptyState() {
@@ -153,7 +153,7 @@ function EmptyState() {
         Prueba a ampliar la ciudad, soltar la edad o quitar algún chip de
         servicio. También puedes empezar de cero.
       </p>
-      <Button href="/" variant="primary" size="md" className="mt-2" glow>
+      <Button href="/explorar" variant="primary" size="md" className="mt-2" glow>
         Borrar todos los filtros
       </Button>
 

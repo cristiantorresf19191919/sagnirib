@@ -1,10 +1,12 @@
 import type { Metadata } from "next";
+import { redirect } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 
 import { buildPageMetadata } from "@/core/seo/build-page-metadata";
 import { EnrollmentWizard } from "@/features/enrollment/components/EnrollmentWizard";
 import type { EnrollmentCatalogs } from "@/features/enrollment/lib/catalogs";
+import { getSession } from "@/server/auth";
 import {
   ATTENTION_CATALOG,
   CONTACT_CATALOG,
@@ -25,7 +27,17 @@ export const metadata: Metadata = buildPageMetadata({
   indexable: false,
 });
 
-export default function PublicarPage() {
+export default async function PublicarPage() {
+  // Auth gate. The wizard submits via a Server Action that already calls
+  // `requireAuth()` — this redirect just gives an anonymous user a friendly
+  // entry point instead of letting them fill the entire form and get
+  // rejected at submit time. `next` is read by `/ingresar` once that
+  // ?next= forwarding lands (PR2 follow-up).
+  const session = await getSession().catch(() => null);
+  if (!session) {
+    redirect("/ingresar?next=/publicar");
+  }
+
   const catalogs: EnrollmentCatalogs = {
     cities: SUPPORTED_CITIES,
     services: SERVICE_CATALOG,
@@ -42,7 +54,7 @@ export default function PublicarPage() {
           <header className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
             <div className="flex flex-col gap-2">
               <Link
-                href="/"
+                href="/explorar"
                 className="inline-flex w-fit items-center gap-1.5 text-[12px] font-semibold uppercase tracking-[0.22em] text-[var(--color-brand-primary)] transition-colors hover:text-[var(--color-brand-primary-strong)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-background)]"
               >
                 <ArrowLeft className="h-3.5 w-3.5" aria-hidden />

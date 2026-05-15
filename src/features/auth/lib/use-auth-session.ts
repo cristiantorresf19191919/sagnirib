@@ -2,8 +2,11 @@
 
 import { useEffect, useState } from "react";
 import {
+  createUserWithEmailAndPassword,
   GoogleAuthProvider,
   onIdTokenChanged,
+  sendEmailVerification,
+  sendPasswordResetEmail,
   signInWithEmailAndPassword as signInWithEmailAndPasswordFb,
   signInWithPopup,
   signOut as signOutFb,
@@ -12,7 +15,11 @@ import {
 
 import { isFirebaseClientConfigured } from "@/core/config/firebase-client";
 
-import { loginWithIdToken, signOut as signOutAction } from "../actions/session";
+import {
+  loginWithIdToken,
+  signOut as signOutAction,
+  signUpWithIdToken,
+} from "../actions/session";
 import { getClientAuth } from "./firebase-client";
 
 /**
@@ -44,6 +51,8 @@ export interface UseAuthSession {
   user: SessionUser | null;
   signInWithEmail: (email: string, password: string) => Promise<void>;
   signInWithGoogle: () => Promise<void>;
+  signUpWithEmail: (email: string, password: string) => Promise<void>;
+  sendPasswordReset: (email: string) => Promise<void>;
   signOut: () => Promise<void>;
 }
 
@@ -63,6 +72,16 @@ async function pushIdTokenToServer(u: FirebaseUser): Promise<void> {
   if (!result.ok) {
     throw new Error(
       `[auth] server rejected session: ${result.error?.message ?? "unknown"}`,
+    );
+  }
+}
+
+async function pushSignUpIdTokenToServer(u: FirebaseUser): Promise<void> {
+  const idToken = await u.getIdToken(/* forceRefresh */ false);
+  const result = await signUpWithIdToken(idToken);
+  if (!result.ok) {
+    throw new Error(
+      `[auth] server rejected signup: ${result.error?.message ?? "unknown"}`,
     );
   }
 }
@@ -114,6 +133,23 @@ export function useAuthSession(): UseAuthSession {
       const provider = new GoogleAuthProvider();
       const cred = await signInWithPopup(auth, provider);
       await pushIdTokenToServer(cred.user);
+    },
+    signUpWithEmail: async (email, password) => {
+      const auth = getClientAuth();
+      if (!auth) throw new Error("[auth] firebase client not configured");
+      const cred = await createUserWithEmailAndPassword(auth, email, password);
+      // Audit-distinct path. The onIdTokenChanged listener will follow up
+      // with a regular `auth.login` event on the same actorId.
+      await pushSignUpIdTokenToServer(cred.user);
+      // Best-effort: fire the verification email but never block signup.
+      sendEmailVerification(cred.user).catch((err) => {
+        console.warn("[auth] sendEmailVerification failed", err);
+      });
+    },
+    sendPasswordReset: async (email) => {
+      const auth = getClientAuth();
+      if (!auth) throw new Error("[auth] firebase client not configured");
+      await sendPasswordResetEmail(auth, email);
     },
     signOut: async () => {
       // Clear the cookie first so the server is consistent even if the

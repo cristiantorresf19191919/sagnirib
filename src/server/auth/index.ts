@@ -1,6 +1,7 @@
 import "server-only";
 
 import { isFirebaseConfigured } from "@/core/config/firebase";
+import { auditLog } from "@/server/security/audit-log";
 
 /**
  * Public barrel for the auth port.
@@ -15,6 +16,8 @@ import { isFirebaseConfigured } from "@/core/config/firebase";
  *   - `createSession(idToken)` exchanges a freshly-issued ID token for a
  *     server-side session cookie.
  *   - `destroySession()` clears the cookie + revokes refresh tokens.
+ *   - `grantRole(uid, role)` adds a role to a user via Firebase custom
+ *     claims (additive merge). Audited.
  */
 
 export type { AuthenticatedUser, AuthErrorKind } from "./types";
@@ -28,3 +31,23 @@ export const SESSION_COOKIE_NAME = provider.SESSION_COOKIE_NAME;
 export const getSession = provider.getSession;
 export const createSession = provider.createSession;
 export const destroySession = provider.destroySession;
+
+/**
+ * Grants a role to a user (additive). Auditable wrapper around the
+ * provider's raw helper. Call sites pass `actorUid` explicitly so the audit
+ * trail records who initiated the grant — typically the same user (a
+ * self-grant after publishing a draft), but occasionally an admin.
+ */
+export async function grantRole(
+  uid: string,
+  role: string,
+  actorUid?: string,
+): Promise<void> {
+  await provider.grantRoleRaw(uid, role);
+  await auditLog({
+    event: "auth.role_granted",
+    actorId: actorUid ?? uid,
+    resource: `user:${uid}`,
+    metadata: { role },
+  });
+}
