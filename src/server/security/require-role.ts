@@ -7,6 +7,6 @@ export async function requireRole(
   role: string,
 ): Promise<void> {
   if (!user.roles.includes(role)) {
-    throw new Error(`[security] user ${user.id} missing role "${role}"`);
+    throw new Error(`[security] user ${user.uid} missing role "${role}"`);
   }
 }

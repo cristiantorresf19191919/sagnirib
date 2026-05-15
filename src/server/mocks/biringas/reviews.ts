@@ -3,41 +3,17 @@ import "server-only";
 import { BIRINGA_LISTINGS } from "./data";
 import type { BiringaListing } from "./types";
 
-export interface ReviewBreakdown {
-  trato: number;
-  puntualidad: number;
-  conversacion: number;
-  presentacion: number;
-  discrecion: number;
-}
+export type {
+  ReviewBreakdown,
+  ReviewItem,
+  ReviewsAggregate,
+} from "@/server/biringas/review-types";
 
-export interface ReviewItem {
-  id: string;
-  alias: string;
-  city: string;
-  date: string;
-  rating: number;
-  body: string;
-  helpful: number;
-  notHelpful: number;
-  verified: boolean;
-}
-
-export interface ReviewsAggregate {
-  total: number;
-  averageRating: number;
-  /** 0–100. */
-  recommendRate: number;
-  distribution: ReadonlyArray<{
-    stars: number;
-    count: number;
-    percent: number;
-  }>;
-  breakdown: ReviewBreakdown;
-  anonymousLikes: number;
-  anonymousDislikes: number;
-  reviews: ReadonlyArray<ReviewItem>;
-}
+import type {
+  ReviewBreakdown,
+  ReviewItem,
+  ReviewsAggregate,
+} from "@/server/biringas/review-types";
 
 const REVIEW_BODIES: ReadonlyArray<string> = [
   "Súper puntual y elegante. La conversación fluyó toda la noche, repetiría sin pensarlo.",

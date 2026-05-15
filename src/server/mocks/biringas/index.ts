@@ -283,4 +283,6 @@ export type {
   ReviewsAggregate,
 } from "./reviews";
 
+export { getPrivateContactRaw } from "./private-contact";
+export { submitReviewRaw } from "./submit-review";
 export { listSimilar } from "./similar";

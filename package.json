@@ -17,9 +17,17 @@
     "security:audit": "node scripts/audit-security.mjs",
     "patterns:audit": "node scripts/audit-patterns.mjs",
     "responsive:audit": "node scripts/audit-responsive.mjs",
-    "responsive:e2e": "playwright test --project=responsive"
+    "firebase:audit": "node scripts/audit-firebase.mjs",
+    "responsive:e2e": "playwright test --project=responsive",
+    "seed:firebase": "tsx --conditions=react-server scripts/seed-firebase.ts",
+    "seed:firebase:dry": "tsx --conditions=react-server scripts/seed-firebase.ts --dry-run",
+    "firebase:deploy:rules": "pnpm dlx firebase-tools@latest deploy --only firestore:rules",
+    "firebase:deploy:indexes": "pnpm dlx firebase-tools@latest deploy --only firestore:indexes",
+    "firebase:deploy": "pnpm dlx firebase-tools@latest deploy --only firestore"
   },
   "dependencies": {
+    "firebase": "^12.13.0",
+    "firebase-admin": "^13.9.0",
     "framer-motion": "^12.38.0",
     "lucide-react": "^1.12.0",
     "next": "16.2.4",
@@ -36,10 +44,12 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "@vitejs/plugin-react": "^4.3.4",
+    "dotenv": "^17.4.2",
     "eslint": "^9",
     "eslint-config-next": "16.2.4",
     "jsdom": "^25.0.1",
     "tailwindcss": "^4",
+    "tsx": "^4.21.0",
     "typescript": "^5",
     "vitest": "^2.1.8"
   }

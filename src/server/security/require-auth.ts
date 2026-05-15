@@ -1,19 +1,25 @@
 import "server-only";
 
-export interface AuthenticatedUser {
-  id: string;
-  roles: ReadonlyArray<string>;
-}
+import { AuthError, getSession } from "@/server/auth";
+import type { AuthenticatedUser } from "@/server/auth/types";
+
+export type { AuthenticatedUser } from "@/server/auth/types";
 
 /**
  * Enforces authentication for Server Actions and Server Components.
  *
- * No auth provider is wired yet — this stub fails closed so any caller
- * triggers an explicit decision. Wiring the real provider must happen
- * in a single place (here) per Addendum 001 §14.
+ * Returns the authenticated user, or throws `AuthError("no-session")` if
+ * the request is anonymous. Call sites that want optional auth (`null` is
+ * fine) should use `getSession()` from `@/server/auth` directly.
+ *
+ * This is the SINGLE place where the auth provider is consulted for guard
+ * purposes (Addendum 001 §14). Adding a new check (e.g. emailVerified) goes
+ * here, not in features.
  */
 export async function requireAuth(): Promise<AuthenticatedUser> {
-  throw new Error(
-    "[security] requireAuth is not wired yet. Configure an auth provider before invoking protected server code.",
-  );
+  const user = await getSession();
+  if (!user) {
+    throw new AuthError("no-session", "Authentication required");
+  }
+  return user;
 }
