@@ -35,3 +35,4 @@ pnpm responsive:audit
 Foundation técnica + gobernanza completas. Páginas finales y features de negocio quedan **bloqueadas** hasta cerrar el Brand Handshake (logo, paleta final, referencias visuales) — ver `docs/branding/brand-intake.md` y `docs/seo/public-routes-brief.md`.
 
 Indexación SEO está globalmente desactivada (`src/core/seo/seo-config.ts → indexingEnabled = false`). Se abre sólo después del release-hardening.
+# sagnirib
