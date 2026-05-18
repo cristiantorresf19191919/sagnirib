@@ -21,7 +21,12 @@ export async function FeaturedBiringas({
   title = "Acompañantes verificadas para hoy",
   description = "Una selección curada por reputación, presencia y disponibilidad reciente.",
 }: FeaturedBiringasProps) {
-  const listings = await listFeatured(limit);
+  // Auxiliary surface — degrade to null on failure so the caller page
+  // still renders without the strip.
+  const listings = await listFeatured(limit).catch((err) => {
+    console.error("[featured-biringas] listFeatured failed", err);
+    return [] as Awaited<ReturnType<typeof listFeatured>>;
+  });
 
   if (listings.length === 0) return null;
 

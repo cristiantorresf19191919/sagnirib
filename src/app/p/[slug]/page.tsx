@@ -41,7 +41,10 @@ export async function generateMetadata({
   params,
 }: Readonly<ProfilePageProps>): Promise<Metadata> {
   const { slug } = await params;
-  const listing = await findBySlug(slug);
+  // Metadata generation must never crash — fall back to the not-found
+  // shell if findBySlug throws (Firestore hiccup, etc.). The page-level
+  // findBySlug call below decides the actual render.
+  const listing = await findBySlug(slug).catch(() => null);
   if (!listing) {
     return buildPageMetadata({
       title: "Perfil no encontrado",

@@ -24,7 +24,12 @@ export async function SimilarProfiles({
   heading = "Perfiles similares",
   limit = 4,
 }: Readonly<SimilarProfilesProps>) {
-  const similar = await listSimilar(slug, limit);
+  // Auxiliary rail — degrade to nothing on failure so the profile page
+  // doesn't 500 because of a "more like this" hiccup.
+  const similar = await listSimilar(slug, limit).catch((err) => {
+    console.error("[profile] listSimilar failed", err);
+    return [] as Awaited<ReturnType<typeof listSimilar>>;
+  });
   if (similar.length === 0) return null;
 
   return (

@@ -20,7 +20,14 @@ export default async function FavoritesPage() {
   // Pull the full catalog so the client can hydrate selected favorites
   // without a per-card round trip. Mock catalog is small (≈18 entries);
   // when this hits a real provider we'll switch to a `findByIds(ids)` API.
-  const { data: listings } = await listAll({ pageSize: 200 });
+  //
+  // Degrade to empty on failure — the favorites view handles an empty
+  // dataset already (renders the "todavía no guardaste perfiles" state),
+  // which is the right outcome if Firestore is unreachable.
+  const { data: listings } = await listAll({ pageSize: 200 }).catch((err) => {
+    console.error("[favoritas] listAll failed", err);
+    return { data: [], meta: { total: 0, page: 1, pageSize: 200, totalPages: 1 } };
+  });
 
   return (
     <>

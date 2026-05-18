@@ -37,12 +37,18 @@ export async function CatalogGrid({
   filters,
   view = "grid3",
 }: CatalogGridProps) {
+  // Primary list — let this throw if Firestore is genuinely down so the
+  // operator sees the 500 instead of an empty catalog.
   const { data, meta } = await listAll(filters);
   // Total in the unfiltered catalog (excludes the city scope so the toolbar
-  // can show "X de Y" when filters narrow the result).
+  // can show "X de Y" when filters narrow the result). Auxiliary — degrade
+  // to the primary `meta` if the second call hiccups.
   const { meta: cityMeta } = await listAll(
     filters.city ? { city: filters.city } : {},
-  );
+  ).catch((err) => {
+    console.error("[explorar] cityMeta listAll failed", err);
+    return { data: [], meta };
+  });
   const showSpecialTiles = view !== "list";
 
   return (
