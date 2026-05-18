@@ -112,7 +112,8 @@ function LocalHeart({
 }
 
 function baseClasses(extra: string): string {
-  return `inline-flex h-9 w-9 items-center justify-center rounded-full bg-[var(--color-surface)]/95 text-[var(--color-foreground)] shadow-[var(--shadow-sm)] backdrop-blur-sm transition-[color,transform] duration-200 ease-[var(--ease-standard)] hover:-translate-y-px hover:text-[var(--color-brand-highlight)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-background)] ${extra}`.trim();
+  // Mobile: 44x44 (touch target minimum). sm+: 36x36 (denser cards on desktop).
+  return `inline-flex h-11 w-11 sm:h-9 sm:w-9 items-center justify-center rounded-full bg-[var(--color-surface)]/95 text-[var(--color-foreground)] shadow-[var(--shadow-sm)] backdrop-blur-sm transition-[color,transform] duration-200 ease-[var(--ease-standard)] hover:-translate-y-px hover:text-[var(--color-brand-highlight)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-background)] ${extra}`.trim();
 }
 
 function iconClasses(active: boolean): string {

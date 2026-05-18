@@ -95,8 +95,7 @@ export async function EditorialHero({
     <section
       data-testid="editorial-hero"
       aria-labelledby="editorial-hero-title"
-      className="relative isolate overflow-hidden border-b border-[var(--color-line-soft)] bg-[var(--color-cream)] text-[var(--color-ink)]"
-      style={{ minHeight: 720 }}
+      className="relative isolate overflow-hidden border-b border-[var(--color-line-soft)] bg-[var(--color-cream)] text-[var(--color-ink)] lg:min-h-[720px]"
     >
       {/* Mosaic — desktop only, absolutely placed on the right.
           `pointer-events-none` removed so each tile's `Link` is clickable;
