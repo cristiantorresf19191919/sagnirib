@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowUpRight } from "lucide-react";
+import { ArrowUpRight, Plus } from "lucide-react";
 
 import { Container } from "@/shared/design-system/components/Container";
 import { Logo } from "@/shared/design-system/components/Logo";
@@ -47,9 +47,11 @@ export function Header({ hideCatalogCta = false }: HeaderProps) {
           <Link
             data-testid="header-link-publish-profile"
             href="/publicar"
-            className="hidden sm:inline-flex h-11 items-center rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] px-4 text-sm font-semibold text-[var(--color-foreground)] transition-[border-color,background] duration-200 ease-[var(--ease-standard)] hover:border-[var(--color-brand-primary-soft)] hover:bg-[var(--color-background-elevated)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-background)]"
+            aria-label="Publica tu perfil"
+            className="inline-flex h-11 items-center gap-1.5 rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] px-3 sm:px-4 text-sm font-semibold text-[var(--color-foreground)] transition-[border-color,background] duration-200 ease-[var(--ease-standard)] hover:border-[var(--color-brand-primary-soft)] hover:bg-[var(--color-background-elevated)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-background)]"
           >
-            Publica tu perfil
+            <Plus className="h-4 w-4 sm:hidden" aria-hidden />
+            <span className="hidden sm:inline">Publica tu perfil</span>
           </Link>
 
           {!hideCatalogCta && (

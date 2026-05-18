@@ -1,5 +1,6 @@
 "use client";
 
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { Loader2, Lock, MessageCircle, Phone, Send } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -77,55 +78,72 @@ export function ContactReveal({
     setState({ kind: "revealed", data: result.data ?? {} });
   }
 
-  if (state.kind === "revealed") {
-    return (
-      <RevealedChannels
-        listingName={listingName}
-        contactChannels={contactChannels}
-        contact={state.data}
-      />
-    );
-  }
-
   const isLoading = state.kind === "loading" || status === "loading";
 
   return (
     <div id="contacto" className="flex flex-col gap-3">
-      <BlurredPreview />
-      <Button
-        onClick={handleReveal}
-        variant="primary"
-        size="lg"
-        glow
-        disabled={isLoading}
-        aria-label={`Revelar contacto de ${listingName}`}
-        className="w-full"
-      >
-        {isLoading ? (
-          <>
-            <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
-            Revelando…
-          </>
+      <AnimatePresence mode="wait" initial={false}>
+        {state.kind === "revealed" ? (
+          <motion.div
+            key="revealed"
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -4 }}
+            transition={{ duration: 0.32, ease: [0.22, 1, 0.36, 1] }}
+          >
+            <RevealedChannels
+              listingName={listingName}
+              contactChannels={contactChannels}
+              contact={state.data}
+            />
+          </motion.div>
         ) : (
-          <>
-            <Lock className="h-4 w-4" aria-hidden />
-            Revelar contacto
-          </>
+          <motion.div
+            key="idle"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0, y: -4 }}
+            transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+            className="flex flex-col gap-3"
+          >
+            <BlurredPreview />
+            <Button
+              onClick={handleReveal}
+              variant="primary"
+              size="lg"
+              glow
+              disabled={isLoading}
+              aria-label={`Revelar contacto de ${listingName}`}
+              className="w-full"
+            >
+              {isLoading ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+                  Revelando…
+                </>
+              ) : (
+                <>
+                  <Lock className="h-4 w-4" aria-hidden />
+                  Revelar contacto
+                </>
+              )}
+            </Button>
+            <p className="text-xs text-[var(--color-text-subtle)]">
+              {status === "authenticated"
+                ? "Toca para mostrar los canales privados de este perfil."
+                : "Inicia sesión para ver los canales privados de este perfil."}
+            </p>
+            {state.kind === "error" && (
+              <p
+                role="alert"
+                className="text-xs text-[var(--color-brand-highlight)]"
+              >
+                {state.message}
+              </p>
+            )}
+          </motion.div>
         )}
-      </Button>
-      <p className="text-xs text-[var(--color-text-subtle)]">
-        {status === "authenticated"
-          ? "Toca para mostrar los canales privados de este perfil."
-          : "Inicia sesión para ver los canales privados de este perfil."}
-      </p>
-      {state.kind === "error" && (
-        <p
-          role="alert"
-          className="text-xs text-[var(--color-brand-highlight)]"
-        >
-          {state.message}
-        </p>
-      )}
+      </AnimatePresence>
     </div>
   );
 }
@@ -212,18 +230,49 @@ function RevealedChannels({
   }
 
   return (
+    <RevealedChannelsView buttons={buttons} />
+  );
+}
+
+function RevealedChannelsView({
+  buttons,
+}: Readonly<{
+  buttons: ReadonlyArray<{
+    key: ContactChannel;
+    href: string;
+    label: string;
+    Icon: typeof MessageCircle;
+  }>;
+}>) {
+  const reduced = useReducedMotion();
+  const stagger = reduced ? 0 : 0.06;
+
+  return (
     <div id="contacto" className="flex flex-col gap-3">
       <span className="text-[10px] uppercase tracking-[0.22em] text-[var(--color-text-subtle)]">
         Canales disponibles
       </span>
-      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+      <motion.div
+        className="grid grid-cols-1 gap-2 sm:grid-cols-2"
+        initial="hidden"
+        animate="visible"
+        variants={{
+          hidden: {},
+          visible: { transition: { staggerChildren: stagger, delayChildren: 0.05 } },
+        }}
+      >
         {buttons.map(({ key, href, label, Icon }, idx) => (
-          <a
+          <motion.a
             key={key}
             href={href}
             target={key === "llamada" ? undefined : "_blank"}
             rel={key === "llamada" ? undefined : "noopener noreferrer"}
             data-testid={`contact-reveal-${key}`}
+            variants={{
+              hidden: { opacity: 0, y: 6 },
+              visible: { opacity: 1, y: 0 },
+            }}
+            transition={{ duration: 0.26, ease: [0.22, 1, 0.36, 1] }}
             className={
               idx === 0
                 ? "inline-flex h-12 items-center justify-center gap-2 rounded-full bg-[var(--color-brand-primary)] px-5 text-sm font-semibold text-[var(--color-surface)] shadow-[var(--shadow-sm)] transition-[background,transform] duration-200 ease-[var(--ease-standard)] hover:bg-[var(--color-brand-primary-strong)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-background)] active:translate-y-px"
@@ -232,9 +281,9 @@ function RevealedChannels({
           >
             <Icon className="h-4 w-4" aria-hidden />
             {label}
-          </a>
+          </motion.a>
         ))}
-      </div>
+      </motion.div>
       <p className="text-xs text-[var(--color-text-subtle)]">
         Saluda con respeto. Toda interacción queda registrada.
       </p>

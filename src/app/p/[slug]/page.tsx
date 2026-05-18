@@ -105,10 +105,11 @@ export default async function ProfilePage({ params }: Readonly<ProfilePageProps>
         >
           <Link
             href="/explorar"
-            className="inline-flex items-center gap-1.5 text-xs uppercase tracking-[0.28em] text-[var(--color-text-subtle)] transition-colors hover:text-[var(--color-foreground)]"
+            className="inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap text-xs uppercase tracking-[0.28em] text-[var(--color-text-subtle)] transition-colors hover:text-[var(--color-foreground)]"
           >
             <ArrowLeft className="h-3 w-3" aria-hidden />
-            Volver al catálogo
+            <span className="hidden sm:inline">Volver al catálogo</span>
+            <span className="sm:hidden">Volver</span>
           </Link>
           <ShareMenu
             url={new URL(`/p/${listing.slug}`, seoConfig.metadataBase).toString()}

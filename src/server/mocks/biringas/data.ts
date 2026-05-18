@@ -1094,7 +1094,195 @@ const SEEDS: ReadonlyArray<MockSeed> = [
   },
 ];
 
-export const BIRINGA_LISTINGS: ReadonlyArray<BiringaListing> = SEEDS.map(build);
+/**
+ * Compact descriptor for additional listings. Heavy/repeated fields are filled
+ * from pools below — keeps the catalog varied without ~50 lines per entry.
+ * Used by `fastSeed()` to produce full `MockSeed` rows.
+ */
+interface ExtraDescriptor {
+  id: string;
+  slug: string;
+  name: string;
+  age: number;
+  city: keyof typeof cityCoords;
+  hood: string;
+  price: number;
+  img: number;
+  gallery: ReadonlyArray<number>;
+  cat: Category;
+  score: number;
+  views: number;
+  reviewCount: number;
+  storiesRecorded: number;
+  daysAdvertised: number;
+  daysSinceVerification: number;
+  daysFeatured: number;
+  hasVideo: boolean;
+  hasAudio: boolean;
+  availableNow: boolean;
+  faceVisible: boolean;
+  paymentByCard: boolean;
+  attention: ReadonlyArray<AttentionTarget>;
+  channels: ReadonlyArray<ContactChannel>;
+  storyAt?: string;
+  tags: ReadonlyArray<string>;
+  bioIndex: number;
+  attrIndex: number;
+  serviceIndex: number;
+  /** Override only when the default ("/3") fields aren't right. */
+  meetingContexts?: ReadonlyArray<string>;
+  specialServices?: ReadonlyArray<string>;
+  createdAt: string;
+  updatedAt: string;
+}
+
+const BIO_POOL: ReadonlyArray<{ bio: string; shortBio: string }> = [
+  {
+    bio: "Acompañante atenta para cenas, eventos privados y viajes cortos. Conversación fluida, trato cálido y discreción absoluta.",
+    shortBio: "Puntual, aseada, conversación fluida. Avísame con tiempo.",
+  },
+  {
+    bio: "Sesiones relajadas, sin prisas, con buena energía. Atiendo en lugar propio y hoteles 5 estrellas.",
+    shortBio: "Sin afán, ambiente cómodo, hoteles 5★.",
+  },
+  {
+    bio: "Acompañante VIP, perfil discreto y elegante. Especializada en cenas ejecutivas y salidas nocturnas.",
+    shortBio: "VIP discreta, cenas ejecutivas y noche.",
+  },
+  {
+    bio: "Trato dulce, novia experience real. Aviso con confirmación y verificación previa.",
+    shortBio: "Novia experience, dulce y cariñosa.",
+  },
+  {
+    bio: "Independiente, atiendo solo a caballeros respetuosos. Reservar con anticipación.",
+    shortBio: "Independiente. Solo caballeros respetuosos.",
+  },
+  {
+    bio: "Bilingüe español/inglés. Disponible para viajes nacionales y compañía en eventos corporativos.",
+    shortBio: "Bilingüe, viajes y eventos corporativos.",
+  },
+];
+
+const ATTR_POOL: ReadonlyArray<MockSeed["attributes"]> = [
+  {
+    ethnicity: "Trigueñas",
+    hair: "Pelinegras",
+    height: "Altas",
+    body: "Delgadas",
+    breast: "Pechos naturales",
+    pubis: "Depiladas",
+    country: "Colombianas",
+    languages: ["Español"],
+  },
+  {
+    ethnicity: "Piel blanca",
+    hair: "Rubias",
+    height: "Bajitas",
+    body: "Cuerpos Fitness",
+    breast: "Tetonas",
+    pubis: "Depiladas",
+    country: "Colombianas",
+    languages: ["Español", "Inglés"],
+  },
+  {
+    ethnicity: "Morenas",
+    hair: "Pelinegras",
+    height: "Altas",
+    body: "Delgadas",
+    breast: "Pechos naturales",
+    pubis: "Depiladas",
+    country: "Venezolanas",
+    languages: ["Español"],
+  },
+  {
+    ethnicity: "Trigueñas",
+    hair: "Pelirrojas",
+    height: "Altas",
+    body: "Gorditas",
+    breast: "Tetonas",
+    pubis: "Sin depilar",
+    country: "Colombianas",
+    languages: ["Español"],
+  },
+];
+
+const SERVICE_POOL: ReadonlyArray<ReadonlyArray<string>> = [
+  ["Cenas y restaurantes", "Trato de novia", "Acompañamiento ejecutivo"],
+  ["Masajes eróticos", "Oral natural", "Trato de novia"],
+  ["Eventos sociales", "Viajes nacionales", "Cenas y restaurantes", "Salidas nocturnas"],
+  ["Oral completo", "Sexo anal", "Fantasías y disfraces"],
+  ["Videollamadas", "Sesiones privadas", "Audio personalizado"],
+];
+
+const MEETING_DEFAULT: ReadonlyArray<string> = ["Hoteles", "Domicilio"];
+
+function fastSeed(d: ExtraDescriptor): MockSeed {
+  const { bio, shortBio } = BIO_POOL[d.bioIndex % BIO_POOL.length];
+  return {
+    id: d.id,
+    slug: d.slug,
+    name: d.name,
+    age: d.age,
+    city: d.city,
+    neighborhood: d.hood,
+    pricePerHour: d.price,
+    imageIndex: d.img,
+    galleryIndices: d.gallery,
+    hasVideo: d.hasVideo,
+    hasAudio: d.hasAudio,
+    category: d.cat,
+    attention: d.attention,
+    contactChannels: d.channels,
+    paymentByCard: d.paymentByCard,
+    faceVisible: d.faceVisible,
+    availableNow: d.availableNow,
+    storyAt: d.storyAt,
+    tags: d.tags,
+    bio,
+    shortBio,
+    privatePhone: `300 555 ${String(1000 + Number(d.id)).slice(-4)}`,
+    privateWhatsapp: `300555${String(1000 + Number(d.id)).slice(-4)}`,
+    reputation: {
+      daysAdvertised: d.daysAdvertised,
+      daysSinceVerification: d.daysSinceVerification,
+      storiesRecorded: d.storiesRecorded,
+      score: d.score,
+      totalViews: d.views,
+      daysFeatured: d.daysFeatured,
+      reviewCount: d.reviewCount,
+    },
+    attributes: ATTR_POOL[d.attrIndex % ATTR_POOL.length],
+    services: SERVICE_POOL[d.serviceIndex % SERVICE_POOL.length],
+    specialServices: d.specialServices ?? [],
+    meetingContexts: d.meetingContexts ?? MEETING_DEFAULT,
+    createdAt: d.createdAt,
+    updatedAt: d.updatedAt,
+  };
+}
+
+const EXTRA_DESCRIPTORS: ReadonlyArray<ExtraDescriptor> = [
+  { id: "19", slug: "camila-usaquen", name: "Camila", age: 22, city: "Bogotá", hood: "Usaquén", price: 240000, img: 10, gallery: [10, 4, 7], cat: "prepagos", score: 4.7, views: 24500, reviewCount: 18, storiesRecorded: 8, daysAdvertised: 90, daysSinceVerification: 14, daysFeatured: 22, hasVideo: true, hasAudio: false, availableNow: true, faceVisible: true, paymentByCard: true, attention: ATT_OPEN, channels: CH_CALL_WA, storyAt: "2026-05-15T10:00:00-05:00", tags: ["Premium", "Bilingüe"], bioIndex: 5, attrIndex: 1, serviceIndex: 0, createdAt: "2026-02-15T10:00:00Z", updatedAt: "2026-05-15T10:00:00Z" },
+  { id: "20", slug: "lucia-laureles", name: "Lucía", age: 25, city: "Medellín", hood: "Laureles", price: 280000, img: 11, gallery: [11, 5, 9], cat: "prepagos", score: 4.85, views: 56200, reviewCount: 31, storiesRecorded: 11, daysAdvertised: 142, daysSinceVerification: 7, daysFeatured: 45, hasVideo: false, hasAudio: true, availableNow: true, faceVisible: true, paymentByCard: true, attention: ATT_GENERIC, channels: CH_FULL, storyAt: "2026-05-15T12:00:00-05:00", tags: ["VIP", "Trato de Novia"], bioIndex: 2, attrIndex: 0, serviceIndex: 2, createdAt: "2026-01-04T09:30:00Z", updatedAt: "2026-05-15T12:00:00Z" },
+  { id: "21", slug: "renata-granada", name: "Renata", age: 28, city: "Cali", hood: "Granada", price: 220000, img: 12, gallery: [12, 6, 8], cat: "masajes", score: 4.6, views: 18900, reviewCount: 14, storiesRecorded: 4, daysAdvertised: 67, daysSinceVerification: 21, daysFeatured: 12, hasVideo: false, hasAudio: true, availableNow: false, faceVisible: false, paymentByCard: false, attention: ATT_OPEN, channels: CH_WA, tags: ["Masajes"], bioIndex: 1, attrIndex: 3, serviceIndex: 1, createdAt: "2026-03-09T11:00:00Z", updatedAt: "2026-05-14T18:00:00Z" },
+  { id: "22", slug: "antonella-bocagrande", name: "Antonella", age: 24, city: "Cartagena", hood: "Bocagrande", price: 350000, img: 13, gallery: [13, 0, 4], cat: "prepagos", score: 4.95, views: 142000, reviewCount: 58, storiesRecorded: 19, daysAdvertised: 220, daysSinceVerification: 5, daysFeatured: 120, hasVideo: true, hasAudio: true, availableNow: true, faceVisible: true, paymentByCard: true, attention: ATT_OPEN, channels: CH_FULL, storyAt: "2026-05-15T15:30:00-05:00", tags: ["VIP", "Premium", "Bilingüe"], bioIndex: 5, attrIndex: 1, serviceIndex: 2, specialServices: ["Squirting"], createdAt: "2025-10-12T08:00:00Z", updatedAt: "2026-05-15T15:30:00Z" },
+  { id: "23", slug: "salome-norte", name: "Salomé", age: 21, city: "Barranquilla", hood: "Norte Histórico", price: 180000, img: 14, gallery: [14, 1, 3], cat: "prepagos", score: 4.4, views: 12300, reviewCount: 9, storiesRecorded: 3, daysAdvertised: 33, daysSinceVerification: 11, daysFeatured: 6, hasVideo: false, hasAudio: false, availableNow: true, faceVisible: false, paymentByCard: false, attention: ATT_GENERIC, channels: CH_WA, tags: ["Nueva"], bioIndex: 4, attrIndex: 2, serviceIndex: 0, createdAt: "2026-04-10T16:00:00Z", updatedAt: "2026-05-14T20:00:00Z" },
+  { id: "24", slug: "florencia-poblado", name: "Florencia", age: 30, city: "Medellín", hood: "El Poblado", price: 420000, img: 15, gallery: [15, 7, 2], cat: "prepagos", score: 4.9, views: 198000, reviewCount: 72, storiesRecorded: 22, daysAdvertised: 410, daysSinceVerification: 9, daysFeatured: 210, hasVideo: true, hasAudio: false, availableNow: false, faceVisible: true, paymentByCard: true, attention: ATT_OPEN, channels: CH_FULL, tags: ["VIP", "Premium", "Ejecutiva"], bioIndex: 2, attrIndex: 1, serviceIndex: 2, createdAt: "2025-03-22T10:00:00Z", updatedAt: "2026-05-13T11:00:00Z" },
+  { id: "25", slug: "violeta-chapinero", name: "Violeta", age: 26, city: "Bogotá", hood: "Chapinero Alto", price: 260000, img: 16, gallery: [16, 8, 5], cat: "prepagos", score: 4.75, views: 41200, reviewCount: 24, storiesRecorded: 9, daysAdvertised: 115, daysSinceVerification: 3, daysFeatured: 35, hasVideo: true, hasAudio: true, availableNow: true, faceVisible: true, paymentByCard: true, attention: ATT_COUPLES, channels: CH_CALL_WA, storyAt: "2026-05-15T13:45:00-05:00", tags: ["Parejas", "VIP"], bioIndex: 3, attrIndex: 0, serviceIndex: 3, createdAt: "2026-01-22T14:00:00Z", updatedAt: "2026-05-15T13:45:00Z" },
+  { id: "26", slug: "agustina-getsemani", name: "Agustina", age: 23, city: "Cartagena", hood: "Getsemaní", price: 200000, img: 17, gallery: [17, 9, 6], cat: "masajes", score: 4.55, views: 16800, reviewCount: 11, storiesRecorded: 5, daysAdvertised: 78, daysSinceVerification: 18, daysFeatured: 14, hasVideo: false, hasAudio: true, availableNow: true, faceVisible: false, paymentByCard: false, attention: ATT_GENERIC, channels: CH_WA, tags: ["Masajes"], bioIndex: 1, attrIndex: 2, serviceIndex: 1, createdAt: "2026-02-25T11:30:00Z", updatedAt: "2026-05-15T09:15:00Z" },
+  { id: "27", slug: "noelia-cam", name: "Noelia", age: 22, city: "Bogotá", hood: "Cedritos", price: 80000, img: 18, gallery: [18, 11, 14], cat: "videollamadas", score: 4.85, views: 89000, reviewCount: 41, storiesRecorded: 14, daysAdvertised: 156, daysSinceVerification: 6, daysFeatured: 60, hasVideo: true, hasAudio: true, availableNow: true, faceVisible: true, paymentByCard: true, attention: ATT_OPEN, channels: CH_CALL_WA, storyAt: "2026-05-15T14:00:00-05:00", tags: ["VIP", "Cam"], bioIndex: 5, attrIndex: 1, serviceIndex: 4, createdAt: "2025-12-05T10:00:00Z", updatedAt: "2026-05-15T14:00:00Z" },
+  { id: "28", slug: "milagros-san-fernando", name: "Milagros", age: 29, city: "Cali", hood: "San Fernando", price: 320000, img: 19, gallery: [19, 12, 8], cat: "prepagos", score: 4.7, views: 32100, reviewCount: 19, storiesRecorded: 7, daysAdvertised: 98, daysSinceVerification: 16, daysFeatured: 25, hasVideo: true, hasAudio: false, availableNow: false, faceVisible: true, paymentByCard: true, attention: ATT_GENERIC, channels: CH_FULL, tags: ["VIP"], bioIndex: 0, attrIndex: 0, serviceIndex: 2, createdAt: "2026-02-01T15:00:00Z", updatedAt: "2026-05-12T22:00:00Z" },
+  { id: "29", slug: "jimena-prado", name: "Jimena", age: 27, city: "Barranquilla", hood: "El Prado", price: 280000, img: 0, gallery: [0, 13, 4], cat: "prepagos", score: 4.65, views: 28400, reviewCount: 16, storiesRecorded: 6, daysAdvertised: 85, daysSinceVerification: 10, daysFeatured: 18, hasVideo: false, hasAudio: true, availableNow: true, faceVisible: true, paymentByCard: false, attention: ATT_OPEN, channels: CH_CALL_WA, storyAt: "2026-05-15T11:30:00-05:00", tags: ["Trato de Novia"], bioIndex: 3, attrIndex: 0, serviceIndex: 0, createdAt: "2026-02-18T08:30:00Z", updatedAt: "2026-05-15T11:30:00Z" },
+  { id: "30", slug: "constanza-zona-rosa", name: "Constanza", age: 31, city: "Bogotá", hood: "Zona Rosa", price: 500000, img: 1, gallery: [1, 15, 5], cat: "prepagos", score: 4.92, views: 215000, reviewCount: 88, storiesRecorded: 26, daysAdvertised: 540, daysSinceVerification: 4, daysFeatured: 280, hasVideo: true, hasAudio: true, availableNow: false, faceVisible: true, paymentByCard: true, attention: ATT_OPEN, channels: CH_FULL, tags: ["VIP", "Premium", "Ejecutiva", "Bilingüe"], bioIndex: 5, attrIndex: 1, serviceIndex: 2, createdAt: "2024-09-08T10:00:00Z", updatedAt: "2026-05-14T16:20:00Z" },
+  { id: "31", slug: "paola-envigado", name: "Paola", age: 24, city: "Medellín", hood: "Envigado", price: 230000, img: 2, gallery: [2, 16, 7], cat: "prepagos", score: 4.6, views: 19500, reviewCount: 12, storiesRecorded: 4, daysAdvertised: 52, daysSinceVerification: 22, daysFeatured: 9, hasVideo: false, hasAudio: false, availableNow: true, faceVisible: false, paymentByCard: false, attention: ATT_GENERIC, channels: CH_WA, tags: ["Discreta"], bioIndex: 4, attrIndex: 2, serviceIndex: 0, createdAt: "2026-03-24T09:00:00Z", updatedAt: "2026-05-15T07:00:00Z" },
+  { id: "32", slug: "rocio-marbella", name: "Rocío", age: 25, city: "Cartagena", hood: "Marbella", price: 270000, img: 3, gallery: [3, 17, 10], cat: "masajes", score: 4.78, views: 35800, reviewCount: 21, storiesRecorded: 8, daysAdvertised: 124, daysSinceVerification: 8, daysFeatured: 38, hasVideo: true, hasAudio: false, availableNow: true, faceVisible: true, paymentByCard: true, attention: ATT_OPEN, channels: CH_CALL_WA, storyAt: "2026-05-15T16:00:00-05:00", tags: ["VIP", "Masajes"], bioIndex: 1, attrIndex: 0, serviceIndex: 1, createdAt: "2026-01-08T12:00:00Z", updatedAt: "2026-05-15T16:00:00Z" },
+  { id: "33", slug: "abril-tequendama", name: "Abril", age: 23, city: "Bogotá", hood: "Teusaquillo", price: 190000, img: 4, gallery: [4, 18, 11], cat: "videollamadas", score: 4.5, views: 22800, reviewCount: 13, storiesRecorded: 5, daysAdvertised: 47, daysSinceVerification: 12, daysFeatured: 11, hasVideo: true, hasAudio: true, availableNow: true, faceVisible: true, paymentByCard: false, attention: ATT_GENERIC, channels: CH_WA, tags: ["Cam"], bioIndex: 0, attrIndex: 3, serviceIndex: 4, createdAt: "2026-03-29T10:30:00Z", updatedAt: "2026-05-14T19:30:00Z" },
+  { id: "34", slug: "delfina-san-antonio", name: "Delfina", age: 27, city: "Cali", hood: "San Antonio", price: 310000, img: 5, gallery: [5, 19, 12], cat: "prepagos", score: 4.82, views: 67400, reviewCount: 34, storiesRecorded: 12, daysAdvertised: 188, daysSinceVerification: 6, daysFeatured: 58, hasVideo: true, hasAudio: false, availableNow: true, faceVisible: true, paymentByCard: true, attention: ATT_COUPLES, channels: CH_FULL, storyAt: "2026-05-15T08:30:00-05:00", tags: ["VIP", "Parejas"], bioIndex: 2, attrIndex: 1, serviceIndex: 3, specialServices: ["Squirting", "Sado suave"], createdAt: "2025-11-10T14:00:00Z", updatedAt: "2026-05-15T08:30:00Z" },
+];
+
+export const BIRINGA_LISTINGS: ReadonlyArray<BiringaListing> = [
+  ...SEEDS,
+  ...EXTRA_DESCRIPTORS.map(fastSeed),
+].map(build);
 
 export const SUPPORTED_CITIES: ReadonlyArray<string> = [
   "Bogotá",

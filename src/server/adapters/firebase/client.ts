@@ -47,6 +47,21 @@ export function getDb(): Firestore {
   firestoreInstance = getFirestore(getApp());
   // ignoreUndefinedProperties keeps the mapper-from-internal flow safe;
   // we never write `undefined` into Firestore for optional fields.
-  firestoreInstance.settings({ ignoreUndefinedProperties: true });
+  //
+  // Wrapped in try/catch because `settings()` can only be called once per
+  // Firestore instance. In dev, HMR resets `firestoreInstance` to null but
+  // the underlying firebase-admin singleton survives — so the second call
+  // throws "Firestore has already been initialized". The settings are
+  // already applied from the first load; the throw is safe to swallow.
+  try {
+    firestoreInstance.settings({ ignoreUndefinedProperties: true });
+  } catch (err) {
+    if (
+      !(err instanceof Error) ||
+      !err.message.includes("already been initialized")
+    ) {
+      throw err;
+    }
+  }
   return firestoreInstance;
 }
