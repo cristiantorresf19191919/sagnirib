@@ -17,7 +17,13 @@ import { Container } from "@/shared/design-system/components/Container";
  * with snap-points, lift this into a client component.
  */
 export async function FeaturedStrip() {
-  const featured = await listFeatured(4);
+  // Auxiliary content — degrade to null on failure so the home page still
+  // renders. See note in EditorialHero re: missing Firestore indexes on
+  // first production read.
+  const featured = await listFeatured(4).catch((err) => {
+    console.error("[home] listFeatured failed", err);
+    return [] as Awaited<ReturnType<typeof listFeatured>>;
+  });
   if (featured.length === 0) return null;
 
   return (

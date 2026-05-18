@@ -78,7 +78,14 @@ const MOSAIC_COL_B_LEFT = `calc((100% - ${MOSAIC_GAP_PX * 2}px) * 0.28 + ${MOSAI
 export async function EditorialHero({
   location = "Acompañantes verificadas · Colombia",
 }: Readonly<EditorialHeroProps>) {
-  const mosaic = await listHeroMosaic(MOSAIC_TOTAL_TILES);
+  // Auxiliary content — degrade to empty on failure so the hero copy + CTA
+  // still render. Common failure mode in early production: Firestore
+  // composite indexes from `firestore.indexes.json` not yet deployed, so
+  // the first read throws FAILED_PRECONDITION. The page should not 500.
+  const mosaic = await listHeroMosaic(MOSAIC_TOTAL_TILES).catch((err) => {
+    console.error("[home] listHeroMosaic failed", err);
+    return [] as Awaited<ReturnType<typeof listHeroMosaic>>;
+  });
 
   const colA = mosaic.slice(MOSAIC_COL_A_START, MOSAIC_COL_A_END);
   const colB = mosaic.slice(MOSAIC_COL_B_START, MOSAIC_COL_B_END);
