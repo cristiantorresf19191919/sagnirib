@@ -3,7 +3,6 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import {
   ArrowLeft,
-  ArrowRight,
   Eye,
   Film,
   Mic,
@@ -16,13 +15,13 @@ import { buildPageMetadata } from "@/core/seo/build-page-metadata";
 import { seoConfig } from "@/core/seo/seo-config";
 import { findBySlug, getListingReviews } from "@/server/biringas";
 import { CardStackGallery } from "@/features/biringas/components/CardStackGallery";
+import { ContactReveal } from "@/features/biringas/components/ContactReveal";
 import { RecentlyViewedStrip } from "@/features/biringas/components/RecentlyViewedStrip";
 import { RecordRecentView } from "@/features/biringas/components/RecordRecentView";
 import { ReviewsSection } from "@/features/biringas/components/ReviewsSection";
 import { ShareMenu } from "@/features/biringas/components/ShareMenu";
 import { SimilarProfiles } from "@/features/biringas/components/SimilarProfiles";
 import { formatPricePerHour } from "@/features/biringas/format";
-import { Button } from "@/shared/design-system/components/Button";
 import { Card } from "@/shared/design-system/components/Card";
 import { Container } from "@/shared/design-system/components/Container";
 import { VerifiedBadge } from "@/shared/design-system/components/VerifiedBadge";
@@ -257,30 +256,13 @@ export default async function ProfilePage({ params }: Readonly<ProfilePageProps>
                   </div>
                 </div>
 
-                <div className="mt-5 flex flex-col gap-2 sm:flex-row">
-                  <Button
-                    href="#contacto"
-                    variant="primary"
-                    size="lg"
-                    glow
-                    className="w-full sm:flex-1"
-                  >
-                    Contactar
-                    <ArrowRight className="h-4 w-4" aria-hidden />
-                  </Button>
-                  <Button
-                    href="/explorar"
-                    variant="outline"
-                    size="lg"
-                    className="w-full sm:w-auto"
-                  >
-                    Ver más
-                  </Button>
+                <div className="mt-5">
+                  <ContactReveal
+                    slug={listing.slug}
+                    listingName={listing.name}
+                    contactChannels={listing.contactChannels}
+                  />
                 </div>
-                <p className="mt-3 text-xs text-[var(--color-text-subtle)]">
-                  El contacto directo se libera tras verificar tu cuenta. La
-                  pasarela de contratación llega en la próxima versión.
-                </p>
                 </Card>
               </RevealItem>
 
