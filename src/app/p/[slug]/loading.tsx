@@ -1,4 +1,5 @@
 import { Container } from "@/shared/design-system/components/Container";
+import { LoadingTips } from "@/shared/layout/LoadingTips";
 
 /**
  * Route-level skeleton for `/p/[slug]`. Mirrors the actual profile shape —
@@ -15,6 +16,14 @@ export default function Loading() {
       >
         <div className="h-3 w-32 animate-pulse rounded-full bg-[var(--color-surface-muted)]" />
         <div className="h-11 w-28 animate-pulse rounded-full bg-[var(--color-surface-muted)]" />
+      </Container>
+
+      {/* Tips strip — sits between the back-link row and the heavy gallery
+          skeleton so users see something useful during the navigation
+          handoff, especially on profile pages where data fetching can take
+          a beat longer. */}
+      <Container width="wide" className="mt-6">
+        <LoadingTips />
       </Container>
 
       <Container

@@ -16,6 +16,7 @@ import { seoConfig } from "@/core/seo/seo-config";
 import { findBySlug, getListingReviews } from "@/server/biringas";
 import { CardStackGallery } from "@/features/biringas/components/CardStackGallery";
 import { ContactReveal } from "@/features/biringas/components/ContactReveal";
+import { PremiumContentGrid } from "@/features/biringas/components/PremiumContentGrid";
 import { RecentlyViewedStrip } from "@/features/biringas/components/RecentlyViewedStrip";
 import { RecordRecentView } from "@/features/biringas/components/RecordRecentView";
 import { ReviewsSection } from "@/features/biringas/components/ReviewsSection";
@@ -330,6 +331,12 @@ export default async function ProfilePage({ params }: Readonly<ProfilePageProps>
         {reviews && (
           <ReviewsSection listingName={listing.name} reviews={reviews} />
         )}
+
+        {/* Locked-content tease — OnlyFans-style premium grid. Sits before
+            the similar-profiles strip so the upsell moment lands after
+            the user has read the bio + reviews but before they bounce
+            to another profile. */}
+        <PremiumContentGrid listing={listing} />
 
         <SimilarProfiles slug={listing.slug} />
         <RecentlyViewedStrip />

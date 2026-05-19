@@ -1,4 +1,5 @@
 import { Container } from "@/shared/design-system/components/Container";
+import { LoadingTips } from "@/shared/layout/LoadingTips";
 
 const SKELETON_CARDS = Array.from({ length: 8 });
 
@@ -19,6 +20,13 @@ export default function Loading() {
           <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between sm:gap-6">
             <div className="h-8 w-2/3 max-w-md animate-pulse rounded-md bg-[var(--color-surface-muted)]" />
             <div className="h-8 w-32 animate-pulse rounded-full bg-[var(--color-surface-muted)]" />
+          </div>
+
+          {/* Rotating tips strip — replaces the dead vertical space between
+              the page title and the skeleton grid with safety, trust, and
+              growth nudges. */}
+          <div className="mt-6">
+            <LoadingTips />
           </div>
           <ul
             aria-hidden

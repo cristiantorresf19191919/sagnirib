@@ -1,4 +1,5 @@
 import { Container } from "@/shared/design-system/components/Container";
+import { LoadingTips } from "@/shared/layout/LoadingTips";
 
 const SKELETON_CARDS = Array.from({ length: 4 });
 
@@ -18,6 +19,10 @@ export default function Loading() {
           <div className="h-3 w-20 animate-pulse rounded-full bg-[var(--color-surface-muted)]" />
           <div className="h-12 w-3/4 max-w-md animate-pulse rounded-md bg-[var(--color-surface-muted)]" />
           <div className="h-4 w-1/2 max-w-sm animate-pulse rounded bg-[var(--color-surface-muted)]" />
+        </div>
+
+        <div className="mt-8">
+          <LoadingTips />
         </div>
         <ul
           aria-hidden
