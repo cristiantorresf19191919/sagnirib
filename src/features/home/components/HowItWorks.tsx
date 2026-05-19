@@ -272,7 +272,9 @@ function StepCard({ step, isLast, reduced }: Readonly<StepCardProps>) {
           aria-hidden
           variants={reduced ? undefined : ICON_VARIANTS}
           transition={HOVER_SPRING}
-          className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl will-change-transform"
+          // Tailwind classes are the SSR + reduced-motion fallback — when
+          // variants are active framer-motion overrides via inline style.
+          className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[var(--color-brand-primary)]/10 text-[var(--color-brand-primary)] will-change-transform"
         >
           <Icon className="h-5 w-5" aria-hidden />
         </motion.span>

@@ -264,10 +264,15 @@ export async function EditorialHero({
             </div>
             <span aria-hidden className="h-4 w-px bg-[var(--color-line)]" />
             <div className="flex items-center gap-2">
-              <ShieldCheck
-                className="h-3.5 w-3.5 text-[var(--color-forest)]"
+              <span
                 aria-hidden
-              />
+                className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-[var(--color-forest)]/10 ring-1 ring-[var(--color-forest)]/15"
+              >
+                <ShieldCheck
+                  className="h-3 w-3 text-[var(--color-forest)]"
+                  aria-hidden
+                />
+              </span>
               <span className="text-[13px] text-[var(--color-ink-soft)]">
                 <strong className="font-semibold text-[var(--color-ink)] tabular-nums">
                   <CountUp to={247} duration={1.6} />
@@ -277,10 +282,15 @@ export async function EditorialHero({
             </div>
             <span aria-hidden className="h-4 w-px bg-[var(--color-line)]" />
             <div className="flex items-center gap-2">
-              <MapPin
-                className="h-3.5 w-3.5 text-[var(--color-forest)]"
+              <span
                 aria-hidden
-              />
+                className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-[var(--color-gold)]/15 ring-1 ring-[var(--color-gold)]/25"
+              >
+                <MapPin
+                  className="h-3 w-3 text-[var(--color-gold-deep)]"
+                  aria-hidden
+                />
+              </span>
               <span className="text-[13px] text-[var(--color-ink-soft)]">
                 <strong className="font-semibold text-[var(--color-ink)] tabular-nums">
                   6
@@ -303,13 +313,16 @@ export async function EditorialHero({
               role="search"
               aria-label="Buscar Biringas"
             >
-              <label className="block flex-[0_0_38%] cursor-pointer border-r border-[var(--color-line-soft)] px-5 py-2.5">
+              <label className="group/city block flex-[0_0_38%] cursor-pointer border-r border-[var(--color-line-soft)] px-5 py-2.5 transition-colors duration-200 hover:bg-[var(--color-cream)]/40 focus-within:bg-[var(--color-cream)]/40">
                 <span className="block text-[9.5px] uppercase tracking-[0.16em] text-[var(--color-ink-soft)] opacity-80">
                   Ciudad
                 </span>
                 <span className="mt-0.5 flex items-center gap-1.5 text-sm font-medium text-[var(--color-ink)]">
                   Toda Colombia
-                  <ChevronDown className="h-3 w-3" aria-hidden />
+                  <ChevronDown
+                    className="h-3 w-3 transition-transform duration-300 ease-[var(--ease-standard)] group-hover/city:rotate-180 group-focus-within/city:rotate-180"
+                    aria-hidden
+                  />
                 </span>
                 <select
                   data-testid="editorial-hero-search-city"
@@ -342,10 +355,16 @@ export async function EditorialHero({
               <button
                 data-testid="editorial-hero-search-submit"
                 type="submit"
-                className="inline-flex items-center gap-2 rounded-full bg-[var(--color-forest)] px-6 text-[13.5px] font-medium text-[var(--color-cream)] transition-colors duration-200 hover:bg-[var(--color-forest-deep)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-forest)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-cream)]"
+                className="group/submit relative inline-flex items-center gap-2 overflow-hidden rounded-full bg-[var(--color-forest)] px-6 text-[13.5px] font-medium text-[var(--color-cream)] transition-colors duration-200 hover:bg-[var(--color-forest-deep)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-forest)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-cream)]"
               >
-                <Search className="h-3.5 w-3.5" aria-hidden />
-                Buscar
+                {/* Gold shimmer sweep — only fires on hover, reuses the
+                    existing motion-shimmer-sweep keyframe. */}
+                <span
+                  aria-hidden
+                  className="pointer-events-none absolute inset-y-0 -left-1/3 block w-1/3 bg-gradient-to-r from-transparent via-[rgba(200,166,118,0.55)] to-transparent opacity-0 group-hover/submit:opacity-100 motion-safe:group-hover/submit:motion-shimmer-sweep"
+                />
+                <Search className="relative h-3.5 w-3.5" aria-hidden />
+                <span className="relative">Buscar</span>
               </button>
             </form>
 
@@ -366,7 +385,7 @@ export async function EditorialHero({
                     className={
                       isPrimary
                         ? "inline-flex items-center gap-1.5 rounded-full bg-[var(--color-forest)] px-3.5 py-1.5 text-xs font-semibold text-[var(--color-cream)] shadow-[0_4px_14px_-4px_rgba(31,61,46,0.45)] transition-[background,box-shadow,transform] duration-200 hover:-translate-y-[1px] hover:bg-[var(--color-forest-deep)] hover:shadow-[0_8px_22px_-6px_rgba(31,61,46,0.55)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-forest)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-cream)]"
-                        : "rounded-full border border-[var(--color-line)] bg-transparent px-3 py-1.5 text-xs text-[var(--color-ink)] transition-colors duration-200 hover:border-[var(--color-ink)] hover:bg-[var(--color-ink)] hover:text-[var(--color-cream)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-forest)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-cream)]"
+                        : "inline-flex items-center rounded-full border border-[var(--color-line)] bg-transparent px-3 py-1.5 text-xs text-[var(--color-ink)] transition-[background,border-color,color,transform] duration-200 ease-[var(--ease-standard)] hover:-translate-y-[1px] hover:border-[var(--color-ink)] hover:bg-[var(--color-ink)] hover:text-[var(--color-cream)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-forest)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-cream)]"
                     }
                   >
                     {isPrimary && (
@@ -390,21 +409,21 @@ export async function EditorialHero({
               style={{ animationDelay: "0.55s" }}
               aria-label="Garantías del marketplace"
             >
-              <li className="inline-flex items-center gap-1.5 rounded-full border border-[var(--color-line)] bg-[var(--color-cream-soft)]/60 px-3 py-1.5 text-[var(--color-ink-soft)]">
+              <li className="group/pill inline-flex items-center gap-1.5 rounded-full border border-[var(--color-line)] bg-[var(--color-cream-soft)]/60 px-3 py-1.5 text-[var(--color-ink-soft)] transition-[background,border-color,color,transform] duration-200 ease-[var(--ease-standard)] hover:-translate-y-[1px] hover:border-[var(--color-forest)]/40 hover:bg-[var(--color-cream)] hover:text-[var(--color-ink)]">
                 <UserCheck
                   className="h-3.5 w-3.5 text-[var(--color-forest)]"
                   aria-hidden
                 />
                 Verificación humana
               </li>
-              <li className="inline-flex items-center gap-1.5 rounded-full border border-[var(--color-line)] bg-[var(--color-cream-soft)]/60 px-3 py-1.5 text-[var(--color-ink-soft)]">
+              <li className="group/pill inline-flex items-center gap-1.5 rounded-full border border-[var(--color-line)] bg-[var(--color-cream-soft)]/60 px-3 py-1.5 text-[var(--color-ink-soft)] transition-[background,border-color,color,transform] duration-200 ease-[var(--ease-standard)] hover:-translate-y-[1px] hover:border-[var(--color-forest)]/40 hover:bg-[var(--color-cream)] hover:text-[var(--color-ink)]">
                 <Lock
                   className="h-3.5 w-3.5 text-[var(--color-forest)]"
                   aria-hidden
                 />
                 Pago discreto
               </li>
-              <li className="inline-flex items-center gap-1.5 rounded-full border border-[var(--color-line)] bg-[var(--color-cream-soft)]/60 px-3 py-1.5 text-[var(--color-ink-soft)]">
+              <li className="group/pill inline-flex items-center gap-1.5 rounded-full border border-[var(--color-line)] bg-[var(--color-cream-soft)]/60 px-3 py-1.5 text-[var(--color-ink-soft)] transition-[background,border-color,color,transform] duration-200 ease-[var(--ease-standard)] hover:-translate-y-[1px] hover:border-[var(--color-forest)]/40 hover:bg-[var(--color-cream)] hover:text-[var(--color-ink)]">
                 <BotOff
                   className="h-3.5 w-3.5 text-[var(--color-forest)]"
                   aria-hidden
