@@ -11,7 +11,13 @@ import { validateActionInput } from "@/server/security/validate-action-input";
 import { CACHE_TAGS } from "./cache-tags";
 import { createListingDraftSchema } from "./create-draft-schema";
 import type { CreateListingDraftInput } from "./draft-types";
+import type {
+  BookingRequestInput,
+} from "./booking-types";
 import type { PrivateContact } from "./private-contact-types";
+import { reportListingSchema } from "./report-listing-schema";
+import type { ReportListingInput } from "./report-types";
+import { requestBookingSchema } from "./request-booking-schema";
 import type { SubmitReviewInput } from "./review-types";
 import { submitReviewSchema } from "./submit-review-schema";
 
@@ -79,6 +85,8 @@ export const listServiceCatalog = adapter.listServiceCatalog;
 export const listMeetingContextCatalog = adapter.listMeetingContextCatalog;
 export const getListingReviews = adapter.getListingReviews;
 export const listSimilar = adapter.listSimilar;
+export const requestBookingRaw = adapter.requestBookingRaw;
+export const reportListingRaw = adapter.reportListingRaw;
 
 /**
  * Curated marketing testimonials for the home page.
@@ -98,6 +106,19 @@ export type {
   Testimonial,
   TestimonialListingRef,
 } from "./testimonial-types";
+export type {
+  BookingContactPreference,
+  BookingMeetingType,
+  BookingRequestInput,
+  BookingRequestRecord,
+} from "./booking-types";
+export { BOOKING_DURATIONS, BOOKING_LIMITS } from "./booking-types";
+export type {
+  ReportListingInput,
+  ReportListingRecord,
+  ReportReason,
+} from "./report-types";
+export { REPORT_LIMITS, REPORT_REASONS } from "./report-types";
 export { CACHE_TAGS } from "./cache-tags";
 export type {
   CreateListingDraftInput,
@@ -167,6 +188,89 @@ export async function submitReview(
   // (which now requires a CacheLife profile and is for non-action paths).
   updateTag(CACHE_TAGS.listing(input.listingSlug));
   updateTag(CACHE_TAGS.listings);
+
+  return result;
+}
+
+/**
+ * Files a booking request against a listing.
+ *
+ * Standard mutation contract (ADR-010 §5):
+ *
+ *   1. Validate via `requestBookingSchema`.
+ *   2. Authenticate — anonymous bookings are refused.
+ *   3. Adapter call — appends to the mock store today; will write a
+ *      `bookings/{auto-id}` document under Firestore when implemented.
+ *   4. Audit — `biringa.booking.requested` with proposed date + duration.
+ *   5. Revalidate — the per-listing bookings tag so the listing owner's
+ *      future inbox surface sees the new request without a full refetch.
+ */
+export async function requestBooking(
+  rawInput: unknown,
+): Promise<{ id: string }> {
+  const input: BookingRequestInput = validateActionInput(
+    requestBookingSchema,
+    rawInput,
+  );
+  const user = await requireAuth();
+
+  const result = await adapter.requestBookingRaw({
+    input,
+    requesterUid: user.uid,
+  });
+
+  await auditLog({
+    event: "biringa.booking.requested",
+    actorId: user.uid,
+    resource: `listing:${input.listingSlug}`,
+    metadata: {
+      proposedAt: input.proposedAt,
+      durationHours: input.durationHours,
+      meetingType: input.meetingType,
+    },
+  });
+
+  updateTag(CACHE_TAGS.bookingsForListing(input.listingSlug));
+
+  return result;
+}
+
+/**
+ * Files a report against a listing (fake photos, scam, harassment, etc.).
+ *
+ * Anonymous reports ARE permitted (for `minor_concern` / `underage`
+ * especially, the reporter may not have an account). When `requireAuth`
+ * throws we still file the report with `reporterUid: null`. All other
+ * steps of the mutation contract (validate / adapter / audit) run
+ * unchanged so trust&safety has a complete trail.
+ */
+export async function reportListing(
+  rawInput: unknown,
+): Promise<{ id: string }> {
+  const input: ReportListingInput = validateActionInput(
+    reportListingSchema,
+    rawInput,
+  );
+
+  let reporterUid: string | null = null;
+  try {
+    const user = await requireAuth();
+    reporterUid = user.uid;
+  } catch {
+    // Anonymous reports allowed — see docstring.
+  }
+
+  const result = await adapter.reportListingRaw({
+    input,
+    reporterUid,
+  });
+
+  await auditLog({
+    event: "biringa.listing.reported",
+    actorId: reporterUid ?? "anonymous",
+    resource: `listing:${input.listingSlug}`,
+    metadata: { reason: input.reason },
+  });
 
   return result;
 }

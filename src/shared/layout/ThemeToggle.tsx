@@ -1,9 +1,10 @@
 "use client";
 
 import { Flame, Moon, Sparkles, Sun } from "lucide-react";
-import { useSyncExternalStore } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 
 const STORAGE_KEY = "biringas:theme";
+const HINT_DISMISSED_KEY = "biringas:theme-hint-dismissed";
 
 type Theme = "light" | "dark" | "bloom" | "desire";
 
@@ -106,15 +107,77 @@ export function ThemeToggle() {
     getServerSnapshot,
   );
 
-  const toggle = () => applyTheme(NEXT_THEME[theme]);
+  const toggle = () => {
+    applyTheme(NEXT_THEME[theme]);
+    dismissHint();
+  };
   const isViolet = theme === "bloom" || theme === "desire";
 
+  // First-time hint: nudge dark-mode users toward the violet variants
+  // they may never discover. Shows ONCE per browser, only when the user
+  // landed in `dark` (already past the first cycle step) and has not
+  // dismissed the hint before. Auto-dismisses after 8s; clicking the
+  // toggle dismisses it permanently.
+  const [hintVisible, setHintVisible] = useState(false);
+  useEffect(() => {
+    if (theme !== "dark") return;
+    if (typeof window === "undefined") return;
+    try {
+      if (window.localStorage.getItem(HINT_DISMISSED_KEY) === "1") return;
+    } catch {
+      return;
+    }
+    // Small delay so the hint doesn't appear during page-load animations.
+    const showTimer = window.setTimeout(() => setHintVisible(true), 1200);
+    const hideTimer = window.setTimeout(() => {
+      setHintVisible(false);
+    }, 9200);
+    return () => {
+      window.clearTimeout(showTimer);
+      window.clearTimeout(hideTimer);
+    };
+  }, [theme]);
+
+  function dismissHint() {
+    setHintVisible(false);
+    try {
+      window.localStorage.setItem(HINT_DISMISSED_KEY, "1");
+    } catch {
+      // ignore
+    }
+  }
+
   return (
-    <button
-      type="button"
-      onClick={toggle}
-      data-testid="theme-toggle"
-      data-theme-state={theme}
+    <span className="relative inline-flex">
+      {hintVisible && (
+        <span
+          aria-hidden
+          data-testid="theme-hint"
+          className="motion-safe:motion-hero-reveal pointer-events-none absolute right-0 top-12 z-50 inline-flex max-w-[220px] items-center gap-2 rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-[11px] font-medium text-[var(--color-foreground)] shadow-[var(--shadow-md)]"
+        >
+          <Sparkles
+            className="h-3.5 w-3.5 shrink-0"
+            style={{ color: "#E5B7DA" }}
+            aria-hidden
+          />
+          <span>
+            Toca otra vez para probar el modo{" "}
+            <span className="font-semibold" style={{ color: "#E5B7DA" }}>
+              violeta
+            </span>
+            .
+          </span>
+          <span
+            aria-hidden
+            className="absolute -top-1 right-3 h-2 w-2 rotate-45 border-l border-t border-[var(--color-border)] bg-[var(--color-surface)]"
+          />
+        </span>
+      )}
+      <button
+        type="button"
+        onClick={toggle}
+        data-testid="theme-toggle"
+        data-theme-state={theme}
       aria-label={LABEL[theme]}
       title={LABEL[theme]}
       className="group relative inline-flex h-11 w-11 items-center justify-center overflow-hidden rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-foreground)] transition-[border-color,background,transform,box-shadow] duration-200 ease-[var(--ease-standard)] hover:-translate-y-[1px] hover:border-[var(--color-brand-primary-soft)] hover:bg-[var(--color-background-elevated)] hover:shadow-[var(--shadow-glow-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-background)]"
@@ -223,6 +286,7 @@ export function ThemeToggle() {
             : "none",
         }}
       />
-    </button>
+      </button>
+    </span>
   );
 }

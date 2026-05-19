@@ -4,9 +4,12 @@ import { buildPageMetadata } from "@/core/seo/build-page-metadata";
 import { RecentlyViewedStrip } from "@/features/biringas/components/RecentlyViewedStrip";
 import { CatalogGrid } from "@/features/catalog/components/CatalogGrid";
 import { CategoryBar } from "@/features/catalog/components/CategoryBar";
+import { OnboardingQuiz } from "@/features/catalog/components/OnboardingQuiz";
 import { QuickPresets } from "@/features/catalog/components/QuickPresets";
+import { SaveSearchButton } from "@/features/catalog/components/SaveSearchButton";
 import { SearchBar } from "@/features/catalog/components/SearchBar";
 import {
+  encodeFilters,
   parseFilters,
   parseView,
   type RawSearchParams,
@@ -38,6 +41,27 @@ export default async function ExplorarPage({
   const params = await searchParams;
   const filters = parseFilters(params);
   const view = parseView(params);
+
+  // Compose a short label for the "guardar búsqueda" pill — only shows
+  // when the user has applied at least one real filter. Pure read; no
+  // hooks here because this is a server component.
+  const filterCount = Object.values(filters).filter(
+    (v) =>
+      v !== undefined &&
+      v !== null &&
+      v !== "" &&
+      !(Array.isArray(v) && v.length === 0),
+  ).length;
+  const savedSearchHref = `/explorar?${encodeFilters(filters)}`;
+  const savedSearchLabel = [
+    filters.city,
+    filters.category,
+    filters.search ? `“${filters.search}”` : null,
+    filters.sortBy ? filters.sortBy.replace("_", " ") : null,
+  ]
+    .filter(Boolean)
+    .slice(0, 3)
+    .join(" · ") || "Búsqueda personalizada";
 
   return (
     <>
@@ -74,12 +98,21 @@ export default async function ExplorarPage({
             Filtra por ciudad, categoría y disponibilidad. Sólo perfiles
             verificados — <em>sin bots, sin catfish.</em>
           </p>
+          {filterCount > 0 && (
+            <div className="mt-2 flex">
+              <SaveSearchButton
+                label={savedSearchLabel}
+                href={savedSearchHref}
+              />
+            </div>
+          )}
         </Container>
         <CategoryBar filters={filters} view={view} />
         <SearchBar filters={filters} view={view} />
         <QuickPresets filters={filters} view={view} />
         <CatalogGrid filters={filters} view={view} />
         <RecentlyViewedStrip />
+        <OnboardingQuiz />
       </main>
       <Footer />
     </>

@@ -15,12 +15,15 @@ import { buildPageMetadata } from "@/core/seo/build-page-metadata";
 import { seoConfig } from "@/core/seo/seo-config";
 import { findBySlug, getListingReviews } from "@/server/biringas";
 import { CardStackGallery } from "@/features/biringas/components/CardStackGallery";
+import { AvailabilityStrip } from "@/features/biringas/components/AvailabilityStrip";
+import { BookingRequestModal } from "@/features/biringas/components/BookingRequestModal";
 import { ContactReveal } from "@/features/biringas/components/ContactReveal";
 import { PremiumContentGrid } from "@/features/biringas/components/PremiumContentGrid";
 import { RateBiringaForm } from "@/features/biringas/components/RateBiringaForm";
 import { RecentlyViewedStrip } from "@/features/biringas/components/RecentlyViewedStrip";
 import { RecordRecentView } from "@/features/biringas/components/RecordRecentView";
 import { ReviewsSection } from "@/features/biringas/components/ReviewsSection";
+import { ReportListingMenu } from "@/features/biringas/components/ReportListingMenu";
 import { ShareMenu } from "@/features/biringas/components/ShareMenu";
 import { SimilarProfiles } from "@/features/biringas/components/SimilarProfiles";
 import { formatPricePerHour } from "@/features/biringas/format";
@@ -116,10 +119,16 @@ export default async function ProfilePage({ params }: Readonly<ProfilePageProps>
             <span className="hidden sm:inline">Volver al catálogo</span>
             <span className="sm:hidden">Volver</span>
           </Link>
-          <ShareMenu
-            url={new URL(`/p/${listing.slug}`, seoConfig.metadataBase).toString()}
-            name={listing.name}
-          />
+          <div className="inline-flex shrink-0 items-center gap-2">
+            <ShareMenu
+              url={new URL(`/p/${listing.slug}`, seoConfig.metadataBase).toString()}
+              name={listing.name}
+            />
+            <ReportListingMenu
+              listingSlug={listing.slug}
+              listingName={listing.name}
+            />
+          </div>
         </Container>
 
         {/* Records the visit in client-side localStorage so the home strip
@@ -149,6 +158,32 @@ export default async function ProfilePage({ params }: Readonly<ProfilePageProps>
               images={galleryImages}
               altBase={`${listing.name} en ${listing.city}`}
             />
+
+            {/* Photo-verification timestamp — anchors the trust promise
+                of the verified shield with a concrete date. Pulled from
+                `daysSinceVerification` so it stays accurate without an
+                extra Firestore field. Hidden when the listing isn't
+                verified (no shield, no timestamp). */}
+            {listing.verified && (
+              <div className="mt-4 flex items-center justify-center">
+                <Link
+                  href="/verificacion"
+                  className="inline-flex items-center gap-2 rounded-full border border-[var(--color-gold)]/45 bg-[var(--color-cream-soft)]/80 px-3.5 py-1.5 text-[11px] font-semibold text-[var(--color-foreground)] shadow-[inset_0_1px_0_rgba(255,255,255,0.6)] transition-colors duration-200 ease-[var(--ease-standard)] hover:border-[var(--color-gold)] hover:bg-[var(--color-cream)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-gold)]"
+                  title="Cómo funciona la verificación"
+                >
+                  <ShieldCheck
+                    className="h-3.5 w-3.5 text-[var(--color-brand-primary)]"
+                    aria-hidden
+                  />
+                  Fotos verificadas{" "}
+                  {listing.reputation.daysSinceVerification < 30
+                    ? "este mes"
+                    : `hace ${Math.floor(
+                        listing.reputation.daysSinceVerification / 30,
+                      )} mes(es)`}
+                </Link>
+              </div>
+            )}
 
             <div className="mt-6 flex flex-wrap items-center justify-center gap-3 text-xs text-[var(--color-text-muted)]">
               {listing.hasVideo && (
@@ -262,12 +297,21 @@ export default async function ProfilePage({ params }: Readonly<ProfilePageProps>
                   </div>
                 </div>
 
-                <div className="mt-5">
+                <div className="mt-5 flex flex-col gap-3">
+                  <BookingRequestModal
+                    listingSlug={listing.slug}
+                    listingName={listing.name}
+                    defaultCity={listing.city}
+                  />
                   <ContactReveal
                     slug={listing.slug}
                     listingName={listing.name}
                     contactChannels={listing.contactChannels}
                   />
+                </div>
+
+                <div className="mt-5">
+                  <AvailabilityStrip listingSlug={listing.slug} />
                 </div>
                 </Card>
               </RevealItem>

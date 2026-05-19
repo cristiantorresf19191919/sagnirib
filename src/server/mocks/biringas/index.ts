@@ -287,3 +287,8 @@ export { getPrivateContactRaw } from "./private-contact";
 export { submitReviewRaw } from "./submit-review";
 export { createListingDraftRaw } from "./create-draft";
 export { listSimilar } from "./similar";
+export {
+  requestBookingRaw,
+  listBookingRequestsRaw,
+} from "./request-booking";
+export { reportListingRaw, listReportsRaw } from "./report-listing";

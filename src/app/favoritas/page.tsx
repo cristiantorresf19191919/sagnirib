@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 
 import { buildPageMetadata } from "@/core/seo/build-page-metadata";
 import { FavoritesView } from "@/features/favorites/components/FavoritesView";
+import { SavedSearchesList } from "@/features/favorites/components/SavedSearchesList";
 import { listAll } from "@/server/biringas";
 import { Container } from "@/shared/design-system/components/Container";
 import { Footer } from "@/shared/layout/Footer";
@@ -38,8 +39,9 @@ export default async function FavoritesPage() {
           className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-[520px] bg-[radial-gradient(circle_at_15%_5%,rgba(47,93,67,0.10),transparent_55%),radial-gradient(circle_at_85%_15%,rgba(229,162,58,0.10),transparent_55%)]"
         />
 
-        <Container width="wide" className="py-12 sm:py-16">
+        <Container width="wide" className="flex flex-col gap-10 py-12 sm:gap-12 sm:py-16">
           <FavoritesView listings={listings} />
+          <SavedSearchesList />
         </Container>
       </main>
       <Footer />
