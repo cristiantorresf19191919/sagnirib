@@ -25,7 +25,7 @@ export function SearchBar({ filters, view }: SearchBarProps) {
       <Container width="wide" className="py-4 sm:py-5">
         <form
           data-testid="search-bar-form"
-          action="/"
+          action="/explorar"
           method="get"
           className="flex flex-col gap-2 sm:flex-row sm:items-stretch sm:gap-2"
         >

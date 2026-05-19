@@ -76,3 +76,75 @@
   --breakpoint-xl: 1280px;
   --breakpoint-2xl: 1440px;
 }
+
+/*
+ * Dark mode — flipped via `data-theme="dark"` on <html>. Same variable
+ * names, remapped values so cream/forest editorial vocabulary survives:
+ *  - `cream` becomes a deep warm-ink (paper goes to candlelight)
+ *  - `ink` becomes off-cream so type still reads "warm" not "neon white"
+ *  - `forest` shifts brighter (~+25 L*) so cream text on the CTA stays
+ *    above 4.5:1 contrast against the lighter green
+ *  - `gold` warms but desaturates so it reads as candle-glow on dark
+ *
+ * Theme is applied pre-paint by `ThemeScript` (no FOUC). The body grain
+ * overlay's `mix-blend-mode: multiply` is swapped for `screen` so the
+ * texture still feels like paper-weave instead of a black smear.
+ */
+html[data-theme="dark"] {
+  --color-background: #14130E;
+  --color-background-elevated: #1B1A14;
+  --color-surface: #211F18;
+  --color-surface-muted: #2A2820;
+  --color-border: #3A362A;
+
+  /*
+   * Dark-mode brand-primary inverts the light/dark relationship: in light
+   * mode it was a deep forest (dark on cream). Here it becomes a mint-
+   * forest (light on ink) so the existing `text-[var(--color-surface)]`
+   * pattern on CTAs renders as DARK text on a BRIGHT pill — high
+   * contrast (~5.4:1) without rewriting 40+ callsites. Same idiom as
+   * Material You / Apple Light-on-Dark CTAs.
+   */
+  --color-brand-primary: #88BDA1;
+  --color-brand-primary-strong: #A2D0B6;
+  --color-brand-primary-soft: #4A6E55;
+
+  --color-brand-secondary: #98A78A;
+  --color-brand-secondary-strong: #B6C2A4;
+
+  --color-brand-accent: #E5B564;
+  --color-brand-accent-strong: #F0C77D;
+
+  --color-brand-highlight: #E08278;
+  --color-brand-warn: #E5B564;
+
+  --color-foreground: #F2EBDC;
+  --color-text-muted: #BDB39E;
+  --color-text-subtle: #8D8474;
+
+  /*
+   * Editorial vocabulary remap: "cream" was the paper field in light
+   * mode; in dark mode it becomes the candlelit surface. "ink" was the
+   * deep brown text; here it inverts to off-cream. Forest stays mint
+   * (matches brand-primary) so the hero's signature gold-on-forest
+   * gradient keeps reading correctly.
+   */
+  --color-cream: #1B1A14;
+  --color-cream-deep: #14130E;
+  --color-cream-soft: #221F18;
+  --color-ink: #F2EBDC;
+  --color-ink-soft: #D5CDB7;
+  --color-forest: #88BDA1;
+  --color-forest-deep: #A2D0B6;
+  --color-gold: #D4B582;
+  --color-gold-deep: #B89668;
+  --color-line: rgba(242, 235, 220, 0.10);
+  --color-line-soft: rgba(242, 235, 220, 0.05);
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.45);
+  --shadow-md: 0 6px 20px -8px rgba(0, 0, 0, 0.55);
+  --shadow-lg: 0 18px 40px -16px rgba(0, 0, 0, 0.65);
+  --shadow-glow-primary: 0 12px 32px -16px rgba(136, 189, 161, 0.55);
+  --shadow-glow-secondary: 0 12px 32px -16px rgba(152, 167, 138, 0.40);
+  --shadow-glow-accent: 0 12px 32px -16px rgba(229, 181, 100, 0.45);
+}

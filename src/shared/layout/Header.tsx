@@ -7,6 +7,7 @@ import { AuthBadge } from "@/features/auth/components/AuthBadge";
 import { FavoritesNavLink } from "@/features/favorites/components/FavoritesNavLink";
 
 import { HeaderBackdrop } from "./HeaderBackdrop";
+import { ThemeToggle } from "./ThemeToggle";
 
 interface HeaderProps {
   /**
@@ -47,6 +48,8 @@ export function Header({ hideCatalogCta = false }: HeaderProps) {
           </Link>
 
           <FavoritesNavLink />
+
+          <ThemeToggle />
 
           <AuthBadge />
 

@@ -9,6 +9,7 @@ import {
 } from "@/core/seo/structured-data";
 import { AgeGate } from "@/features/age-gate/AgeGate";
 import { readAgeAck } from "@/features/age-gate/cookie";
+import { ThemeScript } from "@/shared/layout/ThemeScript";
 import "@/styles/globals.css";
 
 import { Providers } from "./providers";
@@ -76,6 +77,9 @@ export default async function RootLayout({
       className={`h-full antialiased ${sans.variable} ${mono.variable} ${display.variable} ${serif.variable}`}
       suppressHydrationWarning
     >
+      <head>
+        <ThemeScript />
+      </head>
       <body className="min-h-full flex flex-col bg-[var(--color-background)] text-[var(--color-foreground)]">
         {/*
          * Brand-wide structured data per home SEO Route Contract — emitted

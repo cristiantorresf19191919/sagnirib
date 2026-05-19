@@ -93,10 +93,13 @@ export function HeroMosaicCard({
 
         {/* Rating ribbon — explains the mosaic's curation: every tile is
             in the hall of fame. Top-right corner avoids collision with the
-            bottom-right "live" pill. */}
+            bottom-right "live" pill. Text intentionally hardcoded cream-
+            white: it always sits over a dark photograph + scrim, so it must
+            stay light in BOTH light and dark themes (the cream token flips
+            dark under [data-theme="dark"]). */}
         <span
           aria-label={`Calificación ${listing.reputation.score.toFixed(1)} estrellas`}
-          className="absolute right-3.5 top-3.5 inline-flex items-center gap-1 rounded-full border border-[rgba(248,242,228,0.32)] bg-[rgba(20,28,24,0.48)] px-2 py-0.5 text-[10.5px] font-semibold text-[var(--color-cream)] backdrop-blur-md"
+          className="absolute right-3.5 top-3.5 inline-flex items-center gap-1 rounded-full border border-[rgba(248,242,228,0.32)] bg-[rgba(20,28,24,0.48)] px-2 py-0.5 text-[10.5px] font-semibold text-[#F2EBDC] backdrop-blur-md"
         >
           <Star
             className="h-3 w-3 fill-[var(--color-gold)] text-[var(--color-gold)]"
@@ -107,7 +110,7 @@ export function HeroMosaicCard({
           </span>
         </span>
 
-        <div className="absolute right-3.5 bottom-3.5 left-3.5 flex items-end justify-between gap-2 text-[var(--color-cream)]">
+        <div className="absolute right-3.5 bottom-3.5 left-3.5 flex items-end justify-between gap-2 text-[#F2EBDC]">
           <div className="min-w-0">
             <h3 className="font-[var(--font-display)] text-[22px] font-[380] leading-none tracking-[-0.02em]">
               {listing.name}

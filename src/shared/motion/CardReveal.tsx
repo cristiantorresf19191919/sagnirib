@@ -1,6 +1,12 @@
 "use client";
 
-import { motion, useInView, useReducedMotion } from "framer-motion";
+import {
+  motion,
+  useInView,
+  useReducedMotion,
+  type TargetAndTransition,
+  type Transition,
+} from "framer-motion";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 
 interface CardRevealProps {
@@ -13,14 +19,43 @@ interface CardRevealProps {
   "data-testid"?: string;
 }
 
-const STAGGER_BUCKET = 6;
-const STEP_DELAY = 0.11;
-const TRAVEL = 48;
-const DURATION = 0.7;
-const EASE = [0.22, 0.61, 0.36, 1] as const;
+/*
+ * Cascade tuning — a few values chosen carefully so the stagger reads as
+ * one continuous wave rather than discrete steps:
+ *  - TRAVEL is the vertical lift distance. 56 is large enough to feel like
+ *    arrival but small enough that the user doesn't lose place.
+ *  - The transition is a spring, not a bezier — gives the cards a slight
+ *    settle that bezier ease-out lacks.
+ *  - `index * STEP_DELAY` with no modulo. Past rows ~6 the visual cascade
+ *    has already passed off-screen by the time later rows enter view, so
+ *    bucketing was hiding cumulative drift. With viewport-triggered reveal
+ *    (each card waits for IntersectionObserver), the per-row stagger only
+ *    matters for the FIRST row above the fold — it's clamped by useInView
+ *    waking each row independently afterward.
+ */
+const STEP_DELAY = 0.06;
+const STEP_DELAY_CAP = 0.55;
+const TRAVEL = 56;
 
-const HIDDEN = { opacity: 0, y: TRAVEL, scale: 0.97 } as const;
-const VISIBLE = { opacity: 1, y: 0, scale: 1 } as const;
+const HIDDEN: TargetAndTransition = {
+  opacity: 0,
+  y: TRAVEL,
+  scale: 0.96,
+  filter: "blur(8px)",
+};
+const VISIBLE: TargetAndTransition = {
+  opacity: 1,
+  y: 0,
+  scale: 1,
+  filter: "blur(0px)",
+};
+
+const SPRING: Transition = {
+  type: "spring",
+  stiffness: 140,
+  damping: 22,
+  mass: 0.9,
+};
 
 /**
  * Per-card viewport-triggered cascade.
@@ -51,8 +86,8 @@ export function CardReveal({
   const ref = useRef<HTMLLIElement>(null);
   const inView = useInView(ref, {
     once: true,
-    amount: 0.15,
-    margin: "-40px 0px -40px 0px",
+    amount: 0.1,
+    margin: "-60px 0px -60px 0px",
   });
   // `mountedAbove` is true only when the card was already past the viewport
   // top when it mounted — IntersectionObserver will never fire for it, so we
@@ -71,17 +106,18 @@ export function CardReveal({
   const revealed = inView || mountedAbove;
   const skipAnimation = mountedAbove;
 
+  // Delay capped so very long lists don't pile up: the cap means even a
+  // 30th card waits at most ~0.55s instead of nearly two seconds.
+  const delay = Math.min(index * STEP_DELAY, STEP_DELAY_CAP);
+
   const motionProps = {
     initial: HIDDEN,
     animate: revealed ? VISIBLE : HIDDEN,
     transition:
       reduced || skipAnimation
         ? { duration: 0 }
-        : {
-            duration: DURATION,
-            ease: EASE,
-            delay: (index % STAGGER_BUCKET) * STEP_DELAY,
-          },
+        : { ...SPRING, delay },
+    style: { willChange: "transform, opacity, filter" } as const,
   };
 
   if (as === "div") {
