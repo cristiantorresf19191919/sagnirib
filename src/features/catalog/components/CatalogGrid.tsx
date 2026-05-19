@@ -37,10 +37,9 @@ export async function CatalogGrid({
   filters,
   view = "grid3",
 }: CatalogGridProps) {
-  // Primary list. Log + catch so a partial outage surfaces in Netlify
-  // function logs without 500'ing the page; the empty-state already
-  // handles the no-data render. Remove the catch once we have proper
-  // observability.
+  // Primary list. Catch + log so a Firestore outage renders the empty
+  // state instead of 500'ing the catalog, and the underlying error
+  // surfaces in Netlify function logs for diagnosis.
   const { data, meta } = await listAll(filters).catch((err) => {
     console.error("[explorar] primary listAll failed", {
       message: (err as Error)?.message,
