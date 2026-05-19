@@ -43,7 +43,11 @@ export function ReviewsSection({
       >
         <Container width="wide" className="py-16">
           <div className="flex flex-col gap-3">
-            <span className="text-xs uppercase tracking-[0.32em] text-[var(--color-text-subtle)]">
+            <span className="flex items-center gap-3 text-xs uppercase tracking-[0.32em] text-[var(--color-text-subtle)]">
+              <span
+                aria-hidden
+                className="inline-block h-px w-8 bg-gradient-to-r from-[var(--color-gold)] to-transparent"
+              />
               Opiniones
             </span>
             <h2 className="text-2xl font-semibold tracking-tight text-[var(--color-foreground)]">

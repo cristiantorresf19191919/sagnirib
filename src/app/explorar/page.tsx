@@ -45,8 +45,12 @@ export default async function ExplorarPage({
     <>
       <Header hideCatalogCta />
       <main className="flex flex-col bg-[var(--color-background)]">
-        <Container width="wide" className="flex flex-col gap-2 pt-10 sm:pt-12">
-          <span className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[var(--color-brand-primary)]">
+        <Container width="wide" className="flex flex-col gap-3 pt-10 sm:pt-12">
+          <span className="flex items-center gap-3 text-[11px] font-semibold uppercase tracking-[0.22em] text-[var(--color-brand-primary)]">
+            <span
+              aria-hidden
+              className="inline-block h-px w-8 bg-gradient-to-r from-[var(--color-gold)] to-transparent"
+            />
             Catálogo
           </span>
           <h1 className="text-3xl font-bold leading-[1.05] tracking-tight text-[var(--color-foreground)] sm:text-4xl">
