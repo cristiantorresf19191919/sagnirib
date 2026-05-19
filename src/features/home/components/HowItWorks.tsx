@@ -1,9 +1,16 @@
+"use client";
+
 import type { LucideIcon } from "lucide-react";
 import { ArrowRight, Compass, ShieldCheck, Sparkles } from "lucide-react";
+import {
+  motion,
+  useReducedMotion,
+  type Transition,
+  type Variants,
+} from "framer-motion";
 
 import { Container } from "@/shared/design-system/components/Container";
 import { Sparkle } from "@/shared/design-system/components/Sparkle";
-import { Reveal, RevealItem } from "@/shared/motion/Reveal";
 
 import { HowItWorksConnector } from "./HowItWorksConnector";
 
@@ -42,7 +49,58 @@ const STEPS: ReadonlyArray<Step> = [
   },
 ];
 
+/**
+ * Soft diffused drop shadow used on hover. Two layers — a tight one for the
+ * edge definition + a wider one for the cushion — produces the "lifted" feel
+ * without harshness.
+ */
+const HOVER_SHADOW =
+  "0 18px 40px -16px rgba(20, 28, 24, 0.18), 0 8px 22px -12px rgba(20, 28, 24, 0.10)";
+const REST_SHADOW =
+  "0 1px 2px 0 rgba(20, 28, 24, 0.04), 0 1px 1px 0 rgba(20, 28, 24, 0.03)";
+
+const LIST_VARIANTS: Variants = {
+  hidden: {},
+  visible: {
+    transition: {
+      staggerChildren: 0.15,
+      delayChildren: 0.05,
+    },
+  },
+};
+
+/**
+ * Card variants combine the entrance keyframes (hidden → rest) AND the
+ * hover target (rest → hover). Framer Motion propagates the active key
+ * down to children that declare matching variants — which is how the
+ * icon scale stays coordinated with the card lift without extra wiring.
+ */
+const CARD_VARIANTS: Variants = {
+  hidden: { opacity: 0, y: 20, boxShadow: REST_SHADOW },
+  rest: { opacity: 1, y: 0, boxShadow: REST_SHADOW },
+  hover: { opacity: 1, y: -8, boxShadow: HOVER_SHADOW },
+};
+
+const ICON_VARIANTS: Variants = {
+  hidden: { scale: 1 },
+  rest: { scale: 1 },
+  hover: { scale: 1.1 },
+};
+
+const ENTRANCE_TRANSITION: Transition = {
+  duration: 0.5,
+  ease: [0.22, 1, 0.36, 1],
+};
+
+const HOVER_SPRING: Transition = {
+  type: "spring",
+  stiffness: 320,
+  damping: 22,
+  mass: 0.6,
+};
+
 export function HowItWorks() {
+  const reduced = useReducedMotion();
   return (
     <section
       data-testid="how-it-works"
@@ -89,16 +147,22 @@ export function HowItWorks() {
 
         <div className="relative mt-14 lg:mt-20">
           <HowItWorksConnector />
-          <Reveal
-            as="ol"
+          <motion.ol
             className="relative grid gap-6 md:grid-cols-3 lg:gap-8"
+            variants={reduced ? undefined : LIST_VARIANTS}
+            initial={reduced ? false : "hidden"}
+            whileInView={reduced ? undefined : "visible"}
+            viewport={{ once: true, amount: 0.2, margin: "-40px 0px" }}
           >
             {STEPS.map((step, index) => (
-              <RevealItem key={step.numeral} as="li">
-                <StepCard step={step} isLast={index === STEPS.length - 1} />
-              </RevealItem>
+              <StepCard
+                key={step.numeral}
+                step={step}
+                isLast={index === STEPS.length - 1}
+                reduced={!!reduced}
+              />
             ))}
-          </Reveal>
+          </motion.ol>
         </div>
       </Container>
     </section>
@@ -108,14 +172,31 @@ export function HowItWorks() {
 interface StepCardProps {
   step: Step;
   isLast: boolean;
+  reduced: boolean;
 }
 
-function StepCard({ step, isLast }: StepCardProps) {
+function StepCard({ step, isLast, reduced }: Readonly<StepCardProps>) {
   const Icon = step.icon;
   return (
-    <article
+    <motion.li
       data-testid={`how-it-works-step-${step.numeral}`}
-      className="group relative flex h-full flex-col gap-6 overflow-hidden rounded-[var(--radius-2xl)] border border-[var(--color-border)] bg-[var(--color-surface)] p-7 shadow-[var(--shadow-sm)] transition-[border-color,transform,box-shadow] duration-300 ease-[var(--ease-standard)] hover:-translate-y-1 hover:border-[var(--color-brand-primary-soft)] hover:shadow-[var(--shadow-md)] sm:p-8"
+      // Three-state variant chain: hidden (initial) -> rest (in-view) ->
+      // hover (whileHover). The transition prop is the hover spring;
+      // entrance uses its own (ENTRANCE_TRANSITION) declared on the rest
+      // variant.
+      variants={
+        reduced
+          ? undefined
+          : {
+              ...CARD_VARIANTS,
+              rest: { ...CARD_VARIANTS.rest, transition: ENTRANCE_TRANSITION },
+            }
+      }
+      whileHover={reduced ? undefined : "hover"}
+      whileFocus={reduced ? undefined : "hover"}
+      transition={HOVER_SPRING}
+      className="group relative flex h-full cursor-default flex-col gap-6 overflow-hidden rounded-[var(--radius-2xl)] border border-[var(--color-border)] bg-[var(--color-surface)] p-7 outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-background-elevated)] sm:p-8"
+      tabIndex={0}
     >
       <div className="relative flex items-start justify-between gap-4">
         <span
@@ -124,9 +205,14 @@ function StepCard({ step, isLast }: StepCardProps) {
         >
           {step.numeral}
         </span>
-        <span className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[var(--color-brand-primary)]/10 text-[var(--color-brand-primary)] transition-[background,color] duration-300 group-hover:bg-[var(--color-brand-primary)] group-hover:text-[var(--color-surface)]">
+        <motion.span
+          aria-hidden
+          variants={reduced ? undefined : ICON_VARIANTS}
+          transition={HOVER_SPRING}
+          className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[var(--color-brand-primary)]/10 text-[var(--color-brand-primary)] will-change-transform"
+        >
           <Icon className="h-5 w-5" aria-hidden />
-        </span>
+        </motion.span>
       </div>
 
       <div className="relative flex flex-col gap-3">
@@ -149,6 +235,6 @@ function StepCard({ step, isLast }: StepCardProps) {
           <ArrowRight className="h-4 w-4" aria-hidden />
         </span>
       )}
-    </article>
+    </motion.li>
   );
 }
