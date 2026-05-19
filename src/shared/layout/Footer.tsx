@@ -92,10 +92,43 @@ export function Footer() {
             <h3 className="flex items-center gap-3 text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-text-subtle)]"><span aria-hidden className="inline-block h-px w-6 bg-gradient-to-r from-[var(--color-gold)] to-transparent" />
               Legal
             </h3>
-            <ul className="mt-4 space-y-2.5 text-sm text-[var(--color-text-muted)]">
-              <li className="opacity-70">Términos — en redacción</li>
-              <li className="opacity-70">Privacidad — en redacción</li>
-              <li className="opacity-70">Aviso legal — en redacción</li>
+            <ul className="mt-4 space-y-2.5 text-sm">
+              <li>
+                <Link
+                  href="/legal/terminos"
+                  className="group/legal inline-flex items-center gap-1 text-[var(--color-text-muted)] transition-colors hover:text-[var(--color-brand-primary)]"
+                >
+                  Términos y condiciones
+                  <ArrowUpRight
+                    className="h-3 w-3 opacity-0 transition-[opacity,transform] duration-200 ease-[var(--ease-standard)] group-hover/legal:translate-x-0.5 group-hover/legal:-translate-y-0.5 group-hover/legal:opacity-100"
+                    aria-hidden
+                  />
+                </Link>
+              </li>
+              <li>
+                <Link
+                  href="/legal/privacidad"
+                  className="group/legal inline-flex items-center gap-1 text-[var(--color-text-muted)] transition-colors hover:text-[var(--color-brand-primary)]"
+                >
+                  Política de privacidad
+                  <ArrowUpRight
+                    className="h-3 w-3 opacity-0 transition-[opacity,transform] duration-200 ease-[var(--ease-standard)] group-hover/legal:translate-x-0.5 group-hover/legal:-translate-y-0.5 group-hover/legal:opacity-100"
+                    aria-hidden
+                  />
+                </Link>
+              </li>
+              <li>
+                <Link
+                  href="/legal/aviso-legal"
+                  className="group/legal inline-flex items-center gap-1 text-[var(--color-text-muted)] transition-colors hover:text-[var(--color-brand-primary)]"
+                >
+                  Aviso legal
+                  <ArrowUpRight
+                    className="h-3 w-3 opacity-0 transition-[opacity,transform] duration-200 ease-[var(--ease-standard)] group-hover/legal:translate-x-0.5 group-hover/legal:-translate-y-0.5 group-hover/legal:opacity-100"
+                    aria-hidden
+                  />
+                </Link>
+              </li>
             </ul>
           </div>
 

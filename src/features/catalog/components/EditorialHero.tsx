@@ -399,11 +399,11 @@ export async function EditorialHero({
               data-testid="editorial-hero-search-form"
               action="/explorar"
               method="get"
-              className="group/search flex max-w-[600px] items-stretch rounded-full border border-[var(--color-line)] bg-[var(--color-cream-soft)] p-1.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.7),0_18px_48px_-12px_rgba(31,61,46,0.18),0_8px_22px_-10px_rgba(31,61,46,0.08)] transition-[border-color,box-shadow,transform] duration-300 ease-[var(--ease-standard)] hover:-translate-y-[1px] focus-within:border-[var(--color-forest)] focus-within:shadow-[inset_0_1px_0_rgba(255,255,255,0.7),0_22px_56px_-12px_rgba(31,61,46,0.26),0_10px_24px_-10px_rgba(31,61,46,0.14)]"
+              className="group/search flex max-w-[600px] flex-col items-stretch gap-1.5 rounded-[var(--radius-2xl)] border border-[var(--color-line)] bg-[var(--color-cream-soft)] p-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.7),0_18px_48px_-12px_rgba(31,61,46,0.18),0_8px_22px_-10px_rgba(31,61,46,0.08)] transition-[border-color,box-shadow,transform] duration-300 ease-[var(--ease-standard)] hover:-translate-y-[1px] focus-within:border-[var(--color-forest)] focus-within:shadow-[inset_0_1px_0_rgba(255,255,255,0.7),0_22px_56px_-12px_rgba(31,61,46,0.26),0_10px_24px_-10px_rgba(31,61,46,0.14)] md:flex-row md:gap-0 md:rounded-full md:p-1.5"
               role="search"
               aria-label="Buscar Biringas"
             >
-              <label className="group/city relative block flex-[0_0_38%] cursor-pointer border-r border-[var(--color-line-soft)] px-5 py-2.5 transition-colors duration-200 hover:bg-[var(--color-cream)]/40 focus-within:bg-[var(--color-cream)]/40">
+              <label className="group/city relative block cursor-pointer rounded-[var(--radius-xl)] px-4 py-2 transition-colors duration-200 hover:bg-[var(--color-cream)]/40 focus-within:bg-[var(--color-cream)]/40 md:flex-[0_0_38%] md:rounded-none md:border-r md:border-[var(--color-line-soft)] md:px-5 md:py-2.5">
                 <span className="block text-[9.5px] uppercase tracking-[0.16em] text-[var(--color-ink-soft)] opacity-80">
                   Ciudad
                 </span>
@@ -450,7 +450,7 @@ export async function EditorialHero({
               <button
                 data-testid="editorial-hero-search-submit"
                 type="submit"
-                className="group/submit relative inline-flex items-center gap-2 overflow-hidden rounded-full bg-[var(--color-forest)] px-6 text-[13.5px] font-medium text-[var(--color-cream)] transition-colors duration-200 hover:bg-[var(--color-forest-deep)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-forest)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-cream)]"
+                className="group/submit relative inline-flex h-11 items-center justify-center gap-2 overflow-hidden rounded-full bg-[var(--color-forest)] px-6 text-[13.5px] font-medium text-[var(--color-cream)] transition-colors duration-200 hover:bg-[var(--color-forest-deep)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-forest)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-cream)] md:h-auto"
               >
                 {/* Gold shimmer sweep — only fires on hover, reuses the
                     existing motion-shimmer-sweep keyframe. */}
@@ -574,7 +574,7 @@ export async function EditorialHero({
                 <span
                   key={listing.id}
                   aria-hidden
-                  className="relative block h-12 w-12 overflow-hidden rounded-full border-[3px] border-[var(--color-cream)] shadow-[0_2px_6px_rgba(31,61,46,0.18)] transition-transform duration-300 ease-[var(--ease-standard)] group-hover/trust:translate-x-[2px] sm:h-14 sm:w-14"
+                  className="relative block h-12 w-12 overflow-hidden rounded-full border-[3px] border-[var(--color-cream)] shadow-[0_2px_6px_rgba(31,61,46,0.18)] transition-transform duration-300 ease-[var(--ease-standard)] group-hover/trust:translate-x-[2px] md:h-14 md:w-14"
                   style={{
                     marginLeft: i === 0 ? 0 : -14,
                     transitionDelay: `${i * 35}ms`,
@@ -595,7 +595,7 @@ export async function EditorialHero({
                   <span
                     key={bg}
                     aria-hidden
-                    className="block h-12 w-12 rounded-full border-[3px] border-[var(--color-cream)] shadow-[0_2px_6px_rgba(31,61,46,0.18)] sm:h-14 sm:w-14"
+                    className="block h-12 w-12 rounded-full border-[3px] border-[var(--color-cream)] shadow-[0_2px_6px_rgba(31,61,46,0.18)] md:h-14 md:w-14"
                     style={{
                       background: bg,
                       marginLeft: i === 0 ? 0 : -14,
@@ -611,8 +611,8 @@ export async function EditorialHero({
               </span>
             </div>
 
-            <p className="min-w-0 flex-1 font-[var(--font-serif)] text-[14px] leading-[1.45] text-[var(--color-ink-soft)] sm:text-[15px]">
-              <strong className="block font-semibold text-[var(--color-ink)] sm:text-[17px]">
+            <p className="min-w-0 flex-1 font-[var(--font-serif)] text-[13.5px] leading-[1.45] text-[var(--color-ink-soft)] md:text-[15px]">
+              <strong className="block font-semibold text-[var(--color-ink)] md:text-[17px]">
                 Verificación en 2 capas
               </strong>
               <span className="mt-1 block">
@@ -624,11 +624,13 @@ export async function EditorialHero({
             </p>
 
             {/* Gold-shield disc on the right — the "official seal" cue
-                from the reference. Hidden on small screens where the card
-                stacks tighter. */}
+                from the reference. Hidden below `md:` (768px) since on
+                a 390-class viewport the avatar stack + text already fills
+                the row; squeezing in the disc compresses the type into
+                vertical word-per-line wrap. */}
             <span
               aria-hidden
-              className="hidden h-14 w-14 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[var(--color-gold)]/20 via-[var(--color-gold)]/10 to-[var(--color-cream)] text-[var(--color-gold-deep)] ring-1 ring-[var(--color-gold)]/35 shadow-[0_8px_22px_-10px_rgba(200,166,118,0.55)] sm:inline-flex"
+              className="hidden h-14 w-14 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[var(--color-gold)]/20 via-[var(--color-gold)]/10 to-[var(--color-cream)] text-[var(--color-gold-deep)] ring-1 ring-[var(--color-gold)]/35 shadow-[0_8px_22px_-10px_rgba(200,166,118,0.55)] md:inline-flex"
             >
               <ShieldCheck className="h-6 w-6" aria-hidden />
             </span>

@@ -18,6 +18,14 @@ const nextConfig: NextConfig = {
         hostname: "images.unsplash.com",
         pathname: "/**",
       },
+      // Allow the mock listing photo source used by the seed dataset.
+      // Production should replace this with an asset provider that
+      // documents consent per-image — see ADR-009.
+      {
+        protocol: "https",
+        hostname: "static1.mileroticos.com",
+        pathname: "/**",
+      },
     ],
   },
 };

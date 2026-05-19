@@ -56,22 +56,32 @@ export function CategoryBar({ filters, view }: CategoryBarProps) {
         <div className="relative">
           <div
             data-testid="category-bar-tabs"
-            className="flex flex-nowrap items-center gap-x-5 overflow-x-auto pb-1 [scrollbar-width:none] sm:flex-wrap sm:gap-x-7 sm:gap-y-3 sm:overflow-visible sm:pb-0 [&::-webkit-scrollbar]:hidden"
+            className="flex flex-nowrap items-center gap-x-5 overflow-x-auto pb-1 [scrollbar-width:none] md:flex-wrap md:gap-x-7 md:gap-y-3 md:overflow-visible md:pb-0 [&::-webkit-scrollbar]:hidden"
           >
+            {/* `!flex-nowrap` overrides AnimatedTabs' default `flex-wrap` so
+                the inner row stays in one scroll lane at mobile widths. The
+                outer container is the scroll container (overflow-x-auto on
+                CategoryBar) and re-enables wrap at md+. */}
             <AnimatedTabs
               groupId="category"
               items={categoryItems}
               ariaLabel="Categoría"
+              className="!flex-nowrap shrink-0 md:!flex-wrap"
             />
             <span
               aria-hidden
-              className="hidden h-5 w-px bg-[var(--color-border)] sm:inline-block"
+              className="hidden h-5 w-px bg-[var(--color-border)] md:inline-block"
             />
-            <AnimatedTabs groupId="sex" items={sexItems} ariaLabel="Sexo" />
+            <AnimatedTabs
+              groupId="sex"
+              items={sexItems}
+              ariaLabel="Sexo"
+              className="!flex-nowrap shrink-0 md:!flex-wrap"
+            />
           </div>
           <span
             aria-hidden
-            className="pointer-events-none absolute inset-y-0 right-0 w-8 bg-gradient-to-l from-[var(--color-background)] to-transparent sm:hidden"
+            className="pointer-events-none absolute inset-y-0 right-0 w-8 bg-gradient-to-l from-[var(--color-background)] to-transparent md:hidden"
           />
         </div>
       </Container>

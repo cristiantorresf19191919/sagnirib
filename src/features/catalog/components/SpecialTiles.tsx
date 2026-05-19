@@ -10,8 +10,12 @@ interface TileProps {
   href: string;
 }
 
+// `aspect-[4/5]` forced the tile to a hard ratio that the editorial
+// content overflows on narrow viewports (≤ 200 px column width). We
+// switched to a min-height so the content can grow vertically on mobile
+// and the aspect ratio kicks back in at md+ where columns are wider.
 const TILE_BASE =
-  "group relative isolate flex aspect-[4/5] flex-col overflow-hidden rounded-[var(--radius-xl)] p-5 transition-[box-shadow,border-color] duration-200 ease-[var(--ease-standard)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-background)]";
+  "group relative isolate flex min-h-[360px] flex-col overflow-hidden rounded-[var(--radius-xl)] p-5 transition-[box-shadow,border-color] duration-200 ease-[var(--ease-standard)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-background)] md:aspect-[4/5] md:min-h-0";
 
 const SPRING_HOVER = { y: -4, transition: { type: "spring", stiffness: 320, damping: 22 } } as const;
 const SPRING_TAP = { scale: 0.985, transition: { duration: 0.12 } } as const;

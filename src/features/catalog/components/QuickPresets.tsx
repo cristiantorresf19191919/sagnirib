@@ -143,7 +143,7 @@ export function QuickPresets({ filters, view }: QuickPresetsProps) {
       className="bg-[var(--color-background)]"
     >
       <Container width="wide" className="py-3 sm:py-4">
-        <div className="flex items-center gap-2.5 sm:gap-3">
+        <div className="flex items-center gap-2.5 md:gap-3">
           {/* Sugerencias eyebrow chip — full h-11 with gold-sparkle icon
               disc. Stays pinned to the left while the chip row scrolls. */}
           <span
@@ -153,19 +153,18 @@ export function QuickPresets({ filters, view }: QuickPresetsProps) {
             <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-br from-[var(--color-gold)]/20 via-[var(--color-gold)]/10 to-[var(--color-cream)] text-[var(--color-gold-deep)] ring-1 ring-[var(--color-gold)]/30">
               <Sparkles className="h-3.5 w-3.5" aria-hidden />
             </span>
-            <span className="hidden sm:inline">Sugerencias</span>
+            <span className="hidden md:inline">Sugerencias</span>
           </span>
           {/* Horizontal scroll on mobile — preserves Hick's-law style
               single-row scan instead of letting 6+ chips wrap into a
               chaotic 3-row stack at narrow widths. `flex-wrap` returns
-              at sm+ where there's room. Scrollbar visually hidden so it
-              doesn't break the editorial rhythm; the right-edge fade
-              hints there's more to swipe. */}
+              at md+ where there's room. Scrollbar visually hidden; the
+              right-edge fade hints there's more to swipe. */}
           <div className="relative min-w-0 flex-1">
             <ul
               data-testid="quick-presets-list"
               aria-label="Filtros rápidos"
-              className="flex flex-nowrap items-center gap-2 overflow-x-auto pb-1 [scrollbar-width:none] sm:flex-wrap sm:overflow-visible sm:pb-0 [&::-webkit-scrollbar]:hidden"
+              className="flex flex-nowrap items-center gap-2 overflow-x-auto pb-1 [scrollbar-width:none] md:flex-wrap md:overflow-visible md:pb-0 [&::-webkit-scrollbar]:hidden"
             >
             {PRESETS.map((preset) => {
               const active = preset.isActive(filters);
@@ -203,7 +202,7 @@ export function QuickPresets({ filters, view }: QuickPresetsProps) {
                 swipe. Pointer-events:none so it never blocks taps. */}
             <span
               aria-hidden
-              className="pointer-events-none absolute inset-y-0 right-0 w-8 bg-gradient-to-l from-[var(--color-background)] to-transparent sm:hidden"
+              className="pointer-events-none absolute inset-y-0 right-0 w-8 bg-gradient-to-l from-[var(--color-background)] to-transparent md:hidden"
             />
           </div>
         </div>

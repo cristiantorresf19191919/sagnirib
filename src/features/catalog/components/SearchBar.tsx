@@ -27,12 +27,12 @@ export function SearchBar({ filters, view }: SearchBarProps) {
           data-testid="search-bar-form"
           action="/explorar"
           method="get"
-          className="flex flex-col gap-2 sm:flex-row sm:items-stretch sm:gap-2"
+          className="flex flex-col gap-2 md:flex-row md:items-stretch md:gap-2"
         >
           {/* Preserve filters this form does not own. */}
           <PreservedFilters filters={filters} view={view} omit={["q", "city"]} />
 
-          <label className="group relative sm:w-[260px] sm:shrink-0">
+          <label className="group relative md:w-[260px] md:shrink-0">
             <span className="sr-only">¿Dónde estás?</span>
             <span
               aria-hidden
