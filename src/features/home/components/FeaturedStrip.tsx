@@ -32,9 +32,13 @@ export async function FeaturedStrip() {
       className="border-b border-[var(--color-border)] bg-[var(--color-background)] py-14 sm:py-18"
     >
       <Container width="wide" className="flex flex-col gap-6">
-        <header className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between sm:gap-6">
+        <header className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between sm:gap-6">
           <div className="flex flex-col gap-2">
-            <span className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[var(--color-brand-primary)]">
+            <span className="flex items-center gap-3 text-[11px] font-semibold uppercase tracking-[0.22em] text-[var(--color-brand-primary)]">
+              <span
+                aria-hidden
+                className="inline-block h-px w-8 bg-gradient-to-r from-[var(--color-gold)] to-transparent"
+              />
               Destacadas
             </span>
             <h2
@@ -43,14 +47,24 @@ export async function FeaturedStrip() {
             >
               Perfiles verificados que están convirtiendo esta semana
             </h2>
+            <p className="text-sm text-[var(--color-text-muted)]">
+              Curadas por reputación y volumen de reseñas — sólo entran si lo
+              han ganado.
+            </p>
           </div>
           <Link
             href="/explorar"
-            className="group inline-flex items-center gap-1.5 text-sm font-semibold text-[var(--color-brand-primary)] hover:text-[var(--color-brand-primary-strong)]"
+            className="group/seeall inline-flex items-center gap-1.5 self-start text-sm font-semibold text-[var(--color-brand-primary)] transition-colors duration-200 hover:text-[var(--color-brand-primary-strong)] sm:self-auto"
           >
-            Ver todo el catálogo
+            <span className="relative">
+              Ver todo el catálogo
+              <span
+                aria-hidden
+                className="absolute -bottom-0.5 left-0 h-px w-full origin-left scale-x-0 bg-[var(--color-brand-primary-strong)] transition-transform duration-300 ease-[var(--ease-standard)] group-hover/seeall:scale-x-100"
+              />
+            </span>
             <ArrowRight
-              className="h-4 w-4 transition-transform duration-200 ease-[var(--ease-standard)] group-hover:translate-x-px"
+              className="h-4 w-4 transition-transform duration-200 ease-[var(--ease-standard)] group-hover/seeall:translate-x-0.5"
               aria-hidden
             />
           </Link>

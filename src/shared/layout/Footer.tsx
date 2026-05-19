@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ShieldCheck, MapPin } from "lucide-react";
+import { ShieldCheck, MapPin, ArrowUpRight } from "lucide-react";
 
 import { brandConfig } from "@/core/branding/brand-config";
 import { SUPPORTED_CITIES } from "@/server/biringas";
@@ -57,31 +57,39 @@ export function Footer() {
 
         <div className="grid grid-cols-2 gap-8 sm:grid-cols-3 lg:col-span-7">
           <div>
-            <h3 className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-text-subtle)]">
+            <h3 className="flex items-center gap-3 text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-text-subtle)]"><span aria-hidden className="inline-block h-px w-6 bg-gradient-to-r from-[var(--color-gold)] to-transparent" />
               Producto
             </h3>
             <ul className="mt-4 space-y-2.5 text-sm">
               <li>
                 <Link
                   href="/explorar"
-                  className="group inline-flex items-center gap-1 text-[var(--color-text-muted)] transition-colors hover:text-[var(--color-brand-primary)]"
+                  className="group/prod inline-flex items-center gap-1 text-[var(--color-text-muted)] transition-colors hover:text-[var(--color-brand-primary)]"
                 >
                   Explorar
+                  <ArrowUpRight
+                    className="h-3 w-3 opacity-0 transition-[opacity,transform] duration-200 ease-[var(--ease-standard)] group-hover/prod:translate-x-0.5 group-hover/prod:-translate-y-0.5 group-hover/prod:opacity-100"
+                    aria-hidden
+                  />
                 </Link>
               </li>
               <li>
                 <Link
                   href="/#como-funciona"
-                  className="group inline-flex items-center gap-1 text-[var(--color-text-muted)] transition-colors hover:text-[var(--color-brand-primary)]"
+                  className="group/prod inline-flex items-center gap-1 text-[var(--color-text-muted)] transition-colors hover:text-[var(--color-brand-primary)]"
                 >
                   Cómo funciona
+                  <ArrowUpRight
+                    className="h-3 w-3 opacity-0 transition-[opacity,transform] duration-200 ease-[var(--ease-standard)] group-hover/prod:translate-x-0.5 group-hover/prod:-translate-y-0.5 group-hover/prod:opacity-100"
+                    aria-hidden
+                  />
                 </Link>
               </li>
             </ul>
           </div>
 
           <div>
-            <h3 className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-text-subtle)]">
+            <h3 className="flex items-center gap-3 text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-text-subtle)]"><span aria-hidden className="inline-block h-px w-6 bg-gradient-to-r from-[var(--color-gold)] to-transparent" />
               Legal
             </h3>
             <ul className="mt-4 space-y-2.5 text-sm text-[var(--color-text-muted)]">
@@ -92,7 +100,7 @@ export function Footer() {
           </div>
 
           <div>
-            <h3 className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-text-subtle)]">
+            <h3 className="flex items-center gap-3 text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-text-subtle)]"><span aria-hidden className="inline-block h-px w-6 bg-gradient-to-r from-[var(--color-gold)] to-transparent" />
               Acceso
             </h3>
             <ul className="mt-4 space-y-2.5 text-sm text-[var(--color-text-muted)]">
@@ -115,10 +123,14 @@ export function Footer() {
             {SUPPORTED_CITIES.map((city) => (
               <li key={city}>
                 <Link
-                  href={`/?city=${encodeURIComponent(city)}`}
-                  className="group inline-flex items-center gap-1 text-[var(--color-text-muted)] transition-colors hover:text-[var(--color-brand-primary)]"
+                  href={`/explorar?city=${encodeURIComponent(city)}`}
+                  className="group/city inline-flex items-center gap-1 text-[var(--color-text-muted)] transition-colors hover:text-[var(--color-brand-primary)]"
                 >
                   {city}
+                  <ArrowUpRight
+                    className="h-3 w-3 opacity-0 transition-[opacity,transform] duration-200 ease-[var(--ease-standard)] group-hover/city:translate-x-0.5 group-hover/city:-translate-y-0.5 group-hover/city:opacity-100"
+                    aria-hidden
+                  />
                 </Link>
               </li>
             ))}
