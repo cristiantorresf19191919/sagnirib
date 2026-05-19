@@ -9,6 +9,7 @@ import {
   useId,
   useRef,
   useState,
+  useSyncExternalStore,
   type ReactNode,
 } from "react";
 
@@ -24,6 +25,20 @@ interface FilterModalProps {
 }
 
 const SPRING = { type: "spring", stiffness: 280, damping: 28, mass: 0.6 } as const;
+
+const MOBILE_MQ = "(max-width: 639px)";
+
+function subscribeMobile(callback: () => void): () => void {
+  if (typeof window === "undefined") return () => undefined;
+  const mq = window.matchMedia(MOBILE_MQ);
+  mq.addEventListener("change", callback);
+  return () => mq.removeEventListener("change", callback);
+}
+
+function getMobile(): boolean {
+  if (typeof window === "undefined") return false;
+  return window.matchMedia(MOBILE_MQ).matches;
+}
 
 /**
  * Overlay-based filter panel. Replaces the inline Disclosure so the page
@@ -51,6 +66,13 @@ export function FilterModal({
     setOpen(false);
     setMaximized(false);
   }, []);
+
+  // Mobile bottom-sheet vs desktop centered card — picked at runtime via
+  // matchMedia. useSyncExternalStore is the canonical React 19 pattern for
+  // subscribing to external state (vs useState+useEffect, which trips the
+  // set-state-in-effect rule). SSR snapshot is `false` so server markup
+  // ships the desktop-friendly default.
+  const isMobile = useSyncExternalStore(subscribeMobile, getMobile, () => false);
 
   // ESC to close, scroll lock while open, restore focus to trigger on close.
   useEffect(() => {
@@ -81,7 +103,7 @@ export function FilterModal({
         {open && (
         <motion.div
           key="overlay"
-          className="fixed inset-0 z-[100] flex items-stretch justify-center sm:items-center"
+          className="fixed inset-0 z-[100] flex items-end justify-center sm:items-center sm:items-stretch"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
@@ -100,24 +122,40 @@ export function FilterModal({
           <motion.div
             key={maximized ? "maximized" : "centered"}
             layout
+            // Mobile: slide up from below as a bottom sheet. Desktop:
+            // scale-in from center as a card. Picked at runtime from
+            // matchMedia so SSR ships the desktop-friendly default.
             initial={
               reduceMotion
                 ? { opacity: 0 }
-                : { opacity: 0, scale: 0.96, y: 12 }
+                : isMobile
+                  ? { opacity: 0, y: "100%" }
+                  : { opacity: 0, scale: 0.96, y: 12 }
             }
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={
               reduceMotion
                 ? { opacity: 0 }
-                : { opacity: 0, scale: 0.97, y: 8 }
+                : isMobile
+                  ? { opacity: 0, y: "100%" }
+                  : { opacity: 0, scale: 0.97, y: 8 }
             }
             transition={reduceMotion ? { duration: 0 } : SPRING}
             className={
               maximized
                 ? "relative z-10 flex h-[100dvh] w-full flex-col overflow-hidden bg-[var(--color-background-elevated)] shadow-[var(--shadow-lg)]"
-                : "relative z-10 m-0 flex max-h-[100dvh] w-full flex-col overflow-hidden bg-[var(--color-background-elevated)] shadow-[var(--shadow-lg)] sm:m-4 sm:max-h-[88vh] sm:max-w-3xl sm:rounded-[var(--radius-2xl)] lg:max-w-4xl"
+                : "relative z-10 m-0 flex max-h-[92dvh] w-full flex-col overflow-hidden rounded-t-[var(--radius-2xl)] bg-[var(--color-background-elevated)] shadow-[var(--shadow-lg)] sm:m-4 sm:max-h-[88vh] sm:max-w-3xl sm:rounded-[var(--radius-2xl)] lg:max-w-4xl"
             }
           >
+            {/* Drag-handle affordance — bottom sheets need a visible cue
+                that the surface can dismiss. Hidden on desktop where the
+                X button + maximize button carry the affordance. */}
+            {!maximized && (
+              <span
+                aria-hidden
+                className="mx-auto mt-2 h-1 w-10 shrink-0 rounded-full bg-[var(--color-border)] sm:hidden"
+              />
+            )}
             <header className="flex items-start justify-between gap-3 border-b border-[var(--color-border)] bg-[var(--color-surface)] px-5 py-4 sm:px-7">
               <div className="flex flex-col gap-0.5">
                 <h2

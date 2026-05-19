@@ -108,7 +108,11 @@ export function ResultsToolbar({
 
       {activeCount > 0 && (
         <div className="mt-2.5 flex items-start gap-2.5 border-t border-[var(--color-border)]/60 pt-2.5">
-          <span className="hidden text-[10px] font-semibold uppercase tracking-[0.22em] text-[var(--color-text-subtle)] sm:inline-flex sm:shrink-0 sm:pt-1.5">
+          <span className="hidden items-center gap-3 text-[10px] font-semibold uppercase tracking-[0.22em] text-[var(--color-text-subtle)] sm:inline-flex sm:shrink-0 sm:pt-1.5">
+            <span
+              aria-hidden
+              className="inline-block h-px w-6 bg-gradient-to-r from-[var(--color-gold)] to-transparent"
+            />
             Activos
           </span>
           <ActiveFilterChips filters={filters} />
