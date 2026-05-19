@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ChevronDown, Search } from "lucide-react";
 
 import { listHeroMosaic } from "@/server/biringas";
+import { UnderlineSweep } from "@/shared/motion/UnderlineSweep";
 
 import { EditorialHeroMosaicColumn } from "./EditorialHeroMosaicColumn";
 import { HeroMosaicCard } from "./HeroMosaicCard";
@@ -208,9 +209,9 @@ export async function EditorialHero({
             </span>
             <br />
             <span className="relative inline-block">
-              <span
-                aria-hidden
-                className="pointer-events-none absolute bottom-2 -right-1.5 left-0 -z-10 h-2 -skew-x-12 bg-[var(--color-gold)] opacity-55"
+              <UnderlineSweep
+                delay={0.55}
+                className="bottom-2 -right-1.5 left-0 -z-10 h-2 -skew-x-12 bg-[var(--color-gold)] opacity-55"
               />
               <span>ideal.</span>
             </span>

@@ -101,7 +101,7 @@ export function CatalogCard({
             fill
             sizes={imageSizes}
             priority={priority}
-            className="object-cover transition-[filter] duration-500 ease-[var(--ease-standard)] group-hover:saturate-[1.08]"
+            className="object-cover transition-[filter,transform] duration-[600ms] ease-[var(--ease-standard)] group-hover:scale-[1.04] group-hover:saturate-[1.08]"
           />
         </div>
 
@@ -264,7 +264,7 @@ function ListCard({
             fill
             sizes={SIZES_LIST}
             priority={priority}
-            className="object-cover transition-[filter] duration-500 ease-[var(--ease-standard)] group-hover:saturate-[1.08]"
+            className="object-cover transition-[filter,transform] duration-[600ms] ease-[var(--ease-standard)] group-hover:scale-[1.04] group-hover:saturate-[1.08]"
           />
         </div>
         {listing.availableNow ? (
