@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import { Star } from "lucide-react";
 
 import type { BiringaListing } from "@/server/biringas";
 
@@ -79,6 +80,22 @@ export function HeroMosaicCard({
               "repeating-linear-gradient(135deg, transparent 0 14px, rgba(255,255,255,0.45) 14px 15px)",
           }}
         />
+
+        {/* Rating ribbon — explains the mosaic's curation: every tile is
+            in the hall of fame. Top-right corner avoids collision with the
+            bottom-right "live" pill. */}
+        <span
+          aria-label={`Calificación ${listing.reputation.score.toFixed(1)} estrellas`}
+          className="absolute right-3.5 top-3.5 inline-flex items-center gap-1 rounded-full border border-[rgba(248,242,228,0.32)] bg-[rgba(20,28,24,0.48)] px-2 py-0.5 text-[10.5px] font-semibold text-[var(--color-cream)] backdrop-blur-md"
+        >
+          <Star
+            className="h-3 w-3 fill-[var(--color-gold)] text-[var(--color-gold)]"
+            aria-hidden
+          />
+          <span className="tabular-nums">
+            {listing.reputation.score.toFixed(1)}
+          </span>
+        </span>
 
         <div className="absolute right-3.5 bottom-3.5 left-3.5 flex items-end justify-between gap-2 text-[var(--color-cream)]">
           <div className="min-w-0">
