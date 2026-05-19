@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import type { LucideIcon } from "lucide-react";
 import { ArrowRight, Compass, ShieldCheck, Sparkles } from "lucide-react";
 import {
@@ -24,6 +25,10 @@ interface Step {
    *  default Biringas signature; gold flags the trust step to anchor
    *  verification as the centerpiece of the narrative. */
   accent: "forest" | "gold";
+  /** Marks the funnel-closing card. The CTA card gets the forest tint,
+   *  becomes a real `<Link>`, and renders an explicit button at the
+   *  bottom. Non-CTA cards stay information-only — no clickability cues. */
+  cta?: { href: string; label: string };
 }
 
 const STEPS: ReadonlyArray<Step> = [
@@ -51,8 +56,9 @@ const STEPS: ReadonlyArray<Step> = [
     eyebrow: "Reserva",
     title: "Contrata sin fricción",
     description:
-      "Reserva directo desde el perfil. Pagos y mensajería conectan en la próxima versión — hoy es entrada al MVP.",
+      "Reserva directo desde el perfil con discreción absoluta. Mensajería y pago integrados se suman muy pronto a tu experiencia.",
     accent: "forest",
+    cta: { href: "/explorar", label: "Explorar el catálogo" },
   },
 ];
 
@@ -107,12 +113,6 @@ const SHEEN_VARIANTS: Variants = {
   hidden: { opacity: 0 },
   rest: { opacity: 0 },
   hover: { opacity: 1 },
-};
-
-const ARROW_VARIANTS: Variants = {
-  hidden: { opacity: 0, x: -6 },
-  rest: { opacity: 0, x: -6 },
-  hover: { opacity: 1, x: 0 },
 };
 
 const ENTRANCE_TRANSITION: Transition = {
@@ -221,11 +221,10 @@ export function HowItWorks() {
             whileInView={reduced ? undefined : "visible"}
             viewport={{ once: true, amount: 0.2, margin: "-40px 0px" }}
           >
-            {STEPS.map((step, index) => (
+            {STEPS.map((step) => (
               <StepCard
                 key={step.numeral}
                 step={step}
-                isLast={index === STEPS.length - 1}
                 reduced={!!reduced}
               />
             ))}
@@ -238,13 +237,29 @@ export function HowItWorks() {
 
 interface StepCardProps {
   step: Step;
-  isLast: boolean;
   reduced: boolean;
 }
 
-function StepCard({ step, isLast, reduced }: Readonly<StepCardProps>) {
+function StepCard({ step, reduced }: Readonly<StepCardProps>) {
   const Icon = step.icon;
   const accent = ACCENT[step.accent];
+  const isCta = !!step.cta;
+
+  // CTA card uses a soft cream-to-tinted-cream gradient + a deeper
+  // forest border so the eye is pulled to the funnel's finish line. The
+  // surface MUST stay fully opaque — the connector sits at `-z-1` behind
+  // the cards and any alpha would leak the line through. Non-CTA cards
+  // stay neutral surface so visual weight reads 01 < 02 < 03.
+  const surfaceCls = isCta
+    ? "border-[var(--color-forest)]/25 bg-gradient-to-br from-[var(--color-cream-soft)] via-[var(--color-cream)] to-[#E6DBC1]"
+    : "border-[var(--color-border)] bg-[var(--color-surface)]";
+
+  // The CTA card is interactive (real Link target). The non-CTA cards
+  // are information-only, so they get `cursor-default` and lose the
+  // misleading bottom-right arrow that used to suggest clickability.
+  const interactionCls = isCta
+    ? "cursor-pointer hover:border-[var(--color-forest)]/45"
+    : "cursor-default";
 
   return (
     <motion.li
@@ -260,14 +275,32 @@ function StepCard({ step, isLast, reduced }: Readonly<StepCardProps>) {
       whileHover={reduced ? undefined : "hover"}
       whileFocus={reduced ? undefined : "hover"}
       transition={HOVER_SPRING}
-      className="group relative flex h-full cursor-default flex-col gap-6 overflow-hidden rounded-[var(--radius-2xl)] border border-[var(--color-border)] bg-[var(--color-surface)] p-7 outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-background-elevated)] sm:p-8"
-      tabIndex={0}
+      className={`group relative flex h-full flex-col gap-6 overflow-hidden rounded-[var(--radius-2xl)] border p-7 outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-background-elevated)] sm:p-8 ${surfaceCls} ${interactionCls}`.trim()}
+      tabIndex={isCta ? -1 : 0}
     >
+      {/* Full-card link overlay on the CTA card. Sits below the explicit
+          button's z so users can either click the card surface or the
+          button itself; screen readers get one accessible name. */}
+      {step.cta && (
+        <Link
+          href={step.cta.href}
+          aria-label={`${step.title} — ${step.cta.label}`}
+          className="absolute inset-0 z-10 rounded-[var(--radius-2xl)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-background-elevated)]"
+          data-testid={`how-it-works-step-${step.numeral}-cta-overlay`}
+        >
+          <span className="sr-only">{step.cta.label}</span>
+        </Link>
+      )}
+
       {/* Top accent bar — draws itself in from the center on hover. Per-step
-          accent (forest for action steps, gold for the trust step). */}
+          accent (forest for action steps, gold for the trust step). On
+          the CTA card the bar is rendered at rest so the visual hierarchy
+          reads even when nothing is hovered. */}
       <motion.span
         aria-hidden
         variants={reduced ? undefined : ACCENT_BAR_VARIANTS}
+        initial={isCta ? "hover" : undefined}
+        animate={isCta ? "hover" : undefined}
         transition={HOVER_SPRING}
         className="pointer-events-none absolute inset-x-6 top-0 h-px will-change-transform"
         style={{ backgroundImage: accent.bar }}
@@ -305,7 +338,7 @@ function StepCard({ step, isLast, reduced }: Readonly<StepCardProps>) {
         </motion.span>
       </div>
 
-      <div className="relative flex flex-col gap-3">
+      <div className="relative flex flex-1 flex-col gap-3">
         <span className="text-[10px] font-semibold uppercase tracking-[0.32em] text-[var(--color-text-subtle)]">
           {step.eyebrow}
         </span>
@@ -317,15 +350,22 @@ function StepCard({ step, isLast, reduced }: Readonly<StepCardProps>) {
         </p>
       </div>
 
-      {!isLast && (
-        <motion.span
-          aria-hidden
-          variants={reduced ? undefined : ARROW_VARIANTS}
-          transition={HOVER_SPRING}
-          className="pointer-events-none absolute right-4 top-1/2 hidden -translate-y-1/2 items-center justify-center text-[var(--color-brand-primary)] md:inline-flex"
-        >
-          <ArrowRight className="h-4 w-4" aria-hidden />
-        </motion.span>
+      {/* CTA button — only rendered on the funnel-closing card. Sits at
+          z:20 above the full-card link overlay so a direct click still
+          counts as the same destination. */}
+      {step.cta && (
+        <div className="relative z-20 mt-auto pt-2">
+          <span
+            data-testid={`how-it-works-step-${step.numeral}-cta`}
+            className="group/cta inline-flex items-center gap-2 rounded-full bg-[var(--color-forest)] px-5 py-2.5 text-sm font-semibold text-[var(--color-cream)] shadow-[0_8px_22px_-10px_rgba(31,61,46,0.55)] transition-[background,box-shadow,transform] duration-200 ease-[var(--ease-standard)] group-hover:-translate-y-[1px] group-hover:bg-[var(--color-forest-deep)] group-hover:shadow-[0_14px_30px_-10px_rgba(31,61,46,0.6)]"
+          >
+            {step.cta.label}
+            <ArrowRight
+              className="h-4 w-4 transition-transform duration-200 ease-[var(--ease-standard)] group-hover:translate-x-0.5"
+              aria-hidden
+            />
+          </span>
+        </div>
       )}
     </motion.li>
   );
