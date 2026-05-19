@@ -26,7 +26,9 @@ export const metadata: Metadata = buildPageMetadata({
 export default async function HomePage() {
   return (
     <>
-      <Header />
+      {/* On / the hero search IS the explore CTA — hide the duplicate
+          green Explorar pill from the header so the funnel is singular. */}
+      <Header hideCatalogCta />
       <main className="flex flex-col">
         <EditorialHero location="Acompañantes verificadas · Colombia" />
         <FeaturedStrip />

@@ -1,7 +1,16 @@
 import Link from "next/link";
-import { ChevronDown, Search } from "lucide-react";
+import {
+  BotOff,
+  ChevronDown,
+  Lock,
+  MapPin,
+  Search,
+  ShieldCheck,
+  UserCheck,
+} from "lucide-react";
 
 import { listHeroMosaic } from "@/server/biringas";
+import { CountUp } from "@/shared/motion/CountUp";
 import { UnderlineSweep } from "@/shared/motion/UnderlineSweep";
 
 import { EditorialHeroMosaicColumn } from "./EditorialHeroMosaicColumn";
@@ -204,8 +213,14 @@ export async function EditorialHero({
           >
             Encuentra a
             <br />
-            <span className="font-[var(--font-display)] italic font-[320]">
-              tu Biringa
+            <span className="relative inline-block">
+              <UnderlineSweep
+                delay={0.4}
+                className="bottom-3 -right-2 left-0 -z-10 h-3 -skew-x-12 bg-[var(--color-gold)] opacity-30"
+              />
+              <span className="font-[var(--font-display)] italic font-[320]">
+                tu Biringa
+              </span>
             </span>
             <br />
             <span className="relative inline-block">
@@ -238,7 +253,9 @@ export async function EditorialHero({
                 className="h-2 w-2 rounded-full bg-[#4D9B6E] motion-safe:motion-hero-pulse"
               />
               <span className="text-[13px] text-[var(--color-ink)]">
-                <strong className="font-semibold">38</strong>
+                <strong className="font-semibold tabular-nums">
+                  <CountUp to={38} />
+                </strong>
                 <span className="text-[var(--color-ink-soft)]">
                   {" "}
                   en línea ahora
@@ -246,19 +263,31 @@ export async function EditorialHero({
               </span>
             </div>
             <span aria-hidden className="h-4 w-px bg-[var(--color-line)]" />
-            <span className="text-[13px] text-[var(--color-ink-soft)]">
-              <strong className="font-semibold text-[var(--color-ink)]">
-                247
-              </strong>{" "}
-              verificadas activas
-            </span>
+            <div className="flex items-center gap-2">
+              <ShieldCheck
+                className="h-3.5 w-3.5 text-[var(--color-forest)]"
+                aria-hidden
+              />
+              <span className="text-[13px] text-[var(--color-ink-soft)]">
+                <strong className="font-semibold text-[var(--color-ink)] tabular-nums">
+                  <CountUp to={247} duration={1.6} />
+                </strong>{" "}
+                verificadas activas
+              </span>
+            </div>
             <span aria-hidden className="h-4 w-px bg-[var(--color-line)]" />
-            <span className="text-[13px] text-[var(--color-ink-soft)]">
-              <strong className="font-semibold text-[var(--color-ink)]">
-                6
-              </strong>{" "}
-              ciudades
-            </span>
+            <div className="flex items-center gap-2">
+              <MapPin
+                className="h-3.5 w-3.5 text-[var(--color-forest)]"
+                aria-hidden
+              />
+              <span className="text-[13px] text-[var(--color-ink-soft)]">
+                <strong className="font-semibold text-[var(--color-ink)] tabular-nums">
+                  6
+                </strong>{" "}
+                ciudades
+              </span>
+            </div>
           </div>
 
           <div
@@ -270,7 +299,7 @@ export async function EditorialHero({
               data-testid="editorial-hero-search-form"
               action="/explorar"
               method="get"
-              className="flex max-w-[600px] items-stretch rounded-full border border-[var(--color-line)] bg-[var(--color-cream-soft)] p-1.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.7),0_8px_30px_rgba(31,61,46,0.08)]"
+              className="group/search flex max-w-[600px] items-stretch rounded-full border border-[var(--color-line)] bg-[var(--color-cream-soft)] p-1.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.7),0_18px_48px_-12px_rgba(31,61,46,0.18),0_8px_22px_-10px_rgba(31,61,46,0.08)] transition-[border-color,box-shadow,transform] duration-300 ease-[var(--ease-standard)] hover:-translate-y-[1px] focus-within:border-[var(--color-forest)] focus-within:shadow-[inset_0_1px_0_rgba(255,255,255,0.7),0_22px_56px_-12px_rgba(31,61,46,0.26),0_10px_24px_-10px_rgba(31,61,46,0.14)]"
               role="search"
               aria-label="Buscar Biringas"
             >
@@ -327,17 +356,62 @@ export async function EditorialHero({
               <span className="mr-1 text-[11px] uppercase tracking-[0.14em] text-[var(--color-ink-soft)]">
                 Sugerido
               </span>
-              {SUGGESTED.map((chip) => (
-                <Link
-                  key={chip.label}
-                  data-testid={`editorial-hero-suggested-${chip.label.toLowerCase().replace(/\s+/g, "-")}`}
-                  href={chip.href}
-                  className="rounded-full border border-[var(--color-line)] bg-transparent px-3 py-1.5 text-xs text-[var(--color-ink)] transition-colors duration-200 hover:border-[var(--color-ink)] hover:bg-[var(--color-ink)] hover:text-[var(--color-cream)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-forest)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-cream)]"
-                >
-                  {chip.label}
-                </Link>
-              ))}
+              {SUGGESTED.map((chip, idx) => {
+                const isPrimary = idx === 0;
+                return (
+                  <Link
+                    key={chip.label}
+                    data-testid={`editorial-hero-suggested-${chip.label.toLowerCase().replace(/\s+/g, "-")}`}
+                    href={chip.href}
+                    className={
+                      isPrimary
+                        ? "inline-flex items-center gap-1.5 rounded-full bg-[var(--color-forest)] px-3.5 py-1.5 text-xs font-semibold text-[var(--color-cream)] shadow-[0_4px_14px_-4px_rgba(31,61,46,0.45)] transition-[background,box-shadow,transform] duration-200 hover:-translate-y-[1px] hover:bg-[var(--color-forest-deep)] hover:shadow-[0_8px_22px_-6px_rgba(31,61,46,0.55)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-forest)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-cream)]"
+                        : "rounded-full border border-[var(--color-line)] bg-transparent px-3 py-1.5 text-xs text-[var(--color-ink)] transition-colors duration-200 hover:border-[var(--color-ink)] hover:bg-[var(--color-ink)] hover:text-[var(--color-cream)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-forest)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-cream)]"
+                    }
+                  >
+                    {isPrimary && (
+                      <span
+                        aria-hidden
+                        className="h-1.5 w-1.5 rounded-full bg-[#A8E6BA] motion-safe:motion-hero-pulse"
+                      />
+                    )}
+                    {chip.label}
+                  </Link>
+                );
+              })}
             </div>
+
+            {/* Trust pills — three-up proof line, anchors "sin algoritmos
+                turbios" with concrete claims. Sits below the suggested
+                chips, above the detailed verification block. */}
+            <ul
+              data-testid="editorial-hero-trust-pills"
+              className="motion-safe:motion-hero-reveal mt-5 flex flex-wrap items-center gap-1.5 text-[11.5px] sm:gap-2"
+              style={{ animationDelay: "0.55s" }}
+              aria-label="Garantías del marketplace"
+            >
+              <li className="inline-flex items-center gap-1.5 rounded-full border border-[var(--color-line)] bg-[var(--color-cream-soft)]/60 px-3 py-1.5 text-[var(--color-ink-soft)]">
+                <UserCheck
+                  className="h-3.5 w-3.5 text-[var(--color-forest)]"
+                  aria-hidden
+                />
+                Verificación humana
+              </li>
+              <li className="inline-flex items-center gap-1.5 rounded-full border border-[var(--color-line)] bg-[var(--color-cream-soft)]/60 px-3 py-1.5 text-[var(--color-ink-soft)]">
+                <Lock
+                  className="h-3.5 w-3.5 text-[var(--color-forest)]"
+                  aria-hidden
+                />
+                Pago discreto
+              </li>
+              <li className="inline-flex items-center gap-1.5 rounded-full border border-[var(--color-line)] bg-[var(--color-cream-soft)]/60 px-3 py-1.5 text-[var(--color-ink-soft)]">
+                <BotOff
+                  className="h-3.5 w-3.5 text-[var(--color-forest)]"
+                  aria-hidden
+                />
+                Sin bots ni catfish
+              </li>
+            </ul>
           </div>
 
           {/* Trust block — promoted in this iteration so verification reads
