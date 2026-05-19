@@ -347,12 +347,25 @@ interface StatTileProps {
 
 function StatTile({ label, value, icon }: Readonly<StatTileProps>) {
   return (
-    <div className="rounded-[var(--radius-lg)] bg-[var(--color-surface)] px-3 py-3 ring-1 ring-[var(--color-border)]">
-      <dt className="flex items-center gap-1.5 text-[10px] uppercase tracking-[0.18em] text-[var(--color-text-subtle)]">
-        {icon}
+    <div className="group/stat relative overflow-hidden rounded-[var(--radius-lg)] bg-[var(--color-surface)] px-3 py-3 ring-1 ring-[var(--color-border)] transition-[transform,box-shadow,border-color] duration-300 ease-[var(--ease-standard)] hover:-translate-y-0.5 hover:shadow-[var(--shadow-sm)] hover:ring-[var(--color-brand-primary-soft)]">
+      {/* Hover sheen — gold-tinted radial wash from the icon corner. */}
+      <span
+        aria-hidden
+        className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-300 ease-[var(--ease-standard)] group-hover/stat:opacity-100"
+        style={{
+          backgroundImage:
+            "radial-gradient(circle at top left, rgba(200, 166, 118, 0.12), transparent 60%)",
+        }}
+      />
+      <dt className="relative flex items-center gap-1.5 text-[10px] uppercase tracking-[0.18em] text-[var(--color-text-subtle)]">
+        {icon && (
+          <span className="inline-flex transition-transform duration-300 ease-[var(--ease-standard)] group-hover/stat:scale-110">
+            {icon}
+          </span>
+        )}
         {label}
       </dt>
-      <dd className="mt-1 text-base font-semibold text-[var(--color-foreground)]">
+      <dd className="relative mt-1 text-base font-semibold text-[var(--color-foreground)] tabular-nums">
         {value}
       </dd>
     </div>
@@ -367,7 +380,13 @@ interface SectionProps {
 function Section({ title, children }: Readonly<SectionProps>) {
   return (
     <section>
-      <h2 className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--color-brand-primary)]">
+      <h2 className="flex items-center gap-3 text-xs font-semibold uppercase tracking-[0.22em] text-[var(--color-brand-primary)]">
+        {/* Gold leader dash — editorial structural cue, picks up the
+            same gold accent used in the hero. */}
+        <span
+          aria-hidden
+          className="inline-block h-px w-8 bg-gradient-to-r from-[var(--color-gold)] to-transparent"
+        />
         {title}
       </h2>
       <div className="mt-3">{children}</div>
