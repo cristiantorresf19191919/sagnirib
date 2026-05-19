@@ -137,73 +137,61 @@ export async function listFeatured(
   )();
 }
 
+/**
+ * Bayesian smoothing constant for the hero ranking. Higher = more demanding
+ * on review volume before a listing can climb. With C=10:
+ *   5.0 × 2 reviews   → rank 0.83  (suppressed)
+ *   4.7 × 30 reviews  → rank 3.53  (winner)
+ *   4.9 × 60 reviews  → rank 4.20  (top tier)
+ */
+const HERO_BAYESIAN_C = 10;
+/** Minimum reviews to qualify for the hero — keeps 5★/1-review entries out. */
+const HERO_MIN_REVIEWS = 3;
+
 async function listHeroMosaicUncached(
   limit: number,
 ): Promise<ReadonlyArray<BiringaListing>> {
   const db = getDb();
-  const liveTarget = Math.ceil(limit / 3);
-  const topTarget = Math.ceil(limit / 3);
-  const seen = new Set<string>();
-  const pick = (ad: BiringaListing) => {
-    if (seen.has(ad.id)) return false;
-    seen.add(ad.id);
-    return true;
-  };
-
-  let live: BiringaListing[] = [];
-  let top: BiringaListing[] = [];
-  let pool: BiringaListing[] = [];
-
+  // Pull a generous candidate pool by score, then rerank in memory using a
+  // Bayesian-smoothed score so high-rating / low-review entries can't crack
+  // the hero. Single Firestore round-trip, reuses the existing
+  // (verified, score) composite index.
+  const FETCH_LIMIT = Math.max(limit * 4, 50);
   try {
-    const [liveSnap, topSnap, poolSnap] = await Promise.all([
-      db
-        .collection("listings")
-        .where("verified", "==", true)
-        .where("availableNow", "==", true)
-        .orderBy("updatedAt", "desc")
-        .limit(liveTarget * 2)
-        .get(),
-      db
-        .collection("listings")
-        .where("verified", "==", true)
-        .where("reputation.score", ">=", 4.7)
-        .orderBy("reputation.score", "desc")
-        .limit(topTarget * 2)
-        .get(),
-      db
-        .collection("listings")
-        .where("verified", "==", true)
-        .orderBy("updatedAt", "desc")
-        .limit(limit * 2)
-        .get(),
-    ]);
+    const snap = await db
+      .collection("listings")
+      .where("verified", "==", true)
+      .orderBy("reputation.score", "desc")
+      .limit(FETCH_LIMIT)
+      .get();
+    const candidates = snap.docs.map((d) =>
+      mapListing(d.id, d.data() as ListingDocFields),
+    );
+    const ranked = candidates
+      .filter((l) => l.reputation.reviewCount >= HERO_MIN_REVIEWS)
+      .map((l) => ({
+        listing: l,
+        rank:
+          l.reputation.score *
+          (l.reputation.reviewCount /
+            (l.reputation.reviewCount + HERO_BAYESIAN_C)),
+      }))
+      .sort((a, b) => b.rank - a.rank)
+      .slice(0, limit)
+      .map((r) => r.listing);
 
-    live = liveSnap.docs
-      .map((d) => mapListing(d.id, d.data() as ListingDocFields))
-      .filter(pick)
-      .slice(0, liveTarget);
-    top = topSnap.docs
-      .map((d) => mapListing(d.id, d.data() as ListingDocFields))
-      .filter(pick)
-      .slice(0, topTarget);
-    pool = poolSnap.docs
-      .map((d) => mapListing(d.id, d.data() as ListingDocFields))
-      .filter(pick);
+    if (ranked.length >= limit) return ranked;
+
+    // Soft fallback for early-stage catalogs where few listings clear the
+    // review-count floor — backfill with the next best by raw score.
+    const seen = new Set(ranked.map((l) => l.id));
+    const backfill = candidates
+      .filter((l) => !seen.has(l.id))
+      .slice(0, limit - ranked.length);
+    return [...ranked, ...backfill];
   } catch (err) {
     throw wrapFirestoreError("listHeroMosaic", err);
   }
-
-  // Deterministic fill so SSR is stable per request body.
-  const remaining = limit - live.length - top.length;
-  const seed = pool.reduce((acc, ad) => acc + ad.id.length, 0);
-  const fill: BiringaListing[] = [];
-  for (let i = 0; i < remaining && pool.length > 0; i += 1) {
-    const idx = (seed + i * 13) % pool.length;
-    const [item] = pool.splice(idx, 1);
-    if (item) fill.push(item);
-  }
-
-  return [...live, ...top, ...fill].slice(0, limit);
 }
 
 export async function listHeroMosaic(

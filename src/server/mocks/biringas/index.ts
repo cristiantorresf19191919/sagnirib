@@ -188,50 +188,48 @@ export async function listFeatured(
  * Why: founder wants the first surface to feel editorial, not algorithmic;
  * the curation is deterministic per request so SSR + hydration agree.
  */
+/**
+ * Hero mosaic — Bayesian-ranked hall of fame.
+ *
+ * Mirrors the Firestore adapter exactly so dev (mock) and prod render the
+ * same hero. Bayesian smoothing keeps 5★/1-review entries out:
+ *
+ *   rank = score × (reviewCount / (reviewCount + C))
+ *
+ * With C=10 and a `reviewCount >= 3` floor a profile needs both stars AND
+ * volume to crack the mosaic.
+ */
+const HERO_BAYESIAN_C = 10;
+const HERO_MIN_REVIEWS = 3;
+
 export async function listHeroMosaic(
   limit = 12,
 ): Promise<ReadonlyArray<BiringaListing>> {
-  const liveTarget = Math.ceil(limit / 3);
-  const topTarget = Math.ceil(limit / 3);
-  const seen = new Set<string>();
-  const pick = (ad: BiringaListing) => {
-    if (seen.has(ad.id)) return false;
-    seen.add(ad.id);
-    return true;
-  };
+  const verified = BIRINGA_LISTINGS.filter((ad) => ad.verified);
 
-  const live = BIRINGA_LISTINGS.filter((ad) => ad.verified && ad.availableNow)
-    .slice()
-    .sort((a, b) => {
-      const aTs = new Date(a.storyAt ?? a.updatedAt).getTime();
-      const bTs = new Date(b.storyAt ?? b.updatedAt).getTime();
-      return bTs - aTs;
-    })
-    .filter(pick)
-    .slice(0, liveTarget);
+  const ranked = verified
+    .filter((l) => l.reputation.reviewCount >= HERO_MIN_REVIEWS)
+    .map((l) => ({
+      listing: l,
+      rank:
+        l.reputation.score *
+        (l.reputation.reviewCount /
+          (l.reputation.reviewCount + HERO_BAYESIAN_C)),
+    }))
+    .sort((a, b) => b.rank - a.rank)
+    .slice(0, limit)
+    .map((r) => r.listing);
 
-  const topRated = BIRINGA_LISTINGS.filter(
-    (ad) => ad.verified && ad.reputation.score >= 4.7,
-  )
+  if (ranked.length >= limit) return ranked;
+
+  // Soft fallback for tiny catalogs — backfill by raw score.
+  const seen = new Set(ranked.map((l) => l.id));
+  const backfill = verified
+    .filter((l) => !seen.has(l.id))
     .slice()
     .sort((a, b) => b.reputation.score - a.reputation.score)
-    .filter(pick)
-    .slice(0, topTarget);
-
-  const remaining = limit - live.length - topRated.length;
-  const randomPool = BIRINGA_LISTINGS.filter(
-    (ad) => ad.verified && !seen.has(ad.id),
-  );
-  // Deterministic pick keyed on listing.id length sum so SSR is stable.
-  const seed = randomPool.reduce((acc, ad) => acc + ad.id.length, 0);
-  const random: BiringaListing[] = [];
-  for (let i = 0; i < remaining && randomPool.length > 0; i += 1) {
-    const idx = (seed + i * 13) % randomPool.length;
-    const [item] = randomPool.splice(idx, 1);
-    if (item) random.push(item);
-  }
-
-  return [...live, ...topRated, ...random].slice(0, limit);
+    .slice(0, limit - ranked.length);
+  return [...ranked, ...backfill];
 }
 
 export async function findBySlug(slug: string): Promise<BiringaListing | null> {
