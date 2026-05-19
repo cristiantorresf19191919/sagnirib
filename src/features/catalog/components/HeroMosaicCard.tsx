@@ -32,6 +32,11 @@ interface HeroMosaicCardProps {
  * The tile itself carries no motion — the parent reel column scrolls it
  * vertically. Stacking ken-burns / drift here on top of the reel produced
  * the "wobbly bad animation" look from the previous iteration.
+ *
+ * Compositor hints: the outer wrapper and inner `<Link>` opt into their
+ * own paint layer (`translateZ(0)`, `backface-visibility`, `contain`)
+ * so the parent reel translation does not force a re-raster of every
+ * tile's blurred backdrop pills every frame.
  */
 export function HeroMosaicCard({
   listing,
@@ -45,13 +50,16 @@ export function HeroMosaicCard({
     : listing.city;
 
   return (
-    <div className="relative w-full shrink-0" style={{ height }}>
+    <div
+      className="relative w-full shrink-0 [transform:translateZ(0)] [backface-visibility:hidden]"
+      style={{ height }}
+    >
       <Link
         href={`/p/${listing.slug}`}
         aria-label={`${listing.name}, ${listing.age}, ${listing.city} — ver perfil`}
-        className="group relative block h-full w-full overflow-hidden rounded-[var(--radius-xl)] bg-[var(--color-cream-deep)] shadow-[0_18px_36px_-22px_rgba(20,28,24,0.45)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-forest)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-cream)]"
+        className="group relative block h-full w-full overflow-hidden rounded-[var(--radius-xl)] bg-[var(--color-cream-deep)] shadow-[0_18px_36px_-22px_rgba(20,28,24,0.45)] [contain:layout_paint] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-forest)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-cream)]"
       >
-        <div className="absolute inset-0">
+        <div className="absolute inset-0 [transform:translateZ(0)] [backface-visibility:hidden]">
           <Image
             src={listing.mainImage}
             alt=""

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowUpRight, Plus } from "lucide-react";
+import { ArrowUpRight, HelpCircle, Plus } from "lucide-react";
 
 import { Container } from "@/shared/design-system/components/Container";
 import { Logo } from "@/shared/design-system/components/Logo";
@@ -17,6 +17,34 @@ interface HeaderProps {
   hideCatalogCta?: boolean;
 }
 
+/**
+ * Site-wide sticky header — marketing-driven layout.
+ *
+ * Reading the bar left → right tells the buyer journey:
+ *
+ *   LOGO  |  DISCOVERY              |  ACCOUNT       |  UTIL  |  CTAs
+ *         |  Cómo funciona · Faves  |  Ingresar      |  Theme |  Publica · Explorar
+ *
+ * Why this order:
+ *   1. Logo anchors brand identity at the left edge.
+ *   2. Discovery cluster (low-commitment: learn → engage with what you
+ *      already like) — appears first because it converts curious visitors
+ *      into qualified prospects.
+ *   3. Account state — appears once the user has discovered enough to
+ *      need an account (favoritas requires saving; reservations require
+ *      login). Putting it BEFORE the CTAs avoids the "click → bounce →
+ *      where do I sign in?" loop.
+ *   4. Theme toggle — pure utility, ranked deliberately low. Lives just
+ *      before the CTAs so it doesn't dilute the discovery cluster.
+ *   5. Secondary CTA — `Publica tu perfil` (the SELLER-side ask). Outline
+ *      treatment so it doesn't compete with the primary buyer CTA.
+ *   6. Primary CTA — `Explorar`. Filled forest pill, rightmost so it's the
+ *      last and strongest action on the bar (Fitt's-law sweet spot near
+ *      the typical reading-exit point).
+ *
+ * Mobile (< sm) collapses labels to icons but preserves the order; touch
+ * targets stay 44×44 px throughout.
+ */
 export function Header({ hideCatalogCta = false }: HeaderProps) {
   return (
     <header data-testid="header" className="sticky top-0 z-30 isolate">
@@ -24,21 +52,28 @@ export function Header({ hideCatalogCta = false }: HeaderProps) {
 
       <Container
         width="wide"
-        className="flex h-16 items-center justify-between gap-4"
+        className="flex h-16 items-center justify-between gap-3 sm:gap-4"
       >
         <Logo size="md" />
 
         <nav
           data-testid="header-nav"
           aria-label="Navegación principal"
-          className="flex items-center gap-1"
+          className="flex items-center gap-0.5 sm:gap-1"
         >
+          {/* 1. DISCOVERY — Cómo funciona (learn) + Favoritas (engage with
+              what already resonated). Both collapse labels on mobile. */}
           <Link
             data-testid="header-link-how-it-works"
             href="/#como-funciona"
-            className="group/nav hidden sm:inline-flex h-11 items-center rounded-full px-4 text-sm font-medium text-[var(--color-text-muted)] transition-colors hover:text-[var(--color-foreground)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-background)]"
+            aria-label="Cómo funciona"
+            className="group/nav inline-flex h-11 items-center gap-1.5 rounded-full px-2.5 sm:px-4 text-sm font-medium text-[var(--color-text-muted)] transition-colors duration-200 ease-[var(--ease-standard)] hover:text-[var(--color-foreground)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-background)]"
           >
-            <span className="relative inline-block">
+            <HelpCircle
+              className="h-4 w-4 sm:hidden"
+              aria-hidden
+            />
+            <span className="relative hidden sm:inline-block">
               Cómo funciona
               <span
                 aria-hidden
@@ -49,25 +84,47 @@ export function Header({ hideCatalogCta = false }: HeaderProps) {
 
           <FavoritesNavLink />
 
-          <ThemeToggle />
+          {/* Divider: separates the DISCOVERY cluster (left) from the
+              ACCOUNT + UTILITY + CTA cluster (right). */}
+          <span
+            aria-hidden
+            className="mx-1.5 hidden h-6 w-px bg-[var(--color-border)] sm:block"
+          />
 
+          {/* 2. ACCOUNT — surface "Ingresar" right where the user reaches
+              for it (immediately before they want to publish or explore).
+              When signed-in this slot renders the user chip + sign-out. */}
           <AuthBadge />
 
+          {/* 3. UTILITY — theme toggle. Lowest priority; sits flush with
+              the CTAs so it doesn't draw eyes away from discovery. */}
+          <ThemeToggle />
+
+          {/* 4. SECONDARY CTA — seller-side ask. Outline pill so it reads
+              as the supporting action against the primary `Explorar`. */}
           <Link
             data-testid="header-link-publish-profile"
             href="/publicar"
             aria-label="Publica tu perfil"
-            className="inline-flex h-11 items-center gap-1.5 rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] px-3 sm:px-4 text-sm font-semibold text-[var(--color-foreground)] transition-[border-color,background] duration-200 ease-[var(--ease-standard)] hover:border-[var(--color-brand-primary-soft)] hover:bg-[var(--color-background-elevated)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-background)]"
+            className="group/publish relative inline-flex h-11 items-center gap-1.5 overflow-hidden rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] px-3 sm:px-4 text-sm font-semibold text-[var(--color-foreground)] transition-[border-color,background,transform,box-shadow] duration-200 ease-[var(--ease-standard)] hover:-translate-y-[1px] hover:border-[var(--color-brand-primary-soft)] hover:bg-[var(--color-background-elevated)] hover:shadow-[var(--shadow-sm)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-background)]"
           >
-            <Plus className="h-4 w-4 sm:hidden" aria-hidden />
+            {/* Plus rotates 90° on hover → reads as "open / create". */}
+            <Plus
+              className="h-4 w-4 transition-transform duration-300 ease-[var(--ease-standard)] group-hover/publish:rotate-90 sm:hidden"
+              aria-hidden
+            />
             <span className="hidden sm:inline">Publica tu perfil</span>
           </Link>
 
+          {/* 5. PRIMARY CTA — buyer-side conversion. Filled forest pill,
+              rightmost so it's the last and strongest action on the bar.
+              Hidden on the catalog page itself so we never show two
+              competing "Explorar" affordances. */}
           {!hideCatalogCta && (
             <Link
               data-testid="header-cta-explore"
               href="/explorar"
-              className="group relative inline-flex h-11 items-center gap-1.5 overflow-hidden rounded-full bg-[var(--color-brand-primary)] px-5 text-sm font-semibold text-[var(--color-surface)] shadow-[var(--shadow-glow-primary)] transition-[background,box-shadow,transform] duration-200 ease-[var(--ease-standard)] hover:-translate-y-[1px] hover:bg-[var(--color-brand-primary-strong)] hover:shadow-[0_18px_36px_-12px_rgba(47,93,67,0.5)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-background)]"
+              className="group relative inline-flex h-11 items-center gap-1.5 overflow-hidden rounded-full bg-[var(--color-brand-primary)] px-4 sm:px-5 text-sm font-semibold text-[var(--color-surface)] shadow-[var(--shadow-glow-primary)] transition-[background,box-shadow,transform] duration-200 ease-[var(--ease-standard)] hover:-translate-y-[1px] hover:bg-[var(--color-brand-primary-strong)] hover:shadow-[0_18px_36px_-12px_rgba(47,93,67,0.5)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-background)]"
             >
               {/* Shimmer sweep on hover — same vocabulary as the hero search */}
               <span

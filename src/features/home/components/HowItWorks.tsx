@@ -17,9 +17,58 @@ import {
   useInView,
   useReducedMotion,
   type TargetAndTransition,
-  type Transition,
   type Variants,
 } from "framer-motion";
+
+/**
+ * Section-level reveal cascade. The outer container drives a parent
+ * `staggerChildren` so the three step cards bloom one after the other
+ * in left → right order — each card visibly "grows out of" the previous
+ * one because the next reveal only starts after the previous card has
+ * crossed its main animation peak (delay ~ 0.55s × index).
+ */
+const SECTION_PARENT: Variants = {
+  hidden: {},
+  visible: {
+    transition: {
+      staggerChildren: 0.55,
+      delayChildren: 0.15,
+    },
+  },
+};
+
+/**
+ * Card-level "grow from previous" variant. Each card starts collapsed
+ * to a sliver on its LEFT edge (origin-left + small scaleX) and inflates
+ * out to the right with a spring — visually, the card unfurls from the
+ * trailing edge of the previous card. Y-offset adds a slight rise so
+ * the cascade feels organic rather than purely mechanical.
+ */
+const CARD_GROW_VARIANTS: Variants = {
+  hidden: {
+    opacity: 0,
+    scaleX: 0.4,
+    scaleY: 0.92,
+    y: 14,
+    filter: "blur(6px)",
+  },
+  visible: {
+    opacity: 1,
+    scaleX: 1,
+    scaleY: 1,
+    y: 0,
+    filter: "blur(0px)",
+    transition: {
+      type: "spring",
+      stiffness: 180,
+      damping: 22,
+      mass: 0.95,
+      opacity: { duration: 0.5, ease: [0.22, 1, 0.36, 1] },
+      filter: { duration: 0.5, ease: [0.22, 1, 0.36, 1] },
+    },
+  },
+  hover: { y: -6 },
+};
 
 import { Container } from "@/shared/design-system/components/Container";
 
@@ -74,17 +123,6 @@ const STEPS: ReadonlyArray<Step> = [
   },
 ];
 
-/*
- * Card-level entrance variants — used distinct keys ("card-*") so they
- * don't collide with the inner stagger's "hidden"/"visible" cascade.
- * Framer-motion variant propagation only fires on key match.
- */
-const CARD_VARIANTS: Variants = {
-  cardHidden: { opacity: 0, y: 28 },
-  cardRest: { opacity: 1, y: 0 },
-  cardHover: { y: -6 },
-};
-
 const INNER_PARENT: Variants = {
   hidden: {},
   visible: {
@@ -108,13 +146,6 @@ const ITEM_POP: Variants = {
     scale: 1,
     transition: { type: "spring", stiffness: 280, damping: 20 },
   },
-};
-
-const CARD_TRANSITION: Transition = {
-  type: "spring",
-  stiffness: 220,
-  damping: 26,
-  mass: 0.9,
 };
 
 const ICON_HOVER: TargetAndTransition = {
@@ -231,11 +262,22 @@ export function HowItWorks() {
 
         <div className="relative mt-14 lg:mt-20">
           <HowItWorksConnector />
-          <ol className="relative grid gap-6 md:grid-cols-3 lg:gap-8">
-            {STEPS.map((step) => (
-              <StepCard key={step.numeral} step={step} reduced={!!reduced} />
+          <motion.ol
+            className="relative grid gap-6 md:grid-cols-3 lg:gap-8"
+            variants={reduced ? undefined : SECTION_PARENT}
+            initial={reduced ? false : "hidden"}
+            whileInView={reduced ? undefined : "visible"}
+            viewport={{ once: true, amount: 0.2, margin: "-80px" }}
+          >
+            {STEPS.map((step, idx) => (
+              <StepCard
+                key={step.numeral}
+                step={step}
+                index={idx}
+                reduced={!!reduced}
+              />
             ))}
-          </ol>
+          </motion.ol>
         </div>
 
         {/* Privacy / trust ribbon — closes the section with a discrete
@@ -249,17 +291,19 @@ export function HowItWorks() {
 
 interface StepCardProps {
   step: Step;
+  index: number;
   reduced: boolean;
 }
 
-function StepCard({ step, reduced }: Readonly<StepCardProps>) {
+function StepCard({ step, index, reduced }: Readonly<StepCardProps>) {
   const Icon = step.icon;
   const isCta = !!step.cta;
   const ref = useRef<HTMLLIElement>(null);
-  // Per-card in-view trigger drives BOTH the card entrance AND the
-  // inner stagger + illustration. One scroll signal, three coordinated
-  // animations — feels like the card is "waking up" the moment it
-  // appears.
+  // Per-card in-view trigger drives only the *inner* per-element
+  // stagger (numeral / icon / copy / illustration). The CARD's own
+  // entrance is now choreographed by the parent <motion.ol>'s variants
+  // cascade so cards reveal one after another (2 grows out of 1, 3
+  // grows out of 2) instead of all popping in together.
   const inView = useInView(ref, { once: true, amount: 0.25 });
 
   const surfaceCls = isCta
@@ -274,14 +318,40 @@ function StepCard({ step, reduced }: Readonly<StepCardProps>) {
     <motion.li
       ref={ref}
       data-testid={`how-it-works-step-${step.numeral}`}
-      variants={reduced ? undefined : CARD_VARIANTS}
-      initial={reduced ? false : "cardHidden"}
-      animate={reduced ? undefined : inView ? "cardRest" : "cardHidden"}
-      whileHover={reduced ? undefined : "cardHover"}
-      transition={CARD_TRANSITION}
-      className={`group relative flex h-full flex-col overflow-hidden rounded-[var(--radius-2xl)] border p-7 outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-background-elevated)] sm:p-8 ${surfaceCls} ${interactionCls}`.trim()}
+      variants={reduced ? undefined : CARD_GROW_VARIANTS}
+      whileHover={reduced ? undefined : "hover"}
+      // Origin-left + GPU promotion so the scaleX inflation feels like
+      // the card is unfurling from the trailing edge of its left
+      // neighbour. `contain` keeps the layout cost local.
+      style={{
+        transformOrigin: "left center",
+        willChange: "transform, opacity, filter",
+      }}
+      className={`group relative flex h-full flex-col overflow-hidden rounded-[var(--radius-2xl)] border p-7 outline-none [contain:layout_paint] focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-background-elevated)] sm:p-8 ${surfaceCls} ${interactionCls}`.trim()}
       tabIndex={isCta ? -1 : 0}
     >
+      {/* "Grow-from-previous" connector spark — a small gold dot that
+          shoots in from the LEFT edge as this card unfurls. Card #1
+          skips it (nothing to grow from). Sits behind content; pure
+          decoration. */}
+      {!reduced && index > 0 && (
+        <motion.span
+          aria-hidden
+          className="pointer-events-none absolute left-0 top-1/2 -z-[1] block h-3 w-3 -translate-y-1/2 rounded-full bg-[var(--color-gold)] shadow-[0_0_0_4px_rgba(200,166,118,0.22),0_0_16px_4px_rgba(200,166,118,0.32)]"
+          initial={{ opacity: 0, scale: 0.4, x: -22 }}
+          whileInView={{
+            opacity: [0, 1, 0],
+            scale: [0.4, 1.2, 0.6],
+            x: [-22, 18, 28],
+          }}
+          viewport={{ once: true, amount: 0.25, margin: "-80px" }}
+          transition={{
+            duration: 0.9,
+            ease: [0.22, 1, 0.36, 1],
+            delay: 0.05,
+          }}
+        />
+      )}
       {/* CTA card link overlay — full surface click target at z:10. */}
       {step.cta && (
         <Link

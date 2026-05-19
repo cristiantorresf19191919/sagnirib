@@ -143,10 +143,17 @@ export function FilterModal({
             transition={reduceMotion ? { duration: 0 } : SPRING}
             className={
               maximized
-                ? "relative z-10 flex h-[100dvh] w-full flex-col overflow-hidden bg-[var(--color-background-elevated)] shadow-[var(--shadow-lg)]"
-                : "relative z-10 m-0 flex max-h-[92dvh] w-full flex-col overflow-hidden rounded-t-[var(--radius-2xl)] bg-[var(--color-background-elevated)] shadow-[var(--shadow-lg)] sm:m-4 sm:max-h-[88vh] sm:max-w-3xl sm:rounded-[var(--radius-2xl)] lg:max-w-4xl"
+                ? "relative z-10 flex h-[100dvh] w-full flex-col overflow-hidden bg-[var(--color-background-elevated)] shadow-[var(--shadow-lg)] ring-1 ring-[var(--color-border)]"
+                : "relative z-10 m-0 flex max-h-[92dvh] w-full flex-col overflow-hidden rounded-t-[var(--radius-2xl)] bg-[var(--color-background-elevated)] shadow-[var(--shadow-lg)] ring-1 ring-[var(--color-border)] sm:m-4 sm:max-h-[88vh] sm:max-w-3xl sm:rounded-[var(--radius-2xl)] lg:max-w-4xl"
             }
           >
+            {/* Top gold hairline — sits just inside the modal border, a
+                tiny editorial flourish that telegraphs "premium tools"
+                without adding chrome. Hidden on mobile bottom-sheet. */}
+            <span
+              aria-hidden
+              className="pointer-events-none absolute inset-x-0 top-0 hidden h-px bg-gradient-to-r from-transparent via-[var(--color-gold)]/55 to-transparent sm:block"
+            />
             {/* Drag-handle affordance — bottom sheets need a visible cue
                 that the surface can dismiss. Hidden on desktop where the
                 X button + maximize button carry the affordance. */}
@@ -196,7 +203,20 @@ export function FilterModal({
               </div>
             </header>
 
-            <div className="flex-1 overflow-y-auto bg-[var(--color-background-elevated)] px-5 py-5 sm:px-7 sm:py-6">
+            {/* Scrolling body. The wrapper carries the padding; the
+                inner `<div>` carries the soft scroll-fade mask so
+                content fades into the header instead of slicing cleanly.
+                Using `mask-image` here keeps the fade purely visual
+                (does not affect hit-testing). */}
+            <div
+              className="relative flex-1 overflow-y-auto bg-[var(--color-background-elevated)] px-5 py-5 sm:px-7 sm:py-6"
+              style={{
+                WebkitMaskImage:
+                  "linear-gradient(to bottom, transparent 0px, #000 14px, #000 calc(100% - 24px), transparent calc(100% - 4px))",
+                maskImage:
+                  "linear-gradient(to bottom, transparent 0px, #000 14px, #000 calc(100% - 24px), transparent calc(100% - 4px))",
+              }}
+            >
               {children}
             </div>
           </motion.div>

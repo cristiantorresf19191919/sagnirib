@@ -1,13 +1,21 @@
 "use client";
 
 import Image from "next/image";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
 interface CardStackGalleryProps {
   images: ReadonlyArray<string>;
   altBase: string;
 }
+
+/**
+ * Slow auto-advance interval (ms). Tuned to feel ambient — long enough
+ * that the user doesn't perceive it as a slideshow, short enough that
+ * a passive viewer sees motion before they look away. Paired with a
+ * 1px progress hairline so the pacing is visible without being noisy.
+ */
+const AUTO_ADVANCE_MS = 7000;
 
 /**
  * Stacked "naipe" gallery — every image is rendered as a card stacked behind
@@ -17,6 +25,8 @@ interface CardStackGalleryProps {
  */
 export function CardStackGallery({ images, altBase }: Readonly<CardStackGalleryProps>) {
   const [activeIndex, setActiveIndex] = useState(0);
+  const [paused, setPaused] = useState(false);
+  const [autoTick, setAutoTick] = useState(0);
   const total = images.length;
 
   const goNext = useCallback(() => {
@@ -36,13 +46,59 @@ export function CardStackGallery({ images, altBase }: Readonly<CardStackGalleryP
     return () => globalThis.removeEventListener("keydown", onKey);
   }, [goNext, goPrev]);
 
+  // Slow, ambient auto-advance to the right. Pauses while the user is
+  // hovering or focused inside the deck, while the document is hidden,
+  // and when prefers-reduced-motion is on. `autoTick` keeps the
+  // progress hairline re-keying so it restarts its 7s fill on every
+  // cycle (including manual navigation).
+  const userPrefersReducedMotion = useRef(false);
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
+    userPrefersReducedMotion.current = mq.matches;
+    const onChange = () => {
+      userPrefersReducedMotion.current = mq.matches;
+    };
+    mq.addEventListener("change", onChange);
+    return () => mq.removeEventListener("change", onChange);
+  }, []);
+
+  useEffect(() => {
+    if (total <= 1) return;
+    if (userPrefersReducedMotion.current) return;
+    if (paused) return;
+
+    const id = window.setInterval(() => {
+      if (document.visibilityState === "hidden") return;
+      setActiveIndex((i) => (i + 1) % total);
+      setAutoTick((t) => t + 1);
+    }, AUTO_ADVANCE_MS);
+    return () => window.clearInterval(id);
+  }, [paused, total]);
+
+  // Reset the progress hairline whenever the user manually navigates so
+  // it doesn't appear to "skip" mid-fill.
+  useEffect(() => {
+    setAutoTick((t) => t + 1);
+  }, [activeIndex]);
+
   if (total === 0) return null;
 
   return (
     <div className="flex flex-col gap-6">
       <div
-        className="relative mx-auto w-full max-w-[440px] aspect-[3/4] [perspective:1400px]"
+        className="group/gallery relative mx-auto w-full max-w-[440px] aspect-[3/4] [perspective:1400px]"
         aria-roledescription="galería tipo naipes"
+        onMouseEnter={() => setPaused(true)}
+        onMouseLeave={() => setPaused(false)}
+        onFocus={() => setPaused(true)}
+        onBlur={(e) => {
+          // Only unpause when focus actually leaves the gallery (not when
+          // it jumps between siblings).
+          if (!e.currentTarget.contains(e.relatedTarget as Node | null)) {
+            setPaused(false);
+          }
+        }}
       >
         {images.map((src, i) => {
           const offset = (i - activeIndex + total) % total;
@@ -68,7 +124,7 @@ export function CardStackGallery({ images, altBase }: Readonly<CardStackGalleryP
               aria-current={isFront}
               tabIndex={isFront ? -1 : 0}
               onClick={() => setActiveIndex(i)}
-              className="absolute inset-0 origin-center cursor-pointer rounded-[var(--radius-2xl)] border border-[var(--color-border)] bg-[var(--color-surface)] shadow-[var(--shadow-lg)] transition-[transform,opacity,box-shadow,border-color] duration-500 ease-[var(--ease-standard)] focus:outline-none focus-visible:border-[var(--color-brand-primary)] focus-visible:shadow-[var(--shadow-glow-primary)]"
+              className="absolute inset-0 origin-center cursor-pointer rounded-[var(--radius-2xl)] border border-[var(--color-border)] bg-[var(--color-surface)] shadow-[var(--shadow-lg)] transition-[transform,opacity,box-shadow,border-color] duration-[900ms] ease-[var(--ease-standard)] focus:outline-none focus-visible:border-[var(--color-brand-primary)] focus-visible:shadow-[var(--shadow-glow-primary)]"
               style={{
                 transform: `translate3d(${translateX}px, ${translateY}px, ${
                   -depth * 40
@@ -80,12 +136,17 @@ export function CardStackGallery({ images, altBase }: Readonly<CardStackGalleryP
             >
               <span className="absolute inset-0 overflow-hidden rounded-[var(--radius-2xl)]">
                 <Image
+                  key={isFront ? `front-${activeIndex}` : `back-${i}`}
                   src={src}
                   alt={`${altBase} — imagen ${i + 1}`}
                   fill
                   sizes="(max-width: 768px) 90vw, 440px"
                   priority={i === 0}
-                  className="object-cover"
+                  className={`object-cover ${
+                    isFront
+                      ? "motion-safe:motion-gallery-pan-right"
+                      : ""
+                  }`}
                 />
                 {isFront && (
                   <>
@@ -107,6 +168,27 @@ export function CardStackGallery({ images, altBase }: Readonly<CardStackGalleryP
             </button>
           );
         })}
+
+        {/* Ambient auto-advance progress hairline. Sits at the very
+            bottom of the active card; fades to gold as it fills. Re-keys
+            on every cycle (including manual nav) so the fill never
+            "skips" mid-stride. Hidden under prefers-reduced-motion. */}
+        {total > 1 && (
+          <span
+            key={`auto-${autoTick}`}
+            aria-hidden
+            data-paused={paused ? "true" : "false"}
+            className="pointer-events-none absolute inset-x-6 bottom-3 z-20 block h-px overflow-hidden rounded-full bg-[var(--color-surface)]/40 motion-reduce:hidden"
+          >
+            <span
+              className="block h-full origin-left bg-gradient-to-r from-[var(--color-brand-primary)] via-[var(--color-gold)] to-[var(--color-brand-primary)] data-[paused=true]:animation-play-state-paused"
+              style={{
+                animation: `gallery-progress ${AUTO_ADVANCE_MS}ms linear forwards`,
+                animationPlayState: paused ? "paused" : "running",
+              }}
+            />
+          </span>
+        )}
       </div>
 
       <div className="flex items-center justify-center gap-3">

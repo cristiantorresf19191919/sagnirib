@@ -8,6 +8,7 @@ import { UnderlineSweep } from "@/shared/motion/UnderlineSweep";
 import { EditorialHeroMosaicColumn } from "./EditorialHeroMosaicColumn";
 import { HeroCitySelect } from "./HeroCitySelect";
 import { HeroMosaicCard } from "./HeroMosaicCard";
+import { LuckyButton } from "./LuckyButton";
 
 const HERO_CITIES = [
   { value: "", label: "Toda Colombia" },
@@ -320,6 +321,15 @@ export async function EditorialHero({
                   </Link>
                 );
               })}
+
+              {/* "Me siento con suerte" — picks a random visible mosaic
+                  profile and routes to it. Sits at the end of the chip
+                  row so it reads as a serendipity offer next to the
+                  taxonomy filters. */}
+              <LuckyButton
+                slugs={mosaic.map((listing) => listing.slug)}
+                className="group/lucky relative ml-1 inline-flex h-8 items-center gap-1.5 overflow-hidden rounded-full border border-[var(--color-gold)]/55 bg-[var(--color-cream-soft)]/80 px-3 text-xs font-semibold text-[var(--color-ink)] shadow-[inset_0_1px_0_rgba(255,255,255,0.5),0_4px_14px_-6px_rgba(31,61,46,0.18)] transition-[transform,border-color,box-shadow,background-color] duration-200 ease-[var(--ease-standard)] hover:-translate-y-[1px] hover:border-[var(--color-gold)] hover:bg-[var(--color-cream)] hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.6),0_8px_20px_-8px_rgba(31,61,46,0.24)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-gold)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-cream)] disabled:cursor-not-allowed disabled:opacity-60"
+              />
             </div>
 
             {/* Search pill. `relative z-30` lifts the open city dropdown

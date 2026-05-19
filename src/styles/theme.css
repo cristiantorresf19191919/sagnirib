@@ -152,10 +152,11 @@ html[data-theme="dark"] {
 /*
  * "Desire" theme — flipped via `data-theme="desire"` on <html>.
  *
- * Deep aubergine canvas + mauve primary + rose-gold accent. The third
- * mood in the toggle cycle (light → dark → desire). Designed to feel
- * sensual without being gaudy: violet is heavily desaturated toward
- * plum, gold stays warm, accents stay reserved.
+ * Deep aubergine canvas + iridescent mauve primary + rose-gold accent.
+ * One of two violet moods in the toggle cycle. Designed to feel
+ * sensual and cinematic — the palette is built around a midnight
+ * aubergine ground with cooler surfaces stepping toward magenta, and
+ * a champagne-gold accent that keeps the warmth.
  *
  * Same surface-vs-primary inversion as dark mode: the primary CTA is a
  * LIGHT mauve so `text-[var(--color-surface)]` (dark plum) reads as
@@ -163,49 +164,137 @@ html[data-theme="dark"] {
  * surface.
  */
 html[data-theme="desire"] {
-  --color-background: #1A0822;
-  --color-background-elevated: #25102E;
-  --color-surface: #2E1538;
-  --color-surface-muted: #3A1D45;
-  --color-border: #4C2A57;
+  /* Background ladder — true black-violet at the bottom, with surfaces
+     stepping cooler toward magenta. Tuned so cards on backgrounds have
+     a clear, painterly separation instead of melting into one flat
+     plum. */
+  --color-background: #120320;
+  --color-background-elevated: #1C0830;
+  --color-surface: #29103E;
+  --color-surface-muted: #371B4F;
+  --color-border: #5C2E6E;
 
-  --color-brand-primary: #E5B7DA;
-  --color-brand-primary-strong: #F2C7E5;
-  --color-brand-primary-soft: #6F3F76;
+  /* Primary — a brighter, slightly cooler iridescent mauve. Pushes
+     toward orchid so CTAs feel jewel-like against the deep plum. */
+  --color-brand-primary: #F2C8E7;
+  --color-brand-primary-strong: #FBDDF2;
+  --color-brand-primary-soft: #82488C;
 
-  --color-brand-secondary: #B58FAE;
-  --color-brand-secondary-strong: #C9A3C2;
+  --color-brand-secondary: #C8A0C2;
+  --color-brand-secondary-strong: #DDB7D5;
 
-  --color-brand-accent: #E5B564;
-  --color-brand-accent-strong: #F0C77D;
+  /* Champagne gold — slightly warmer, less yellow, more rosé. */
+  --color-brand-accent: #F1C98C;
+  --color-brand-accent-strong: #FADCA8;
 
-  --color-brand-highlight: #FF7BB0;
-  --color-brand-warn: #E5B564;
+  --color-brand-highlight: #FF6FB3;
+  --color-brand-warn: #F1C98C;
 
-  --color-foreground: #F5E7F0;
-  --color-text-muted: #C7A6C2;
-  --color-text-subtle: #957795;
+  --color-foreground: #FBEEF6;
+  --color-text-muted: #D6B7D1;
+  --color-text-subtle: #A082A0;
 
   /* Editorial vocabulary remap: "cream" reads as the candlelit
      aubergine surface; "ink" stays the off-cream type; "forest"
      becomes the mauve primary so the gradient and "tu Biringa" gold
      sweep still align with brand-primary. */
-  --color-cream: #25102E;
-  --color-cream-deep: #1A0822;
-  --color-cream-soft: #2E1538;
-  --color-ink: #F5E7F0;
-  --color-ink-soft: #D8BCD2;
-  --color-forest: #E5B7DA;
-  --color-forest-deep: #F2C7E5;
-  --color-gold: #E5B564;
-  --color-gold-deep: #C99750;
-  --color-line: rgba(245, 231, 240, 0.11);
-  --color-line-soft: rgba(245, 231, 240, 0.06);
+  --color-cream: #1C0830;
+  --color-cream-deep: #120320;
+  --color-cream-soft: #29103E;
+  --color-ink: #FBEEF6;
+  --color-ink-soft: #E2C7DC;
+  --color-forest: #F2C8E7;
+  --color-forest-deep: #FBDDF2;
+  --color-gold: #F1C98C;
+  --color-gold-deep: #D4A969;
+  --color-line: rgba(251, 238, 246, 0.13);
+  --color-line-soft: rgba(251, 238, 246, 0.06);
 
-  --shadow-sm: 0 1px 2px rgba(15, 4, 22, 0.55);
-  --shadow-md: 0 6px 20px -8px rgba(15, 4, 22, 0.65);
-  --shadow-lg: 0 18px 40px -16px rgba(15, 4, 22, 0.75);
-  --shadow-glow-primary: 0 12px 32px -16px rgba(229, 183, 218, 0.55);
-  --shadow-glow-secondary: 0 12px 32px -16px rgba(181, 143, 174, 0.40);
-  --shadow-glow-accent: 0 12px 32px -16px rgba(229, 181, 100, 0.45);
+  /* Shadow + glow ladder — deeper void below + a wider, more saturated
+     halo above. The primary glow now blends orchid + champagne for a
+     subtle two-tone bloom around hovered CTAs. */
+  --shadow-sm: 0 1px 2px rgba(8, 1, 14, 0.65);
+  --shadow-md: 0 10px 28px -12px rgba(8, 1, 14, 0.75);
+  --shadow-lg: 0 26px 56px -20px rgba(8, 1, 14, 0.85);
+  --shadow-glow-primary:
+    0 16px 40px -18px rgba(242, 200, 231, 0.70),
+    0 0 0 1px rgba(242, 200, 231, 0.08);
+  --shadow-glow-secondary: 0 14px 36px -18px rgba(200, 160, 194, 0.50);
+  --shadow-glow-accent: 0 14px 36px -18px rgba(241, 201, 140, 0.55);
+}
+
+/*
+ * "Bloom" theme — flipped via `data-theme="bloom"` on <html>.
+ *
+ * Light cousin of `desire`: pale lavender-cream canvas with a deep
+ * royal-mauve primary and rose-gold accents. The fourth mood in the
+ * toggle cycle (light → dark → bloom → desire). Designed to feel like
+ * a sunlit boudoir — bright, romantic, photo-friendly without losing
+ * editorial composure.
+ *
+ * Unlike `desire`, this is a LIGHT theme: brand-primary is the deep
+ * plum CTA and `text-[var(--color-surface)]` (near-white) is the pill
+ * label — same idiom as the default cream/forest theme.
+ */
+html[data-theme="bloom"] {
+  /* Canvas ladder — warmer, peachier-lavender paper so the surface
+     reads as romantic rather than clinical. Surfaces step from cream-
+     lavender up to true white, with the muted band biased orchid. */
+  --color-background: #F8EFF7;
+  --color-background-elevated: #FEF7FD;
+  --color-surface: #FFFFFF;
+  --color-surface-muted: #EFE0EC;
+  --color-border: #E2C9DD;
+
+  /* Primary — a deeper, more saturated royal plum. Reads as confident
+     and editorial against the pale lavender and pairs cleanly with
+     white pill labels (~4.9:1 against surface). */
+  --color-brand-primary: #62217A;
+  --color-brand-primary-strong: #7A2C95;
+  --color-brand-primary-soft: #D0AED9;
+
+  /* Secondary — dustier mauve so the secondary CTAs sit a half-step
+     behind primary without disappearing into the paper. */
+  --color-brand-secondary: #8E6A9C;
+  --color-brand-secondary-strong: #6F4D7E;
+
+  /* Accent — rose-copper. Slightly warmer than v1 so it harmonises
+     with the new champagne accent in `desire`. */
+  --color-brand-accent: #C98561;
+  --color-brand-accent-strong: #AD6B49;
+
+  --color-brand-highlight: #C9326F;
+  --color-brand-warn: #C98561;
+
+  --color-foreground: #240C2C;
+  --color-text-muted: #6A537A;
+  --color-text-subtle: #9C84A7;
+
+  /* Editorial vocabulary remap: "cream" reads as the pale lavender-
+     paper surface; "ink" stays a deep plum; "forest" becomes the
+     royal-mauve primary so the gold-sheen headline and CTA gradients
+     align with brand-primary. */
+  --color-cream: #F2E4F0;
+  --color-cream-deep: #E8D2E5;
+  --color-cream-soft: #FAEFF7;
+  --color-ink: #240C2C;
+  --color-ink-soft: #57385F;
+  --color-forest: #62217A;
+  --color-forest-deep: #501968;
+  --color-gold: #B98559;
+  --color-gold-deep: #966240;
+  --color-line: rgba(36, 12, 44, 0.14);
+  --color-line-soft: rgba(36, 12, 44, 0.06);
+
+  /* Shadows — plum-tinted so cards feel like they're sitting on warm
+     paper rather than casting grey drop-shadows. The primary glow
+     gets a hairline ring for definition on hovered CTAs. */
+  --shadow-sm: 0 1px 2px rgba(60, 22, 76, 0.09);
+  --shadow-md: 0 10px 28px -12px rgba(60, 22, 76, 0.20);
+  --shadow-lg: 0 26px 56px -20px rgba(60, 22, 76, 0.26);
+  --shadow-glow-primary:
+    0 16px 40px -18px rgba(98, 33, 122, 0.50),
+    0 0 0 1px rgba(98, 33, 122, 0.06);
+  --shadow-glow-secondary: 0 14px 36px -18px rgba(142, 106, 156, 0.45);
+  --shadow-glow-accent: 0 14px 36px -18px rgba(201, 133, 97, 0.50);
 }

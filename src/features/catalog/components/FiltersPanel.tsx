@@ -451,11 +451,25 @@ export function FiltersPanel({ filters, view }: FiltersPanelProps) {
 
             {/* Sticky action bar — anchored at the bottom of the modal so the
                 primary CTA is always reachable, and the live filter count
-                stays visible while the user picks chips. */}
+                stays visible while the user picks chips.
+
+                Edges align with the modal body padding (-mx-5 / -mx-7,
+                -mb-5 / -mb-6) so the bar bleeds flush. Background is
+                fully opaque + carries a soft upward fade so chips
+                scrolling underneath cleanly disappear instead of ghosting
+                through. */}
             <div
               data-testid="filters-sticky-bar"
-              className="sticky bottom-0 z-10 -mx-4 -mb-4 flex flex-col gap-3 border-t border-[var(--color-border)] bg-[var(--color-surface)]/95 px-4 py-4 backdrop-blur-md sm:-mx-6 sm:-mb-6 sm:flex-row sm:items-center sm:justify-between sm:px-6 sm:py-4 lg:col-span-2"
+              className="sticky bottom-0 z-10 -mx-5 -mb-5 flex flex-col gap-3 border-t border-[var(--color-border)] bg-[var(--color-surface)] px-5 py-4 shadow-[0_-12px_24px_-18px_rgba(20,28,24,0.25)] sm:-mx-7 sm:-mb-6 sm:flex-row sm:items-center sm:justify-between sm:px-7 sm:py-4 lg:col-span-2"
             >
+              {/* Top fade — a thin gradient above the bar that softens the
+                  edge where the scrolling content meets the action bar.
+                  Sits outside the bar's content area, points downward
+                  into the bar's surface for visual continuity. */}
+              <span
+                aria-hidden
+                className="pointer-events-none absolute inset-x-0 -top-6 h-6 bg-gradient-to-t from-[var(--color-surface)] to-transparent"
+              />
               <div className="flex items-center gap-3">
                 <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--color-text-muted)]">
                   {active > 0

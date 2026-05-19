@@ -23,6 +23,13 @@ interface EditorialHeroMosaicColumnProps {
  * Pure CSS (no framer-motion) so this component is a Server Component and
  * the animation cannot drift out of sync across hydration. `prefers-reduced-
  * motion` collapses the animation to a static stack via the global utility.
+ *
+ * Compositor hints: the column wrapper opts into its own paint layer via
+ * `[transform:translateZ(0)]` + `[contain:layout_paint]`. Without this,
+ * the browser can keep the long inner track on the main raster thread,
+ * which is what produced the "stutter / jank" the previous iteration of
+ * this reel had on lower-end laptops. The inner track separately carries
+ * `will-change: transform` for the same reason.
  */
 export function EditorialHeroMosaicColumn({
   tiles,
@@ -44,10 +51,10 @@ export function EditorialHeroMosaicColumn({
   return (
     <div
       data-testid={`editorial-hero-mosaic-column-${testIdSuffix}`}
-      className="group/reel relative h-full overflow-hidden"
+      className="group/reel relative h-full overflow-hidden [transform:translateZ(0)] [contain:layout_paint] [backface-visibility:hidden]"
     >
       <div
-        className={`flex flex-col will-change-transform ${reelClass} group-hover/reel:[animation-play-state:paused]`}
+        className={`flex flex-col will-change-transform [transform:translateZ(0)] [backface-visibility:hidden] ${reelClass} group-hover/reel:[animation-play-state:paused]`}
         style={{ ["--reel-duration" as string]: `${durationSeconds}s` }}
       >
         {/* Every tile (including the last) carries a 10 px trailing buffer
