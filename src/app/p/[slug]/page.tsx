@@ -17,6 +17,7 @@ import { findBySlug, getListingReviews } from "@/server/biringas";
 import { CardStackGallery } from "@/features/biringas/components/CardStackGallery";
 import { ContactReveal } from "@/features/biringas/components/ContactReveal";
 import { PremiumContentGrid } from "@/features/biringas/components/PremiumContentGrid";
+import { RateBiringaForm } from "@/features/biringas/components/RateBiringaForm";
 import { RecentlyViewedStrip } from "@/features/biringas/components/RecentlyViewedStrip";
 import { RecordRecentView } from "@/features/biringas/components/RecordRecentView";
 import { ReviewsSection } from "@/features/biringas/components/ReviewsSection";
@@ -327,6 +328,24 @@ export default async function ProfilePage({ params }: Readonly<ProfilePageProps>
             </Reveal>
           </aside>
         </Container>
+
+        {/* Interactive rating form — sits just above the reviews readout
+            so the social proof immediately follows the invitation to
+            contribute it. Anonymous users see a sign-in prompt instead
+            of the full form. */}
+        <section
+          aria-label="Califica este perfil"
+          className="border-t border-[var(--color-border)]/50 bg-[var(--color-background-elevated)]/40"
+        >
+          <Container width="wide" className="py-10 lg:py-12">
+            <div className="mx-auto max-w-3xl">
+              <RateBiringaForm
+                listingSlug={listing.slug}
+                listingName={listing.name}
+              />
+            </div>
+          </Container>
+        </section>
 
         {reviews && (
           <ReviewsSection listingName={listing.name} reviews={reviews} />

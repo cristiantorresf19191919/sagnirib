@@ -6,6 +6,7 @@ import { buildPageMetadata } from "@/core/seo/build-page-metadata";
 import { EditorialHero } from "@/features/catalog/components/EditorialHero";
 import { FeaturedStrip } from "@/features/home/components/FeaturedStrip";
 import { HowItWorks } from "@/features/home/components/HowItWorks";
+import { TestimonialsSection } from "@/features/home/components/TestimonialsSection";
 import { Container } from "@/shared/design-system/components/Container";
 import { Footer } from "@/shared/layout/Footer";
 import { Header } from "@/shared/layout/Header";
@@ -45,6 +46,7 @@ export default async function HomePage() {
           </Link>
         </Container>
         <HowItWorks />
+        <TestimonialsSection />
       </main>
       <Footer />
     </>

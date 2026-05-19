@@ -80,9 +80,24 @@ export const listMeetingContextCatalog = adapter.listMeetingContextCatalog;
 export const getListingReviews = adapter.getListingReviews;
 export const listSimilar = adapter.listSimilar;
 
+/**
+ * Curated marketing testimonials for the home page.
+ *
+ * NOT adapter-routed: testimonials are curated marketing copy (same
+ * category as `BIRINGA_LISTINGS` seed data and `CATEGORIES` constants),
+ * not user-generated content. Always served from the mock today; when
+ * a Firestore `testimonials` collection ships, swap this export to
+ * route through the adapter the same way `getListingReviews` does.
+ */
+export { listTestimonials } from "@/server/mocks/biringas/testimonials";
+
 export type { PrivateContact } from "./private-contact-types";
 export type { SubmitReviewInput } from "./review-types";
 export { REVIEW_LIMITS } from "./review-types";
+export type {
+  Testimonial,
+  TestimonialListingRef,
+} from "./testimonial-types";
 export { CACHE_TAGS } from "./cache-tags";
 export type {
   CreateListingDraftInput,

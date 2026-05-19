@@ -281,6 +281,8 @@ export type {
   ReviewsAggregate,
 } from "./reviews";
 
+export { listTestimonials } from "./testimonials";
+
 export { getPrivateContactRaw } from "./private-contact";
 export { submitReviewRaw } from "./submit-review";
 export { createListingDraftRaw } from "./create-draft";
