@@ -109,7 +109,7 @@ export function CatalogCard({
             aria-hidden
             className="pointer-events-none absolute inset-0 z-[6] overflow-hidden"
           >
-            <span className="absolute inset-y-0 -left-1/3 block w-1/3 bg-gradient-to-r from-transparent via-[rgba(229,162,58,0.55)] to-transparent opacity-0 group-hover:opacity-100 motion-safe:group-hover:motion-shimmer-sweep" />
+            <span className="absolute inset-y-0 -left-1/3 block w-1/3 bg-gradient-to-r from-transparent via-[rgba(229,162,58,0.28)] to-transparent opacity-0 group-hover:opacity-100 motion-safe:group-hover:motion-shimmer-sweep" />
           </div>
         )}
 

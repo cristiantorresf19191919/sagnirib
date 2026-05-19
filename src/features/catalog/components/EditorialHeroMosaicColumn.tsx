@@ -1,83 +1,68 @@
-"use client";
-
-import { motion, useReducedMotion } from "framer-motion";
-import type { CSSProperties } from "react";
-
 import type { BiringaListing } from "@/server/biringas";
 
 import { HeroMosaicCard } from "./HeroMosaicCard";
 
 interface EditorialHeroMosaicColumnProps {
-  tiles: ReadonlyArray<BiringaListing>;
-  heights: ReadonlyArray<number>;
-  drift: "up" | "down";
-  /** Vertical offset; negative pulls the column above the rail for the editorial stagger. */
-  top: number;
-  /** Horizontal placement — `left`/`right` + `width`. */
-  position: CSSProperties;
-  /**
-   * Horizontal travel range in pixels. Sign drives direction so adjacent
-   * columns can drift in opposite directions for a parallax feel.
-   */
-  slideRange: number;
-  /** Loop duration in seconds — slow on purpose, ~16–22s. */
-  slideDuration: number;
-  /** Start offset so columns don't share a phase. */
-  slideDelay: number;
-  testIdSuffix: string;
+  readonly tiles: ReadonlyArray<BiringaListing>;
+  readonly heights: ReadonlyArray<number>;
+  /** Direction the reel travels — adjacent columns alternate up/down/up. */
+  readonly drift: "up" | "down";
+  /** One full loop in seconds. Each column carries its own clock so the
+   *  three strips never advance in lockstep. */
+  readonly durationSeconds: number;
+  readonly testIdSuffix: string;
 }
 
 /**
- * Mosaic column with an infinite, *very* slow horizontal drift on top of the
- * existing per-tile vertical ken-burns. Range stays small (≤16px) so the
- * editorial layout reads as still — the motion is at the edge of perception
- * and gives the hero a living, breathing quality without becoming a feature.
+ * One vertical strip of the cinema-reel mosaic. The tile list is duplicated
+ * back-to-back inside an overflow-hidden frame; the inner track translates
+ * exactly -50% (or 0 → 0 for the reversed direction) on a linear infinite
+ * loop, so the seam between copy 1 and copy 2 is pixel-identical and the
+ * reel reads as endless film.
  *
- * `useReducedMotion` skips the animation entirely; the column renders
- * statically in its absolute position.
+ * Pure CSS (no framer-motion) so this component is a Server Component and
+ * the animation cannot drift out of sync across hydration. `prefers-reduced-
+ * motion` collapses the animation to a static stack via the global utility.
  */
 export function EditorialHeroMosaicColumn({
   tiles,
   heights,
   drift,
-  top,
-  position,
-  slideRange,
-  slideDuration,
-  slideDelay,
+  durationSeconds,
   testIdSuffix,
-}: EditorialHeroMosaicColumnProps) {
-  const reduced = useReducedMotion();
+}: Readonly<EditorialHeroMosaicColumnProps>) {
+  if (tiles.length === 0) return null;
 
-  const animate = reduced ? undefined : { x: [0, slideRange, 0] };
-  const transition = reduced
-    ? undefined
-    : {
-        duration: slideDuration,
-        delay: slideDelay,
-        repeat: Number.POSITIVE_INFINITY,
-        ease: "easeInOut" as const,
-      };
+  // Duplicate the tile list back-to-back. The animation translates by -50%
+  // so the visible window cycles through copy 1 → copy 2 → copy 1 …
+  const reel = [...tiles, ...tiles];
+  const reelClass =
+    drift === "up"
+      ? "motion-safe:motion-hero-reel-up"
+      : "motion-safe:motion-hero-reel-down";
 
   return (
-    <motion.div
+    <div
       data-testid={`editorial-hero-mosaic-column-${testIdSuffix}`}
-      className="absolute flex flex-col gap-2.5 will-change-transform"
-      style={{ ...position, top }}
-      animate={animate}
-      transition={transition}
+      className="group/reel relative h-full overflow-hidden"
     >
-      {tiles.map((listing, idx) => (
-        <HeroMosaicCard
-          key={listing.id}
-          listing={listing}
-          height={heights[idx % heights.length] ?? 280}
-          drift={drift}
-          delay={`${idx * 0.4}s`}
-          duration={`${12 + idx}s`}
-          hideLive={idx % 2 === 1}
-        />
-      ))}
-    </motion.div>
+      <div
+        className={`flex flex-col will-change-transform ${reelClass} group-hover/reel:[animation-play-state:paused]`}
+        style={{ ["--reel-duration" as string]: `${durationSeconds}s` }}
+      >
+        {/* Every tile (including the last) carries a 10 px trailing buffer
+            so the doubled list has identical pitch between any two adjacent
+            tiles — required for the -50 % loop to land pixel-clean. */}
+        {reel.map((listing, idx) => (
+          <div key={`${testIdSuffix}-${idx}-${listing.id}`} className="pb-2.5">
+            <HeroMosaicCard
+              listing={listing}
+              height={heights[idx % heights.length] ?? 280}
+              hideLive={idx % 2 === 1}
+            />
+          </div>
+        ))}
+      </div>
+    </div>
   );
 }

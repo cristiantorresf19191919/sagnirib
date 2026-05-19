@@ -5,18 +5,12 @@ import { ShieldCheck, Star } from "lucide-react";
 import type { BiringaListing } from "@/server/biringas";
 
 interface HeroMosaicCardProps {
-  listing: BiringaListing;
+  readonly listing: BiringaListing;
   /** Tile height — drives the editorial rhythm of the column. */
-  height: number;
-  /** Each column drifts slowly in its own direction. */
-  drift?: "up" | "down";
-  /** Stagger the drift per tile so the mosaic never feels synchronized. */
-  delay?: string;
-  /** Slow individual durations per tile to break up the loop. */
-  duration?: string;
+  readonly height: number;
   /** Hide the "live" pill even when listing is `availableNow` (for variety). */
-  hideLive?: boolean;
-  priority?: boolean;
+  readonly hideLive?: boolean;
+  readonly priority?: boolean;
 }
 
 /**
@@ -34,36 +28,30 @@ interface HeroMosaicCardProps {
  * Text color is hardcoded cream-white because it always sits over the
  * dark forest scrim — the `--color-cream` token flips dark under
  * `data-theme="dark"` and would render invisible against the scrim.
+ *
+ * The tile itself carries no motion — the parent reel column scrolls it
+ * vertically. Stacking ken-burns / drift here on top of the reel produced
+ * the "wobbly bad animation" look from the previous iteration.
  */
 export function HeroMosaicCard({
   listing,
   height,
-  drift = "up",
-  delay = "0s",
-  duration,
   hideLive = false,
   priority = false,
-}: Readonly<HeroMosaicCardProps>) {
+}: HeroMosaicCardProps) {
   const showLive = !hideLive && listing.availableNow;
   const location = listing.neighborhood
     ? `${listing.neighborhood}, ${listing.city}`
     : listing.city;
-  const driftClass =
-    drift === "up"
-      ? "motion-safe:motion-drift-up"
-      : "motion-safe:motion-drift-down";
 
   return (
-    <div
-      className={`relative w-full shrink-0 ${driftClass}`}
-      style={{ height, animationDelay: delay, animationDuration: duration }}
-    >
+    <div className="relative w-full shrink-0" style={{ height }}>
       <Link
         href={`/p/${listing.slug}`}
         aria-label={`${listing.name}, ${listing.age}, ${listing.city} — ver perfil`}
         className="group relative block h-full w-full overflow-hidden rounded-[var(--radius-xl)] bg-[var(--color-cream-deep)] shadow-[0_18px_36px_-22px_rgba(20,28,24,0.45)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-forest)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-cream)]"
       >
-        <div className="absolute inset-0 motion-safe:motion-ken-burns">
+        <div className="absolute inset-0">
           <Image
             src={listing.mainImage}
             alt=""
