@@ -167,6 +167,11 @@ body {
   50% { opacity: 0.55; transform: scale(0.85); }
 }
 
+@keyframes page-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
 @utility motion-blob-a {
   animation: blob-drift-a 18s ease-in-out infinite;
   will-change: transform;
@@ -222,6 +227,10 @@ body {
   animation: hero-pulse-dot 2s ease-in-out infinite;
 }
 
+@utility motion-page-in {
+  animation: page-in 0.28s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .motion-blob-a,
   .motion-blob-b,
@@ -234,7 +243,8 @@ body {
   .motion-drift-down,
   .motion-hero-marquee,
   .motion-hero-reveal,
-  .motion-hero-pulse {
+  .motion-hero-pulse,
+  .motion-page-in {
     animation: none !important;
   }
 }

@@ -1,6 +1,5 @@
 "use client";
 
-import { motion, useReducedMotion } from "framer-motion";
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
 
@@ -8,28 +7,32 @@ import type { ReactNode } from "react";
  * App-level page transition.
  *
  * Next 16 template.tsx re-mounts on every navigation (unlike layout.tsx),
- * so a motion wrapper here fires on each route change. Subtle on purpose —
- * 4px rise + opacity fade, easing out in <300ms. Respects prefers-reduced-
- * motion: skips the animation entirely.
+ * so a CSS keyframe applied to the wrapper fires once per route change.
  *
- * The `key={pathname}` is belt-and-braces — template should already give us
- * a fresh instance per navigation, but if a future Next refactor changes
- * that, the key keeps the transition firing.
+ * Why CSS instead of framer-motion: a motion.div with `initial={{ opacity: 0 }}`
+ * emits `style="opacity:0..."` into the SSR markup. When the route is in
+ * Next 16's LoadingBoundary, the server tree (motion.div with inline style)
+ * doesn't match the client tree (Suspense fallback), producing the React
+ * hydration mismatch error we saw in production. A pure CSS animation
+ * doesn't bake a starting style into the server HTML — the keyframe is the
+ * only thing transforming the element — so SSR and CSR markup are
+ * identical and hydration is clean.
+ *
+ * The `motion-safe:` variant short-circuits the animation when the user
+ * has prefers-reduced-motion set (handled via the @media block in
+ * globals.css).
+ *
+ * `key={pathname}` forces a fresh mount on each navigation; CSS animations
+ * fire on first paint of an element, so the new mount re-runs the keyframe
+ * cleanly.
  */
-export default function Template({ children }: Readonly<{ children: ReactNode }>) {
-  const reduced = useReducedMotion();
+export default function Template({
+  children,
+}: Readonly<{ children: ReactNode }>) {
   const pathname = usePathname();
-
-  if (reduced) return <>{children}</>;
-
   return (
-    <motion.div
-      key={pathname}
-      initial={{ opacity: 0, y: 4 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
-    >
+    <div key={pathname} className="motion-safe:motion-page-in">
       {children}
-    </motion.div>
+    </div>
   );
 }
