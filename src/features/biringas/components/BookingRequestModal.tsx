@@ -6,6 +6,7 @@ import Link from "next/link";
 import { createPortal } from "react-dom";
 import { useEffect, useState, useTransition } from "react";
 
+import { usePathname } from "next/navigation";
 import { useAuthSession } from "@/features/auth/lib/use-auth-session";
 import { toast } from "@/shared/ui/toast";
 
@@ -380,6 +381,10 @@ function Field({ icon: Icon, label, children }: Readonly<FieldProps>) {
 }
 
 function AnonymousNudge({ onClose }: Readonly<{ onClose: () => void }>) {
+  const pathname = usePathname();
+  const ingresarHref = pathname
+    ? `/ingresar?next=${encodeURIComponent(pathname)}`
+    : "/ingresar";
   return (
     <div className="flex flex-col gap-4 py-2">
       <p className="text-sm text-[var(--color-text-muted)]">
@@ -389,7 +394,7 @@ function AnonymousNudge({ onClose }: Readonly<{ onClose: () => void }>) {
       </p>
       <div className="flex items-center gap-3">
         <Link
-          href="/ingresar"
+          href={ingresarHref}
           onClick={onClose}
           className="inline-flex h-11 items-center gap-2 rounded-full bg-[var(--color-brand-primary)] px-5 text-sm font-semibold text-[var(--color-surface)] shadow-[var(--shadow-glow-primary)] transition-[background,transform] duration-200 ease-[var(--ease-standard)] hover:-translate-y-[1px] hover:bg-[var(--color-brand-primary-strong)]"
         >

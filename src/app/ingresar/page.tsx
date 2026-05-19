@@ -5,50 +5,69 @@ import { Footer } from "@/shared/layout/Footer";
 import { Header } from "@/shared/layout/Header";
 import { SignInForm } from "@/features/auth/components/SignInForm";
 
-/**
- * Sign-in route.
- *
- * SEO: noindex — auth surfaces should not be indexable.
- *
- * Copy is BRAND_HANDSHAKE_TODO across the page — a writer can search for
- * that token to find every visible string.
- */
-
 export const metadata: Metadata = {
-  title: "Ingresar",
+  title: "Ingresar — Biringas",
   robots: { index: false, follow: false },
 };
 
-export default function IngresarPage() {
+interface IngresarPageProps {
+  searchParams: Promise<{ next?: string | string[] }>;
+}
+
+/**
+ * Sign-in route.
+ *
+ * Reads the optional `?next=` query param so flows that redirected the
+ * user here (e.g. /publicar gating) bounce back to the original target
+ * after successful authentication. The `next` value is forwarded to
+ * `<SignInForm next={…} />` which sanitizes it to a relative path before
+ * the redirect.
+ *
+ * Never indexable — auth surfaces should not surface in search.
+ */
+export default async function IngresarPage({
+  searchParams,
+}: Readonly<IngresarPageProps>) {
+  const params = await searchParams;
+  const raw = Array.isArray(params.next) ? params.next[0] : params.next;
+  const next = raw && raw.startsWith("/") && !raw.startsWith("//") ? raw : undefined;
+
   return (
     <>
       <Header hideCatalogCta />
-      <main className="relative isolate bg-[var(--color-background)] py-20 sm:py-28">
+      <main className="relative isolate bg-[var(--color-background)] py-16 sm:py-24">
         <div
           aria-hidden
-          className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-[420px] bg-[radial-gradient(circle_at_50%_0%,rgba(47,93,67,0.08),transparent_60%)]"
+          className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-[520px] bg-[radial-gradient(circle_at_50%_0%,rgba(47,93,67,0.10),transparent_60%),radial-gradient(circle_at_85%_18%,rgba(200,166,118,0.10),transparent_55%)]"
         />
         <Container width="narrow">
-          <div className="mx-auto flex max-w-sm flex-col gap-7">
-            <header className="flex flex-col gap-3">
-              <span className="flex items-center gap-3 text-[11px] font-semibold uppercase tracking-[0.28em] text-[var(--color-brand-primary)]">
+          <div className="mx-auto flex max-w-md flex-col items-center gap-6">
+            <header className="flex flex-col items-center gap-3 text-center">
+              <span className="inline-flex items-center gap-3 text-[11px] font-semibold uppercase tracking-[0.28em] text-[var(--color-brand-primary)]">
                 <span
                   aria-hidden
                   className="inline-block h-px w-8 bg-gradient-to-r from-[var(--color-gold)] to-transparent"
                 />
+                <span
+                  aria-hidden
+                  className="inline-block h-1.5 w-1.5 rotate-45 bg-[var(--color-gold)] shadow-[0_0_0_3px_rgba(200,166,118,0.18)]"
+                />
                 Acceso
               </span>
-              {/* BRAND_HANDSHAKE_TODO: page heading */}
-              <h1 className="text-3xl font-bold leading-tight tracking-tight text-[var(--color-foreground)] sm:text-4xl">
-                Iniciar sesión
+              <h1 className="font-[var(--font-display)] text-[clamp(28px,4vw,42px)] font-[370] leading-[1.05] tracking-[-0.025em] text-[var(--color-foreground)]">
+                Ingresá a{" "}
+                <span className="italic font-[340] text-[var(--color-brand-primary)]">
+                  Biringas
+                </span>
+                .
               </h1>
-              {/* BRAND_HANDSHAKE_TODO: page subhead */}
-              <p className="text-sm leading-relaxed text-[var(--color-text-muted)]">
-                Accedé con tu email o cuenta de Google.
+              <p className="max-w-sm font-[var(--font-serif)] text-[15px] leading-[1.55] text-[var(--color-text-muted)]">
+                Tu favoritos, búsquedas guardadas y reservas — todo en un lugar
+                discreto y verificado.
               </p>
             </header>
 
-            <SignInForm />
+            <SignInForm next={next} />
           </div>
         </Container>
       </main>

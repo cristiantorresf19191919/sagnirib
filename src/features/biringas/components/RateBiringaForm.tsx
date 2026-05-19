@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useTransition, useState } from "react";
 import { CheckCircle2, LogIn, Star } from "lucide-react";
 
@@ -53,6 +54,10 @@ export function RateBiringaForm({
   listingName,
 }: Readonly<RateBiringaFormProps>) {
   const { status } = useAuthSession();
+  const pathname = usePathname();
+  const ingresarHref = pathname
+    ? `/ingresar?next=${encodeURIComponent(pathname)}`
+    : "/ingresar";
   const [rating, setRating] = useState<number | null>(null);
   const [hoverRating, setHoverRating] = useState<number | null>(null);
   const [body, setBody] = useState("");
@@ -171,7 +176,7 @@ export function RateBiringaForm({
               </p>
             </div>
             <Link
-              href="/ingresar"
+              href={ingresarHref}
               className="inline-flex w-fit items-center gap-2 rounded-full bg-[var(--color-brand-primary)] px-4 py-2 text-sm font-semibold text-[var(--color-surface)] shadow-[var(--shadow-glow-primary)] transition-[background,transform] duration-200 ease-[var(--ease-standard)] hover:-translate-y-[1px] hover:bg-[var(--color-brand-primary-strong)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-background)]"
             >
               <LogIn className="h-4 w-4" aria-hidden />

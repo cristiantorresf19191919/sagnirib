@@ -5,47 +5,66 @@ import { Footer } from "@/shared/layout/Footer";
 import { Header } from "@/shared/layout/Header";
 import { SignUpForm } from "@/features/auth/components/SignUpForm";
 
-/**
- * Sign-up route. Funnel-only — never indexable.
- *
- * Copy is BRAND_HANDSHAKE_TODO across the page.
- */
-
 export const metadata: Metadata = {
-  title: "Crear cuenta",
+  title: "Crear cuenta — Biringas",
   robots: { index: false, follow: false },
 };
 
-export default function RegistrarsePage() {
+interface RegistrarsePageProps {
+  searchParams: Promise<{ next?: string | string[] }>;
+}
+
+/**
+ * Sign-up route. Funnel-only — never indexable.
+ *
+ * Forwards the optional `?next=` query param to `<SignUpForm>` so a
+ * user who reached signup from a gated flow (e.g. /publicar) lands
+ * back on that flow after creating the account. Validation that `next`
+ * is a relative path happens inside the form.
+ */
+export default async function RegistrarsePage({
+  searchParams,
+}: Readonly<RegistrarsePageProps>) {
+  const params = await searchParams;
+  const raw = Array.isArray(params.next) ? params.next[0] : params.next;
+  const next = raw && raw.startsWith("/") && !raw.startsWith("//") ? raw : undefined;
+
   return (
     <>
       <Header hideCatalogCta />
-      <main className="relative isolate bg-[var(--color-background)] py-20 sm:py-28">
+      <main className="relative isolate bg-[var(--color-background)] py-16 sm:py-24">
         <div
           aria-hidden
-          className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-[420px] bg-[radial-gradient(circle_at_50%_0%,rgba(47,93,67,0.08),transparent_60%)]"
+          className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-[520px] bg-[radial-gradient(circle_at_50%_0%,rgba(47,93,67,0.10),transparent_60%),radial-gradient(circle_at_85%_18%,rgba(200,166,118,0.10),transparent_55%)]"
         />
         <Container width="narrow">
-          <div className="mx-auto flex max-w-sm flex-col gap-7">
-            <header className="flex flex-col gap-3">
-              <span className="flex items-center gap-3 text-[11px] font-semibold uppercase tracking-[0.28em] text-[var(--color-brand-primary)]">
+          <div className="mx-auto flex max-w-md flex-col items-center gap-6">
+            <header className="flex flex-col items-center gap-3 text-center">
+              <span className="inline-flex items-center gap-3 text-[11px] font-semibold uppercase tracking-[0.28em] text-[var(--color-brand-primary)]">
                 <span
                   aria-hidden
                   className="inline-block h-px w-8 bg-gradient-to-r from-[var(--color-gold)] to-transparent"
                 />
+                <span
+                  aria-hidden
+                  className="inline-block h-1.5 w-1.5 rotate-45 bg-[var(--color-gold)] shadow-[0_0_0_3px_rgba(200,166,118,0.18)]"
+                />
                 Cuenta nueva
               </span>
-              {/* BRAND_HANDSHAKE_TODO: page heading */}
-              <h1 className="text-3xl font-bold leading-tight tracking-tight text-[var(--color-foreground)] sm:text-4xl">
-                Crear cuenta
+              <h1 className="font-[var(--font-display)] text-[clamp(28px,4vw,42px)] font-[370] leading-[1.05] tracking-[-0.025em] text-[var(--color-foreground)]">
+                Unite a{" "}
+                <span className="italic font-[340] text-[var(--color-brand-primary)]">
+                  Biringas
+                </span>
+                .
               </h1>
-              {/* BRAND_HANDSHAKE_TODO: page subhead */}
-              <p className="text-sm leading-relaxed text-[var(--color-text-muted)]">
-                Necesitás una cuenta para publicar tu perfil o dejar reseñas.
+              <p className="max-w-sm font-[var(--font-serif)] text-[15px] leading-[1.55] text-[var(--color-text-muted)]">
+                Cuenta gratis para guardar favoritos, dejar reseñas o publicar
+                tu perfil verificado.
               </p>
             </header>
 
-            <SignUpForm />
+            <SignUpForm next={next} />
           </div>
         </Container>
       </main>
