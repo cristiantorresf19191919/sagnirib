@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import { AnimatePresence, motion, type Variants } from "framer-motion";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
@@ -12,30 +13,94 @@ interface CardStackGalleryProps {
 /**
  * Slow auto-advance interval (ms). Tuned to feel ambient — long enough
  * that the user doesn't perceive it as a slideshow, short enough that
- * a passive viewer sees motion before they look away. Paired with a
- * 1px progress hairline so the pacing is visible without being noisy.
+ * a passive viewer sees motion before they look away.
  */
 const AUTO_ADVANCE_MS = 7000;
 
 /**
- * Stacked "naipe" gallery — every image is rendered as a card stacked behind
- * the active one with subtle rotation and offset. Click any back card or use
- * the arrows / arrow keys to bring it to the front. The transition is a
- * lift + slide swap so the deck feels like a real card hand.
+ * Slide variants for the active image. `direction` is +1 for "next"
+ * (the new image enters from the right) and -1 for "prev". Easing is
+ * deliberately soft so the swap feels like a slow magazine page-turn
+ * rather than a UI carousel.
+ */
+const SLIDE_VARIANTS: Variants = {
+  enter: (direction: number) => ({
+    x: direction > 0 ? "62%" : "-62%",
+    opacity: 0,
+    scale: 0.97,
+    filter: "blur(6px)",
+  }),
+  center: {
+    x: "0%",
+    opacity: 1,
+    scale: 1,
+    filter: "blur(0px)",
+  },
+  exit: (direction: number) => ({
+    x: direction > 0 ? "-62%" : "62%",
+    opacity: 0,
+    scale: 0.97,
+    filter: "blur(6px)",
+  }),
+};
+
+const SLIDE_TRANSITION = {
+  x: { duration: 1.2, ease: [0.22, 1, 0.36, 1] as const },
+  opacity: { duration: 0.9, ease: [0.22, 1, 0.36, 1] as const },
+  scale: { duration: 1.2, ease: [0.22, 1, 0.36, 1] as const },
+  filter: { duration: 0.7, ease: [0.22, 1, 0.36, 1] as const },
+};
+
+/**
+ * Card-stack gallery with a seamless right-to-left slide on the active
+ * image.
+ *
+ * Visual structure:
+ *  - Back peek cards (decorative naipe stack) sit behind, slightly
+ *    rotated; clicking one brings it forward.
+ *  - A static "frame" (rounded, bordered, shadowed) sits on top of the
+ *    stack. The active image lives INSIDE the frame, animated through
+ *    Framer Motion `AnimatePresence`. The frame stays put while the
+ *    image slides across it — the visual is "window onto a continuous
+ *    reel of photos", not "shuffling cards on a table".
+ *
+ * Direction is tracked in state so:
+ *  - Arrow ► / auto-advance → new image enters from the RIGHT.
+ *  - Arrow ◄ → new image enters from the LEFT.
+ * Dot-tab navigation picks the shorter rotation distance.
+ *
+ * Slow, subtle: ~1.2s slide with a soft blur-out / blur-in, opacity
+ * fade peaking faster than the slide so the overlap reads as a fluid
+ * page-turn instead of a hard swap.
  */
 export function CardStackGallery({ images, altBase }: Readonly<CardStackGalleryProps>) {
   const [activeIndex, setActiveIndex] = useState(0);
+  const [direction, setDirection] = useState(1);
   const [paused, setPaused] = useState(false);
   const [autoTick, setAutoTick] = useState(0);
   const total = images.length;
 
   const goNext = useCallback(() => {
+    setDirection(1);
     setActiveIndex((i) => (i + 1) % total);
   }, [total]);
 
   const goPrev = useCallback(() => {
+    setDirection(-1);
     setActiveIndex((i) => (i - 1 + total) % total);
   }, [total]);
+
+  /** Jump to a specific index, choosing the shorter rotation direction. */
+  const goTo = useCallback(
+    (target: number) => {
+      if (target === activeIndex) return;
+      const forwardDistance = (target - activeIndex + total) % total;
+      const backwardDistance = (activeIndex - target + total) % total;
+      setDirection(forwardDistance <= backwardDistance ? 1 : -1);
+      setActiveIndex(target);
+    },
+    [activeIndex, total],
+  );
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
@@ -46,11 +111,8 @@ export function CardStackGallery({ images, altBase }: Readonly<CardStackGalleryP
     return () => globalThis.removeEventListener("keydown", onKey);
   }, [goNext, goPrev]);
 
-  // Slow, ambient auto-advance to the right. Pauses while the user is
-  // hovering or focused inside the deck, while the document is hidden,
-  // and when prefers-reduced-motion is on. `autoTick` keeps the
-  // progress hairline re-keying so it restarts its 7s fill on every
-  // cycle (including manual navigation).
+  // Auto-advance — same pause-on-hover/focus/hidden + reduced-motion guard
+  // as before. Always advances right (direction = +1).
   const userPrefersReducedMotion = useRef(false);
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -70,118 +132,144 @@ export function CardStackGallery({ images, altBase }: Readonly<CardStackGalleryP
 
     const id = window.setInterval(() => {
       if (document.visibilityState === "hidden") return;
+      setDirection(1);
       setActiveIndex((i) => (i + 1) % total);
       setAutoTick((t) => t + 1);
     }, AUTO_ADVANCE_MS);
     return () => window.clearInterval(id);
   }, [paused, total]);
 
-  // Reset the progress hairline whenever the user manually navigates so
-  // it doesn't appear to "skip" mid-fill.
+  // Re-key the progress hairline on every nav so the fill restarts.
   useEffect(() => {
     setAutoTick((t) => t + 1);
   }, [activeIndex]);
 
   if (total === 0) return null;
+  const activeSrc = images[activeIndex]!;
 
   return (
     <div className="flex flex-col gap-6">
       <div
         className="group/gallery relative mx-auto w-full max-w-[440px] aspect-[3/4] [perspective:1400px]"
-        aria-roledescription="galería tipo naipes"
+        aria-roledescription="galería"
         onMouseEnter={() => setPaused(true)}
         onMouseLeave={() => setPaused(false)}
         onFocus={() => setPaused(true)}
         onBlur={(e) => {
-          // Only unpause when focus actually leaves the gallery (not when
-          // it jumps between siblings).
           if (!e.currentTarget.contains(e.relatedTarget as Node | null)) {
             setPaused(false);
           }
         }}
       >
+        {/* Back peek cards — decorative naipe stack behind the front
+            frame. Click brings to front; the slide direction is chosen
+            so the rotation feels natural (forward for upcoming images,
+            backward for past ones). */}
         {images.map((src, i) => {
+          if (i === activeIndex) return null;
           const offset = (i - activeIndex + total) % total;
-          const isFront = offset === 0;
+          if (offset > 3) return null;
           const depth = Math.min(offset, 3);
-
-          const direction = i % 2 === 0 ? -1 : 1;
-          const rotate = isFront ? 0 : direction * (4 + depth * 1.5);
-          const translateX = isFront ? 0 : direction * (depth * 14);
-          const translateY = isFront ? 0 : depth * 10;
-          const scale = isFront ? 1 : 1 - depth * 0.04;
-          const opacity = offset > 3 ? 0 : 1;
+          const stackDir = i % 2 === 0 ? -1 : 1;
+          const rotate = stackDir * (4 + depth * 1.5);
+          const translateX = stackDir * (depth * 14);
+          const translateY = depth * 10;
+          const scale = 1 - depth * 0.04;
 
           return (
             <button
-              key={`${src}-${i}`}
+              key={`back-${i}`}
               type="button"
-              aria-label={
-                isFront
-                  ? `Imagen ${i + 1} de ${total}`
-                  : `Traer imagen ${i + 1} al frente`
-              }
-              aria-current={isFront}
-              tabIndex={isFront ? -1 : 0}
-              onClick={() => setActiveIndex(i)}
-              className="absolute inset-0 origin-center cursor-pointer rounded-[var(--radius-2xl)] border border-[var(--color-border)] bg-[var(--color-surface)] shadow-[var(--shadow-lg)] transition-[transform,opacity,box-shadow,border-color] duration-[900ms] ease-[var(--ease-standard)] focus:outline-none focus-visible:border-[var(--color-brand-primary)] focus-visible:shadow-[var(--shadow-glow-primary)]"
+              aria-label={`Traer imagen ${i + 1} al frente`}
+              onClick={() => goTo(i)}
+              className="absolute inset-0 origin-center cursor-pointer rounded-[var(--radius-2xl)] border border-[var(--color-border)] bg-[var(--color-surface)] shadow-[var(--shadow-lg)] transition-[transform,opacity,box-shadow,border-color] duration-700 ease-[var(--ease-standard)] focus:outline-none focus-visible:border-[var(--color-brand-primary)] focus-visible:shadow-[var(--shadow-glow-primary)]"
               style={{
                 transform: `translate3d(${translateX}px, ${translateY}px, ${
                   -depth * 40
                 }px) rotate(${rotate}deg) scale(${scale})`,
-                opacity,
-                zIndex: total - depth + (isFront ? 10 : 0),
-                pointerEvents: opacity === 0 ? "none" : "auto",
+                zIndex: total - depth,
               }}
             >
               <span className="absolute inset-0 overflow-hidden rounded-[var(--radius-2xl)]">
                 <Image
-                  key={isFront ? `front-${activeIndex}` : `back-${i}`}
                   src={src}
-                  alt={`${altBase} — imagen ${i + 1}`}
+                  alt=""
+                  aria-hidden
                   fill
                   sizes="(max-width: 768px) 90vw, 440px"
-                  priority={i === 0}
-                  className={`object-cover ${
-                    isFront
-                      ? "motion-safe:motion-gallery-pan-right"
-                      : ""
-                  }`}
+                  className="object-cover opacity-90"
                 />
-                {isFront && (
-                  <>
-                    <span
-                      aria-hidden
-                      className="pointer-events-none absolute left-3 top-3 inline-flex h-7 min-w-7 items-center justify-center rounded-full bg-[var(--color-surface)]/95 px-2 text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--color-brand-primary)] shadow-[var(--shadow-sm)] backdrop-blur-sm"
-                    >
-                      {i + 1}/{total}
-                    </span>
-                  </>
-                )}
               </span>
-              {isFront && (
-                <span
-                  aria-hidden
-                  className="pointer-events-none absolute -inset-px rounded-[var(--radius-2xl)] ring-1 ring-[var(--color-brand-primary)]/30"
-                />
-              )}
             </button>
           );
         })}
 
-        {/* Ambient auto-advance progress hairline. Sits at the very
-            bottom of the active card; fades to gold as it fills. Re-keys
-            on every cycle (including manual nav) so the fill never
-            "skips" mid-stride. Hidden under prefers-reduced-motion. */}
+        {/* Static front frame — the slide container. `overflow-hidden`
+            clips the sliding image so it appears to move through a
+            window. The bordered/shadowed shell stays fixed in place. */}
+        <div
+          aria-hidden={false}
+          className="absolute inset-0 z-20 overflow-hidden rounded-[var(--radius-2xl)] border border-[var(--color-border)] bg-[var(--color-surface)] shadow-[var(--shadow-lg)]"
+        >
+          <AnimatePresence custom={direction} initial={false} mode="sync">
+            <motion.div
+              key={activeIndex}
+              custom={direction}
+              variants={SLIDE_VARIANTS}
+              initial="enter"
+              animate="center"
+              exit="exit"
+              transition={SLIDE_TRANSITION}
+              className="absolute inset-0 will-change-[transform,opacity,filter] [backface-visibility:hidden]"
+            >
+              <Image
+                src={activeSrc}
+                alt={`${altBase} — imagen ${activeIndex + 1}`}
+                fill
+                sizes="(max-width: 768px) 90vw, 440px"
+                priority
+                // Ken-burns pan rides on top of the slide so once the
+                // image has settled at center, it continues to drift
+                // slightly to the right until the next swap. Two
+                // transforms on separate elements never conflict.
+                className="object-cover motion-safe:motion-gallery-pan-right"
+              />
+              <span
+                aria-hidden
+                className="pointer-events-none absolute left-3 top-3 inline-flex h-7 min-w-7 items-center justify-center rounded-full bg-[var(--color-surface)]/95 px-2 text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--color-brand-primary)] shadow-[var(--shadow-sm)] backdrop-blur-sm"
+              >
+                {activeIndex + 1}/{total}
+              </span>
+            </motion.div>
+          </AnimatePresence>
+
+          {/* Static inner ring overlay — gives the frame its premium
+              feel without re-rendering on swap. */}
+          <span
+            aria-hidden
+            className="pointer-events-none absolute inset-0 rounded-[var(--radius-2xl)] ring-1 ring-inset ring-[var(--color-brand-primary)]/30"
+          />
+
+          {/* Hover affordance — surfaces "Click to navigate" hint when
+              the user mouses over the frame. Subtle; only on pointer. */}
+          <span
+            aria-hidden
+            className="pointer-events-none absolute inset-x-0 bottom-0 z-[5] h-20 bg-gradient-to-t from-[rgba(20,28,24,0.45)] via-[rgba(20,28,24,0.18)] to-transparent opacity-0 transition-opacity duration-500 ease-[var(--ease-standard)] group-hover/gallery:opacity-100"
+          />
+        </div>
+
+        {/* Ambient auto-advance progress hairline. Re-keys on every
+            cycle (including manual nav) so the fill never "skips"
+            mid-stride. Hidden under prefers-reduced-motion. */}
         {total > 1 && (
           <span
             key={`auto-${autoTick}`}
             aria-hidden
             data-paused={paused ? "true" : "false"}
-            className="pointer-events-none absolute inset-x-6 bottom-3 z-20 block h-px overflow-hidden rounded-full bg-[var(--color-surface)]/40 motion-reduce:hidden"
+            className="pointer-events-none absolute inset-x-6 bottom-3 z-[30] block h-px overflow-hidden rounded-full bg-[var(--color-surface)]/40 motion-reduce:hidden"
           >
             <span
-              className="block h-full origin-left bg-gradient-to-r from-[var(--color-brand-primary)] via-[var(--color-gold)] to-[var(--color-brand-primary)] data-[paused=true]:animation-play-state-paused"
+              className="block h-full origin-left bg-gradient-to-r from-[var(--color-brand-primary)] via-[var(--color-gold)] to-[var(--color-brand-primary)]"
               style={{
                 animation: `gallery-progress ${AUTO_ADVANCE_MS}ms linear forwards`,
                 animationPlayState: paused ? "paused" : "running",
@@ -214,7 +302,7 @@ export function CardStackGallery({ images, altBase }: Readonly<CardStackGalleryP
                 role="tab"
                 aria-selected={active}
                 aria-label={`Imagen ${i + 1}`}
-                onClick={() => setActiveIndex(i)}
+                onClick={() => goTo(i)}
                 className={`h-1.5 rounded-full transition-all duration-300 ease-[var(--ease-standard)] ${
                   active
                     ? "w-7 bg-[var(--color-brand-primary)]"

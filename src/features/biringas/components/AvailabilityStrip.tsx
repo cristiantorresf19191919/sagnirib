@@ -1,4 +1,13 @@
+"use client";
+
+import {
+  motion,
+  useInView,
+  useReducedMotion,
+  type Variants,
+} from "framer-motion";
 import { Clock } from "lucide-react";
+import { useRef } from "react";
 
 const DAY_NAMES = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
 const SLOT_NAMES = ["Mañana", "Tarde", "Noche"];
@@ -29,6 +38,68 @@ function mulberry32(seed: number) {
   };
 }
 
+/**
+ * Parent stagger — fires once per viewport entry, replays on every
+ * subsequent re-entry. `delayChildren` gives the eye a beat to land on
+ * the calendar before the cells start spark-firing.
+ */
+const STAGGER_PARENT: Variants = {
+  hidden: {},
+  visible: {
+    transition: {
+      staggerChildren: 0.045,
+      delayChildren: 0.12,
+    },
+  },
+};
+
+/**
+ * "Disponible" (open green) slot — sparks in with a bright halo, scale
+ * overshoot, and a soft drop into the resting state. This is the
+ * attention-call: the user's eye is drawn directly to the cells they
+ * can actually book.
+ */
+const SPARK_AVAILABLE: Variants = {
+  hidden: {
+    opacity: 0,
+    scale: 0.35,
+    boxShadow: "0 0 0 0 rgba(47, 93, 67, 0)",
+  },
+  visible: {
+    opacity: 1,
+    // Slight overshoot → settle = "spark"
+    scale: [0.35, 1.22, 0.98, 1],
+    boxShadow: [
+      "0 0 0 0 rgba(47, 93, 67, 0)",
+      "0 0 22px 6px rgba(47, 93, 67, 0.55)",
+      "0 0 8px 2px rgba(47, 93, 67, 0.25)",
+      "0 2px 6px -2px rgba(47, 93, 67, 0.45)",
+    ],
+    transition: {
+      duration: 0.7,
+      ease: [0.22, 1, 0.36, 1] as const,
+      times: [0, 0.4, 0.7, 1],
+    },
+  },
+};
+
+/**
+ * Non-available slots fade in quietly. Same parent stagger so the
+ * grid still reads as a single coordinated reveal, but no spark — only
+ * the green cells call attention.
+ */
+const FADE_NEUTRAL: Variants = {
+  hidden: { opacity: 0, scale: 0.85 },
+  visible: {
+    opacity: 1,
+    scale: 1,
+    transition: {
+      duration: 0.4,
+      ease: [0.22, 1, 0.36, 1] as const,
+    },
+  },
+};
+
 interface AvailabilityStripProps {
   /** Slug of the listing — drives the deterministic week pattern. */
   listingSlug: string;
@@ -47,6 +118,12 @@ interface AvailabilityStripProps {
  * grid (day × slot) gives buyers a one-glance answer to "is she free
  * when I want to meet?" — the biggest pre-contact uncertainty.
  *
+ * Animation: on every viewport entry (first paint AND each scroll-in),
+ * the grid replays a staggered cascade. "Disponible" cells SPARK in
+ * with a bright forest halo + scale overshoot, calling attention. The
+ * neutral cells fade in quietly so the green ones own the moment.
+ * Respects `prefers-reduced-motion`.
+ *
  * When the real port lands, swap the `availability` array for the
  * server-supplied data and delete the synth helpers.
  */
@@ -56,7 +133,6 @@ export function AvailabilityStrip({
   avgReplyMinutes,
 }: Readonly<AvailabilityStripProps>) {
   const rng = mulberry32(seedFrom(listingSlug));
-  // 7 days × 3 slots → 21 cells, each 0..2: 0=closed, 1=tentative, 2=open
   const availability: ReadonlyArray<ReadonlyArray<0 | 1 | 2>> = Array.from(
     { length: 7 },
     () =>
@@ -68,15 +144,39 @@ export function AvailabilityStrip({
       }),
   );
 
-  // Synthesise an avg reply time too if the parent didn't pass one.
   const replyMin =
     avgReplyMinutes ?? Math.max(4, Math.floor(rng() * 38) + 4);
 
-  // We never trust the server's `new Date()` for "today" — render the
-  // dow on the client via a data-attribute so SSR is stable across
-  // timezones. Tailwind picks up the `data-today=true` class for the
-  // highlight.
+  // Highlight today (computed client-side so timezone doesn't drift
+  // between SSR and CSR).
   const todayDow = highlightToday ? new Date().getDay() : -1;
+
+  // useInView re-fires every viewport entry (`once: false`) — that's
+  // what makes the spark cascade replay each time the user scrolls
+  // back to the profile, exactly as the founder asked.
+  const reduced = useReducedMotion();
+  const containerRef = useRef<HTMLTableElement>(null);
+  const inView = useInView(containerRef, {
+    once: false,
+    amount: 0.4,
+    margin: "-40px",
+  });
+
+  // Build a flat slot list so the parent stagger can drive a single
+  // ordered cascade across all 21 cells (top-left → bottom-right).
+  // Each slot carries its row/col + state so the render below can pick
+  // the right variant.
+  const orderedSlots: ReadonlyArray<{
+    row: number;
+    col: number;
+    state: 0 | 1 | 2;
+  }> = SLOT_NAMES.flatMap((_, row) =>
+    availability.map((day, col) => ({
+      row,
+      col,
+      state: day[row]!,
+    })),
+  );
 
   return (
     <section
@@ -94,7 +194,13 @@ export function AvailabilityStrip({
         </span>
       </header>
 
-      <table className="mt-4 w-full border-separate border-spacing-1 text-center">
+      <motion.table
+        ref={containerRef}
+        className="mt-4 w-full border-separate border-spacing-1 text-center"
+        variants={reduced ? undefined : STAGGER_PARENT}
+        initial={reduced ? false : "hidden"}
+        animate={reduced ? undefined : inView ? "visible" : "hidden"}
+      >
         <thead>
           <tr>
             <th className="w-12" />
@@ -120,11 +226,25 @@ export function AvailabilityStrip({
                 {slot}
               </th>
               {availability.map((day, dayIdx) => {
-                const state = day[slotIdx];
+                const state = day[slotIdx]!;
                 const isToday = dayIdx === todayDow;
+                const variants =
+                  state === 2 ? SPARK_AVAILABLE : FADE_NEUTRAL;
+                const baseCls =
+                  "block h-7 w-full rounded-[6px] will-change-transform";
+                const stateCls =
+                  state === 0
+                    ? "bg-[var(--color-surface-muted)]"
+                    : state === 1
+                      ? "bg-[var(--color-brand-warn)]/30 ring-1 ring-[var(--color-brand-warn)]/50"
+                      : "bg-[var(--color-brand-primary)]";
+                const todayCls = isToday
+                  ? "ring-2 ring-[var(--color-brand-primary)]/60"
+                  : "";
+
                 return (
                   <td key={`${slot}-${dayIdx}`} className="p-0">
-                    <span
+                    <motion.span
                       aria-label={
                         state === 2
                           ? "Disponible"
@@ -139,9 +259,8 @@ export function AvailabilityStrip({
                             ? "Consultar"
                             : "Ocupada"
                       }
-                      data-today={isToday ? "true" : "false"}
-                      data-state={state}
-                      className="block h-7 w-full rounded-[6px] transition-transform duration-150 ease-[var(--ease-standard)] data-[state='0']:bg-[var(--color-surface-muted)] data-[state='1']:bg-[var(--color-brand-warn)]/30 data-[state='1']:ring-1 data-[state='1']:ring-[var(--color-brand-warn)]/50 data-[state='2']:bg-[var(--color-brand-primary)] data-[state='2']:shadow-[0_2px_6px_-2px_rgba(47,93,67,0.4)] data-[today=true]:scale-[1.06] data-[today=true]:ring-2 data-[today=true]:ring-[var(--color-brand-primary)]/60"
+                      variants={reduced ? undefined : variants}
+                      className={`${baseCls} ${stateCls} ${todayCls}`}
                     />
                   </td>
                 );
@@ -149,7 +268,7 @@ export function AvailabilityStrip({
             </tr>
           ))}
         </tbody>
-      </table>
+      </motion.table>
 
       <ul
         aria-label="Leyenda de disponibilidad"
