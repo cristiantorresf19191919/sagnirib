@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useMemo } from "react";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import {
   ArrowRight,
   Crown,
@@ -51,6 +51,7 @@ export function CompareDrawer({
 }: Readonly<CompareDrawerProps>) {
   const { clearCompare, toggleCompare } = useFavorites();
   const open = listings.length > 0;
+  const reduced = useReducedMotion();
 
   useEffect(() => {
     if (!open) return;
@@ -73,16 +74,35 @@ export function CompareDrawer({
   return (
     <AnimatePresence>
       {open && (
-        <motion.aside
-          key="compare-drawer"
-          role="dialog"
-          aria-label="Comparación lado a lado"
-          initial={{ y: "110%" }}
-          animate={{ y: 0 }}
-          exit={{ y: "110%" }}
-          transition={{ type: "spring", stiffness: 240, damping: 30 }}
-          className="fixed inset-x-0 bottom-0 z-40"
-        >
+        <>
+          {/* Backdrop — fades alongside the drawer, dismisses on click.
+              Lives at a lower z-index than the drawer so the drawer's
+              chrome stays clickable. */}
+          <motion.button
+            key="compare-backdrop"
+            type="button"
+            aria-label="Cerrar comparación"
+            onClick={() => clearCompare()}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: reduced ? 0 : 0.2 }}
+            className="fixed inset-0 z-30 cursor-default bg-[rgba(27,26,23,0.45)] backdrop-blur-[2px]"
+          />
+          <motion.aside
+            key="compare-drawer"
+            role="dialog"
+            aria-label="Comparación lado a lado"
+            initial={reduced ? { opacity: 0 } : { y: "110%" }}
+            animate={reduced ? { opacity: 1 } : { y: 0 }}
+            exit={reduced ? { opacity: 0 } : { y: "110%" }}
+            transition={
+              reduced
+                ? { duration: 0 }
+                : { type: "spring", stiffness: 260, damping: 28, mass: 0.7 }
+            }
+            className="fixed inset-x-0 bottom-0 z-40"
+          >
           <div className="pointer-events-none absolute -top-6 inset-x-0 h-6 bg-gradient-to-t from-[var(--color-background)]/80 to-transparent" />
 
           <div className="relative mx-auto w-full max-w-[1200px] px-2 pb-2 sm:px-4 sm:pb-4">
@@ -163,7 +183,8 @@ export function CompareDrawer({
               </div>
             </div>
           </div>
-        </motion.aside>
+          </motion.aside>
+        </>
       )}
     </AnimatePresence>
   );

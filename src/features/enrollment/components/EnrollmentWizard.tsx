@@ -1,5 +1,6 @@
 "use client";
 
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { ArrowLeft, ArrowRight, Loader2, PartyPopper } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
@@ -72,6 +73,8 @@ export function EnrollmentWizard({ catalogs }: EnrollmentWizardProps) {
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [errorBanner, setErrorBanner] = useState<string | null>(null);
+  const [direction, setDirection] = useState<1 | -1>(1);
+  const reduced = useReducedMotion();
 
   const tip = TIPS_BY_STEP[current];
 
@@ -131,19 +134,29 @@ export function EnrollmentWizard({ catalogs }: EnrollmentWizardProps) {
     setErrorBanner(null);
     setCompleted((prev) => (prev.includes(current) ? prev : [...prev, current]));
     const idx = STEP_ORDER.indexOf(current);
-    if (idx < STEP_ORDER.length - 1) setCurrent(STEP_ORDER[idx + 1]);
+    if (idx < STEP_ORDER.length - 1) {
+      setDirection(1);
+      setCurrent(STEP_ORDER[idx + 1]);
+    }
   }
 
   function back() {
     setErrorBanner(null);
     const idx = STEP_ORDER.indexOf(current);
-    if (idx > 0) setCurrent(STEP_ORDER[idx - 1]);
+    if (idx > 0) {
+      setDirection(-1);
+      setCurrent(STEP_ORDER[idx - 1]);
+    }
   }
 
   function jump(id: StepId) {
     if (id === current) return;
     if (!completed.includes(id) && STEP_ORDER.indexOf(id) > STEP_ORDER.indexOf(current))
       return;
+    // Determine direction based on relative position.
+    setDirection(
+      STEP_ORDER.indexOf(id) > STEP_ORDER.indexOf(current) ? 1 : -1,
+    );
     setErrorBanner(null);
     setCurrent(id);
   }
@@ -199,26 +212,60 @@ export function EnrollmentWizard({ catalogs }: EnrollmentWizardProps) {
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,320px)]">
         <div className="flex flex-col gap-6">
-          {current === "details" && (
-            <StepDetails
-              values={draft.details}
-              catalogs={catalogs}
-              onChange={handleChangeDetails}
-            />
-          )}
-          {current === "description" && (
-            <StepDescription
-              values={draft.description}
-              catalogs={catalogs}
-              onChange={handleChangeDescription}
-            />
-          )}
-          {current === "publish" && (
-            <StepPublish
-              values={draft.publish}
-              onChange={handleChangePublish}
-            />
-          )}
+          {/* Directional slide between steps — forward navigations slide
+              right→left, back navigations slide left→right. mode="wait"
+              ensures the outgoing step finishes before the next enters
+              so the underlying form state never overlaps visually. */}
+          <AnimatePresence mode="wait" initial={false} custom={direction}>
+            <motion.div
+              key={current}
+              custom={direction}
+              variants={
+                reduced
+                  ? undefined
+                  : {
+                      enter: (dir: 1 | -1) => ({
+                        opacity: 0,
+                        x: dir > 0 ? 24 : -24,
+                      }),
+                      center: { opacity: 1, x: 0 },
+                      exit: (dir: 1 | -1) => ({
+                        opacity: 0,
+                        x: dir > 0 ? -24 : 24,
+                      }),
+                    }
+              }
+              initial={reduced ? false : "enter"}
+              animate={reduced ? undefined : "center"}
+              exit={reduced ? undefined : "exit"}
+              transition={
+                reduced
+                  ? { duration: 0 }
+                  : { duration: 0.32, ease: [0.22, 1, 0.36, 1] }
+              }
+            >
+              {current === "details" && (
+                <StepDetails
+                  values={draft.details}
+                  catalogs={catalogs}
+                  onChange={handleChangeDetails}
+                />
+              )}
+              {current === "description" && (
+                <StepDescription
+                  values={draft.description}
+                  catalogs={catalogs}
+                  onChange={handleChangeDescription}
+                />
+              )}
+              {current === "publish" && (
+                <StepPublish
+                  values={draft.publish}
+                  onChange={handleChangePublish}
+                />
+              )}
+            </motion.div>
+          </AnimatePresence>
 
           <NavBar
             isFirst={current === "details"}
