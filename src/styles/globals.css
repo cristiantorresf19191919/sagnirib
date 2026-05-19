@@ -13,6 +13,13 @@
 
 html {
   height: 100%;
+  /* Smooth anchor scrolling for in-page jumps like the header's
+   * "Cómo funciona" link → #como-funciona. Disabled automatically by
+   * the browser under prefers-reduced-motion. */
+  scroll-behavior: smooth;
+}
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
 }
 
 body {

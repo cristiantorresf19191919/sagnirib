@@ -116,7 +116,7 @@ export function SortMenu({ filters, view }: SortMenuProps) {
         aria-expanded={open}
         aria-labelledby={labelId}
         onClick={() => setOpen((prev) => !prev)}
-        className="group inline-flex h-10 items-center gap-2 rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] pl-3.5 pr-3 text-[13px] font-semibold text-[var(--color-foreground)] transition-[border-color,background,box-shadow] duration-200 ease-[var(--ease-standard)] hover:border-[var(--color-brand-primary-soft)] hover:bg-[var(--color-background-elevated)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-background)]"
+        className="group inline-flex h-11 items-center gap-2 rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] pl-3.5 pr-3 text-[13px] font-semibold text-[var(--color-foreground)] transition-[border-color,background,box-shadow] duration-200 ease-[var(--ease-standard)] hover:border-[var(--color-brand-primary-soft)] hover:bg-[var(--color-background-elevated)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-background)]"
       >
         <span
           aria-hidden

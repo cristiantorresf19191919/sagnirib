@@ -2,7 +2,7 @@
 
 import { motion } from "framer-motion";
 import Link from "next/link";
-import { Gem, Sparkles } from "lucide-react";
+import { ArrowRight, Sparkles } from "lucide-react";
 
 import { Sparkle } from "@/shared/design-system/components/Sparkle";
 
@@ -17,10 +17,14 @@ const SPRING_HOVER = { y: -4, transition: { type: "spring", stiffness: 320, damp
 const SPRING_TAP = { scale: 0.985, transition: { duration: 0.12 } } as const;
 
 /**
- * Editorial tile pinned at the start of the catalog grid (warm cream + gold).
- * Layout: top badge cluster, large gem mark in the middle as the visual
- * anchor, eyebrow + title + description at the bottom. Same footprint as a
- * card so the masonry stays clean.
+ * Editorial tile pinned at the start of the catalog grid. Matches the
+ * reference comp: cream surface, a decorative eucalyptus sprig on the
+ * left, a gold-diamond inside a gold-ringed circle as the focal element,
+ * a "TOP" pill in the top-right, and a Fraunces title + sub-copy +
+ * "Ver más historias →" link at the bottom.
+ *
+ * Same aspect-[4/5] footprint as a CatalogCard so the masonry rhythm
+ * stays clean.
  */
 export function HistoriasTopTile({ href }: TileProps) {
   return (
@@ -31,12 +35,70 @@ export function HistoriasTopTile({ href }: TileProps) {
     >
       <Link
         href={href}
-        className={`${TILE_BASE} border border-[var(--color-brand-warn)]/40 bg-[var(--color-background-elevated)] text-[var(--color-foreground)] shadow-[var(--shadow-sm)] hover:border-[var(--color-brand-warn)] hover:shadow-[var(--shadow-glow-accent)]`}
+        className={`${TILE_BASE} border border-[var(--color-brand-warn)]/40 bg-gradient-to-br from-[var(--color-background-elevated)] via-[var(--color-cream)] to-[#F0E6CD] text-[var(--color-foreground)] shadow-[var(--shadow-sm)] hover:border-[var(--color-brand-warn)] hover:shadow-[var(--shadow-glow-accent)]`}
       >
+        {/* Soft gold blur in the corner — same vocabulary as the hero
+            aurora, anchors this tile as part of the same publication. */}
         <span
           aria-hidden
-          className="pointer-events-none absolute -right-12 -top-12 h-40 w-40 rounded-full bg-[radial-gradient(closest-side,rgba(229,162,58,0.20),transparent_70%)] blur-2xl"
+          className="pointer-events-none absolute -right-12 -top-12 h-40 w-40 rounded-full bg-[radial-gradient(closest-side,rgba(229,162,58,0.22),transparent_70%)] blur-2xl"
         />
+
+        {/* Decorative SVG ornaments — eucalyptus sprig curving up the
+            left edge + a sparkle near the focal diamond. Inline so the
+            tile is one self-contained component. */}
+        <svg
+          aria-hidden
+          viewBox="0 0 200 280"
+          className="pointer-events-none absolute -left-4 top-0 h-full w-32 text-[var(--color-brand-primary)]/45"
+        >
+          <defs>
+            <linearGradient id="hi-leaf" x1="0" x2="1" y1="0" y2="1">
+              <stop offset="0" stopColor="#A9C2B2" />
+              <stop offset="1" stopColor="#2F5D43" />
+            </linearGradient>
+          </defs>
+          {/* Stem curves up-and-right */}
+          <path
+            d="M 24 260 C 60 200, 90 140, 100 60"
+            fill="none"
+            stroke="#5C6E51"
+            strokeWidth="1.4"
+            strokeLinecap="round"
+            opacity="0.55"
+          />
+          {[
+            { cx: 32, cy: 240, rx: 14, ry: 6, rot: 38 },
+            { cx: 44, cy: 214, rx: 16, ry: 7, rot: -40 },
+            { cx: 56, cy: 184, rx: 18, ry: 8, rot: 42 },
+            { cx: 70, cy: 152, rx: 18, ry: 8, rot: -42 },
+            { cx: 82, cy: 118, rx: 16, ry: 7, rot: 38 },
+            { cx: 94, cy: 84, rx: 14, ry: 6, rot: -34 },
+          ].map((leaf, i) => (
+            <ellipse
+              key={i}
+              cx={leaf.cx}
+              cy={leaf.cy}
+              rx={leaf.rx}
+              ry={leaf.ry}
+              transform={`rotate(${leaf.rot} ${leaf.cx} ${leaf.cy})`}
+              fill="url(#hi-leaf)"
+              opacity={0.6}
+            />
+          ))}
+          {/* Tiny gold sparkles scattered around the leaf */}
+          <path
+            d="M 130 30 l 1.5 -5 l 1.5 5 l 5 1.5 l -5 1.5 l -1.5 5 l -1.5 -5 l -5 -1.5 z"
+            fill="#C8A676"
+            opacity="0.85"
+          />
+          <path
+            d="M 152 80 l 1 -3.5 l 1 3.5 l 3.5 1 l -3.5 1 l -1 3.5 l -1 -3.5 l -3.5 -1 z"
+            fill="#C8A676"
+            opacity="0.7"
+          />
+          <circle cx="118" cy="64" r="1.2" fill="#C8A676" opacity="0.65" />
+        </svg>
 
         <div className="relative flex items-start justify-end">
           <span className="rounded-full bg-[var(--color-brand-warn)]/15 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.22em] text-[var(--color-brand-accent-strong)] ring-1 ring-[var(--color-brand-warn)]/30">
@@ -44,13 +106,42 @@ export function HistoriasTopTile({ href }: TileProps) {
           </span>
         </div>
 
+        {/* Focal: a gold diamond inside a thin gold-ringed circle. The
+            diamond is a clean SVG rotated square + inner solid square
+            so it reads as a jewel facet. Sparkle accent in the corner. */}
         <div className="relative flex flex-1 items-center justify-center">
-          <span className="relative inline-flex h-24 w-24 items-center justify-center rounded-full bg-[var(--color-brand-warn)]/12 text-[var(--color-brand-accent-strong)] ring-1 ring-[var(--color-brand-warn)]/35">
-            <Gem className="h-10 w-10" aria-hidden />
+          <span className="relative inline-flex h-24 w-24 items-center justify-center rounded-full bg-[var(--color-cream-soft)] ring-1 ring-[var(--color-brand-warn)]/40">
+            <svg
+              aria-hidden
+              viewBox="0 0 48 48"
+              className="h-10 w-10 text-[var(--color-brand-accent-strong)]"
+            >
+              <g transform="translate(24 24) rotate(45)">
+                <rect
+                  x="-13"
+                  y="-13"
+                  width="26"
+                  height="26"
+                  rx="3"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.6"
+                  opacity="0.9"
+                />
+                <rect
+                  x="-6"
+                  y="-6"
+                  width="12"
+                  height="12"
+                  fill="currentColor"
+                  opacity="0.95"
+                />
+              </g>
+            </svg>
             <Sparkle
               tone="accent"
               size={18}
-              className="absolute -right-1 -top-1 opacity-80"
+              className="absolute -right-1 -top-1 opacity-85"
             />
           </span>
         </div>
@@ -59,12 +150,20 @@ export function HistoriasTopTile({ href }: TileProps) {
           <p className="text-[10px] font-semibold uppercase tracking-[0.32em] text-[var(--color-brand-accent-strong)]">
             Editorial
           </p>
-          <h3 className="mt-2 text-2xl font-bold leading-tight text-[var(--color-foreground)] sm:text-[1.65rem]">
+          <h3 className="mt-2 font-[var(--font-display)] text-[1.65rem] font-[440] leading-tight tracking-tight text-[var(--color-foreground)]">
             Historias TOP
           </h3>
-          <p className="mt-2 text-xs leading-relaxed text-[var(--color-text-muted)]">
-            Las stories más vistas de la semana. Verificadas y con mejor reputación.
+          <p className="mt-2 font-[var(--font-serif)] text-[12.5px] leading-snug text-[var(--color-text-muted)]">
+            Las stories más vistas de la semana. Verificadas y con mejor
+            reputación.
           </p>
+          <span className="mt-3 inline-flex items-center gap-1 text-[12px] font-semibold text-[var(--color-brand-accent-strong)]">
+            Ver más historias
+            <ArrowRight
+              className="h-3.5 w-3.5 transition-transform duration-200 ease-[var(--ease-standard)] group-hover:translate-x-0.5"
+              aria-hidden
+            />
+          </span>
         </div>
       </Link>
     </motion.div>

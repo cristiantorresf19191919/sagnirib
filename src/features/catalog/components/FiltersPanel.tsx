@@ -498,7 +498,7 @@ function TriggerPill({ active }: TriggerPillProps) {
   // anchors as a small forest dot so the chrome stays tight.
   return (
     <span
-      className={`inline-flex h-10 items-center gap-2 rounded-full border bg-[var(--color-surface)] px-4 text-sm font-semibold shadow-[var(--shadow-sm)] transition-[border-color,background,box-shadow,transform] duration-200 ease-[var(--ease-standard)] hover:-translate-y-[1px] hover:shadow-[var(--shadow-md)] ${
+      className={`inline-flex h-11 items-center gap-2 rounded-full border bg-[var(--color-surface)] px-4 text-sm font-semibold shadow-[var(--shadow-sm)] transition-[border-color,background,box-shadow,transform] duration-200 ease-[var(--ease-standard)] hover:-translate-y-[1px] hover:shadow-[var(--shadow-md)] ${
         active > 0
           ? "border-[var(--color-brand-primary)]/55 text-[var(--color-brand-primary)] hover:border-[var(--color-brand-primary)]"
           : "border-[var(--color-border)] text-[var(--color-foreground)] hover:border-[var(--color-brand-primary-soft)]"

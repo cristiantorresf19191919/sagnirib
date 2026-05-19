@@ -143,22 +143,30 @@ export function QuickPresets({ filters, view }: QuickPresetsProps) {
       className="bg-[var(--color-background)]"
     >
       <Container width="wide" className="py-3 sm:py-4">
-        <div className="flex items-start gap-3 sm:items-center">
+        <div className="flex items-center gap-2.5 sm:gap-3">
+          {/* Sugerencias eyebrow chip — full h-11 with gold-sparkle icon
+              disc. Stays pinned to the left while the chip row scrolls. */}
           <span
             aria-hidden
-            className="hidden shrink-0 items-center gap-2 rounded-full bg-[var(--color-surface)] px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.24em] text-[var(--color-text-muted)] ring-1 ring-[var(--color-border)] sm:inline-flex"
+            className="inline-flex h-11 shrink-0 items-center gap-2 rounded-full bg-[var(--color-surface)] pl-1.5 pr-3.5 text-[10px] font-semibold uppercase tracking-[0.24em] text-[var(--color-text-muted)] ring-1 ring-[var(--color-border)]"
           >
-            <Sparkles
-              className="h-3 w-3 text-[var(--color-brand-primary)]"
-              aria-hidden
-            />
-            Sugerencias
+            <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-br from-[var(--color-gold)]/20 via-[var(--color-gold)]/10 to-[var(--color-cream)] text-[var(--color-gold-deep)] ring-1 ring-[var(--color-gold)]/30">
+              <Sparkles className="h-3.5 w-3.5" aria-hidden />
+            </span>
+            <span className="hidden sm:inline">Sugerencias</span>
           </span>
-          <ul
-            data-testid="quick-presets-list"
-            aria-label="Filtros rápidos"
-            className="flex flex-1 flex-wrap items-center gap-2"
-          >
+          {/* Horizontal scroll on mobile — preserves Hick's-law style
+              single-row scan instead of letting 6+ chips wrap into a
+              chaotic 3-row stack at narrow widths. `flex-wrap` returns
+              at sm+ where there's room. Scrollbar visually hidden so it
+              doesn't break the editorial rhythm; the right-edge fade
+              hints there's more to swipe. */}
+          <div className="relative min-w-0 flex-1">
+            <ul
+              data-testid="quick-presets-list"
+              aria-label="Filtros rápidos"
+              className="flex flex-nowrap items-center gap-2 overflow-x-auto pb-1 [scrollbar-width:none] sm:flex-wrap sm:overflow-visible sm:pb-0 [&::-webkit-scrollbar]:hidden"
+            >
             {PRESETS.map((preset) => {
               const active = preset.isActive(filters);
               const tone = preset.tone ?? "primary";
@@ -178,7 +186,7 @@ export function QuickPresets({ filters, view }: QuickPresetsProps) {
                         ? `Quitar preset: ${preset.label}`
                         : `Aplicar preset: ${preset.label}`
                     }
-                    className={`group inline-flex h-10 items-center gap-2 rounded-full border pl-1.5 pr-4 text-[13px] font-semibold tracking-tight transition-[border-color,background,color,box-shadow] duration-200 ease-[var(--ease-standard)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-background)] ${chipCls}`}
+                    className={`group inline-flex h-11 items-center gap-2 rounded-full border pl-1.5 pr-4 text-[13px] font-semibold tracking-tight transition-[border-color,background,color,box-shadow] duration-200 ease-[var(--ease-standard)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-background)] ${chipCls}`}
                   >
                     <span
                       className={`inline-flex h-7 w-7 items-center justify-center rounded-full transition-colors duration-200 ${iconCls}`}
@@ -190,7 +198,14 @@ export function QuickPresets({ filters, view }: QuickPresetsProps) {
                 </li>
               );
             })}
-          </ul>
+            </ul>
+            {/* Right-edge gradient fade — only on mobile, signals more to
+                swipe. Pointer-events:none so it never blocks taps. */}
+            <span
+              aria-hidden
+              className="pointer-events-none absolute inset-y-0 right-0 w-8 bg-gradient-to-l from-[var(--color-background)] to-transparent sm:hidden"
+            />
+          </div>
         </div>
       </Container>
     </section>

@@ -1,6 +1,14 @@
 import Image from "next/image";
 import Link from "next/link";
-import { Eye, MessageSquare, Mic, Play, Star, Volume2 } from "lucide-react";
+import {
+  BadgeCheck,
+  Eye,
+  MessageSquare,
+  Mic,
+  Play,
+  Star,
+  Volume2,
+} from "lucide-react";
 
 import type { BiringaListing } from "@/server/biringas";
 import { Card } from "@/shared/design-system/components/Card";
@@ -162,13 +170,21 @@ export function CatalogCard({
         </div>
       </div>
 
-      <div className="relative flex flex-1 flex-col gap-1.5 px-1 pt-3">
-        <header className="flex items-baseline justify-between gap-2">
-          <h3 className="flex min-w-0 items-baseline gap-1.5 truncate text-base font-semibold text-[var(--color-foreground)]">
+      <div className="relative flex flex-1 flex-col gap-2 px-1 pt-3">
+        <header className="flex items-center justify-between gap-2">
+          <h3 className="flex min-w-0 items-center gap-1.5 text-base font-semibold text-[var(--color-foreground)]">
             <span className="truncate">{listing.name}</span>
-            {/* In-text live indicator — separates "currently reachable"
-                from the corner pill so the signal travels with the name
-                even when the card image is out of view in a long list. */}
+            {/* Inline verified check — small green badge next to the name,
+                matching the reference. Replaces the bottom-row Verificada
+                pill so the trust signal travels with the name itself. */}
+            {listing.verified && (
+              <BadgeCheck
+                aria-label="Perfil verificado"
+                className="h-4 w-4 shrink-0 text-[var(--color-brand-primary)]"
+              />
+            )}
+            {/* In-text live indicator — separate from the corner pill so
+                the signal travels with the name in long lists. */}
             {listing.availableNow && (
               <span
                 aria-label="En línea ahora"
@@ -195,37 +211,40 @@ export function CatalogCard({
           count={listing.reputation.reviewCount}
           size="sm"
         />
-        <p className="line-clamp-2 min-h-[2.5rem] text-xs leading-relaxed text-[var(--color-text-muted)]">
+        {/* Single condensed feature line — shortBio truncated to one row
+            so the card reads light. The full bio is on the profile page. */}
+        <p className="line-clamp-1 text-xs leading-relaxed text-[var(--color-text-muted)]">
           {listing.shortBio}
         </p>
-        <div className="mt-1 flex items-center justify-between gap-2">
+        <div className="mt-auto flex items-center justify-between gap-2 pt-1">
           <span className="truncate text-xs text-[var(--color-text-muted)]">
             {listing.city}
             {listing.neighborhood ? ` · ${listing.neighborhood}` : ""}
           </span>
-          {/* Promoted to md size + display font + tabular figures so the
-              price reads as the second-most-scannable element after the name. */}
           <PriceTag
             value={formatPricePerHour(listing.pricePerHour)}
             size="md"
             className="font-[var(--font-display)] tabular-nums"
           />
         </div>
-        <div className="mt-1 flex flex-wrap items-center gap-1.5 text-[10px]">
-          {listing.verified && <VerifiedBadge label="Verificada" />}
-          {listing.hasAudio && (
-            <span className="inline-flex items-center gap-1 rounded-full bg-[var(--color-brand-secondary)]/12 px-2 py-0.5 font-medium text-[var(--color-brand-secondary-strong)]">
-              <Volume2 className="h-3 w-3" aria-hidden />
-              Audio
-            </span>
-          )}
-          {listing.reputation.reviewCount > 0 && (
-            <span className="inline-flex items-center gap-1 rounded-full bg-[var(--color-surface-muted)] px-2 py-0.5 text-[var(--color-text-muted)]">
-              <MessageSquare className="h-3 w-3" aria-hidden />
-              {listing.reputation.reviewCount}
-            </span>
-          )}
-        </div>
+        {/* Compact audio + reviews badges — only show when relevant.
+            Verified moved inline next to name above. */}
+        {(listing.hasAudio || listing.reputation.reviewCount > 0) && (
+          <div className="flex flex-wrap items-center gap-1.5 text-[10px]">
+            {listing.hasAudio && (
+              <span className="inline-flex items-center gap-1 rounded-full bg-[var(--color-brand-secondary)]/12 px-2 py-0.5 font-medium text-[var(--color-brand-secondary-strong)]">
+                <Volume2 className="h-3 w-3" aria-hidden />
+                Audio
+              </span>
+            )}
+            {listing.reputation.reviewCount > 0 && (
+              <span className="inline-flex items-center gap-1 rounded-full bg-[var(--color-surface-muted)] px-2 py-0.5 text-[var(--color-text-muted)]">
+                <MessageSquare className="h-3 w-3" aria-hidden />
+                {listing.reputation.reviewCount}
+              </span>
+            )}
+          </div>
+        )}
       </div>
     </Card>
   );

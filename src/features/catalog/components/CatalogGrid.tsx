@@ -20,10 +20,14 @@ interface CatalogGridProps {
 
 const FEATURED_THRESHOLD = 4.85;
 
+// Mobile-first rhythm: tight gap on phones to maximise card real estate,
+// generous gap on desktop so the editorial cards breathe. Scales 4→5→6
+// across the bp curve. List view keeps a tighter 12px stack.
 const GRID_CLASS: Record<CatalogView, string> = {
-  spotlight: "mt-8 grid grid-cols-1 gap-5 sm:gap-6",
-  grid2: "mt-8 grid grid-cols-1 gap-5 sm:grid-cols-2",
-  grid3: "mt-8 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4",
+  spotlight: "mt-8 grid grid-cols-1 gap-4 sm:gap-6 lg:gap-7",
+  grid2: "mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-5 lg:gap-6",
+  grid3:
+    "mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-5 lg:grid-cols-3 lg:gap-6 xl:grid-cols-4 xl:gap-6",
   list: "mt-8 grid grid-cols-1 gap-3",
 };
 

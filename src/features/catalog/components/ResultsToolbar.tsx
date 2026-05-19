@@ -65,63 +65,68 @@ export function ResultsToolbar({
       : "";
 
   return (
-    <div className="sticky top-16 z-20 -mx-4 mb-3 border-y border-[var(--color-border)]/60 bg-[var(--color-background)]/85 px-4 py-3 backdrop-blur-md supports-[backdrop-filter]:bg-[var(--color-background)]/65 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-3">
-        <div className="flex flex-1 flex-wrap items-center gap-3">
-          <span className="inline-flex items-center gap-2.5">
-            <span
-              aria-hidden
-              className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-[var(--color-brand-primary)]/12 text-[var(--color-brand-primary)]"
-            >
-              <Sparkles className="h-4 w-4" aria-hidden />
-            </span>
-            <span className="flex flex-col leading-tight">
-              <span className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[var(--color-text-muted)]">
-                {cityLabel}
+    <div className="sticky top-16 z-20 -mx-4 mb-4 sm:-mx-6 lg:-mx-8">
+      {/* Pill-card surface — the reference treats this band as a discrete
+          rounded card rather than a sticky border. A subtle backdrop blur
+          + soft shadow lifts it visually from the catalog grid below. */}
+      <div className="mx-4 rounded-[var(--radius-2xl)] border border-[var(--color-border)] bg-[var(--color-surface)]/90 px-3 py-2.5 shadow-[0_8px_24px_-16px_rgba(20,28,24,0.25)] backdrop-blur-md supports-[backdrop-filter]:bg-[var(--color-surface)]/75 sm:mx-6 sm:px-4 sm:py-3 lg:mx-8 lg:px-5">
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-3">
+          <div className="flex flex-1 flex-wrap items-center gap-3">
+            <span className="inline-flex items-center gap-3">
+              <span
+                aria-hidden
+                className="relative inline-flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-[var(--color-gold)]/20 via-[var(--color-gold)]/10 to-[var(--color-cream)] text-[var(--color-gold-deep)] ring-1 ring-[var(--color-gold)]/30"
+              >
+                <Sparkles className="h-4 w-4" aria-hidden />
               </span>
-              <span className="text-sm font-semibold text-[var(--color-foreground)]">
-                {FORMAT_NUMBER.format(resultCount)}
-                {totalLabel} biringas
+              <span className="flex flex-col leading-tight">
+                <span className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[var(--color-text-muted)]">
+                  {cityLabel}
+                </span>
+                <span className="font-[var(--font-display)] text-[17px] font-[480] tracking-tight text-[var(--color-foreground)]">
+                  {FORMAT_NUMBER.format(resultCount)}
+                  {totalLabel} <span className="text-[var(--color-text-muted)]">biringas</span>
+                </span>
               </span>
             </span>
-          </span>
 
-          {activeCount > 0 && (
-            <span
-              aria-hidden
-              className="hidden h-5 w-px bg-[var(--color-border)] sm:inline-block"
-            />
-          )}
+            {activeCount > 0 && (
+              <span
+                aria-hidden
+                className="hidden h-7 w-px bg-[var(--color-border)] sm:inline-block"
+              />
+            )}
 
-          {activeCount > 0 && (
-            <Link
-              href="/explorar"
-              className="inline-flex h-8 items-center gap-1.5 rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] px-3 text-[12px] font-semibold text-[var(--color-text-muted)] transition-[border-color,color,background] duration-150 hover:border-[var(--color-brand-highlight)]/45 hover:bg-[var(--color-brand-highlight)]/8 hover:text-[var(--color-brand-highlight)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-highlight)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-background)]"
-            >
-              <Eraser className="h-3 w-3" aria-hidden />
-              Limpiar {activeCount} {activeCount === 1 ? "filtro" : "filtros"}
-            </Link>
-          )}
+            {activeCount > 0 && (
+              <Link
+                href="/explorar"
+                className="inline-flex h-10 items-center gap-1.5 rounded-full border border-[var(--color-border)] bg-[var(--color-background)] px-3.5 text-[12px] font-semibold text-[var(--color-text-muted)] transition-[border-color,color,background] duration-150 hover:border-[var(--color-brand-highlight)]/45 hover:bg-[var(--color-brand-highlight)]/8 hover:text-[var(--color-brand-highlight)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-highlight)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-background)]"
+              >
+                <Eraser className="h-3 w-3" aria-hidden />
+                Limpiar {activeCount} {activeCount === 1 ? "filtro" : "filtros"}
+              </Link>
+            )}
+          </div>
+
+          <div className="flex items-center gap-2">
+            <FiltersPanel filters={filters} view={view} />
+            <SortMenu filters={filters} view={view} />
+          </div>
         </div>
 
-        <div className="flex items-center gap-2">
-          <FiltersPanel filters={filters} view={view} />
-          <SortMenu filters={filters} view={view} />
-        </div>
+        {activeCount > 0 && (
+          <div className="mt-3 flex items-start gap-2.5 border-t border-[var(--color-border)]/60 pt-3">
+            <span className="hidden items-center gap-3 text-[10px] font-semibold uppercase tracking-[0.22em] text-[var(--color-text-subtle)] sm:inline-flex sm:shrink-0 sm:pt-1.5">
+              <span
+                aria-hidden
+                className="inline-block h-px w-6 bg-gradient-to-r from-[var(--color-gold)] to-transparent"
+              />
+              Activos
+            </span>
+            <ActiveFilterChips filters={filters} />
+          </div>
+        )}
       </div>
-
-      {activeCount > 0 && (
-        <div className="mt-2.5 flex items-start gap-2.5 border-t border-[var(--color-border)]/60 pt-2.5">
-          <span className="hidden items-center gap-3 text-[10px] font-semibold uppercase tracking-[0.22em] text-[var(--color-text-subtle)] sm:inline-flex sm:shrink-0 sm:pt-1.5">
-            <span
-              aria-hidden
-              className="inline-block h-px w-6 bg-gradient-to-r from-[var(--color-gold)] to-transparent"
-            />
-            Activos
-          </span>
-          <ActiveFilterChips filters={filters} />
-        </div>
-      )}
     </div>
   );
 }

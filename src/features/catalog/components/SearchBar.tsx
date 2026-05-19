@@ -1,4 +1,4 @@
-import { Search } from "lucide-react";
+import { Search, Sparkles } from "lucide-react";
 
 import { SUPPORTED_CITIES, type ListingsFilters } from "@/server/biringas";
 import { Container } from "@/shared/design-system/components/Container";
@@ -78,13 +78,19 @@ export function SearchBar({ filters, view }: SearchBarProps) {
           <button
             data-testid="search-bar-submit"
             type="submit"
-            className="btn-pulse group relative inline-flex h-12 items-center justify-center gap-1.5 overflow-hidden rounded-full bg-[var(--color-brand-primary)] px-7 text-sm font-semibold text-[var(--color-surface)] shadow-[var(--shadow-glow-primary)] hover:-translate-y-0.5 hover:bg-[var(--color-brand-primary-strong)] hover:shadow-[var(--shadow-lg)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-background)]"
+            className="btn-pulse group relative inline-flex h-12 items-center justify-center gap-2 overflow-hidden rounded-full bg-[var(--color-brand-primary)] px-7 text-sm font-semibold text-[var(--color-surface)] shadow-[var(--shadow-glow-primary)] hover:-translate-y-0.5 hover:bg-[var(--color-brand-primary-strong)] hover:shadow-[var(--shadow-lg)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-background)]"
           >
             <span
               aria-hidden
               className="pointer-events-none absolute inset-y-0 -left-1/3 hidden w-1/3 bg-gradient-to-r from-transparent via-white/30 to-transparent motion-safe:group-hover:motion-shimmer-sweep sm:block"
             />
             <span className="relative">Buscar</span>
+            {/* Gold sparkle ornament — sits inside the button on the right
+                edge, mirroring the reference's punctuation detail. */}
+            <Sparkles
+              aria-hidden
+              className="relative h-3.5 w-3.5 text-[var(--color-gold)] opacity-90 transition-transform duration-300 ease-[var(--ease-standard)] group-hover:rotate-12"
+            />
           </button>
         </form>
       </Container>

@@ -240,7 +240,7 @@ export async function EditorialHero({
       {/* Content column */}
       <div
         data-testid="editorial-hero-content"
-        className="relative z-[5] mx-auto w-full max-w-[1440px] px-6 pb-20 pt-16 sm:px-9 sm:pt-20 lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(0,0.85fr)] lg:gap-15 lg:pt-[70px]"
+        className="relative z-[5] mx-auto w-full max-w-[1440px] px-5 pb-16 pt-12 sm:px-9 sm:pb-20 sm:pt-20 lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(0,0.85fr)] lg:gap-15 lg:pt-[70px]"
       >
         <div data-testid="editorial-hero-copy" className="max-w-[600px]">
           <div
@@ -313,63 +313,79 @@ export async function EditorialHero({
             <em>Sin algoritmos turbios.</em>
           </p>
 
+          {/* Stat tiles — three discrete vertical cells separated by hairlines.
+              Each tile reads "icon · big number · small label" so the user
+              scans counts before reading meaning. Reference design pattern. */}
           <div
             data-testid="editorial-hero-stats"
-            className="motion-safe:motion-hero-reveal mt-9 flex flex-wrap items-center gap-x-7 gap-y-3"
+            className="motion-safe:motion-hero-reveal mt-9 inline-flex flex-wrap items-stretch gap-x-6 gap-y-4 sm:gap-x-7"
             style={{ animationDelay: "0.35s" }}
           >
-            <div className="flex items-center gap-2.5">
+            <div className="flex items-center gap-3">
               <span
                 aria-hidden
-                className="relative inline-flex h-2 w-2 items-center justify-center"
+                className="relative inline-flex h-2.5 w-2.5 items-center justify-center"
               >
                 <span className="absolute inset-0 rounded-full bg-[#4D9B6E] opacity-60 motion-safe:motion-pulse-ring" />
-                <span className="relative inline-block h-2 w-2 rounded-full bg-[#4D9B6E] motion-safe:motion-hero-pulse" />
+                <span className="relative inline-block h-2.5 w-2.5 rounded-full bg-[#4D9B6E] motion-safe:motion-hero-pulse" />
               </span>
-              <span className="text-[13px] text-[var(--color-ink)]">
-                <strong className="font-semibold tabular-nums">
+              <span className="flex flex-col leading-tight">
+                <strong className="text-[22px] font-[var(--font-display)] font-[480] tabular-nums tracking-tight text-[var(--color-ink)]">
                   <CountUp to={38} />
                 </strong>
-                <span className="text-[var(--color-ink-soft)]">
-                  {" "}
+                <span className="text-[11px] uppercase tracking-[0.14em] text-[var(--color-ink-soft)]">
                   en línea ahora
                 </span>
               </span>
             </div>
-            <span aria-hidden className="h-4 w-px bg-[var(--color-line)]" />
-            <div className="flex items-center gap-2">
+
+            <span
+              aria-hidden
+              className="hidden self-stretch w-px bg-gradient-to-b from-transparent via-[var(--color-line)] to-transparent sm:block"
+            />
+
+            <div className="flex items-center gap-3">
               <span
                 aria-hidden
-                className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-[var(--color-forest)]/10 ring-1 ring-[var(--color-forest)]/15"
+                className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-[var(--color-forest)]/10 ring-1 ring-[var(--color-forest)]/20"
               >
                 <ShieldCheck
-                  className="h-3 w-3 text-[var(--color-forest)]"
+                  className="h-4 w-4 text-[var(--color-forest)]"
                   aria-hidden
                 />
               </span>
-              <span className="text-[13px] text-[var(--color-ink-soft)]">
-                <strong className="font-semibold text-[var(--color-ink)] tabular-nums">
+              <span className="flex flex-col leading-tight">
+                <strong className="text-[22px] font-[var(--font-display)] font-[480] tabular-nums tracking-tight text-[var(--color-ink)]">
                   <CountUp to={247} duration={1.6} />
-                </strong>{" "}
-                verificadas activas
+                </strong>
+                <span className="text-[11px] uppercase tracking-[0.14em] text-[var(--color-ink-soft)]">
+                  verificadas activas
+                </span>
               </span>
             </div>
-            <span aria-hidden className="h-4 w-px bg-[var(--color-line)]" />
-            <div className="flex items-center gap-2">
+
+            <span
+              aria-hidden
+              className="hidden self-stretch w-px bg-gradient-to-b from-transparent via-[var(--color-line)] to-transparent sm:block"
+            />
+
+            <div className="flex items-center gap-3">
               <span
                 aria-hidden
-                className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-[var(--color-gold)]/15 ring-1 ring-[var(--color-gold)]/25"
+                className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-[var(--color-gold)]/15 ring-1 ring-[var(--color-gold)]/25"
               >
                 <MapPin
-                  className="h-3 w-3 text-[var(--color-gold-deep)]"
+                  className="h-4 w-4 text-[var(--color-gold-deep)]"
                   aria-hidden
                 />
               </span>
-              <span className="text-[13px] text-[var(--color-ink-soft)]">
-                <strong className="font-semibold text-[var(--color-ink)] tabular-nums">
+              <span className="flex flex-col leading-tight">
+                <strong className="text-[22px] font-[var(--font-display)] font-[480] tabular-nums tracking-tight text-[var(--color-ink)]">
                   6
-                </strong>{" "}
-                ciudades
+                </strong>
+                <span className="text-[11px] uppercase tracking-[0.14em] text-[var(--color-ink-soft)]">
+                  ciudades
+                </span>
               </span>
             </div>
           </div>
@@ -525,18 +541,17 @@ export async function EditorialHero({
             </ul>
           </div>
 
-          {/* Trust block — promoted in this iteration so verification reads
-              as the hero's primary value prop. Avatars are real verified-
-              listing micro-portraits (taken from the same mosaic dataset),
-              with a shield-check corner-nested onto the last bubble so the
-              claim "verificación humana" is visually anchored to faces. */}
+          {/* Trust card — verification as the hero's primary value prop.
+              Layout matches the reference: avatar bubble stack on the left
+              (with shield-check nested on the front bubble), copy block in
+              the middle, and a large gold-shield disc on the right that
+              visually anchors the "official" stamp. */}
           <div
             data-testid="editorial-hero-trust"
-            className="group/trust motion-safe:motion-hero-reveal relative mt-11 flex items-center gap-5 overflow-hidden rounded-2xl border border-[var(--color-line-soft)] bg-[var(--color-cream-soft)]/70 p-4 transition-[border-color,box-shadow,transform] duration-300 ease-[var(--ease-standard)] hover:-translate-y-[2px] hover:border-[var(--color-gold)]/40 hover:shadow-[0_18px_40px_-22px_rgba(20,28,24,0.25)] sm:gap-6 sm:p-5"
+            className="group/trust motion-safe:motion-hero-reveal relative mt-11 flex items-center gap-4 overflow-hidden rounded-2xl border border-[var(--color-line-soft)] bg-[var(--color-cream-soft)]/70 p-4 transition-[border-color,box-shadow,transform] duration-300 ease-[var(--ease-standard)] hover:-translate-y-[2px] hover:border-[var(--color-gold)]/40 hover:shadow-[0_18px_40px_-22px_rgba(20,28,24,0.25)] sm:gap-6 sm:p-5"
             style={{ animationDelay: "0.6s" }}
           >
-            {/* Decorative gold corner brackets — drawn in only on hover.
-                Magazine-grade callout cue that hints at "this is curated". */}
+            {/* Decorative gold corner brackets — drawn in only on hover. */}
             <span
               aria-hidden
               className="pointer-events-none absolute left-2 top-2 h-3 w-3 origin-top-left scale-0 border-l border-t border-[var(--color-gold)] opacity-0 transition-[opacity,transform] duration-300 ease-[var(--ease-standard)] group-hover/trust:scale-100 group-hover/trust:opacity-80"
@@ -559,9 +574,9 @@ export async function EditorialHero({
                 <span
                   key={listing.id}
                   aria-hidden
-                  className="relative block h-14 w-14 overflow-hidden rounded-full border-[3px] border-[var(--color-cream)] shadow-[0_2px_6px_rgba(31,61,46,0.18)] transition-transform duration-300 ease-[var(--ease-standard)] group-hover/trust:translate-x-[2px]"
+                  className="relative block h-12 w-12 overflow-hidden rounded-full border-[3px] border-[var(--color-cream)] shadow-[0_2px_6px_rgba(31,61,46,0.18)] transition-transform duration-300 ease-[var(--ease-standard)] group-hover/trust:translate-x-[2px] sm:h-14 sm:w-14"
                   style={{
-                    marginLeft: i === 0 ? 0 : -16,
+                    marginLeft: i === 0 ? 0 : -14,
                     transitionDelay: `${i * 35}ms`,
                     zIndex: 4 - i,
                   }}
@@ -575,21 +590,18 @@ export async function EditorialHero({
                   />
                 </span>
               ))}
-              {/* Fallback solid bubbles if listings haven't loaded yet —
-                  preserves the visual rhythm and prevents layout shift. */}
               {mosaic.length === 0 &&
                 ["#3B342B", "#1F3D2E", "#C8A676", "#C9837A"].map((bg, i) => (
                   <span
                     key={bg}
                     aria-hidden
-                    className="block h-14 w-14 rounded-full border-[3px] border-[var(--color-cream)] shadow-[0_2px_6px_rgba(31,61,46,0.18)]"
+                    className="block h-12 w-12 rounded-full border-[3px] border-[var(--color-cream)] shadow-[0_2px_6px_rgba(31,61,46,0.18)] sm:h-14 sm:w-14"
                     style={{
                       background: bg,
-                      marginLeft: i === 0 ? 0 : -16,
+                      marginLeft: i === 0 ? 0 : -14,
                     }}
                   />
                 ))}
-              {/* Shield-check corner badge on the last (front-most) bubble */}
               <span
                 aria-label="Verificada"
                 className="absolute -bottom-1 right-0 inline-flex h-6 w-6 items-center justify-center rounded-full bg-[var(--color-forest)] text-[var(--color-cream)] shadow-[0_4px_10px_-2px_rgba(31,61,46,0.55)] ring-2 ring-[var(--color-cream)]"
@@ -598,15 +610,60 @@ export async function EditorialHero({
                 <ShieldCheck className="h-3.5 w-3.5" aria-hidden />
               </span>
             </div>
-            <p className="font-[var(--font-serif)] text-[14px] leading-[1.45] text-[var(--color-ink-soft)] sm:text-[15.5px]">
+
+            <p className="min-w-0 flex-1 font-[var(--font-serif)] text-[14px] leading-[1.45] text-[var(--color-ink-soft)] sm:text-[15px]">
               <strong className="block font-semibold text-[var(--color-ink)] sm:text-[17px]">
                 Verificación en 2 capas
               </strong>
-              <span className="mt-0.5 block">
-                Documento + selfie en vivo. Sin catfish, sin sorpresas.
+              <span className="mt-1 block">
+                Documento oficial + selfie en vivo.
+              </span>
+              <span className="mt-0.5 block italic text-[var(--color-text-muted)]">
+                Perfiles reales para conexiones reales.
               </span>
             </p>
+
+            {/* Gold-shield disc on the right — the "official seal" cue
+                from the reference. Hidden on small screens where the card
+                stacks tighter. */}
+            <span
+              aria-hidden
+              className="hidden h-14 w-14 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[var(--color-gold)]/20 via-[var(--color-gold)]/10 to-[var(--color-cream)] text-[var(--color-gold-deep)] ring-1 ring-[var(--color-gold)]/35 shadow-[0_8px_22px_-10px_rgba(200,166,118,0.55)] sm:inline-flex"
+            >
+              <ShieldCheck className="h-6 w-6" aria-hidden />
+            </span>
           </div>
+
+          {/* Bottom trust strip — matches the reference's footer row of
+              guarantees beneath the verification card. */}
+          <ul
+            data-testid="editorial-hero-trust-strip"
+            className="motion-safe:motion-hero-reveal mt-4 flex flex-wrap items-center gap-x-6 gap-y-2 text-[12px] text-[var(--color-ink-soft)]"
+            style={{ animationDelay: "0.65s" }}
+            aria-label="Garantías"
+          >
+            <li className="inline-flex items-center gap-1.5">
+              <ShieldCheck
+                className="h-3.5 w-3.5 text-[var(--color-forest)]"
+                aria-hidden
+              />
+              Privacidad garantizada
+            </li>
+            <li className="inline-flex items-center gap-1.5">
+              <Lock
+                className="h-3.5 w-3.5 text-[var(--color-forest)]"
+                aria-hidden
+              />
+              Pago 100% discreto
+            </li>
+            <li className="inline-flex items-center gap-1.5">
+              <UserCheck
+                className="h-3.5 w-3.5 text-[var(--color-forest)]"
+                aria-hidden
+              />
+              Perfiles verificados
+            </li>
+          </ul>
         </div>
         <div aria-hidden />
       </div>
