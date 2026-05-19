@@ -37,9 +37,21 @@ export async function CatalogGrid({
   filters,
   view = "grid3",
 }: CatalogGridProps) {
-  // Primary list — let this throw if Firestore is genuinely down so the
-  // operator sees the 500 instead of an empty catalog.
-  const { data, meta } = await listAll(filters);
+  // Primary list. Log + catch so a partial outage surfaces in Netlify
+  // function logs without 500'ing the page; the empty-state already
+  // handles the no-data render. Remove the catch once we have proper
+  // observability.
+  const { data, meta } = await listAll(filters).catch((err) => {
+    console.error("[explorar] primary listAll failed", {
+      message: (err as Error)?.message,
+      code: (err as { code?: unknown })?.code,
+      filters,
+    });
+    return {
+      data: [] as Awaited<ReturnType<typeof listAll>>["data"],
+      meta: { total: 0, page: 1, pageSize: 24, totalPages: 1 },
+    };
+  });
   // Total in the unfiltered catalog (excludes the city scope so the toolbar
   // can show "X de Y" when filters narrow the result). Auxiliary — degrade
   // to the primary `meta` if the second call hiccups.
