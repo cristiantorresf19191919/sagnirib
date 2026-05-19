@@ -31,6 +31,16 @@ interface RangeSliderProps {
   format: RangeFormat;
   /** Optional preset chips rendered below the track. */
   presets?: ReadonlyArray<{ label: string; min?: number; max?: number }>;
+  /**
+   * Optional distribution of values for an inline histogram drawn above
+   * the track. Array of bucket heights in the inclusive range 0..1; the
+   * array length is the bucket count. Buckets are evenly spaced across
+   * the absolute domain `[min, max]`. Bars inside the active range
+   * render in the brand-primary tint; bars outside render muted.
+   * Pattern borrowed from Airbnb's price filter — helps users see where
+   * listings actually concentrate before they drag a thumb.
+   */
+  histogram?: ReadonlyArray<number>;
 }
 
 /**

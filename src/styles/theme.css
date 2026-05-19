@@ -148,3 +148,64 @@ html[data-theme="dark"] {
   --shadow-glow-secondary: 0 12px 32px -16px rgba(152, 167, 138, 0.40);
   --shadow-glow-accent: 0 12px 32px -16px rgba(229, 181, 100, 0.45);
 }
+
+/*
+ * "Desire" theme — flipped via `data-theme="desire"` on <html>.
+ *
+ * Deep aubergine canvas + mauve primary + rose-gold accent. The third
+ * mood in the toggle cycle (light → dark → desire). Designed to feel
+ * sensual without being gaudy: violet is heavily desaturated toward
+ * plum, gold stays warm, accents stay reserved.
+ *
+ * Same surface-vs-primary inversion as dark mode: the primary CTA is a
+ * LIGHT mauve so `text-[var(--color-surface)]` (dark plum) reads as
+ * dark-on-light high contrast on the buttons. Cards keep the deep plum
+ * surface.
+ */
+html[data-theme="desire"] {
+  --color-background: #1A0822;
+  --color-background-elevated: #25102E;
+  --color-surface: #2E1538;
+  --color-surface-muted: #3A1D45;
+  --color-border: #4C2A57;
+
+  --color-brand-primary: #E5B7DA;
+  --color-brand-primary-strong: #F2C7E5;
+  --color-brand-primary-soft: #6F3F76;
+
+  --color-brand-secondary: #B58FAE;
+  --color-brand-secondary-strong: #C9A3C2;
+
+  --color-brand-accent: #E5B564;
+  --color-brand-accent-strong: #F0C77D;
+
+  --color-brand-highlight: #FF7BB0;
+  --color-brand-warn: #E5B564;
+
+  --color-foreground: #F5E7F0;
+  --color-text-muted: #C7A6C2;
+  --color-text-subtle: #957795;
+
+  /* Editorial vocabulary remap: "cream" reads as the candlelit
+     aubergine surface; "ink" stays the off-cream type; "forest"
+     becomes the mauve primary so the gradient and "tu Biringa" gold
+     sweep still align with brand-primary. */
+  --color-cream: #25102E;
+  --color-cream-deep: #1A0822;
+  --color-cream-soft: #2E1538;
+  --color-ink: #F5E7F0;
+  --color-ink-soft: #D8BCD2;
+  --color-forest: #E5B7DA;
+  --color-forest-deep: #F2C7E5;
+  --color-gold: #E5B564;
+  --color-gold-deep: #C99750;
+  --color-line: rgba(245, 231, 240, 0.11);
+  --color-line-soft: rgba(245, 231, 240, 0.06);
+
+  --shadow-sm: 0 1px 2px rgba(15, 4, 22, 0.55);
+  --shadow-md: 0 6px 20px -8px rgba(15, 4, 22, 0.65);
+  --shadow-lg: 0 18px 40px -16px rgba(15, 4, 22, 0.75);
+  --shadow-glow-primary: 0 12px 32px -16px rgba(229, 183, 218, 0.55);
+  --shadow-glow-secondary: 0 12px 32px -16px rgba(181, 143, 174, 0.40);
+  --shadow-glow-accent: 0 12px 32px -16px rgba(229, 181, 100, 0.45);
+}
