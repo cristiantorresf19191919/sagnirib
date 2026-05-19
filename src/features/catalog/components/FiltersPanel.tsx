@@ -26,7 +26,6 @@ import {
   SPECIAL_SERVICE_CATALOG,
   type ListingsFilters,
 } from "@/server/biringas";
-import { Container } from "@/shared/design-system/components/Container";
 
 import {
   DEFAULT_CATALOG_VIEW,
@@ -174,14 +173,16 @@ export function FiltersPanel({ filters, view }: FiltersPanelProps) {
   const counts = buildSectionCounts(filters);
   const active = countActiveFilters(filters);
 
+  // Inline-mounted in ResultsToolbar — no Container/section wrapper so the
+  // trigger slots cleanly next to SortMenu. The modal contents stay
+  // identical; only the trigger pill was redesigned to be compact.
   return (
-    <section data-testid="filters-panel" className="bg-[var(--color-background)]">
-      <Container width="wide" className="py-3 sm:py-4">
-        <FilterModal
-          title="Filtros avanzados"
-          subtitle="Refina por precio, edad, servicios y apariencia."
-          trigger={<TriggerPill active={active} />}
-        >
+    <div data-testid="filters-panel" className="inline-flex">
+      <FilterModal
+        title="Filtros avanzados"
+        subtitle="Refina por precio, edad, servicios y apariencia."
+        trigger={<TriggerPill active={active} />}
+      >
           {active > 0 && (
             <div className="mb-5 flex flex-col gap-2 rounded-[var(--radius-lg)] bg-[var(--color-surface)] p-3 ring-1 ring-[var(--color-border)] sm:p-4">
               <span className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[var(--color-text-subtle)]">
@@ -192,7 +193,7 @@ export function FiltersPanel({ filters, view }: FiltersPanelProps) {
           )}
 
           <FilterForm
-            action="/"
+            action="/explorar"
             method="get"
             className="grid gap-5 lg:grid-cols-2 lg:gap-6"
           >
@@ -482,9 +483,8 @@ export function FiltersPanel({ filters, view }: FiltersPanelProps) {
               </button>
             </div>
           </FilterForm>
-        </FilterModal>
-      </Container>
-    </section>
+      </FilterModal>
+    </div>
   );
 }
 
@@ -493,23 +493,24 @@ interface TriggerPillProps {
 }
 
 function TriggerPill({ active }: TriggerPillProps) {
+  // Compact toolbar trigger — sits alongside SortMenu instead of as the
+  // page-wide banner the previous version was. Active filter count
+  // anchors as a small forest dot so the chrome stays tight.
   return (
-    <span className="flex w-full items-center gap-3 rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-3 text-left shadow-[var(--shadow-sm)] transition-[border-color,background,box-shadow] duration-200 ease-[var(--ease-standard)] hover:border-[var(--color-brand-primary-soft)] hover:shadow-[var(--shadow-md)]">
-      <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[var(--color-brand-primary)]/10 text-[var(--color-brand-primary)]">
-        <SlidersHorizontal className="h-4 w-4" aria-hidden />
-      </span>
-      <span className="flex flex-col gap-0.5">
-        <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--color-text-muted)]">
-          Filtros avanzados
-        </span>
-        <span className="text-sm text-[var(--color-foreground)]">
-          {active > 0
-            ? `${active} ${active === 1 ? "filtro aplicado" : "filtros aplicados"}`
-            : "Refina por precio, edad, servicios y apariencia"}
-        </span>
-      </span>
+    <span
+      className={`inline-flex h-10 items-center gap-2 rounded-full border bg-[var(--color-surface)] px-4 text-sm font-semibold shadow-[var(--shadow-sm)] transition-[border-color,background,box-shadow,transform] duration-200 ease-[var(--ease-standard)] hover:-translate-y-[1px] hover:shadow-[var(--shadow-md)] ${
+        active > 0
+          ? "border-[var(--color-brand-primary)]/55 text-[var(--color-brand-primary)] hover:border-[var(--color-brand-primary)]"
+          : "border-[var(--color-border)] text-[var(--color-foreground)] hover:border-[var(--color-brand-primary-soft)]"
+      }`}
+    >
+      <SlidersHorizontal className="h-4 w-4" aria-hidden />
+      <span>Filtros</span>
       {active > 0 && (
-        <span className="ml-auto inline-flex h-6 min-w-6 items-center justify-center rounded-full bg-[var(--color-brand-primary)] px-2 text-[11px] font-bold text-[var(--color-surface)]">
+        <span
+          aria-hidden
+          className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-[var(--color-brand-primary)] px-1.5 text-[10px] font-bold text-[var(--color-surface)]"
+        >
           {active}
         </span>
       )}

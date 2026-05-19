@@ -5,6 +5,7 @@ import type { ListingsFilters } from "@/server/biringas";
 
 import type { CatalogView } from "../lib/parse-filters";
 import { ActiveFilterChips } from "./ActiveFilterChips";
+import { FiltersPanel } from "./FiltersPanel";
 import { SortMenu } from "./SortMenu";
 
 interface ResultsToolbarProps {
@@ -103,7 +104,10 @@ export function ResultsToolbar({
           )}
         </div>
 
-        <SortMenu filters={filters} view={view} />
+        <div className="flex items-center gap-2">
+          <FiltersPanel filters={filters} view={view} />
+          <SortMenu filters={filters} view={view} />
+        </div>
       </div>
 
       {activeCount > 0 && (
