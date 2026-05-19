@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import {
   BotOff,
@@ -6,7 +7,10 @@ import {
   MapPin,
   Search,
   ShieldCheck,
+  Star,
   UserCheck,
+  Video,
+  type LucideIcon,
 } from "lucide-react";
 
 import { listHeroMosaic } from "@/server/biringas";
@@ -21,26 +25,49 @@ interface EditorialHeroProps {
   location?: string;
 }
 
-const SUGGESTED = [
-  { label: "Disponibles ahora", href: "/explorar?available=1" },
-  { label: "Cena Bogotá", href: "/explorar?city=Bogot%C3%A1" },
-  { label: "Fin de semana Cartagena", href: "/explorar?city=Cartagena" },
-  { label: "Videollamada", href: "/explorar?category=videollamadas" },
-  { label: "Top rated", href: "/explorar?sort=rating" },
-] as const;
+/** Sugerido categories — each pill carries a taxonomy hint so users scan
+ *  the row in an F-pattern instead of reading every label.
+ *  - `live`      → green pulsing dot (availability now)
+ *  - `location`  → MapPin (geo/plan tied to a city)
+ *  - `digital`   → outline-style Video pill (remote service)
+ *  - `quality`   → Star (curation signal)
+ */
+type SuggestedKind = "live" | "location" | "digital" | "quality";
 
-const MARQUEE_ITEMS = [
-  "Bogotá · 142 activas",
-  "Medellín · 88 activas",
-  "Cartagena · 41 activas",
-  "Cali · 37 activas",
-  "Verificación en vivo",
-  "Reseñas reales",
-  "Sin bots, sin catfish",
-  "Pago discreto disponible",
-  "Barranquilla · 24 activas",
-  "Videollamada disponible",
-] as const;
+const SUGGESTED: ReadonlyArray<{
+  label: string;
+  href: string;
+  kind: SuggestedKind;
+}> = [
+  { label: "Disponibles ahora", href: "/explorar?available=1", kind: "live" },
+  { label: "Cena Bogotá", href: "/explorar?city=Bogot%C3%A1", kind: "location" },
+  { label: "Fin de semana Cartagena", href: "/explorar?city=Cartagena", kind: "location" },
+  { label: "Videollamada", href: "/explorar?category=videollamadas", kind: "digital" },
+  { label: "Top rated", href: "/explorar?sort=rating", kind: "quality" },
+];
+
+const SUGGESTED_ICON: Record<SuggestedKind, LucideIcon | null> = {
+  live: null, // rendered as a pulsing dot, see below
+  location: MapPin,
+  digital: Video,
+  quality: Star,
+};
+
+/** Marquee items — city entries are interactive (jump straight into the
+ *  filtered catalog); the value-prop lines stay non-link so the user
+ *  doesn't accidentally navigate. */
+const MARQUEE_ITEMS: ReadonlyArray<{ label: string; href?: string }> = [
+  { label: "Bogotá · 142 activas", href: "/explorar?city=Bogot%C3%A1" },
+  { label: "Medellín · 88 activas", href: "/explorar?city=Medell%C3%ADn" },
+  { label: "Cartagena · 41 activas", href: "/explorar?city=Cartagena" },
+  { label: "Cali · 37 activas", href: "/explorar?city=Cali" },
+  { label: "Verificación en vivo" },
+  { label: "Reseñas reales" },
+  { label: "Sin bots, sin catfish" },
+  { label: "Pago discreto disponible" },
+  { label: "Barranquilla · 24 activas", href: "/explorar?city=Barranquilla" },
+  { label: "Videollamada disponible", href: "/explorar?category=videollamadas" },
+];
 
 const TILE_HEIGHTS_A = [240, 320, 240, 320] as const;
 const TILE_HEIGHTS_B = [360, 220, 360, 220] as const;
@@ -174,14 +201,22 @@ export async function EditorialHero({
         />
       </div>
 
-      {/* Left fade veil — softens the mosaic into the cream paper */}
+      {/* Left fade veil — softens the mosaic into the cream paper. Pushed
+          wider + deeper opacity at the left third so the headline text always
+          reads against calm paper, not faces drifting through it. */}
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-y-0 right-[32%] z-[2] hidden w-[32%] lg:block"
+        className="pointer-events-none absolute inset-y-0 right-[26%] z-[2] hidden w-[42%] lg:block"
         style={{
           background:
-            "linear-gradient(90deg, var(--color-cream) 0%, rgba(242,235,220,0.95) 30%, rgba(242,235,220,0) 100%)",
+            "linear-gradient(90deg, var(--color-cream) 0%, var(--color-cream) 22%, rgba(242,235,220,0.92) 55%, rgba(242,235,220,0) 100%)",
         }}
+      />
+      {/* Secondary cream wash directly behind the headline column — pulls
+          the mosaic visually further away so faces stay in the background. */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-y-0 left-0 z-[2] hidden w-[40%] bg-[var(--color-cream)]/70 backdrop-blur-[2px] lg:block"
       />
       {/* Top fade — bleed the mosaic into the page top */}
       <div
@@ -352,32 +387,37 @@ export async function EditorialHero({
               role="search"
               aria-label="Buscar Biringas"
             >
-              <label className="group/city block flex-[0_0_38%] cursor-pointer border-r border-[var(--color-line-soft)] px-5 py-2.5 transition-colors duration-200 hover:bg-[var(--color-cream)]/40 focus-within:bg-[var(--color-cream)]/40">
+              <label className="group/city relative block flex-[0_0_38%] cursor-pointer border-r border-[var(--color-line-soft)] px-5 py-2.5 transition-colors duration-200 hover:bg-[var(--color-cream)]/40 focus-within:bg-[var(--color-cream)]/40">
                 <span className="block text-[9.5px] uppercase tracking-[0.16em] text-[var(--color-ink-soft)] opacity-80">
                   Ciudad
                 </span>
-                <span className="mt-0.5 flex items-center gap-1.5 text-sm font-medium text-[var(--color-ink)]">
-                  Toda Colombia
+                {/* Native select rendered visibly — appearance-none strips
+                    the default arrow and we draw our own chevron, but the
+                    selected option text *does* render so the value the user
+                    picks is always reflected. Was previously overlaid as
+                    `sr-only` (collapsed to 1×1 px), which made the dropdown
+                    anchor wrong on desktop and never showed the new value. */}
+                <div className="mt-0.5 relative flex items-center gap-1.5">
+                  <select
+                    data-testid="editorial-hero-search-city"
+                    name="city"
+                    className="w-full cursor-pointer appearance-none bg-transparent pr-5 text-sm font-medium text-[var(--color-ink)] focus:outline-none"
+                    aria-label="Ciudad"
+                    defaultValue=""
+                  >
+                    <option value="">Toda Colombia</option>
+                    <option value="Bogotá">Bogotá</option>
+                    <option value="Medellín">Medellín</option>
+                    <option value="Cartagena">Cartagena</option>
+                    <option value="Cali">Cali</option>
+                    <option value="Barranquilla">Barranquilla</option>
+                    <option value="Bucaramanga">Bucaramanga</option>
+                  </select>
                   <ChevronDown
-                    className="h-3 w-3 transition-transform duration-300 ease-[var(--ease-standard)] group-hover/city:rotate-180 group-focus-within/city:rotate-180"
+                    className="pointer-events-none absolute right-0 h-3 w-3 text-[var(--color-ink-soft)] transition-transform duration-300 ease-[var(--ease-standard)] group-hover/city:rotate-180 group-focus-within/city:rotate-180"
                     aria-hidden
                   />
-                </span>
-                <select
-                  data-testid="editorial-hero-search-city"
-                  name="city"
-                  className="sr-only"
-                  aria-label="Ciudad"
-                  defaultValue=""
-                >
-                  <option value="">Toda Colombia</option>
-                  <option value="Bogotá">Bogotá</option>
-                  <option value="Medellín">Medellín</option>
-                  <option value="Cartagena">Cartagena</option>
-                  <option value="Cali">Cali</option>
-                  <option value="Barranquilla">Barranquilla</option>
-                  <option value="Bucaramanga">Bucaramanga</option>
-                </select>
+                </div>
               </label>
               <label className="block flex-1 px-4 py-2.5">
                 <span className="block text-[9.5px] uppercase tracking-[0.16em] text-[var(--color-ink-soft)] opacity-80">
@@ -414,25 +454,38 @@ export async function EditorialHero({
               <span className="mr-1 text-[11px] uppercase tracking-[0.14em] text-[var(--color-ink-soft)]">
                 Sugerido
               </span>
-              {SUGGESTED.map((chip, idx) => {
-                const isPrimary = idx === 0;
+              {SUGGESTED.map((chip) => {
+                const isLive = chip.kind === "live";
+                const isDigital = chip.kind === "digital";
+                const Icon = SUGGESTED_ICON[chip.kind];
+                // Live → forest-filled CTA pill. Digital → outline pill
+                // (signals "remote, ethereal"). Location/quality → solid
+                // bone pill with a small leading icon. The taxonomy lets
+                // users F-scan: shape + colour says category before they
+                // read the label.
+                const cls = isLive
+                  ? "inline-flex items-center gap-1.5 rounded-full bg-[var(--color-forest)] px-3.5 py-1.5 text-xs font-semibold text-[var(--color-cream)] shadow-[0_4px_14px_-4px_rgba(31,61,46,0.45)] transition-[background,box-shadow,transform] duration-200 hover:-translate-y-[1px] hover:bg-[var(--color-forest-deep)] hover:shadow-[0_8px_22px_-6px_rgba(31,61,46,0.55)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-forest)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-cream)]"
+                  : isDigital
+                  ? "inline-flex items-center gap-1.5 rounded-full border border-dashed border-[var(--color-forest)]/45 bg-transparent px-3 py-1.5 text-xs font-medium text-[var(--color-forest)] transition-[background,border-color,color,transform] duration-200 ease-[var(--ease-standard)] hover:-translate-y-[1px] hover:border-[var(--color-forest)] hover:bg-[var(--color-forest)]/8 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-forest)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-cream)]"
+                  : "inline-flex items-center gap-1.5 rounded-full border border-[var(--color-line)] bg-[var(--color-cream-soft)]/70 px-3 py-1.5 text-xs text-[var(--color-ink)] transition-[background,border-color,color,transform] duration-200 ease-[var(--ease-standard)] hover:-translate-y-[1px] hover:border-[var(--color-ink)] hover:bg-[var(--color-ink)] hover:text-[var(--color-cream)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-forest)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-cream)]";
                 return (
                   <Link
                     key={chip.label}
                     data-testid={`editorial-hero-suggested-${chip.label.toLowerCase().replace(/\s+/g, "-")}`}
                     href={chip.href}
-                    className={
-                      isPrimary
-                        ? "inline-flex items-center gap-1.5 rounded-full bg-[var(--color-forest)] px-3.5 py-1.5 text-xs font-semibold text-[var(--color-cream)] shadow-[0_4px_14px_-4px_rgba(31,61,46,0.45)] transition-[background,box-shadow,transform] duration-200 hover:-translate-y-[1px] hover:bg-[var(--color-forest-deep)] hover:shadow-[0_8px_22px_-6px_rgba(31,61,46,0.55)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-forest)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-cream)]"
-                        : "inline-flex items-center rounded-full border border-[var(--color-line)] bg-transparent px-3 py-1.5 text-xs text-[var(--color-ink)] transition-[background,border-color,color,transform] duration-200 ease-[var(--ease-standard)] hover:-translate-y-[1px] hover:border-[var(--color-ink)] hover:bg-[var(--color-ink)] hover:text-[var(--color-cream)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-forest)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-cream)]"
-                    }
+                    className={cls}
                   >
-                    {isPrimary && (
+                    {isLive ? (
                       <span
                         aria-hidden
-                        className="h-1.5 w-1.5 rounded-full bg-[#A8E6BA] motion-safe:motion-hero-pulse"
-                      />
-                    )}
+                        className="relative inline-flex h-1.5 w-1.5 items-center justify-center"
+                      >
+                        <span className="absolute inset-0 rounded-full bg-[#A8E6BA] opacity-70 motion-safe:motion-pulse-ring" />
+                        <span className="relative inline-block h-1.5 w-1.5 rounded-full bg-[#A8E6BA] motion-safe:motion-hero-pulse" />
+                      </span>
+                    ) : Icon ? (
+                      <Icon className="h-3 w-3" aria-hidden />
+                    ) : null}
                     {chip.label}
                   </Link>
                 );
@@ -473,9 +526,10 @@ export async function EditorialHero({
           </div>
 
           {/* Trust block — promoted in this iteration so verification reads
-              as the hero's primary value prop. Avatars 2x larger, headline
-              bumped, sub-copy spans wider. Sits inside a soft cream-tinted
-              card so it reads as a discrete editorial unit. */}
+              as the hero's primary value prop. Avatars are real verified-
+              listing micro-portraits (taken from the same mosaic dataset),
+              with a shield-check corner-nested onto the last bubble so the
+              claim "verificación humana" is visually anchored to faces. */}
           <div
             data-testid="editorial-hero-trust"
             className="group/trust motion-safe:motion-hero-reveal relative mt-11 flex items-center gap-5 overflow-hidden rounded-2xl border border-[var(--color-line-soft)] bg-[var(--color-cream-soft)]/70 p-4 transition-[border-color,box-shadow,transform] duration-300 ease-[var(--ease-standard)] hover:-translate-y-[2px] hover:border-[var(--color-gold)]/40 hover:shadow-[0_18px_40px_-22px_rgba(20,28,24,0.25)] sm:gap-6 sm:p-5"
@@ -500,24 +554,49 @@ export async function EditorialHero({
               className="pointer-events-none absolute bottom-2 right-2 h-3 w-3 origin-bottom-right scale-0 border-b border-r border-[var(--color-gold)] opacity-0 transition-[opacity,transform] duration-300 ease-[var(--ease-standard)] group-hover/trust:scale-100 group-hover/trust:opacity-80"
             />
 
-            <div className="flex items-center">
-              {[
-                "#3B342B",
-                "#1F3D2E",
-                "#C8A676",
-                "#C9837A",
-              ].map((bg, i) => (
+            <div className="relative flex shrink-0 items-center">
+              {mosaic.slice(0, 4).map((listing, i) => (
                 <span
-                  key={bg}
+                  key={listing.id}
                   aria-hidden
-                  className="block h-14 w-14 rounded-full border-[3px] border-[var(--color-cream)] shadow-[0_2px_6px_rgba(31,61,46,0.18)] transition-transform duration-300 ease-[var(--ease-standard)] group-hover/trust:translate-x-[2px]"
+                  className="relative block h-14 w-14 overflow-hidden rounded-full border-[3px] border-[var(--color-cream)] shadow-[0_2px_6px_rgba(31,61,46,0.18)] transition-transform duration-300 ease-[var(--ease-standard)] group-hover/trust:translate-x-[2px]"
                   style={{
-                    background: bg,
                     marginLeft: i === 0 ? 0 : -16,
                     transitionDelay: `${i * 35}ms`,
+                    zIndex: 4 - i,
                   }}
-                />
+                >
+                  <Image
+                    src={listing.mainImage}
+                    alt=""
+                    fill
+                    sizes="56px"
+                    className="object-cover"
+                  />
+                </span>
               ))}
+              {/* Fallback solid bubbles if listings haven't loaded yet —
+                  preserves the visual rhythm and prevents layout shift. */}
+              {mosaic.length === 0 &&
+                ["#3B342B", "#1F3D2E", "#C8A676", "#C9837A"].map((bg, i) => (
+                  <span
+                    key={bg}
+                    aria-hidden
+                    className="block h-14 w-14 rounded-full border-[3px] border-[var(--color-cream)] shadow-[0_2px_6px_rgba(31,61,46,0.18)]"
+                    style={{
+                      background: bg,
+                      marginLeft: i === 0 ? 0 : -16,
+                    }}
+                  />
+                ))}
+              {/* Shield-check corner badge on the last (front-most) bubble */}
+              <span
+                aria-label="Verificada"
+                className="absolute -bottom-1 right-0 inline-flex h-6 w-6 items-center justify-center rounded-full bg-[var(--color-forest)] text-[var(--color-cream)] shadow-[0_4px_10px_-2px_rgba(31,61,46,0.55)] ring-2 ring-[var(--color-cream)]"
+                style={{ zIndex: 10 }}
+              >
+                <ShieldCheck className="h-3.5 w-3.5" aria-hidden />
+              </span>
             </div>
             <p className="font-[var(--font-serif)] text-[14px] leading-[1.45] text-[var(--color-ink-soft)] sm:text-[15.5px]">
               <strong className="block font-semibold text-[var(--color-ink)] sm:text-[17px]">
@@ -561,28 +640,45 @@ export async function EditorialHero({
         </div>
       </div>
 
-      {/* Bottom marquee */}
+      {/* Bottom marquee — auto-drifting on rest, but city entries are real
+          anchors so clicking "Bogotá · 142 activas" auto-filters the catalog.
+          The marquee pauses on hover so users can read + click without the
+          tape sliding the target out from under them. */}
       <div
         data-testid="editorial-hero-marquee"
-        className="relative z-[6] overflow-hidden border-y border-[var(--color-line)] bg-[var(--color-cream)] py-4"
+        className="group/marquee relative z-[6] overflow-hidden border-y border-[var(--color-line)] bg-[var(--color-cream)] py-4"
       >
         <div
-          className="flex w-[200%] gap-15 whitespace-nowrap motion-safe:motion-hero-marquee"
-          aria-hidden
+          className="flex w-[200%] gap-15 whitespace-nowrap motion-safe:motion-hero-marquee group-hover/marquee:[animation-play-state:paused]"
         >
           {[0, 1].map((dup) =>
-            MARQUEE_ITEMS.map((item) => (
-              <span
-                key={`${dup}-${item}`}
-                className="inline-flex items-center gap-3.5 text-xs uppercase tracking-[0.18em] text-[var(--color-ink-soft)]"
-              >
-                {item}
-                <span
-                  aria-hidden
-                  className="block h-1.5 w-1.5 rotate-45 bg-[var(--color-gold)] shadow-[0_0_0_2px_rgba(200,166,118,0.18)]"
-                />
-              </span>
-            )),
+            MARQUEE_ITEMS.map((item) => {
+              const inner = (
+                <>
+                  {item.label}
+                  <span
+                    aria-hidden
+                    className="block h-1.5 w-1.5 rotate-45 bg-[var(--color-gold)] shadow-[0_0_0_2px_rgba(200,166,118,0.18)]"
+                  />
+                </>
+              );
+              const cls =
+                "inline-flex items-center gap-3.5 text-xs uppercase tracking-[0.18em] text-[var(--color-ink-soft)]";
+              return item.href ? (
+                <Link
+                  key={`${dup}-${item.label}`}
+                  href={item.href}
+                  className={`${cls} transition-colors duration-200 ease-[var(--ease-standard)] hover:text-[var(--color-forest)]`}
+                  aria-label={`Ver ${item.label}`}
+                >
+                  {inner}
+                </Link>
+              ) : (
+                <span key={`${dup}-${item.label}`} className={cls} aria-hidden>
+                  {inner}
+                </span>
+              );
+            }),
           )}
         </div>
       </div>

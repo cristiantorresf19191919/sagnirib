@@ -68,9 +68,19 @@ export function HeroMosaicCard({
           />
         </div>
 
+        {/* Forest-tinted bottom scrim — guarantees WCAG-AA contrast for the
+            cream name + uppercase neighborhood line against any uploaded
+            photograph (bright skies, light fabric, etc). The previous flat
+            black/55 was too uniform and competed with the brand palette. */}
         <div
           aria-hidden
-          className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-[rgba(0,0,0,0.55)]"
+          className="absolute inset-0 bg-gradient-to-t from-[rgba(20,38,30,0.82)] via-[rgba(20,38,30,0.28)] to-transparent"
+        />
+        {/* Subtle top vignette so the rating ribbon also reads cleanly
+            against pale-sky photographs. */}
+        <div
+          aria-hidden
+          className="absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-[rgba(20,38,30,0.35)] to-transparent"
         />
         <div
           aria-hidden

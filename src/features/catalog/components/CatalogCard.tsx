@@ -164,8 +164,27 @@ export function CatalogCard({
 
       <div className="relative flex flex-1 flex-col gap-1.5 px-1 pt-3">
         <header className="flex items-baseline justify-between gap-2">
-          <h3 className="truncate text-base font-semibold text-[var(--color-foreground)]">
-            {listing.name}
+          <h3 className="flex min-w-0 items-baseline gap-1.5 truncate text-base font-semibold text-[var(--color-foreground)]">
+            <span className="truncate">{listing.name}</span>
+            {/* In-text live indicator — separates "currently reachable"
+                from the corner pill so the signal travels with the name
+                even when the card image is out of view in a long list. */}
+            {listing.availableNow && (
+              <span
+                aria-label="En línea ahora"
+                title="En línea ahora"
+                className="relative inline-flex h-1.5 w-1.5 shrink-0 items-center justify-center"
+              >
+                <span
+                  aria-hidden
+                  className="absolute inset-0 rounded-full bg-[#4D9B6E] opacity-70 motion-safe:motion-pulse-ring"
+                />
+                <span
+                  aria-hidden
+                  className="relative inline-block h-1.5 w-1.5 rounded-full bg-[#4D9B6E] motion-safe:motion-hero-pulse"
+                />
+              </span>
+            )}
           </h3>
           <span className="shrink-0 text-xs text-[var(--color-text-muted)]">
             {listing.age} a.
@@ -264,9 +283,25 @@ function ListCard({
       <div className="relative flex flex-1 flex-col justify-between gap-1.5 py-0.5">
         <div className="flex flex-col gap-1">
           <header className="flex items-baseline justify-between gap-2">
-            <h3 className="truncate text-sm font-semibold text-[var(--color-foreground)] sm:text-base">
-              {listing.name}
-              <span className="ml-2 text-xs font-normal text-[var(--color-text-muted)]">
+            <h3 className="flex min-w-0 items-baseline gap-1.5 text-sm font-semibold text-[var(--color-foreground)] sm:text-base">
+              <span className="truncate">{listing.name}</span>
+              {listing.availableNow && (
+                <span
+                  aria-label="En línea ahora"
+                  title="En línea ahora"
+                  className="relative inline-flex h-1.5 w-1.5 shrink-0 items-center justify-center"
+                >
+                  <span
+                    aria-hidden
+                    className="absolute inset-0 rounded-full bg-[#4D9B6E] opacity-70 motion-safe:motion-pulse-ring"
+                  />
+                  <span
+                    aria-hidden
+                    className="relative inline-block h-1.5 w-1.5 rounded-full bg-[#4D9B6E] motion-safe:motion-hero-pulse"
+                  />
+                </span>
+              )}
+              <span className="ml-1 text-xs font-normal text-[var(--color-text-muted)]">
                 {listing.age} a.
               </span>
             </h3>
