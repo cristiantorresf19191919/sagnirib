@@ -38,10 +38,11 @@ export function CatalogCard({
   featured = false,
   view = "grid3",
 }: CatalogCardProps) {
-  // Make featured cards visibly distinct — the previous 1px @ 40% opacity ring
-  // was barely perceptible. 2px ring + dedicated pill conveys premium status.
+  // Make featured cards visibly distinct — a double ring (inner cream
+  // hairline + outer gold) plus an ambient shadow that intensifies on
+  // hover. Reads as "this is curated" without resorting to a coloured fill.
   const featuredCls = featured
-    ? "ring-2 ring-[var(--color-brand-warn)]/65"
+    ? "ring-1 ring-[var(--color-gold)]/55 ring-offset-2 ring-offset-[var(--color-background)] shadow-[0_0_0_1px_rgba(255,247,232,0.9),0_18px_44px_-22px_rgba(200,166,118,0.55)] hover:shadow-[0_0_0_1px_rgba(255,247,232,0.95),0_26px_60px_-22px_rgba(200,166,118,0.7)]"
     : "";
 
   if (view === "list") {
@@ -88,9 +89,11 @@ export function CatalogCard({
           />
         </div>
 
+        {/* Two-layer hover overlay — a forest-tinted scrim at the bottom
+            for the meta + a thin gold rim at the top for editorial polish. */}
         <div
           aria-hidden
-          className="pointer-events-none absolute inset-0 z-[5] bg-gradient-to-t from-black/25 via-transparent to-transparent opacity-0 transition-opacity duration-300 ease-[var(--ease-standard)] group-hover:opacity-100"
+          className="pointer-events-none absolute inset-0 z-[5] bg-gradient-to-t from-[rgba(20,28,24,0.32)] via-transparent to-[rgba(200,166,118,0.10)] opacity-0 transition-opacity duration-300 ease-[var(--ease-standard)] group-hover:opacity-100"
         />
 
         {featured && (
@@ -104,7 +107,7 @@ export function CatalogCard({
 
         <div className="absolute left-3 top-3 z-10 flex flex-col gap-1.5">
           {featured && (
-            <span className="inline-flex items-center gap-1 rounded-full bg-[var(--color-brand-warn)]/95 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--color-surface)] shadow-[var(--shadow-sm)]">
+            <span className="inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-[var(--color-gold-deep)] via-[var(--color-gold)] to-[var(--color-gold-deep)] px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--color-cream)] shadow-[0_4px_14px_-4px_rgba(200,166,118,0.6)] ring-1 ring-[rgba(255,247,232,0.45)]">
               <Star className="h-2.5 w-2.5 fill-current" aria-hidden />
               Destacada
             </span>
@@ -127,9 +130,13 @@ export function CatalogCard({
         </div>
 
         <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center">
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--color-surface)]/95 px-3.5 py-1.5 text-xs font-semibold text-[var(--color-foreground)] opacity-0 shadow-[var(--shadow-md)] backdrop-blur-sm transition-opacity duration-200 ease-[var(--ease-standard)] group-hover:opacity-100">
-            <Eye className="h-3.5 w-3.5" aria-hidden />
+          <span className="inline-flex translate-y-2 items-center gap-1.5 rounded-full bg-[var(--color-surface)]/95 px-4 py-2 text-xs font-semibold text-[var(--color-foreground)] opacity-0 shadow-[0_12px_28px_-10px_rgba(20,28,24,0.35)] ring-1 ring-[var(--color-gold)]/40 backdrop-blur-sm transition-[opacity,transform] duration-300 ease-[var(--ease-standard)] group-hover:translate-y-0 group-hover:opacity-100">
+            <Eye className="h-3.5 w-3.5 text-[var(--color-brand-primary)]" aria-hidden />
             Ver anuncio
+            <span
+              aria-hidden
+              className="ml-1 inline-block h-1 w-1 rotate-45 bg-[var(--color-gold)]"
+            />
           </span>
         </div>
 

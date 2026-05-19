@@ -124,9 +124,19 @@ export function Footer() {
               <li key={city}>
                 <Link
                   href={`/explorar?city=${encodeURIComponent(city)}`}
-                  className="group/city inline-flex items-center gap-1 text-[var(--color-text-muted)] transition-colors hover:text-[var(--color-brand-primary)]"
+                  className="group/city inline-flex items-center gap-1.5 text-[var(--color-text-muted)] transition-colors hover:text-[var(--color-brand-primary)]"
                 >
-                  {city}
+                  <span
+                    aria-hidden
+                    className="inline-block h-1 w-1 rotate-45 bg-[var(--color-gold)]/0 transition-[background,transform] duration-200 ease-[var(--ease-standard)] group-hover/city:bg-[var(--color-gold)] group-hover/city:scale-125"
+                  />
+                  <span className="relative">
+                    {city}
+                    <span
+                      aria-hidden
+                      className="pointer-events-none absolute -bottom-0.5 left-0 h-px w-full origin-left scale-x-0 bg-[var(--color-brand-primary)]/50 transition-transform duration-300 ease-[var(--ease-standard)] group-hover/city:scale-x-100"
+                    />
+                  </span>
                   <ArrowUpRight
                     className="h-3 w-3 opacity-0 transition-[opacity,transform] duration-200 ease-[var(--ease-standard)] group-hover/city:translate-x-0.5 group-hover/city:-translate-y-0.5 group-hover/city:opacity-100"
                     aria-hidden

@@ -29,32 +29,57 @@ export async function FeaturedStrip() {
   return (
     <section
       aria-labelledby="featured-title"
-      className="border-b border-[var(--color-border)] bg-[var(--color-background)] py-14 sm:py-18"
+      className="relative isolate overflow-hidden border-b border-[var(--color-border)] bg-[var(--color-background)] py-14 sm:py-18"
     >
-      <Container width="wide" className="flex flex-col gap-6">
+      {/* Ambient gradient mesh — same vocabulary as the hero so the page
+          reads as one continuous editorial spread. */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 -z-10 motion-safe:motion-aurora opacity-60"
+        style={{
+          background:
+            "radial-gradient(40% 35% at 90% 10%, rgba(200,166,118,0.10), transparent 70%), radial-gradient(45% 40% at 5% 90%, rgba(31,61,46,0.07), transparent 70%)",
+        }}
+      />
+
+      <Container width="wide" className="flex flex-col gap-7">
         <header className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between sm:gap-6">
-          <div className="flex flex-col gap-2">
-            <span className="flex items-center gap-3 text-[11px] font-semibold uppercase tracking-[0.22em] text-[var(--color-brand-primary)]">
+          <div className="flex flex-col gap-3">
+            {/* Editorial flourish — gold gradient rule + rotated diamond +
+                small caps eyebrow. Reads as a magazine chapter header. */}
+            <span className="inline-flex items-center gap-3 text-[11px] font-semibold uppercase tracking-[0.24em] text-[var(--color-brand-primary)]">
               <span
                 aria-hidden
-                className="inline-block h-px w-8 bg-gradient-to-r from-[var(--color-gold)] to-transparent"
+                className="inline-block h-px w-10 bg-gradient-to-r from-transparent via-[var(--color-gold)] to-[var(--color-brand-primary)]/40"
+              />
+              <span
+                aria-hidden
+                className="inline-block h-1.5 w-1.5 rotate-45 bg-[var(--color-gold)] shadow-[0_0_0_3px_rgba(200,166,118,0.18)]"
               />
               Destacadas
+              <span
+                aria-hidden
+                className="inline-block h-px w-10 bg-gradient-to-l from-transparent via-[var(--color-gold)] to-[var(--color-brand-primary)]/40"
+              />
             </span>
             <h2
               id="featured-title"
-              className="text-2xl font-bold leading-tight tracking-tight text-[var(--color-foreground)] sm:text-3xl"
+              className="font-[var(--font-display)] text-[clamp(28px,3.8vw,44px)] leading-[1.02] tracking-[-0.025em] text-[var(--color-foreground)]"
             >
-              Perfiles verificados que están convirtiendo esta semana
+              Perfiles verificados que están{" "}
+              <span className="italic font-[360] text-[var(--color-brand-primary)]">
+                convirtiendo
+              </span>{" "}
+              esta semana
             </h2>
-            <p className="text-sm text-[var(--color-text-muted)]">
-              Curadas por reputación y volumen de reseñas — sólo entran si lo
-              han ganado.
+            <p className="max-w-xl font-[var(--font-serif)] text-[15px] leading-[1.55] text-[var(--color-text-muted)]">
+              Curadas por reputación y volumen de reseñas —{" "}
+              <em>sólo entran si lo han ganado.</em>
             </p>
           </div>
           <Link
             href="/explorar"
-            className="group/seeall inline-flex items-center gap-1.5 self-start text-sm font-semibold text-[var(--color-brand-primary)] transition-colors duration-200 hover:text-[var(--color-brand-primary-strong)] sm:self-auto"
+            className="group/seeall inline-flex items-center gap-1.5 self-start rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-2 text-sm font-semibold text-[var(--color-brand-primary)] transition-[border-color,background,transform] duration-200 ease-[var(--ease-standard)] hover:-translate-y-[1px] hover:border-[var(--color-brand-primary)]/40 hover:bg-[var(--color-background-elevated)] sm:self-auto"
           >
             <span className="relative">
               Ver todo el catálogo
@@ -70,15 +95,31 @@ export async function FeaturedStrip() {
           </Link>
         </header>
 
+        {/* Thin double-rule divider, magazine-style. The top hairline is
+            full-width; the bottom is short and offset right with a diamond
+            mark — an old print typographer's trick that adds a tactile sense
+            of structure. */}
+        <div aria-hidden className="relative h-3">
+          <span className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[var(--color-border)] to-transparent" />
+          <span className="absolute right-[30%] top-1.5 h-px w-24 bg-[var(--color-gold)]/40" />
+          <span className="absolute right-[30%] top-1 inline-block h-1.5 w-1.5 -translate-x-1/2 rotate-45 bg-[var(--color-gold)]" />
+        </div>
+
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {featured.map((listing, idx) => (
-            <CatalogCard
+            <div
               key={listing.id}
-              listing={listing}
-              featured
-              priority={idx === 0}
-              view="grid3"
-            />
+              data-rise
+              className="motion-safe:motion-view-rise"
+              style={{ animationDelay: `${idx * 80}ms` }}
+            >
+              <CatalogCard
+                listing={listing}
+                featured
+                priority={idx === 0}
+                view="grid3"
+              />
+            </div>
           ))}
         </div>
       </Container>

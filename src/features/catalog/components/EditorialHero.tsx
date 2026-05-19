@@ -107,6 +107,29 @@ export async function EditorialHero({
       aria-labelledby="editorial-hero-title"
       className="relative isolate overflow-hidden border-b border-[var(--color-line-soft)] bg-[var(--color-cream)] text-[var(--color-ink)] lg:min-h-[720px]"
     >
+      {/* Aurora — three soft radial blooms layered behind the cream paper,
+          each drifting on its own clock so the field never repeats. Sits
+          below the mosaic so the photography remains the focal point. */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 -z-10 motion-safe:motion-aurora"
+        style={{
+          background:
+            "radial-gradient(60% 50% at 18% 30%, rgba(31,61,46,0.10), transparent 70%), radial-gradient(45% 40% at 80% 12%, rgba(200,166,118,0.14), transparent 65%), radial-gradient(50% 45% at 55% 85%, rgba(124,90,78,0.10), transparent 70%)",
+        }}
+      />
+      {/* Second aurora layer drifts on a different timeline */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 -z-10 motion-safe:motion-aurora"
+        style={{
+          animationDelay: "-14s",
+          animationDuration: "36s",
+          background:
+            "radial-gradient(35% 30% at 12% 75%, rgba(200,166,118,0.08), transparent 70%), radial-gradient(40% 35% at 88% 65%, rgba(31,61,46,0.08), transparent 70%)",
+        }}
+      />
+
       {/* Mosaic — desktop only, absolutely placed on the right.
           `pointer-events-none` removed so each tile's `Link` is clickable;
           the column wrappers and their backdrops still pass clicks through
@@ -193,7 +216,11 @@ export async function EditorialHero({
             <div className="inline-flex items-center gap-3.5">
               <span
                 aria-hidden
-                className="h-px w-8 bg-[var(--color-ink-soft)] opacity-50"
+                className="h-px w-8 bg-gradient-to-r from-transparent via-[var(--color-ink-soft)] to-[var(--color-gold)] opacity-70"
+              />
+              <span
+                aria-hidden
+                className="inline-block h-1.5 w-1.5 rotate-45 bg-[var(--color-gold)] shadow-[0_0_0_3px_rgba(200,166,118,0.18)]"
               />
               <span className="text-[11px] uppercase tracking-[0.22em] text-[var(--color-ink-soft)]">
                 {location}
@@ -218,7 +245,10 @@ export async function EditorialHero({
                 delay={0.4}
                 className="bottom-3 -right-2 left-0 -z-10 h-3 -skew-x-12 bg-[var(--color-gold)] opacity-30"
               />
-              <span className="font-[var(--font-display)] italic font-[320]">
+              {/* Gold sheen swept through Fraunces italic — the headline's
+                  signature moment. Falls back to flat ink at SSR and for
+                  reduced-motion users (utility resets text-fill there). */}
+              <span className="font-[var(--font-display)] italic font-[320] motion-safe:motion-gold-sheen">
                 tu Biringa
               </span>
             </span>
@@ -229,6 +259,12 @@ export async function EditorialHero({
                 className="bottom-2 -right-1.5 left-0 -z-10 h-2 -skew-x-12 bg-[var(--color-gold)] opacity-55"
               />
               <span>ideal.</span>
+              {/* Period flourish — a tiny gold diamond hangs off the end of
+                  the headline. Editorial finishing touch. */}
+              <span
+                aria-hidden
+                className="ml-3 inline-block h-2 w-2 rotate-45 align-middle bg-[var(--color-gold)] shadow-[0_0_0_4px_rgba(200,166,118,0.18)]"
+              />
             </span>
           </h1>
 
@@ -250,8 +286,11 @@ export async function EditorialHero({
             <div className="flex items-center gap-2.5">
               <span
                 aria-hidden
-                className="h-2 w-2 rounded-full bg-[#4D9B6E] motion-safe:motion-hero-pulse"
-              />
+                className="relative inline-flex h-2 w-2 items-center justify-center"
+              >
+                <span className="absolute inset-0 rounded-full bg-[#4D9B6E] opacity-60 motion-safe:motion-pulse-ring" />
+                <span className="relative inline-block h-2 w-2 rounded-full bg-[#4D9B6E] motion-safe:motion-hero-pulse" />
+              </span>
               <span className="text-[13px] text-[var(--color-ink)]">
                 <strong className="font-semibold tabular-nums">
                   <CountUp to={38} />
@@ -439,9 +478,28 @@ export async function EditorialHero({
               card so it reads as a discrete editorial unit. */}
           <div
             data-testid="editorial-hero-trust"
-            className="motion-safe:motion-hero-reveal mt-11 flex items-center gap-5 rounded-2xl border border-[var(--color-line-soft)] bg-[var(--color-cream-soft)]/70 p-4 sm:gap-6 sm:p-5"
+            className="group/trust motion-safe:motion-hero-reveal relative mt-11 flex items-center gap-5 overflow-hidden rounded-2xl border border-[var(--color-line-soft)] bg-[var(--color-cream-soft)]/70 p-4 transition-[border-color,box-shadow,transform] duration-300 ease-[var(--ease-standard)] hover:-translate-y-[2px] hover:border-[var(--color-gold)]/40 hover:shadow-[0_18px_40px_-22px_rgba(20,28,24,0.25)] sm:gap-6 sm:p-5"
             style={{ animationDelay: "0.6s" }}
           >
+            {/* Decorative gold corner brackets — drawn in only on hover.
+                Magazine-grade callout cue that hints at "this is curated". */}
+            <span
+              aria-hidden
+              className="pointer-events-none absolute left-2 top-2 h-3 w-3 origin-top-left scale-0 border-l border-t border-[var(--color-gold)] opacity-0 transition-[opacity,transform] duration-300 ease-[var(--ease-standard)] group-hover/trust:scale-100 group-hover/trust:opacity-80"
+            />
+            <span
+              aria-hidden
+              className="pointer-events-none absolute right-2 top-2 h-3 w-3 origin-top-right scale-0 border-r border-t border-[var(--color-gold)] opacity-0 transition-[opacity,transform] duration-300 ease-[var(--ease-standard)] group-hover/trust:scale-100 group-hover/trust:opacity-80"
+            />
+            <span
+              aria-hidden
+              className="pointer-events-none absolute bottom-2 left-2 h-3 w-3 origin-bottom-left scale-0 border-b border-l border-[var(--color-gold)] opacity-0 transition-[opacity,transform] duration-300 ease-[var(--ease-standard)] group-hover/trust:scale-100 group-hover/trust:opacity-80"
+            />
+            <span
+              aria-hidden
+              className="pointer-events-none absolute bottom-2 right-2 h-3 w-3 origin-bottom-right scale-0 border-b border-r border-[var(--color-gold)] opacity-0 transition-[opacity,transform] duration-300 ease-[var(--ease-standard)] group-hover/trust:scale-100 group-hover/trust:opacity-80"
+            />
+
             <div className="flex items-center">
               {[
                 "#3B342B",
@@ -452,10 +510,11 @@ export async function EditorialHero({
                 <span
                   key={bg}
                   aria-hidden
-                  className="block h-14 w-14 rounded-full border-[3px] border-[var(--color-cream)] shadow-[0_2px_6px_rgba(31,61,46,0.18)]"
+                  className="block h-14 w-14 rounded-full border-[3px] border-[var(--color-cream)] shadow-[0_2px_6px_rgba(31,61,46,0.18)] transition-transform duration-300 ease-[var(--ease-standard)] group-hover/trust:translate-x-[2px]"
                   style={{
                     background: bg,
                     marginLeft: i === 0 ? 0 : -16,
+                    transitionDelay: `${i * 35}ms`,
                   }}
                 />
               ))}
@@ -520,7 +579,7 @@ export async function EditorialHero({
                 {item}
                 <span
                   aria-hidden
-                  className="block h-1 w-1 rounded-full bg-[var(--color-gold)]"
+                  className="block h-1.5 w-1.5 rotate-45 bg-[var(--color-gold)] shadow-[0_0_0_2px_rgba(200,166,118,0.18)]"
                 />
               </span>
             )),

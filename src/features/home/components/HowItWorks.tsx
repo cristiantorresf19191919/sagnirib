@@ -150,6 +150,23 @@ export function HowItWorks() {
       aria-labelledby="how-title"
       className="relative isolate scroll-mt-24 overflow-hidden border-y border-[var(--color-border)]/60 bg-[var(--color-background-elevated)] py-20 sm:py-24 lg:py-28"
     >
+      {/* Ambient aurora — two soft gold + forest blooms that drift across
+          the band. Anchors the section as the spread's centerpiece without
+          competing with the cards for attention. */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 -z-10 motion-safe:motion-aurora opacity-70"
+        style={{
+          background:
+            "radial-gradient(45% 60% at 18% 20%, rgba(200,166,118,0.14), transparent 70%), radial-gradient(55% 55% at 82% 80%, rgba(47,93,67,0.12), transparent 70%)",
+        }}
+      />
+      {/* Faint top hairline gradient — gives the section a defined upper edge */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-px bg-gradient-to-r from-transparent via-[var(--color-gold)]/40 to-transparent"
+      />
+
       <Sparkle
         tone="primary"
         size={36}
@@ -164,26 +181,34 @@ export function HowItWorks() {
 
       <Container width="wide">
         <header className="mx-auto max-w-3xl text-center">
-          <span className="inline-flex items-center gap-2 rounded-full bg-[var(--color-surface)] px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.28em] text-[var(--color-text-muted)] ring-1 ring-[var(--color-border)]">
+          <span className="inline-flex items-center gap-3 rounded-full bg-[var(--color-surface)] px-4 py-1.5 text-[11px] font-semibold uppercase tracking-[0.28em] text-[var(--color-text-muted)] ring-1 ring-[var(--color-border)]">
             <span
               aria-hidden
-              className="h-1.5 w-1.5 rounded-full bg-[var(--color-brand-primary)]"
+              className="inline-block h-1.5 w-1.5 rotate-45 bg-[var(--color-gold)] shadow-[0_0_0_3px_rgba(200,166,118,0.18)]"
             />
             Cómo funciona
+            <span
+              aria-hidden
+              className="inline-block h-1.5 w-1.5 rotate-45 bg-[var(--color-brand-primary)]/70"
+            />
           </span>
           <h2
             id="how-title"
-            className="mt-5 text-3xl font-bold leading-[1.05] tracking-tight text-[var(--color-foreground)] sm:text-4xl lg:text-5xl"
+            className="mt-5 font-[var(--font-display)] text-[clamp(30px,4.2vw,52px)] font-[370] leading-[1.02] tracking-[-0.028em] text-[var(--color-foreground)]"
           >
             Tres pasos para encontrar la{" "}
-            <span className="text-[var(--color-brand-primary)]">
+            <span className="relative inline-block italic font-[340] text-[var(--color-brand-primary)]">
               compañía adecuada
+              <span
+                aria-hidden
+                className="pointer-events-none absolute -bottom-1 left-0 h-[3px] w-full -skew-x-12 bg-[var(--color-gold)] opacity-45"
+              />
             </span>
             .
           </h2>
-          <p className="mx-auto mt-5 max-w-xl text-base leading-relaxed text-[var(--color-text-muted)]">
-            Reservar es simple. Antes vamos por la confianza — verificación,
-            consentimiento, transparencia.
+          <p className="mx-auto mt-5 max-w-xl font-[var(--font-serif)] text-[16px] leading-[1.55] text-[var(--color-text-muted)]">
+            Reservar es simple. Antes vamos por la confianza —{" "}
+            <em>verificación, consentimiento, transparencia.</em>
           </p>
         </header>
 
