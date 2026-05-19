@@ -10,6 +10,7 @@ import { PriceTag } from "@/shared/ui/PriceTag";
 import { RatingBadge } from "@/shared/ui/RatingBadge";
 
 import { formatPricePerHour } from "@/features/biringas/format";
+import { StoryTimestamp } from "@/features/biringas/components/StoryTimestamp";
 
 import type { CatalogView } from "../lib/parse-filters";
 
@@ -25,22 +26,6 @@ interface CatalogCardProps {
 
 const HREF = (slug: string) => `/p/${slug}`;
 
-const TIME_FORMAT = new Intl.DateTimeFormat("es-CO", {
-  hour: "numeric",
-  minute: "2-digit",
-  hour12: true,
-});
-
-function formatStoryTime(iso: string): string {
-  try {
-    const d = new Date(iso);
-    if (Number.isNaN(d.getTime())) return "";
-    return TIME_FORMAT.format(d).toLowerCase();
-  } catch {
-    return "";
-  }
-}
-
 const SIZES_GRID =
   "(max-width: 640px) 100vw, (max-width: 1024px) 50vw, (max-width: 1280px) 33vw, 280px";
 const SIZES_LIST = "(max-width: 640px) 35vw, 160px";
@@ -53,7 +38,6 @@ export function CatalogCard({
   featured = false,
   view = "grid3",
 }: CatalogCardProps) {
-  const storyLabel = listing.storyAt ? formatStoryTime(listing.storyAt) : "";
   // Make featured cards visibly distinct — the previous 1px @ 40% opacity ring
   // was barely perceptible. 2px ring + dedicated pill conveys premium status.
   const featuredCls = featured
@@ -65,7 +49,6 @@ export function CatalogCard({
       <ListCard
         listing={listing}
         priority={priority}
-        storyLabel={storyLabel}
         featuredCls={featuredCls}
       />
     );
@@ -134,13 +117,8 @@ export function CatalogCard({
               />
               Disponible ahora
             </span>
-          ) : storyLabel ? (
-            <span className="rounded-full bg-[var(--color-surface)]/90 px-2.5 py-1 text-[10px] font-medium uppercase tracking-[0.16em] text-[var(--color-foreground)] shadow-[var(--shadow-sm)] backdrop-blur-sm">
-              <span className="block text-[8px] tracking-[0.22em] text-[var(--color-text-muted)]">
-                Grabada a las
-              </span>
-              {storyLabel}
-            </span>
+          ) : listing.storyAt ? (
+            <StoryTimestamp storyAt={listing.storyAt} />
           ) : null}
         </div>
 
@@ -230,14 +208,12 @@ export function CatalogCard({
 interface ListCardProps {
   listing: BiringaListing;
   priority: boolean;
-  storyLabel: string;
   featuredCls: string;
 }
 
 function ListCard({
   listing,
   priority,
-  storyLabel,
   featuredCls,
 }: ListCardProps) {
   return (
@@ -304,10 +280,17 @@ function ListCard({
           </p>
         </div>
         <div className="flex items-end justify-between gap-2">
-          <span className="truncate text-[11px] text-[var(--color-text-muted)]">
-            {listing.city}
-            {listing.neighborhood ? ` · ${listing.neighborhood}` : ""}
-            {storyLabel ? ` · ${storyLabel}` : ""}
+          <span className="inline-flex min-w-0 items-center gap-1.5 truncate text-[11px] text-[var(--color-text-muted)]">
+            <span className="truncate">
+              {listing.city}
+              {listing.neighborhood ? ` · ${listing.neighborhood}` : ""}
+            </span>
+            {listing.storyAt && (
+              <>
+                <span aria-hidden>·</span>
+                <StoryTimestamp storyAt={listing.storyAt} variant="inline" />
+              </>
+            )}
           </span>
           <PriceTag value={formatPricePerHour(listing.pricePerHour)} size="sm" />
         </div>
