@@ -1,6 +1,9 @@
 import "server-only";
 
-import type { BookingRequestInput } from "@/server/biringas/booking-types";
+import type {
+  BookingRequestInput,
+  BookingRequestRecord,
+} from "@/server/biringas/booking-types";
 
 /**
  * Firestore adapter for booking requests — STUB.
@@ -27,6 +30,31 @@ export async function requestBookingRaw(
 ): Promise<{ id: string }> {
   throw new BookingDisabledError(
     "Las reservas en Firestore aún no están implementadas. Configura la app en modo mock o implementa el adaptador.",
+  );
+}
+
+/**
+ * Inbox query — returns an empty list until the Firestore collection +
+ * security rules ship. The seller-dashboard inbox renders a friendly
+ * empty state in that case (same path users without bookings see).
+ */
+export async function listBookingsForListingsRaw(
+  _slugs: ReadonlyArray<string>,
+): Promise<ReadonlyArray<BookingRequestRecord>> {
+  return [];
+}
+
+/**
+ * Status mutation stub — surfaces a typed error so the action layer can
+ * render a friendly "no implementado" message. The barrel handles auth
+ * + audit before this is reached.
+ */
+export async function updateBookingStatusRaw(
+  _id: string,
+  _status: BookingRequestRecord["status"],
+): Promise<BookingRequestRecord | null> {
+  throw new BookingDisabledError(
+    "Actualizar el estado de reservas requiere la colección `bookings` en Firestore.",
   );
 }
 

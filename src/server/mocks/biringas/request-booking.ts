@@ -47,3 +47,38 @@ export async function listBookingRequestsRaw(): Promise<
 > {
   return STORE.slice();
 }
+
+/**
+ * Returns all bookings filed against any of the given listing slugs,
+ * sorted newest-first. Used by the seller dashboard inbox where the
+ * user owns one or more listings. Empty input → empty output.
+ */
+export async function listBookingsForListingsRaw(
+  slugs: ReadonlyArray<string>,
+): Promise<ReadonlyArray<BookingRequestRecord>> {
+  if (slugs.length === 0) return [];
+  const set = new Set(slugs);
+  return STORE.filter((b) => set.has(b.listingSlug)).sort(
+    (a, b) =>
+      new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime(),
+  );
+}
+
+/**
+ * Flips a booking's status. Used by the seller dashboard to
+ * confirm / decline / cancel a request. Returns the updated record so
+ * the caller can revalidate UI immediately. `null` when the id is
+ * unknown (caller renders a friendly "ya no existe" message).
+ *
+ * The barrel layer is responsible for authorising the call — this
+ * adapter accepts any id and trusts the wrapper.
+ */
+export async function updateBookingStatusRaw(
+  id: string,
+  status: BookingRequestRecord["status"],
+): Promise<BookingRequestRecord | null> {
+  const idx = STORE.findIndex((b) => b.id === id);
+  if (idx < 0) return null;
+  STORE[idx] = { ...STORE[idx]!, status };
+  return STORE[idx];
+}

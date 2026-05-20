@@ -40,3 +40,43 @@ export async function createListingDraftRaw(
 export async function findActiveDraftBySlug(slug: string): Promise<boolean> {
   return DRAFTS.some((d) => d.payload.details.preferredSlug === slug);
 }
+
+/**
+ * Lightweight projection of a stored draft for surfaces that only need
+ * the owner-facing summary (dashboard "Mi perfil" tab). Server-only —
+ * features import the typed barrel function in `@/server/biringas`.
+ */
+export interface DraftSummary {
+  id: string;
+  preferredSlug: string;
+  displayName: string;
+  city: string;
+  category: string;
+  status: "pending_review";
+  submittedAt: string;
+}
+
+/**
+ * Returns all drafts owned by the given user, newest-first. Used by the
+ * seller dashboard to render the "Mi perfil" tab and to compute which
+ * listing slugs the inbox should filter incoming bookings by.
+ */
+export async function listDraftsByOwnerRaw(
+  ownerUid: string,
+): Promise<ReadonlyArray<DraftSummary>> {
+  return DRAFTS.filter((d) => d.ownerUid === ownerUid)
+    .map((d) => ({
+      id: d.id,
+      preferredSlug: d.payload.details.preferredSlug,
+      displayName: d.payload.details.displayName,
+      city: d.payload.details.city,
+      category: d.payload.details.category,
+      status: d.status,
+      submittedAt: d.submittedAt.toISOString(),
+    }))
+    .sort(
+      (a, b) =>
+        new Date(b.submittedAt).getTime() -
+        new Date(a.submittedAt).getTime(),
+    );
+}

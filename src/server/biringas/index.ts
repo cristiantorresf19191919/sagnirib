@@ -90,6 +90,10 @@ export const getListingReviews = adapter.getListingReviews;
 export const listSimilar = adapter.listSimilar;
 export const requestBookingRaw = adapter.requestBookingRaw;
 export const reportListingRaw = adapter.reportListingRaw;
+const listBookingsForListingsRaw = adapter.listBookingsForListingsRaw;
+const updateBookingStatusRaw = adapter.updateBookingStatusRaw;
+const listDraftsByOwnerRaw = adapter.listDraftsByOwnerRaw;
+export type { DraftSummary } from "@/server/mocks/biringas/create-draft";
 /** Internal: probes whether a slug is already claimed by a non-rejected
  *  draft. Wrapped by `createListingDraft` — features should not call it. */
 const findActiveDraftBySlug = adapter.findActiveDraftBySlug;
@@ -409,4 +413,106 @@ export async function createListingDraft(
   }
 
   return { id: result.id };
+}
+
+/**
+ * SELLER DASHBOARD — owner-side queries.
+ *
+ * These three barrel functions back the `/mi-cuenta` surface. Auth is
+ * required for all of them (anonymous → AuthError thrown); the booking
+ * mutation also enforces that the responder owns the listing the
+ * booking was filed against.
+ */
+
+import type { DraftSummary as _DraftSummary } from "@/server/mocks/biringas/create-draft";
+import type { BookingRequestRecord } from "./booking-types";
+
+/**
+ * Drafts owned by the current user, newest-first. Used by the "Mi
+ * perfil" tab in the dashboard and to compute the listing slugs the
+ * inbox should filter against.
+ */
+export async function listMyDrafts(): Promise<
+  ReadonlyArray<_DraftSummary>
+> {
+  const user = await requireAuth();
+  return listDraftsByOwnerRaw(user.uid);
+}
+
+/**
+ * Incoming booking requests for any listing the current user owns.
+ * Returns an empty list when the user has no drafts yet (the dashboard
+ * renders a friendly "publica tu perfil" CTA in that case).
+ */
+export async function listMyIncomingBookings(): Promise<
+  ReadonlyArray<BookingRequestRecord>
+> {
+  const user = await requireAuth();
+  const drafts = await listDraftsByOwnerRaw(user.uid);
+  if (drafts.length === 0) return [];
+  const slugs = drafts.map((d) => d.preferredSlug);
+  return listBookingsForListingsRaw(slugs);
+}
+
+/**
+ * Action taken by a listing owner on an incoming booking. Mutation
+ * contract: validate input → requireAuth → ownership check → adapter
+ * → audit → revalidate the per-listing bookings tag.
+ *
+ * The ownership check is the safety boundary — without it any
+ * authenticated user could flip any booking's status. We re-derive the
+ * caller's owned slugs from drafts (the source of truth) and compare
+ * against the booking's listingSlug.
+ */
+export async function respondToBooking(
+  rawInput: unknown,
+): Promise<BookingRequestRecord> {
+  if (!rawInput || typeof rawInput !== "object") {
+    throw new Error("respondToBooking: input must be an object");
+  }
+  const r = rawInput as Record<string, unknown>;
+  const id = typeof r.id === "string" ? r.id : null;
+  const action =
+    r.action === "confirmed" ||
+    r.action === "declined" ||
+    r.action === "cancelled" ||
+    r.action === "completed"
+      ? r.action
+      : null;
+  if (!id || !action) {
+    throw new Error(
+      "respondToBooking: id (string) and action ('confirmed'|'declined'|'cancelled'|'completed') are required",
+    );
+  }
+
+  const user = await requireAuth();
+
+  // Ownership: the responder must own the listing the booking was
+  // filed against. Pulling the full inbox is acceptable here because
+  // dashboard inboxes are short; switch to a per-id lookup when this
+  // becomes hot.
+  const ownedSlugs = new Set(
+    (await listDraftsByOwnerRaw(user.uid)).map((d) => d.preferredSlug),
+  );
+  const inbox = await listBookingsForListingsRaw([...ownedSlugs]);
+  const target = inbox.find((b) => b.id === id);
+  if (!target) {
+    throw new Error("respondToBooking: booking not found or not yours");
+  }
+
+  const updated = await updateBookingStatusRaw(id, action);
+  if (!updated) {
+    throw new Error("respondToBooking: booking no longer exists");
+  }
+
+  await auditLog({
+    event: "biringa.booking.responded",
+    actorId: user.uid,
+    resource: `booking:${id}`,
+    metadata: { action, listingSlug: target.listingSlug },
+  });
+
+  updateTag(CACHE_TAGS.bookingsForListing(target.listingSlug));
+
+  return updated;
 }

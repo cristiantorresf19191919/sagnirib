@@ -121,3 +121,58 @@ function serializePayload(
     },
   };
 }
+
+/**
+ * Lightweight projection of a stored draft for the seller dashboard.
+ * Mirrors the mock's `DraftSummary` shape so the barrel can route to
+ * either provider without remapping.
+ */
+export interface DraftSummary {
+  id: string;
+  preferredSlug: string;
+  displayName: string;
+  city: string;
+  category: string;
+  status: "pending_review";
+  submittedAt: string;
+}
+
+/**
+ * Returns all drafts owned by `ownerUid`, newest-first. The barrel
+ * already enforces `requireAuth` and passes the resolved uid here, so
+ * this adapter trusts its input. Composite index required:
+ * `(ownerUid asc, submittedAt desc)`.
+ */
+export async function listDraftsByOwnerRaw(
+  ownerUid: string,
+): Promise<ReadonlyArray<DraftSummary>> {
+  try {
+    const snap = await getDb()
+      .collection("listing_drafts")
+      .where("ownerUid", "==", ownerUid)
+      .orderBy("submittedAt", "desc")
+      .limit(25)
+      .get();
+    return snap.docs.map((doc) => {
+      const data = doc.data();
+      const details = (data.payload?.details ?? {}) as Record<string, unknown>;
+      const submitted = data.submittedAt as Timestamp | undefined;
+      return {
+        id: doc.id,
+        preferredSlug: String(details.preferredSlug ?? ""),
+        displayName: String(details.displayName ?? ""),
+        city: String(details.city ?? ""),
+        category: String(details.category ?? ""),
+        status: "pending_review" as const,
+        submittedAt: (submitted?.toDate() ?? new Date()).toISOString(),
+      };
+    });
+  } catch (err) {
+    throw wrapFirestoreError("listDraftsByOwnerRaw", err);
+  }
+}
+
+// Silence the unused import when this module is consumed without the
+// Timestamp branch (e.g. mock-mode bundling). Kept as a value-side
+// reference so tree-shaking does not drop it.
+void FieldValue;
