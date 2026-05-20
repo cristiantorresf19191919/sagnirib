@@ -15,9 +15,9 @@ import {
  * actually fences the inputs since the Server Action is reachable by
  * direct POST.
  *
- * The validator rejects more than the wizard ever sends (e.g. video MIMEs)
- * so the schema stays correct even if the UI temporarily reopens video
- * uploads behind a feature flag.
+ * Photo and video each have their own MIME + size ranges; the `kind`
+ * dispatches between them. Anything outside both ranges is rejected
+ * before the signed URL is minted.
  */
 export const uploadTicketSchema: ActionInputSchema<UploadTicketInput> = {
   parse(input: unknown): UploadTicketInput {
@@ -36,16 +36,23 @@ export const uploadTicketSchema: ActionInputSchema<UploadTicketInput> = {
     }
 
     const contentType = expectString(r.contentType, "contentType", 5, 64);
+    const sizeBytes = expectInt(
+      r.sizeBytes,
+      "sizeBytes",
+      1,
+      Number.MAX_SAFE_INTEGER,
+    );
+
     if (kind === "photo") {
-      if (!(STORAGE_LIMITS.photoMimes as ReadonlyArray<string>).includes(contentType)) {
+      if (
+        !(STORAGE_LIMITS.photoMimes as ReadonlyArray<string>).includes(
+          contentType,
+        )
+      ) {
         throw new Error(
           `requestUploadTicket: contentType must be one of ${STORAGE_LIMITS.photoMimes.join(", ")}`,
         );
       }
-    }
-
-    const sizeBytes = expectInt(r.sizeBytes, "sizeBytes", 1, Number.MAX_SAFE_INTEGER);
-    if (kind === "photo") {
       if (sizeBytes < STORAGE_LIMITS.photoMinBytes) {
         throw new Error(
           `requestUploadTicket: sizeBytes must be at least ${STORAGE_LIMITS.photoMinBytes}`,
@@ -54,6 +61,26 @@ export const uploadTicketSchema: ActionInputSchema<UploadTicketInput> = {
       if (sizeBytes > STORAGE_LIMITS.photoMaxBytes) {
         throw new Error(
           `requestUploadTicket: sizeBytes must be at most ${STORAGE_LIMITS.photoMaxBytes}`,
+        );
+      }
+    } else if (kind === "video") {
+      if (
+        !(STORAGE_LIMITS.videoMimes as ReadonlyArray<string>).includes(
+          contentType,
+        )
+      ) {
+        throw new Error(
+          `requestUploadTicket: contentType must be one of ${STORAGE_LIMITS.videoMimes.join(", ")}`,
+        );
+      }
+      if (sizeBytes < STORAGE_LIMITS.videoMinBytes) {
+        throw new Error(
+          `requestUploadTicket: sizeBytes must be at least ${STORAGE_LIMITS.videoMinBytes}`,
+        );
+      }
+      if (sizeBytes > STORAGE_LIMITS.videoMaxBytes) {
+        throw new Error(
+          `requestUploadTicket: sizeBytes must be at most ${STORAGE_LIMITS.videoMaxBytes}`,
         );
       }
     }

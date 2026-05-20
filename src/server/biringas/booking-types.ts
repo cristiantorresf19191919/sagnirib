@@ -40,6 +40,13 @@ export interface BookingRequestRecord extends BookingRequestInput {
   requesterUid: string;
   /** ISO timestamp of when the request was submitted. */
   submittedAt: string;
+  /**
+   * ISO timestamp of the owner's first response — set when the status
+   * transitions out of `pending` (to `confirmed` or `declined`). Drives
+   * the catalog's "Responde ~Xmin" chip via `reputation.replyMedianMinutes`.
+   * Stays unset for bookings the owner has not yet acted on.
+   */
+  respondedAt?: string;
   /** Pending → owner-confirmed → completed; or cancelled / declined. */
   status:
     | "pending"

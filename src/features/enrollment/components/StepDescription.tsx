@@ -1,12 +1,29 @@
 "use client";
 
-import { AlertCircle, ImagePlus, Loader2, RotateCw, X } from "lucide-react";
+import {
+  AlertCircle,
+  Film,
+  ImagePlus,
+  Loader2,
+  Play,
+  RotateCw,
+  X,
+} from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import type { EnrollmentCatalogs } from "../lib/catalogs";
-import type { DescriptionValues, GalleryItem } from "../lib/types";
+import type {
+  DescriptionValues,
+  GalleryItem,
+  VideoItem,
+} from "../lib/types";
 import { uploadPhoto, UploadError } from "../lib/upload-photo";
 import { CompressionError } from "../lib/compress-image";
+import {
+  uploadVideo,
+  UploadVideoError,
+  VIDEO_LIMITS_CLIENT,
+} from "../lib/upload-video";
 import { ChipChoice, TextAreaField, ToggleSwitch } from "./FormField";
 import { SectionShell } from "./SectionShell";
 
@@ -253,6 +270,165 @@ export function StepDescription({
     (g) => g.status === "compressing" || g.status === "uploading",
   ).length;
 
+  // ----- Video upload pipeline (ADR-015) ----------------------------------
+  // Mirror of the photo pipeline. Same FSM minus compression — videos go
+  // straight to a duration-check step and then the signed PUT. Caps at 2.
+  const videoInputRef = useRef<HTMLInputElement | null>(null);
+  const [videoError, setVideoError] = useState<string | null>(null);
+  const videoInFlight = useRef<Map<string, AbortController>>(new Map());
+  const videoStartedIds = useRef<Set<string>>(new Set());
+  const videosRef = useRef(values.videos);
+  videosRef.current = values.videos;
+
+  const updateVideo = useCallback(
+    (id: string, patch: Partial<VideoItem>) => {
+      const current = videosRef.current;
+      const next = current.map((item) =>
+        item.id === id ? { ...item, ...patch } : item,
+      );
+      videosRef.current = next;
+      onChange({ ...values, videos: next });
+    },
+    [onChange, values],
+  );
+
+  const startVideoUpload = useCallback(
+    (item: VideoItem) => {
+      if (videoStartedIds.current.has(item.id)) return;
+      videoStartedIds.current.add(item.id);
+      const controller = new AbortController();
+      videoInFlight.current.set(item.id, controller);
+      updateVideo(item.id, { status: "validating", errorMessage: undefined });
+
+      uploadVideo(item.file, {
+        sessionId,
+        signal: controller.signal,
+        onPhase: (phase) => {
+          if (phase === "validating") {
+            updateVideo(item.id, { status: "validating" });
+          } else {
+            updateVideo(item.id, { status: "uploading" });
+          }
+        },
+      })
+        .then((result) => {
+          videoInFlight.current.delete(item.id);
+          updateVideo(item.id, {
+            status: "ready",
+            uploadedPath: result.path,
+            durationSeconds: result.durationSeconds,
+            errorMessage: undefined,
+          });
+        })
+        .catch((err: unknown) => {
+          videoInFlight.current.delete(item.id);
+          if (err instanceof UploadVideoError && err.kind === "aborted") return;
+          const message =
+            err instanceof UploadVideoError
+              ? err.message
+              : "No pudimos subir este video.";
+          updateVideo(item.id, {
+            status: "error",
+            errorMessage: message,
+            uploadedPath: undefined,
+          });
+        });
+    },
+    [sessionId, updateVideo],
+  );
+
+  useEffect(() => {
+    for (const item of values.videos) {
+      if (item.status === "queued") {
+        startVideoUpload(item);
+      }
+    }
+  }, [values.videos, startVideoUpload]);
+
+  useEffect(() => {
+    return () => {
+      for (const controller of videoInFlight.current.values()) controller.abort();
+      for (const item of videosRef.current) {
+        if (item.previewUrl.startsWith("blob:")) {
+          URL.revokeObjectURL(item.previewUrl);
+        }
+      }
+    };
+  }, []);
+
+  function openVideoPicker() {
+    if (values.videos.length >= 2) return;
+    setVideoError(null);
+    videoInputRef.current?.click();
+  }
+
+  function handleVideosSelected(event: React.ChangeEvent<HTMLInputElement>) {
+    const picked = event.target.files;
+    if (!picked || picked.length === 0) return;
+
+    const remaining = 2 - values.videos.length;
+    const accepted: VideoItem[] = [];
+    const errors: string[] = [];
+    let consumedSlots = 0;
+
+    for (const file of Array.from(picked)) {
+      if (consumedSlots >= remaining) {
+        errors.push(`Solo podés subir hasta 2 videos.`);
+        break;
+      }
+      if (
+        !(VIDEO_LIMITS_CLIENT.allowedMimes as ReadonlyArray<string>).includes(
+          file.type,
+        )
+      ) {
+        errors.push(`${file.name}: solo MP4 o WebM.`);
+        continue;
+      }
+      if (file.size > VIDEO_LIMITS_CLIENT.maxBytes) {
+        errors.push(`${file.name}: pesa más de 35 MB.`);
+        continue;
+      }
+      accepted.push({
+        id: `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
+        name: file.name,
+        previewUrl: URL.createObjectURL(file),
+        file,
+        status: "queued",
+      });
+      consumedSlots += 1;
+    }
+
+    event.target.value = "";
+
+    if (accepted.length > 0) {
+      onChange({ ...values, videos: [...values.videos, ...accepted] });
+    }
+    setVideoError(errors.length > 0 ? errors.join(" ") : null);
+  }
+
+  function removeVideo(item: VideoItem) {
+    const controller = videoInFlight.current.get(item.id);
+    if (controller) {
+      controller.abort();
+      videoInFlight.current.delete(item.id);
+    }
+    videoStartedIds.current.delete(item.id);
+    URL.revokeObjectURL(item.previewUrl);
+    onChange({
+      ...values,
+      videos: values.videos.filter((x) => x.id !== item.id),
+    });
+  }
+
+  function retryVideo(item: VideoItem) {
+    videoStartedIds.current.delete(item.id);
+    updateVideo(item.id, { status: "queued", errorMessage: undefined });
+  }
+
+  const videoInFlightCount = values.videos.filter(
+    (v) => v.status === "validating" || v.status === "uploading",
+  ).length;
+
   return (
     <SectionShell
       eyebrow="Tu historia"
@@ -397,8 +573,140 @@ export function StepDescription({
           </p>
         )}
       </div>
+
+      {/* Videos block (ADR-015) — max 2 clips, 3..30s each. Optional. */}
+      <div className="flex flex-col gap-3">
+        <div className="flex flex-wrap items-end justify-between gap-2">
+          <span className="text-[12px] font-semibold tracking-tight text-[var(--color-foreground)]">
+            Videos cortos (opcional)
+          </span>
+          <span className="text-[11px] text-[var(--color-text-subtle)]">
+            {values.videos.length} / 2
+            {videoInFlightCount > 0 ? ` · ${videoInFlightCount} subiendo` : null}
+          </span>
+        </div>
+        <p className="text-[11px] text-[var(--color-text-subtle)]">
+          Hasta 2 clips de 3 a 30 segundos. MP4 o WebM, máximo 35 MB cada
+          uno. Subilos como los grabaste — no comprimimos en el navegador.
+        </p>
+        <input
+          ref={videoInputRef}
+          type="file"
+          accept="video/mp4,video/webm"
+          multiple
+          onChange={handleVideosSelected}
+          className="sr-only"
+          aria-hidden
+          tabIndex={-1}
+        />
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
+          {values.videos.map((item) => (
+            <VideoCard
+              key={item.id}
+              item={item}
+              onRemove={() => removeVideo(item)}
+              onRetry={() => retryVideo(item)}
+            />
+          ))}
+          {values.videos.length < 2 && (
+            <button
+              type="button"
+              onClick={openVideoPicker}
+              className="flex aspect-video flex-col items-center justify-center gap-1.5 rounded-[var(--radius-md)] border border-dashed border-[var(--color-border)] bg-[var(--color-background-elevated)] text-[var(--color-text-muted)] transition-colors hover:border-[var(--color-brand-primary)] hover:text-[var(--color-brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-background)]"
+              aria-label="Agregar video"
+            >
+              <Film className="h-5 w-5" aria-hidden />
+              <span className="text-[11px] font-semibold uppercase tracking-[0.18em]">
+                Subir video
+              </span>
+            </button>
+          )}
+        </div>
+        {videoError && (
+          <p
+            role="alert"
+            className="text-[11px] text-[var(--color-brand-highlight)]"
+          >
+            {videoError}
+          </p>
+        )}
+      </div>
     </SectionShell>
   );
+}
+
+interface VideoCardProps {
+  item: VideoItem;
+  onRemove: () => void;
+  onRetry: () => void;
+}
+
+function VideoCard({ item, onRemove, onRetry }: VideoCardProps) {
+  const isBusy = item.status === "validating" || item.status === "uploading";
+  const isError = item.status === "error";
+
+  return (
+    <div className="group relative aspect-video overflow-hidden rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface-muted)]">
+      <video
+        src={item.previewUrl}
+        muted
+        playsInline
+        preload="metadata"
+        className={`absolute inset-0 h-full w-full object-cover transition-opacity ${
+          isBusy || isError ? "opacity-50" : "opacity-100"
+        }`}
+      />
+
+      {item.status === "ready" && item.durationSeconds && (
+        <span className="absolute bottom-1.5 left-1.5 inline-flex items-center gap-1 rounded-full bg-[var(--color-foreground)]/80 px-2 py-0.5 text-[10px] font-semibold text-[var(--color-surface)]">
+          <Play className="h-2.5 w-2.5 fill-current" aria-hidden />
+          {formatDuration(item.durationSeconds)}
+        </span>
+      )}
+
+      {isBusy && (
+        <span
+          aria-live="polite"
+          className="absolute inset-0 flex flex-col items-center justify-center gap-1 bg-[var(--color-foreground)]/30 text-[var(--color-surface)]"
+        >
+          <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+          <span className="text-[10px] font-semibold uppercase tracking-[0.18em]">
+            {item.status === "validating" ? "Validando" : "Subiendo"}
+          </span>
+        </span>
+      )}
+
+      {isError && (
+        <button
+          type="button"
+          onClick={onRetry}
+          className="absolute inset-0 flex flex-col items-center justify-center gap-1 bg-[var(--color-brand-highlight)]/40 text-[var(--color-surface)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)]"
+          title={item.errorMessage ?? "Reintentar subida"}
+        >
+          <AlertCircle className="h-5 w-5" aria-hidden />
+          <span className="inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-[0.18em]">
+            <RotateCw className="h-3 w-3" aria-hidden />
+            Reintentar
+          </span>
+        </button>
+      )}
+
+      <button
+        type="button"
+        onClick={onRemove}
+        aria-label={`Quitar ${item.name}`}
+        className="absolute right-1.5 top-1.5 inline-flex h-6 w-6 items-center justify-center rounded-full bg-[var(--color-foreground)]/80 text-[var(--color-surface)] opacity-0 transition-opacity group-hover:opacity-100 focus:opacity-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)]"
+      >
+        <X className="h-3 w-3" aria-hidden />
+      </button>
+    </div>
+  );
+}
+
+function formatDuration(seconds: number): string {
+  const mm = Math.floor(seconds / 60);
+  const ss = Math.floor(seconds % 60);
+  return `${mm}:${String(ss).padStart(2, "0")}`;
 }
 
 interface GalleryCardProps {
@@ -470,4 +778,22 @@ export function hasInFlightUploads(gallery: ReadonlyArray<GalleryItem>): boolean
 
 export function hasErroredUploads(gallery: ReadonlyArray<GalleryItem>): boolean {
   return gallery.some((g) => g.status === "error");
+}
+
+/** Same gates for video clips (ADR-015). */
+export function hasInFlightVideoUploads(
+  videos: ReadonlyArray<VideoItem>,
+): boolean {
+  return videos.some(
+    (v) =>
+      v.status === "queued" ||
+      v.status === "validating" ||
+      v.status === "uploading",
+  );
+}
+
+export function hasErroredVideoUploads(
+  videos: ReadonlyArray<VideoItem>,
+): boolean {
+  return videos.some((v) => v.status === "error");
 }

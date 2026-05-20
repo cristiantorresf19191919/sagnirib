@@ -13,9 +13,12 @@ import {
 import { getBucket } from "./client";
 import {
   draftPhotoPath,
+  draftVideoPath,
   newPhotoId,
-  parseStagingPath,
+  newVideoId,
+  parseAnyStagingPath,
   stagingPhotoPath,
+  stagingVideoPath,
 } from "./path";
 
 /**
@@ -41,15 +44,32 @@ export async function signUploadUrlRawForOwner(
 ): Promise<UploadTicket> {
   const bucket = getBucket();
 
-  const photoId = newPhotoId();
-  const path = stagingPhotoPath({
-    ownerUid,
-    sessionId: input.sessionId,
-    photoId,
-    mime: input.contentType,
-  });
+  // Per-kind dispatch — photos and videos differ in path sub-prefix,
+  // size cap, and TTL. The schema validator already constrained MIME
+  // and size to the correct family before we got here.
+  const isVideo = input.kind === "video";
+  const maxBytes = isVideo
+    ? STORAGE_LIMITS.videoMaxBytes
+    : STORAGE_LIMITS.photoMaxBytes;
+  const ttlSeconds = isVideo
+    ? STORAGE_LIMITS.videoTicketTtlSeconds
+    : STORAGE_LIMITS.ticketTtlSeconds;
 
-  const expiresMs = Date.now() + STORAGE_LIMITS.ticketTtlSeconds * 1000;
+  const path = isVideo
+    ? stagingVideoPath({
+        ownerUid,
+        sessionId: input.sessionId,
+        videoId: newVideoId(),
+        mime: input.contentType,
+      })
+    : stagingPhotoPath({
+        ownerUid,
+        sessionId: input.sessionId,
+        photoId: newPhotoId(),
+        mime: input.contentType,
+      });
+
+  const expiresMs = Date.now() + ttlSeconds * 1000;
 
   // V4 signing locks:
   //   - HTTP method (PUT, via action: 'write')
@@ -57,7 +77,7 @@ export async function signUploadUrlRawForOwner(
   //   - contentType (the client MUST send the same Content-Type header)
   //   - byte range via X-Goog-Content-Length-Range (rejects out-of-range PUTs at GCS edge)
   // A request that deviates from any of these returns 403 BEFORE GCS stores a byte.
-  const contentLengthRange = `1,${STORAGE_LIMITS.photoMaxBytes}`;
+  const contentLengthRange = `1,${maxBytes}`;
 
   let uploadUrl: string;
   try {
@@ -85,7 +105,7 @@ export async function signUploadUrlRawForOwner(
       "cache-control": STAGING_CACHE_CONTROL,
     },
     contentType: input.contentType,
-    maxBytes: STORAGE_LIMITS.photoMaxBytes,
+    maxBytes,
   };
 }
 
@@ -95,20 +115,22 @@ export async function signUploadUrlRawForOwner(
  * server minted at sign time) — the parser also doubles as a guard against
  * a malicious client sending us a fabricated path.
  *
- * Returns the asset metadata (size, contentType) for the wizard to display.
+ * Dispatches between photo and video staging shapes; the per-family
+ * MIME + size caps are checked accordingly. Returns the asset metadata
+ * (size, contentType) for the wizard to display.
  */
 export async function confirmUploadRawForOwner(
   expectedOwnerUid: string,
   path: string,
 ): Promise<StorageAsset> {
-  const parts = parseStagingPath(path);
-  if (!parts) {
+  const parsed = parseAnyStagingPath(path);
+  if (!parsed) {
     throw new FirebaseAdapterError(
       "invalid-argument",
       `storage/confirmUpload: path does not match staging shape: ${path}`,
     );
   }
-  if (parts.ownerUid !== expectedOwnerUid) {
+  if (parsed.parts.ownerUid !== expectedOwnerUid) {
     throw new FirebaseAdapterError(
       "permission-denied",
       "storage/confirmUpload: caller is not the owner of this path",
@@ -142,15 +164,24 @@ export async function confirmUploadRawForOwner(
         "storage/confirmUpload: stored object is empty",
       );
     }
-    if (size > STORAGE_LIMITS.photoMaxBytes) {
+
+    const isVideo = parsed.kind === "video";
+    const allowedMimes = isVideo
+      ? (STORAGE_LIMITS.videoMimes as ReadonlyArray<string>)
+      : (STORAGE_LIMITS.photoMimes as ReadonlyArray<string>);
+    const maxBytes = isVideo
+      ? STORAGE_LIMITS.videoMaxBytes
+      : STORAGE_LIMITS.photoMaxBytes;
+
+    if (size > maxBytes) {
       // Should be impossible because the signed URL enforces the range, but
       // we defend in depth.
       throw new FirebaseAdapterError(
         "invalid-argument",
-        `storage/confirmUpload: stored object exceeds cap (${size} > ${STORAGE_LIMITS.photoMaxBytes})`,
+        `storage/confirmUpload: stored object exceeds cap (${size} > ${maxBytes})`,
       );
     }
-    if (!(STORAGE_LIMITS.photoMimes as ReadonlyArray<string>).includes(contentType)) {
+    if (!allowedMimes.includes(contentType)) {
       throw new FirebaseAdapterError(
         "invalid-argument",
         `storage/confirmUpload: contentType ${contentType} is not allowed`,
@@ -186,13 +217,14 @@ export async function copyStagedToDraftRawForOwner(
   const draftPaths: string[] = [];
 
   for (const source of input.paths) {
-    const parts = parseStagingPath(source);
-    if (!parts) {
+    const parsed = parseAnyStagingPath(source);
+    if (!parsed) {
       throw new FirebaseAdapterError(
         "invalid-argument",
-        `storage/copyStagedToDraft: ${source} is not a staging photo path`,
+        `storage/copyStagedToDraft: ${source} is not a staging photo or video path`,
       );
     }
+    const { parts } = parsed;
     if (parts.ownerUid !== ownerUid) {
       throw new FirebaseAdapterError(
         "permission-denied",
@@ -206,11 +238,18 @@ export async function copyStagedToDraftRawForOwner(
       );
     }
 
-    const dest = draftPhotoPath({
-      draftId: input.draftId,
-      photoId: parts.photoId,
-      extension: parts.extension,
-    });
+    const dest =
+      parsed.kind === "video"
+        ? draftVideoPath({
+            draftId: input.draftId,
+            videoId: parsed.parts.videoId,
+            extension: parsed.parts.extension,
+          })
+        : draftPhotoPath({
+            draftId: input.draftId,
+            photoId: parsed.parts.photoId,
+            extension: parsed.parts.extension,
+          });
 
     try {
       const srcFile = bucket.file(source);

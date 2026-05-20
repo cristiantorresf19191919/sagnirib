@@ -39,5 +39,27 @@ service cloud.firestore {
         allow read, write: if false;
       }
     }
+
+    // favorites/{uid}/items/* — per-user shortlist (ADR-013). Same
+    // deny-all posture as the rest of the DB: all reads/writes flow
+    // through the Admin SDK via the @/server/favorites barrel behind
+    // authenticated Server Actions. Rule documents owner-only intent
+    // so the day client SDK access is reconsidered the contract is
+    // explicit.
+    match /favorites/{uid} {
+      allow read, write: if false;
+      match /items/{listingId} {
+        allow read, write: if false;
+      }
+    }
+
+    // bookings/{id} — buyer-side booking requests + seller responses
+    // (ADR-016). Same deny-all posture; the Server Actions in
+    // @/server/biringas (`requestBooking`, `respondToBooking`,
+    // `submitBuyerReview`) own every write after auth + audit, and
+    // the seller-dashboard inbox reads via the adapter.
+    match /bookings/{id} {
+      allow read, write: if false;
+    }
   }
 }

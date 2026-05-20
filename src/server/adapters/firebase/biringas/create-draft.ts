@@ -279,6 +279,21 @@ function deserializePayload(raw: unknown): ListingDraftPayload {
             .map((g) => ({ path: String(g.path ?? "") }))
             .filter((g) => g.path.length > 0)
         : [],
+      videos: Array.isArray(description.videos)
+        ? (description.videos as ReadonlyArray<{
+            path?: unknown;
+            durationSeconds?: unknown;
+          }>)
+            .map((v) => ({
+              path: String(v.path ?? ""),
+              durationSeconds:
+                typeof v.durationSeconds === "number" &&
+                Number.isFinite(v.durationSeconds)
+                  ? v.durationSeconds
+                  : 0,
+            }))
+            .filter((v) => v.path.length > 0 && v.durationSeconds > 0)
+        : [],
     },
     attributes: {
       ethnicity: String(attributes.ethnicity ?? ""),

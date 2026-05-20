@@ -3,8 +3,6 @@ import Link from "next/link";
 import {
   BadgeCheck,
   Eye,
-  MessageSquare,
-  Mic,
   Play,
   Star,
   Volume2,
@@ -14,7 +12,6 @@ import type { BiringaListing } from "@/server/biringas";
 import { Card } from "@/shared/design-system/components/Card";
 import { VerifiedBadge } from "@/shared/design-system/components/VerifiedBadge";
 import { HeartButton } from "@/shared/ui/HeartButton";
-import { CompareCheckbox } from "./CompareCheckbox";
 import { PriceTag } from "@/shared/ui/PriceTag";
 import { RatingBadge } from "@/shared/ui/RatingBadge";
 
@@ -134,9 +131,8 @@ export function CatalogCard({
           ) : null}
         </div>
 
-        <div className="absolute right-3 top-3 z-30 flex flex-col items-end gap-1.5">
-          <HeartButton listingId={listing.id} />
-          <CompareCheckbox listingId={listing.id} />
+        <div className="absolute right-3 top-3 z-30">
+          <HeartButton listingId={listing.id} listingSlug={listing.slug} />
         </div>
 
         <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center">
@@ -150,8 +146,13 @@ export function CatalogCard({
           </span>
         </div>
 
-        <div className="absolute right-3 bottom-3 z-10 flex flex-col items-end gap-1.5">
-          {listing.hasVideo && (
+        {/* Audio gets the meta-row "Audio" chip below the title instead
+            of an icon overlay here — the chip with the Volume2 + label
+            reads better at card width than a bare microphone. Video
+            keeps the overlay because the play glyph is universally
+            understood and previews the affordance. */}
+        {listing.hasVideo && (
+          <div className="absolute right-3 bottom-3 z-10">
             <span
               className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-[var(--color-surface)]/95 text-[var(--color-foreground)] shadow-[var(--shadow-sm)] backdrop-blur-sm"
               aria-label="Con vídeo"
@@ -159,17 +160,8 @@ export function CatalogCard({
             >
               <Play className="h-3.5 w-3.5" aria-hidden />
             </span>
-          )}
-          {listing.hasAudio && (
-            <span
-              className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-[var(--color-surface)]/95 text-[var(--color-foreground)] shadow-[var(--shadow-sm)] backdrop-blur-sm"
-              aria-label="Con audio"
-              title="Con audio"
-            >
-              <Mic className="h-3.5 w-3.5" aria-hidden />
-            </span>
-          )}
-        </div>
+          </div>
+        )}
       </div>
 
       <div className="relative flex flex-1 flex-col gap-2 px-1 pt-3">
@@ -229,22 +221,17 @@ export function CatalogCard({
             className="font-[var(--font-display)] tabular-nums"
           />
         </div>
-        {/* Compact audio + reviews badges — only show when relevant.
-            Verified moved inline next to name above. */}
-        {(listing.hasAudio || listing.reputation.reviewCount > 0) && (
-          <div className="flex flex-wrap items-center gap-1.5 text-[10px]">
-            {listing.hasAudio && (
-              <span className="inline-flex items-center gap-1 rounded-full bg-[var(--color-brand-secondary)]/12 px-2 py-0.5 font-medium text-[var(--color-brand-secondary-strong)]">
-                <Volume2 className="h-3 w-3" aria-hidden />
-                Audio
-              </span>
-            )}
-            {listing.reputation.reviewCount > 0 && (
-              <span className="inline-flex items-center gap-1 rounded-full bg-[var(--color-surface-muted)] px-2 py-0.5 text-[var(--color-text-muted)]">
-                <MessageSquare className="h-3 w-3" aria-hidden />
-                {listing.reputation.reviewCount}
-              </span>
-            )}
+        {/* Audio chip — only when relevant. Review count moved out:
+            the RatingBadge above already shows `(reviewCount)` next to
+            the score, so a second chip with a MessageSquare icon read
+            as "messages" not "reviews" and added visual noise without
+            new information. */}
+        {listing.hasAudio && (
+          <div className="text-[10px]">
+            <span className="inline-flex items-center gap-1 rounded-full bg-[var(--color-brand-secondary)]/12 px-2 py-0.5 font-medium text-[var(--color-brand-secondary-strong)]">
+              <Volume2 className="h-3 w-3" aria-hidden />
+              Audio
+            </span>
           </div>
         )}
 
@@ -262,9 +249,15 @@ interface ActivitySignalsProps {
 }
 
 function ActivitySignals({ listing }: Readonly<ActivitySignalsProps>) {
-  const replyMin = synthReplyMin(listing.slug);
-  const lastActive = synthLastActive(listing);
-  if (!replyMin && !lastActive) return null;
+  // Reply median is owner-earned — set by `respondToBooking` once the
+  // listing has at least a couple of responded bookings. Absent value
+  // hides the chip entirely; we do NOT synthesise a number anymore.
+  const replyMin = listing.reputation.replyMedianMinutes ?? null;
+  // "Activa ahora" only when the live flag is on. We don't surface a
+  // synthetic "Activa hace Xh" from storyAt — that conflates "subió
+  // story" with "estuvo en línea", which is misleading.
+  const lastActive = listing.availableNow ? "Activa ahora" : null;
+  if (replyMin === null && !lastActive) return null;
   return (
     <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[10px] text-[var(--color-text-muted)]">
       {replyMin !== null && (
@@ -283,29 +276,6 @@ function ActivitySignals({ listing }: Readonly<ActivitySignalsProps>) {
       )}
     </div>
   );
-}
-
-/** Tiny FNV-1a hash → seed; same idea as AvailabilityStrip. */
-function synthReplyMin(slug: string): number | null {
-  let hash = 2166136261;
-  for (let i = 0; i < slug.length; i += 1) {
-    hash ^= slug.charCodeAt(i);
-    hash = (hash * 16777619) >>> 0;
-  }
-  // 4–42 min, biased toward fast responders (most catalogs are).
-  return Math.max(4, (hash % 38) + 4);
-}
-
-function synthLastActive(listing: BiringaListing): string | null {
-  if (listing.availableNow) return "Activa ahora";
-  if (listing.storyAt) {
-    const ms = Date.now() - new Date(listing.storyAt).getTime();
-    const hours = Math.max(1, Math.floor(ms / (1000 * 60 * 60)));
-    if (hours < 24) return `Activa hace ${hours}h`;
-    const days = Math.floor(hours / 24);
-    return `Activa hace ${days}d`;
-  }
-  return null;
 }
 
 interface ListCardProps {
@@ -383,7 +353,7 @@ function ListCard({
               </span>
             </h3>
             <div className="z-30 shrink-0">
-              <HeartButton listingId={listing.id} />
+              <HeartButton listingId={listing.id} listingSlug={listing.slug} />
             </div>
           </header>
           <div className="flex items-center gap-2">

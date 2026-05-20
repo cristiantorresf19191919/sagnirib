@@ -64,7 +64,7 @@ export function BiringaCard({
         </div>
 
         <div className="absolute right-3 top-3 z-30">
-          <HeartButton listingId={listing.id} />
+          <HeartButton listingId={listing.id} listingSlug={listing.slug} />
         </div>
 
         <div className="absolute right-3 bottom-3 z-10 flex flex-col items-end gap-1.5">

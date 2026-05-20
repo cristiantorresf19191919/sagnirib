@@ -11,7 +11,6 @@ import { useMemo, useRef } from "react";
 
 import {
   getWeeklyAvailability,
-  synthReplyMinutes,
   type Slot,
 } from "../lib/availability";
 
@@ -99,7 +98,12 @@ interface AvailabilityStripProps {
   listingSlug: string;
   /** When true (default), highlights today's column so users orient fast. */
   highlightToday?: boolean;
-  /** Synthesised "avg reply" minutes shown alongside the grid. */
+  /**
+   * Median reply minutes (from `listing.reputation.replyMedianMinutes`).
+   * When absent, the "Responde en ~Xmin" chip is hidden rather than
+   * synthesised — the strip should not invent a number the owner has
+   * not yet earned by responding to bookings.
+   */
   avgReplyMinutes?: number;
 }
 
@@ -130,7 +134,7 @@ export function AvailabilityStrip({
   // this strip and the booking date picker agree cell-for-cell on what
   // "Disponible" / "Consultar" / "Ocupada" means.
   const week = useMemo(() => getWeeklyAvailability(listingSlug), [listingSlug]);
-  const replyMin = avgReplyMinutes ?? synthReplyMinutes(listingSlug);
+  const replyMin = avgReplyMinutes ?? null;
 
   // Highlight today (computed client-side so timezone doesn't drift
   // between SSR and CSR).
@@ -157,10 +161,12 @@ export function AvailabilityStrip({
         <h3 className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[var(--color-text-subtle)]">
           Disponibilidad
         </h3>
-        <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--color-brand-primary)]/10 px-2.5 py-1 text-[11px] font-semibold text-[var(--color-brand-primary)]">
-          <Clock className="h-3 w-3" aria-hidden />
-          Responde en ~{replyMin} min
-        </span>
+        {replyMin !== null && (
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--color-brand-primary)]/10 px-2.5 py-1 text-[11px] font-semibold text-[var(--color-brand-primary)]">
+            <Clock className="h-3 w-3" aria-hidden />
+            Responde en ~{replyMin} min
+          </span>
+        )}
       </header>
 
       <motion.table

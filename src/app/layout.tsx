@@ -9,6 +9,7 @@ import {
 } from "@/core/seo/structured-data";
 import { AgeGate } from "@/features/age-gate/AgeGate";
 import { readAgeAck } from "@/features/age-gate/cookie";
+import { listMyFavorites } from "@/server/favorites";
 import { ThemeScript } from "@/shared/layout/ThemeScript";
 import "@/styles/globals.css";
 
@@ -70,6 +71,10 @@ export default async function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   const acknowledged = await readAgeAck();
+  // SSR hydration for the favorites provider (ADR-013). Anonymous
+  // sessions return an empty array — no auth error is thrown, so the
+  // layout stays a single trivial await for both states.
+  const initialFavorites = await listMyFavorites();
 
   return (
     <html
@@ -89,7 +94,11 @@ export default async function RootLayout({
         <JsonLdScript data={organizationJsonLd()} />
         <JsonLdScript data={websiteJsonLd()} />
 
-        {acknowledged ? <Providers>{children}</Providers> : <AgeGate />}
+        {acknowledged ? (
+          <Providers initialFavorites={initialFavorites}>{children}</Providers>
+        ) : (
+          <AgeGate />
+        )}
       </body>
     </html>
   );

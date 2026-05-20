@@ -94,6 +94,12 @@ const recordListingViewRaw = adapter.recordListingViewRaw;
 const listBookingsForListingsRaw = adapter.listBookingsForListingsRaw;
 const updateBookingStatusRaw = adapter.updateBookingStatusRaw;
 const attachBuyerReviewRaw = adapter.attachBuyerReviewRaw;
+const computeReplyMedianMinutesForSlug =
+  adapter.computeReplyMedianMinutesForSlug;
+const setListingReplyMedianMinutesRaw =
+  adapter.setListingReplyMedianMinutesRaw;
+const setListingAvailableNowRaw = adapter.setListingAvailableNowRaw;
+const setListingPlanRaw = adapter.setListingPlanRaw;
 const listDraftsByOwnerRaw = adapter.listDraftsByOwnerRaw;
 const getDraftByIdForOwnerRaw = adapter.getDraftByIdForOwnerRaw;
 const getReferralStatsRaw = adapter.getReferralStatsRaw;
@@ -118,6 +124,7 @@ export {
   PLAN_LABELS,
   PLAN_PRICING,
 } from "./checkout-types";
+export { isPlanActive, activePlanTier } from "./plan-status";
 export {
   REFERRAL_REWARD_COP,
   REFERRAL_CODE_LENGTH,
@@ -170,7 +177,9 @@ export type {
   ListingDraftPhoto,
   ListingDraftRecord,
   ListingDraftStatus,
+  ListingDraftVideo,
 } from "./draft-types";
+export type { BiringaVideo } from "./types";
 export { DRAFT_LIMITS } from "./draft-types";
 
 /**
@@ -434,9 +443,10 @@ export async function createListingDraft(
     throw err;
   }
 
-  // Gallery cross-ownership. The schema enforced the staging-path shape; we
-  // bind it to the authenticated identity HERE so a malicious client cannot
-  // submit a draft whose photos belong to a different user's session.
+  // Gallery + videos cross-ownership. The schema enforced the staging-
+  // path shape; we bind it to the authenticated identity HERE so a
+  // malicious client cannot submit a draft whose assets belong to a
+  // different user's session.
   const stagingPrefix = `users/${user.uid}/staging/${input.sessionId}/`;
   for (const photo of input.payload.description.gallery) {
     if (!photo.path.startsWith(stagingPrefix)) {
@@ -447,23 +457,50 @@ export async function createListingDraft(
       throw err;
     }
   }
+  for (const video of input.payload.description.videos) {
+    if (!video.path.startsWith(stagingPrefix)) {
+      const err = new Error(
+        "createListingDraft: videos contains a clip not owned by the caller",
+      );
+      (err as { kind?: string }).kind = "permission-denied";
+      throw err;
+    }
+  }
 
   const draftId = globalThis.crypto.randomUUID();
 
-  // Copy staging → draft. Empty gallery is a no-op.
-  const stagingPaths = input.payload.description.gallery.map((p) => p.path);
+  // Copy staging → draft. Combined photos + videos in one call so the
+  // adapter does a single fan-out; we split the result back by index.
+  // Empty arrays are no-ops.
+  const photoStagingPaths = input.payload.description.gallery.map(
+    (p) => p.path,
+  );
+  const videoStagingPaths = input.payload.description.videos.map(
+    (v) => v.path,
+  );
+  const stagingPaths = [...photoStagingPaths, ...videoStagingPaths];
   const { draftPaths } = await copyStagedToDraftForOwner(user.uid, {
     sessionId: input.sessionId,
     draftId,
     paths: stagingPaths,
   });
 
-  // Rewrite payload with the post-copy draft paths.
+  const draftPhotoPaths = draftPaths.slice(0, photoStagingPaths.length);
+  const draftVideoPaths = draftPaths.slice(photoStagingPaths.length);
+
+  // Rewrite payload with the post-copy draft paths. Video durations
+  // preserved from the input — adapter only moves bytes, it does not
+  // re-derive duration.
   const finalPayload = {
     ...input.payload,
     description: {
       ...input.payload.description,
-      gallery: draftPaths.map((path) => ({ path })),
+      gallery: draftPhotoPaths.map((path) => ({ path })),
+      videos: draftVideoPaths.map((path, i) => ({
+        path,
+        durationSeconds:
+          input.payload.description.videos[i]!.durationSeconds,
+      })),
     },
   };
 
@@ -481,7 +518,8 @@ export async function createListingDraft(
       preferredSlug: slug,
       city: input.payload.details.city,
       category: input.payload.details.category,
-      photoCount: draftPaths.length,
+      photoCount: draftPhotoPaths.length,
+      videoCount: draftVideoPaths.length,
       packageId: input.payload.publish.packageId,
       addOnIds: [...input.payload.publish.addOnIds],
     },
@@ -608,7 +646,11 @@ export async function respondToBooking(
     throw new Error("respondToBooking: booking not found or not yours");
   }
 
-  const updated = await updateBookingStatusRaw(id, action);
+  // First response (pending → confirmed | declined) is what the median
+  // measures — subsequent transitions (e.g. confirmed → completed)
+  // intentionally preserve the original timestamp inside the adapter.
+  const respondedAt = new Date().toISOString();
+  const updated = await updateBookingStatusRaw(id, action, respondedAt);
   if (!updated) {
     throw new Error("respondToBooking: booking no longer exists");
   }
@@ -619,6 +661,19 @@ export async function respondToBooking(
     resource: `booking:${id}`,
     metadata: { action, listingSlug: target.listingSlug },
   });
+
+  // Recompute + persist the listing's median reply minutes when this
+  // transition actually marked a new first response. The aggregate is
+  // surfaced by the catalog / profile "Responde ~Xmin" chip — an
+  // absent value hides the chip rather than synthesising one.
+  if (target.status === "pending") {
+    const median = await computeReplyMedianMinutesForSlug(target.listingSlug);
+    await setListingReplyMedianMinutesRaw(target.listingSlug, median);
+    // Catalog cards read this via findBySlug / listAll; invalidate the
+    // per-listing and listings tags so the next render sees the new value.
+    updateTag(CACHE_TAGS.listing(target.listingSlug));
+    updateTag(CACHE_TAGS.listings);
+  }
 
   updateTag(CACHE_TAGS.bookingsForListing(target.listingSlug));
 
@@ -764,6 +819,7 @@ export async function redeemReferralCode(
 
 import {
   PLAN_PRICING as _PLAN_PRICING,
+  computePlanActiveUntil as _computePlanActiveUntil,
   type CheckoutSessionInput as _CheckoutSessionInput,
   type CheckoutSessionRecord as _CheckoutSessionRecord,
 } from "./checkout-types";
@@ -819,6 +875,26 @@ export async function createCheckoutSession(
  * Mock-only completion path. Throws when running against the
  * Firestore adapter (real flows complete via webhook). Ownership
  * check ensures only the session's owner can flip it.
+ *
+ * On successful completion, activates the plan on every approved
+ * listing owned by the buyer:
+ *
+ *   1. List the buyer's drafts (`listDraftsByOwnerRaw`).
+ *   2. Filter to `status === 'approved'` — pre-approval drafts have
+ *      no public listing yet, the plan flips when admin promotes
+ *      them.
+ *   3. For each approved slug, write `plan = { tier, activeUntil }`
+ *      via `setListingPlanRaw`. `activeUntil` is derived from the
+ *      billing cadence (30d / 90d, see `computePlanActiveUntil`).
+ *   4. Invalidate per-listing and listings cache tags so the catalog
+ *      surface re-fetches with the new `isPlanActive` semantics.
+ *
+ * Listing-by-slug lookups + writes happen in parallel — owner-side
+ * cardinality is small (mostly 1–2 listings) and the parallel fan-out
+ * keeps the modal close-time tight.
+ *
+ * Production webhook handlers (Stripe / MercadoPago) must replicate
+ * this side effect once the real adapter ships.
  */
 export async function completeMockCheckout(
   rawInput: unknown,
@@ -847,6 +923,55 @@ export async function completeMockCheckout(
     metadata: { tier: updated.tier, totalCop: updated.totalCop },
   });
 
+  // Activate the plan on every approved listing owned by the buyer.
+  // Drafts pending review have no public listing yet — admin
+  // promotion is what creates the listing and could re-apply the
+  // active plan; for now we just skip them.
+  const activeUntil = _computePlanActiveUntil(updated.billing);
+  const ownedDrafts = await listDraftsByOwnerRaw(user.uid);
+  const approvedSlugs = ownedDrafts
+    .filter((d) => d.status === "approved")
+    .map((d) => d.preferredSlug);
+
+  const results = await Promise.all(
+    approvedSlugs.map((slug) =>
+      setListingPlanRaw(slug, { tier: updated.tier, activeUntil }).catch(
+        (err) => {
+          // Don't fail the whole checkout on a single listing write —
+          // the session is already succeeded; the plan can be
+          // backfilled later. Surface to the audit trail so trust&
+          // safety can spot stuck activations.
+          console.error("[completeCheckout] setListingPlan failed", {
+            slug,
+            err,
+          });
+          return false;
+        },
+      ),
+    ),
+  );
+  const writtenCount = results.filter(Boolean).length;
+
+  await auditLog({
+    event: "biringa.plan.activated",
+    actorId: user.uid,
+    resource: `checkout:${id}`,
+    metadata: {
+      tier: updated.tier,
+      billing: updated.billing,
+      activeUntil,
+      listingsActivated: writtenCount,
+      approvedSlugs: [...approvedSlugs],
+    },
+  });
+
+  for (const slug of approvedSlugs) {
+    updateTag(CACHE_TAGS.listing(slug));
+  }
+  if (approvedSlugs.length > 0) {
+    updateTag(CACHE_TAGS.listings);
+  }
+
   return updated;
 }
 
@@ -859,4 +984,75 @@ export async function getCheckoutSession(
   if (!session) return null;
   if (session.ownerUid !== user.uid) return null;
   return session;
+}
+
+/**
+ * Owner toggle: flips a listing's `availableNow` flag.
+ *
+ * Standard mutation contract (ADR-010 §5): validate → requireAuth →
+ * ownership check → adapter → audit → revalidate.
+ *
+ * Ownership is established the same way as `respondToBooking` — the
+ * caller must own an `approved` draft whose `preferredSlug` matches
+ * the target slug. Pre-approval drafts cannot toggle availability
+ * because there's no public listing to flip yet.
+ *
+ * The catalog's "Disponible ahora" badge + the in-card pulsing dot
+ * read this flag; both surfaces re-fetch on the next render once the
+ * `listings` and per-listing tags get invalidated.
+ */
+export async function setMyListingAvailability(
+  rawInput: unknown,
+): Promise<{ available: boolean }> {
+  if (!rawInput || typeof rawInput !== "object") {
+    throw new Error("setMyListingAvailability: input must be an object");
+  }
+  const r = rawInput as Record<string, unknown>;
+  const slug = typeof r.slug === "string" ? r.slug.trim().toLowerCase() : null;
+  const available = typeof r.available === "boolean" ? r.available : null;
+  if (!slug || available === null) {
+    throw new Error(
+      "setMyListingAvailability: slug (string) and available (boolean) are required",
+    );
+  }
+  if (!/^[a-z0-9-]{1,200}$/.test(slug)) {
+    throw new Error("setMyListingAvailability: slug has invalid shape");
+  }
+
+  const user = await requireAuth();
+
+  // Ownership: the caller owns an approved draft for this slug. Pulling
+  // the full drafts list is fine — owner-side queues are short.
+  const owned = await listDraftsByOwnerRaw(user.uid);
+  const target = owned.find(
+    (d) => d.preferredSlug === slug && d.status === "approved",
+  );
+  if (!target) {
+    const err = new Error(
+      "setMyListingAvailability: listing not found or not yours",
+    );
+    (err as { kind?: string }).kind = "not-found";
+    throw err;
+  }
+
+  const ok = await setListingAvailableNowRaw(slug, available);
+  if (!ok) {
+    const err = new Error(
+      "setMyListingAvailability: listing no longer exists",
+    );
+    (err as { kind?: string }).kind = "not-found";
+    throw err;
+  }
+
+  await auditLog({
+    event: "biringa.listing.availability_changed",
+    actorId: user.uid,
+    resource: `listing:${slug}`,
+    metadata: { available },
+  });
+
+  updateTag(CACHE_TAGS.listing(slug));
+  updateTag(CACHE_TAGS.listings);
+
+  return { available };
 }

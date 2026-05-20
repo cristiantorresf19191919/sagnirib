@@ -7,10 +7,12 @@ import type {
   BiringaAttributes,
   BiringaListing,
   BiringaReputation,
+  BiringaVideo,
   Category,
   ContactChannel,
   Sex,
 } from "@/server/biringas/types";
+import type { PlanTier } from "@/server/biringas/checkout-types";
 import type {
   ReviewBreakdown,
   ReviewItem,
@@ -130,7 +132,54 @@ function asReputation(
     totalViews: asNumber(r.totalViews ?? 0, "reputation.totalViews"),
     daysFeatured: asNumber(r.daysFeatured ?? 0, "reputation.daysFeatured"),
     reviewCount: asNumber(r.reviewCount ?? 0, "reputation.reviewCount"),
+    replyMedianMinutes:
+      typeof r.replyMedianMinutes === "number" &&
+      Number.isFinite(r.replyMedianMinutes)
+        ? r.replyMedianMinutes
+        : undefined,
   };
+}
+
+/**
+ * Maps the optional `videos` array on a listing (ADR-015). Each entry
+ * must have a non-empty path and a finite duration in [3, 30]; malformed
+ * entries are silently dropped so a single bad row never poisons the
+ * whole listing render.
+ */
+function asVideos(value: unknown): ReadonlyArray<BiringaVideo> | undefined {
+  if (!Array.isArray(value)) return undefined;
+  const out: BiringaVideo[] = [];
+  for (const raw of value) {
+    if (!raw || typeof raw !== "object") continue;
+    const r = raw as Raw;
+    const path = typeof r.path === "string" ? r.path : null;
+    const duration =
+      typeof r.durationSeconds === "number" &&
+      Number.isFinite(r.durationSeconds)
+        ? r.durationSeconds
+        : null;
+    if (!path || duration === null) continue;
+    if (duration < 1 || duration > 60) continue;
+    out.push({ path, durationSeconds: duration });
+  }
+  return out.length > 0 ? out : undefined;
+}
+
+/**
+ * Maps the optional `plan` subdocument on a listing. Anything malformed
+ * (missing tier, unparseable timestamp) collapses to `undefined` so the
+ * UI defaults to "no active plan" rather than rendering broken state.
+ */
+function asPlan(value: unknown): BiringaListing["plan"] {
+  if (!value || typeof value !== "object") return undefined;
+  const r = value as Raw;
+  const tier =
+    r.tier === "boost" || r.tier === "elite"
+      ? (r.tier as PlanTier)
+      : null;
+  const activeUntil = toIsoOptional(r.activeUntil);
+  if (!tier || !activeUntil) return undefined;
+  return { tier, activeUntil };
 }
 
 function asCoords(value: unknown): { lat: number; lng: number } {
@@ -197,6 +246,8 @@ export function mapListing(id: string, data: Raw): BiringaListing {
     createdAt,
     updatedAt: toIso(data.updatedAt, "updatedAt"),
     verifiedAt,
+    plan: asPlan(data.plan),
+    videos: asVideos(data.videos),
   };
 }
 

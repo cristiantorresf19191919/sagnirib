@@ -20,14 +20,17 @@ import {
   isFirebaseConfigured,
 } from "@/core/config/firebase";
 import { AvailabilityStrip } from "@/features/biringas/components/AvailabilityStrip";
+import { AvailabilityToggle } from "@/features/dashboard/components/AvailabilityToggle";
 import { BookingInboxList } from "@/features/dashboard/components/BookingInboxList";
 import { DashboardShell } from "@/features/dashboard/components/DashboardShell";
 import { ReferralCard } from "@/features/dashboard/components/ReferralCard";
 import { getSession } from "@/server/auth";
 import {
+  findBySlug,
   getMyReferralStats,
   listMyDrafts,
   listMyIncomingBookings,
+  type BiringaListing,
   type DraftSummary,
   type ListingDraftStatus,
   type ReferralStats,
@@ -110,6 +113,30 @@ export default async function MiCuentaPage() {
     ]);
   const drafts = draftsResult.value;
 
+  // For each approved draft, pull the published listing so the
+  // profile tab can render the `availableNow` toggle with the current
+  // value. Failures degrade silently — a missing listing simply hides
+  // the toggle for that draft.
+  const approvedSlugs = drafts
+    .filter((d) => d.status === "approved")
+    .map((d) => d.preferredSlug);
+  const publishedEntries = await Promise.all(
+    approvedSlugs.map(async (slug) => {
+      try {
+        const listing = await findBySlug(slug);
+        return listing ? ([slug, listing] as const) : null;
+      } catch (err) {
+        console.error("[mi-cuenta] findBySlug failed", { slug, err });
+        return null;
+      }
+    }),
+  );
+  const publishedBySlug = new Map<string, BiringaListing>(
+    publishedEntries.filter(
+      (e): e is readonly [string, BiringaListing] => e !== null,
+    ),
+  );
+
   const pendingCount = bookings.filter((b) => b.status === "pending").length;
   const greetingName =
     drafts[0]?.displayName ??
@@ -158,6 +185,7 @@ export default async function MiCuentaPage() {
               profile: (
                 <ProfileTab
                   drafts={drafts}
+                  publishedBySlug={publishedBySlug}
                   verification={verification}
                   diagnostic={diagnostic}
                 />
@@ -251,12 +279,19 @@ interface TabProps {
 
 interface ProfileTabProps extends TabProps {
   verification: VerificationRecord | null;
+  /**
+   * Map of slug → published `BiringaListing` for any draft whose
+   * `status === 'approved'`. Drives the `availableNow` toggle that
+   * only renders when there is a public listing behind the draft.
+   */
+  publishedBySlug: ReadonlyMap<string, BiringaListing>;
   /** TEMP diagnostic — remove with the owner-side listings query. */
   diagnostic?: DiagnosticInfo;
 }
 
 function ProfileTab({
   drafts,
+  publishedBySlug,
   verification,
   diagnostic,
 }: Readonly<ProfileTabProps>) {
@@ -280,40 +315,56 @@ function ProfileTab({
       {diagnostic ? <DiagnosticPanel info={diagnostic} /> : null}
 
       <ul className="flex flex-col gap-3">
-        {drafts.map((d) => (
-          <li
-            key={d.id}
-            className="flex flex-wrap items-center justify-between gap-4 rounded-[var(--radius-xl)] border border-[var(--color-border)] bg-[var(--color-surface)] p-5 shadow-[var(--shadow-sm)]"
-          >
-            <div className="flex flex-col gap-1">
-              <span className="inline-flex items-center gap-2 text-base font-semibold text-[var(--color-foreground)]">
-                {d.displayName}
-                <DraftStatusBadgeIcon status={d.status} />
-              </span>
-              <span className="inline-flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-[var(--color-text-muted)]">
-                <span className="inline-flex items-center gap-1">
-                  <MapPin className="h-3 w-3" aria-hidden />
-                  {d.city}
-                </span>
-                <span aria-hidden>·</span>
-                <span className="capitalize">{d.category}</span>
-                <span aria-hidden>·</span>
-                <DraftStatusPill status={d.status} />
-              </span>
-            </div>
-            <div className="flex items-center gap-2">
-              {d.status === "approved" ? (
-                <Link
-                  href={`/p/${d.preferredSlug}`}
-                  className="inline-flex h-10 items-center gap-1.5 rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] px-4 text-xs font-semibold text-[var(--color-foreground)] transition-colors hover:border-[var(--color-brand-primary-soft)] hover:bg-[var(--color-background-elevated)]"
-                >
-                  Ver perfil
-                </Link>
+        {drafts.map((d) => {
+          const published = publishedBySlug.get(d.preferredSlug);
+          return (
+            <li
+              key={d.id}
+              className="flex flex-col gap-3 rounded-[var(--radius-xl)] border border-[var(--color-border)] bg-[var(--color-surface)] p-5 shadow-[var(--shadow-sm)]"
+            >
+              <div className="flex flex-wrap items-center justify-between gap-4">
+                <div className="flex flex-col gap-1">
+                  <span className="inline-flex items-center gap-2 text-base font-semibold text-[var(--color-foreground)]">
+                    {d.displayName}
+                    <DraftStatusBadgeIcon status={d.status} />
+                  </span>
+                  <span className="inline-flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-[var(--color-text-muted)]">
+                    <span className="inline-flex items-center gap-1">
+                      <MapPin className="h-3 w-3" aria-hidden />
+                      {d.city}
+                    </span>
+                    <span aria-hidden>·</span>
+                    <span className="capitalize">{d.category}</span>
+                    <span aria-hidden>·</span>
+                    <DraftStatusPill status={d.status} />
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  {d.status === "approved" ? (
+                    <Link
+                      href={`/p/${d.preferredSlug}`}
+                      className="inline-flex h-10 items-center gap-1.5 rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] px-4 text-xs font-semibold text-[var(--color-foreground)] transition-colors hover:border-[var(--color-brand-primary-soft)] hover:bg-[var(--color-background-elevated)]"
+                    >
+                      Ver perfil
+                    </Link>
+                  ) : null}
+                  <DraftActionLink draft={d} />
+                </div>
+              </div>
+              {published ? (
+                <div className="flex flex-wrap items-center gap-3 border-t border-[var(--color-border)] pt-3 text-[11px]">
+                  <span className="text-[var(--color-text-muted)]">
+                    Estado en el catálogo:
+                  </span>
+                  <AvailabilityToggle
+                    listingSlug={published.slug}
+                    initialAvailable={published.availableNow}
+                  />
+                </div>
               ) : null}
-              <DraftActionLink draft={d} />
-            </div>
-          </li>
-        ))}
+            </li>
+          );
+        })}
       </ul>
 
       <div className="rounded-[var(--radius-lg)] border border-dashed border-[var(--color-border)] bg-[var(--color-background-elevated)] p-4 text-xs text-[var(--color-text-muted)]">

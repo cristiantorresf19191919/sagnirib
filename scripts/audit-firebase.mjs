@@ -98,11 +98,15 @@ const RULES = [
     reference: "ADR-010 §3",
     scan: {
       include: ["src/features/**/*.ts", "src/features/**/*.tsx", "src/app/**/*.ts", "src/app/**/*.tsx"],
-      // Exception: the dev-only mock storage ingestion endpoint IS the
-      // mock's edge (see ADR-012 § "Out of scope"). It must read from the
-      // in-memory store directly. The endpoint itself returns 404 in
-      // configured environments (`isFirebaseConfigured()` guard).
-      exclude: ["src/app/api/_storage-mock/**"],
+      // Exception: the dev-only mock storage ingestion endpoints ARE the
+      // mock's edge (see ADR-012 § "Out of scope", ADR-015 § Dev preview).
+      // They must read from the in-memory store directly. The endpoints
+      // themselves return 404 in configured environments
+      // (`isFirebaseConfigured()` guard).
+      exclude: [
+        "src/app/api/_storage-mock/**",
+        "src/app/api/_storage-mock-read/**",
+      ],
     },
     flag: /from\s+["']@\/server\/(adapters|mocks)\//,
     message: "Import from the port barrel: @/server/biringas, @/server/auth, etc.",

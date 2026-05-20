@@ -104,23 +104,26 @@ async function listFeaturedUncached(
 ): Promise<ReadonlyArray<BiringaListing>> {
   const db = getDb();
   try {
+    // "Destacada" requires a paid plan with `activeUntil` in the future
+    // (ADR: BiringaListing.plan). The query pushes the cheap range
+    // filter down to Firestore (single-field index on
+    // `plan.activeUntil`, auto-indexed), then filters `verified` in
+    // memory. Avoids needing a new composite index — paid-plan
+    // cardinality stays small (hundreds), so the post-filter overhead
+    // is negligible.
+    const now = new Date();
     const snap = await db
       .collection("listings")
-      .where("verified", "==", true)
-      .where("reputation.score", ">=", 4.5)
-      .orderBy("reputation.score", "desc")
-      .orderBy("reputation.daysFeatured", "desc")
-      .limit(limit * 2)
+      .where("plan.activeUntil", ">", now)
+      .orderBy("plan.activeUntil", "desc")
+      .limit(limit * 4)
       .get();
     const docs = snap.docs.map((doc) =>
       mapListing(doc.id, doc.data() as ListingDocFields),
     );
     return docs
-      .slice()
-      .sort(
-        (a, b) =>
-          b.reputation.daysFeatured - a.reputation.daysFeatured,
-      )
+      .filter((l) => l.verified)
+      .sort((a, b) => b.reputation.score - a.reputation.score)
       .slice(0, limit);
   } catch (err) {
     throw wrapFirestoreError("listFeatured", err);
@@ -250,9 +253,13 @@ export {
   listBookingsForListingsRaw,
   updateBookingStatusRaw,
   attachBuyerReviewRaw,
+  computeReplyMedianMinutesForSlug,
+  setListingReplyMedianMinutesRaw,
 } from "./request-booking";
 export { reportListingRaw } from "./report-listing";
 export { recordListingViewRaw } from "./record-view";
+export { setListingAvailableNowRaw } from "./set-availability";
+export { setListingPlanRaw } from "./set-plan";
 export {
   listDraftsByOwnerRaw,
   getDraftByIdForOwnerRaw,

@@ -65,12 +65,6 @@ export function getSlotState(
   return 2;
 }
 
-/** "Responde en ~N min" badge — synthesised from a dedicated seed so it
- *  stays stable independently of the availability grid. */
-export function synthReplyMinutes(slug: string): number {
-  return Math.max(4, Math.floor(rngOnce(seedFrom(`${slug}|reply`)) * 38) + 4);
-}
-
 export interface DayAvailability {
   /** Calendar date as YYYY-MM-DD in local time (matches the user's clock). */
   isoDate: string;

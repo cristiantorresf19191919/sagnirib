@@ -56,6 +56,18 @@ export function toServerPayload(
         gallery: draft.description.gallery
           .filter((g): g is typeof g & { uploadedPath: string } => Boolean(g.uploadedPath))
           .map((g) => ({ path: g.uploadedPath })),
+        // Same shape as gallery — only successfully-confirmed clips
+        // make it through. The wizard validator gates submit while a
+        // clip is still uploading.
+        videos: draft.description.videos
+          .filter(
+            (v): v is typeof v & { uploadedPath: string; durationSeconds: number } =>
+              Boolean(v.uploadedPath) && typeof v.durationSeconds === "number",
+          )
+          .map((v) => ({
+            path: v.uploadedPath,
+            durationSeconds: v.durationSeconds,
+          })),
       },
       attributes: {
         ethnicity: draft.attributes.ethnicity.trim(),

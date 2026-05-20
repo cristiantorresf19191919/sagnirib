@@ -41,6 +41,37 @@ export interface GalleryItem {
   compressedSize?: number;
 }
 
+export type VideoItemStatus =
+  | "queued"
+  | "validating"
+  | "uploading"
+  | "ready"
+  | "error";
+
+/**
+ * Per-video lifecycle entry in the wizard (ADR-015). Mirrors
+ * `GalleryItem` but swaps `compressing` for `validating` since videos
+ * are not compressed client-side.
+ */
+export interface VideoItem {
+  /** Stable client-side id used as React key. */
+  id: string;
+  /** Original filename. */
+  name: string;
+  /** Blob URL for the local `<video>` preview. Revoked when removed. */
+  previewUrl: string;
+  /** The user-selected File. */
+  file: File;
+  /** Lifecycle status — drives spinners and submit-gate logic. */
+  status: VideoItemStatus;
+  /** Canonical staging path returned by the storage port once ready. */
+  uploadedPath?: string;
+  /** Client-measured duration in seconds. Populated after validation. */
+  durationSeconds?: number;
+  /** Friendly error message — surfaced under the thumbnail. */
+  errorMessage?: string;
+}
+
 export interface DescriptionValues {
   shortBio: string;
   bio: string;
@@ -50,6 +81,8 @@ export interface DescriptionValues {
   paymentByCard: boolean;
   availableNow: boolean;
   gallery: ReadonlyArray<GalleryItem>;
+  /** Short-form video clips (ADR-015). Empty by default. Max 2. */
+  videos: ReadonlyArray<VideoItem>;
 }
 
 export interface PublishValues {
@@ -104,6 +137,7 @@ export const INITIAL_DRAFT: EnrollmentDraft = {
     paymentByCard: false,
     availableNow: false,
     gallery: [],
+    videos: [],
   },
   attributes: {
     ethnicity: "",

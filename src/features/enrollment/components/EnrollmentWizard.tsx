@@ -28,7 +28,9 @@ import { StepAttributes } from "./StepAttributes";
 import {
   StepDescription,
   hasErroredUploads,
+  hasErroredVideoUploads,
   hasInFlightUploads,
+  hasInFlightVideoUploads,
 } from "./StepDescription";
 import { StepDetails } from "./StepDetails";
 import { StepPublish } from "./StepPublish";
@@ -181,8 +183,13 @@ export function EnrollmentWizard({ catalogs }: EnrollmentWizardProps) {
         return "Espera a que terminen de subir las fotos antes de continuar.";
       if (hasErroredUploads(d.gallery))
         return "Reintenta las fotos con error o quítalas para continuar.";
-      // Gallery itself is optional — the modelo can submit a draft without
-      // photos and admin reviews + attaches at approval time (ADR-011).
+      if (hasInFlightVideoUploads(d.videos))
+        return "Espera a que terminen de subir los videos antes de continuar.";
+      if (hasErroredVideoUploads(d.videos))
+        return "Reintenta los videos con error o quítalos para continuar.";
+      // Gallery + videos are both optional — the modelo can submit a draft
+      // without photos or videos and admin reviews + attaches at approval
+      // time (ADR-011 / ADR-015).
       return null;
     }
     if (current === "attributes") {

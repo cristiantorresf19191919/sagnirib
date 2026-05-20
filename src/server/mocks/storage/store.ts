@@ -1,7 +1,5 @@
 import "server-only";
 
-import { STORAGE_LIMITS } from "@/server/storage/types";
-
 /**
  * Process-local store backing the dev-only storage mock.
  *
@@ -25,6 +23,8 @@ interface TicketReservation {
   sessionId: string;
   /** Epoch ms. */
   expiresAt: number;
+  /** Per-ticket size cap — varies by kind (photo vs video, ADR-015). */
+  maxBytes: number;
 }
 
 export interface MockBlob {
@@ -70,7 +70,7 @@ class MockStore {
     if (args.sizeBytes <= 0) {
       return { error: "empty body", status: 400 };
     }
-    if (args.sizeBytes > STORAGE_LIMITS.photoMaxBytes) {
+    if (args.sizeBytes > reservation.maxBytes) {
       return { error: "body exceeds cap", status: 413 };
     }
 
@@ -111,10 +111,17 @@ class MockStore {
       (err as { kind?: string }).kind = "permission-denied";
       throw err;
     }
-    // Same extension as the staging name.
-    const ext = args.source.split(".").pop() ?? "bin";
-    const photoId = (args.source.split("/").pop() ?? "blob").replace(`.${ext}`, "");
-    const dest = `listing_drafts/${args.draftId}/photos/${photoId}.${ext}`;
+    // Preserve the staging sub-prefix (photos vs videos, ADR-015) so
+    // the draft layout mirrors the staging one. Same extension and id
+    // as the staging name.
+    const segments = args.source.split("/");
+    const filename = segments.pop() ?? "blob.bin";
+    const subPrefix = segments[segments.length - 1] === "videos"
+      ? "videos"
+      : "photos";
+    const ext = filename.split(".").pop() ?? "bin";
+    const assetId = filename.replace(`.${ext}`, "");
+    const dest = `listing_drafts/${args.draftId}/${subPrefix}/${assetId}.${ext}`;
     this.blobs.set(dest, { ...blob, path: dest });
     this.blobs.delete(args.source);
     return dest;

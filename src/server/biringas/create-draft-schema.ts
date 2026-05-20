@@ -2,6 +2,7 @@ import "server-only";
 
 import type { ActionInputSchema } from "@/server/security/validate-action-input";
 import { APPEARANCE_CATALOG } from "@/server/mocks/biringas/data";
+import { STORAGE_LIMITS } from "@/server/storage/types";
 
 import {
   type CreateListingDraftInput,
@@ -149,7 +150,96 @@ function parseDescription(raw: unknown): ListingDraftPayloadDescription {
       0,
       DRAFT_LIMITS.galleryMax,
     ),
+    videos: expectStagingVideoArray(
+      d.videos,
+      "description.videos",
+      0,
+      STORAGE_LIMITS.videoMaxPerListing,
+    ),
   };
+}
+
+/**
+ * Strict shape of a staging video path (ADR-015). Mirrors the photo
+ * regex with the video sub-prefix + extensions.
+ */
+const STAGING_VIDEO_PATH_REGEX =
+  /^users\/([A-Za-z0-9_-]{6,128})\/staging\/([A-Za-z0-9_-]{8,64})\/videos\/([0-9a-f]{8,64})\.(mp4|webm)$/;
+
+function expectStagingVideoArray(
+  value: unknown,
+  field: string,
+  min: number,
+  max: number,
+): ReadonlyArray<{ path: string; durationSeconds: number }> {
+  if (value === undefined || value === null) {
+    // Backwards-compat: drafts created before ADR-015 omitted `videos`.
+    // Treat absent as empty array.
+    if (min > 0) {
+      throw new Error(
+        `createListingDraft: ${field} must have at least ${min} item(s)`,
+      );
+    }
+    return [];
+  }
+  if (!Array.isArray(value)) {
+    throw new Error(`createListingDraft: ${field} must be an array`);
+  }
+  if (value.length < min) {
+    throw new Error(
+      `createListingDraft: ${field} must have at least ${min} item(s)`,
+    );
+  }
+  if (value.length > max) {
+    throw new Error(
+      `createListingDraft: ${field} must have at most ${max} item(s)`,
+    );
+  }
+  const seen = new Set<string>();
+  const out: { path: string; durationSeconds: number }[] = [];
+  for (const item of value) {
+    if (!item || typeof item !== "object") {
+      throw new Error(`createListingDraft: ${field} items must be objects`);
+    }
+    const rec = item as Record<string, unknown>;
+    if (typeof rec.path !== "string") {
+      throw new Error(
+        `createListingDraft: ${field}[].path must be a string`,
+      );
+    }
+    const path = rec.path.trim();
+    if (!STAGING_VIDEO_PATH_REGEX.test(path)) {
+      throw new Error(
+        `createListingDraft: ${field}[].path is not a valid staging video path`,
+      );
+    }
+    if (seen.has(path)) {
+      throw new Error(
+        `createListingDraft: ${field} has duplicate path ${path}`,
+      );
+    }
+    seen.add(path);
+
+    if (
+      typeof rec.durationSeconds !== "number" ||
+      !Number.isFinite(rec.durationSeconds)
+    ) {
+      throw new Error(
+        `createListingDraft: ${field}[].durationSeconds must be a finite number`,
+      );
+    }
+    if (
+      rec.durationSeconds < STORAGE_LIMITS.videoMinDurationSeconds ||
+      rec.durationSeconds > STORAGE_LIMITS.videoMaxDurationSeconds
+    ) {
+      throw new Error(
+        `createListingDraft: ${field}[].durationSeconds must be between ${STORAGE_LIMITS.videoMinDurationSeconds} and ${STORAGE_LIMITS.videoMaxDurationSeconds}`,
+      );
+    }
+
+    out.push({ path, durationSeconds: rec.durationSeconds });
+  }
+  return out;
 }
 
 /**

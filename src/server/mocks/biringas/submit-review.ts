@@ -10,6 +10,13 @@ import type { SubmitReviewRawInput } from "@/server/biringas/review-types";
  *
  * Implementation: process-scoped in-memory map. Sufficient for unit tests
  * to exercise duplicate detection and id assignment. Cleared per process.
+ *
+ * The Firestore adapter recomputes the parent listing's
+ * `reputation.reviewCount` + `reputation.score` inside a transaction
+ * (see `adapters/firebase/biringas/submit-review.ts`). The mock does
+ * NOT mutate the seed array — BIRINGA_LISTINGS is a const fixture and
+ * production-style aggregate behavior is tested against the Firestore
+ * adapter, not the mock.
  */
 
 const writes = new Map<string, Set<string>>(); // slug → Set<authorUid>

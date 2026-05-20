@@ -79,3 +79,30 @@ export const BILLING_LABELS: Record<BillingCadence, string> = {
   monthly: "Mensual",
   quarterly: "Trimestral (15% off)",
 };
+
+/**
+ * Active-window length per billing cadence. Used by the checkout
+ * completion path to compute `plan.activeUntil` for each listing
+ * owned by the buyer (ADR-013 + ADR-015 plan field).
+ *
+ * 30 / 90 days — chosen for parity with the price-quote semantics
+ * (`PLAN_PRICING.quarterly = 3 × monthly × 0.85`); a quarter is
+ * exactly three monthly windows.
+ */
+export const PLAN_ACTIVE_DAYS: Record<BillingCadence, number> = {
+  monthly: 30,
+  quarterly: 90,
+};
+
+/**
+ * Returns the ISO timestamp when a freshly-bought plan should stop
+ * counting as active. The catalog's `isPlanActive(listing)` predicate
+ * compares this against `Date.now()`.
+ */
+export function computePlanActiveUntil(
+  billing: BillingCadence,
+  now: Date = new Date(),
+): string {
+  const ms = PLAN_ACTIVE_DAYS[billing] * 24 * 60 * 60 * 1000;
+  return new Date(now.getTime() + ms).toISOString();
+}

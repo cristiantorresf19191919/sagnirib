@@ -26,7 +26,7 @@ import { mockStore } from "./store";
  * returns true, and the Route Handler itself returns 404 when that env is set.
  */
 
-function newPhotoId(): string {
+function newAssetId(): string {
   const buf = new Uint8Array(8);
   globalThis.crypto.getRandomValues(buf);
   return Array.from(buf, (b) => b.toString(16).padStart(2, "0")).join("");
@@ -35,6 +35,8 @@ function newPhotoId(): string {
 const EXT_BY_MIME: Record<string, string> = {
   "image/jpeg": "jpg",
   "image/webp": "webp",
+  "video/mp4": "mp4",
+  "video/webm": "webm",
 };
 
 export async function signUploadUrlRawForOwner(
@@ -42,22 +44,33 @@ export async function signUploadUrlRawForOwner(
   input: UploadTicketInput,
 ): Promise<UploadTicket> {
   const ext = EXT_BY_MIME[input.contentType] ?? "bin";
-  const photoId = newPhotoId();
-  const path = `users/${ownerUid}/staging/${input.sessionId}/photos/${photoId}.${ext}`;
+  const assetId = newAssetId();
+  // Per-kind path layout + cap dispatch — same shape as the Firebase
+  // adapter so the wizard stays kind-agnostic.
+  const isVideo = input.kind === "video";
+  const subPrefix = isVideo ? "videos" : "photos";
+  const path = `users/${ownerUid}/staging/${input.sessionId}/${subPrefix}/${assetId}.${ext}`;
+  const maxBytes = isVideo
+    ? STORAGE_LIMITS.videoMaxBytes
+    : STORAGE_LIMITS.photoMaxBytes;
+  const ttlSeconds = isVideo
+    ? STORAGE_LIMITS.videoTicketTtlSeconds
+    : STORAGE_LIMITS.ticketTtlSeconds;
 
-  const expiresMs = Date.now() + STORAGE_LIMITS.ticketTtlSeconds * 1000;
+  const expiresMs = Date.now() + ttlSeconds * 1000;
   const token = mockStore.reserveTicket({
     path,
     ownerUid,
     contentType: input.contentType,
     sessionId: input.sessionId,
     expiresAt: expiresMs,
+    maxBytes,
   });
 
   // Relative URL — the wizard PUTs to the same origin it loaded from. The
   // Route Handler resolves `token` back to the reservation.
   const uploadUrl = `/api/_storage-mock/${token}`;
-  const contentLengthRange = `1,${STORAGE_LIMITS.photoMaxBytes}`;
+  const contentLengthRange = `1,${maxBytes}`;
 
   return {
     uploadUrl,
@@ -68,7 +81,7 @@ export async function signUploadUrlRawForOwner(
       "cache-control": "private, max-age=0, no-store",
     },
     contentType: input.contentType,
-    maxBytes: STORAGE_LIMITS.photoMaxBytes,
+    maxBytes,
   };
 }
 

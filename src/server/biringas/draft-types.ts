@@ -34,6 +34,17 @@ export interface ListingDraftPhoto {
   path: string;
 }
 
+/**
+ * One short-form video attached to the draft (ADR-015). `path` is the
+ * canonical draft bucket path post-copy from staging.
+ * `durationSeconds` is the client-reported clip length, validated by
+ * `createListingDraftSchema` into the range [3, 30].
+ */
+export interface ListingDraftVideo {
+  path: string;
+  durationSeconds: number;
+}
+
 export interface ListingDraftPayloadDescription {
   shortBio: string;
   bio: string;
@@ -49,6 +60,12 @@ export interface ListingDraftPayloadDescription {
    * the canonical draft path (e.g. `listing_drafts/<draftId>/photos/<id>.jpg`).
    */
   gallery: ReadonlyArray<ListingDraftPhoto>;
+  /**
+   * Short-form videos attached to this draft (ADR-015). At most
+   * `STORAGE_LIMITS.videoMaxPerListing` entries (today: 2). Empty
+   * array is the default — videos are optional even for premium plans.
+   */
+  videos: ReadonlyArray<ListingDraftVideo>;
 }
 
 export interface ListingDraftPayloadPublish {

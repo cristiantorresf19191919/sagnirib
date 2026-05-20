@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-import { listAll, type ListingsFilters } from "@/server/biringas";
+import { isPlanActive, listAll, type ListingsFilters } from "@/server/biringas";
 import { Button } from "@/shared/design-system/components/Button";
 import { Container } from "@/shared/design-system/components/Container";
 import { Sparkle } from "@/shared/design-system/components/Sparkle";
@@ -17,8 +17,6 @@ interface CatalogGridProps {
   filters: ListingsFilters;
   view?: CatalogView;
 }
-
-const FEATURED_THRESHOLD = 4.85;
 
 // Mobile-first rhythm: tight gap on phones to maximise card real estate,
 // generous gap on desktop so the editorial cards breathe. Scales 4→5→6
@@ -129,7 +127,7 @@ export async function CatalogGrid({
                   <CatalogCard
                     listing={listing}
                     priority={index === 0}
-                    featured={listing.reputation.score >= FEATURED_THRESHOLD}
+                    featured={isPlanActive(listing)}
                     view={view}
                   />
                 </CardReveal>

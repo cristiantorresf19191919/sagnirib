@@ -45,6 +45,10 @@ export async function signKycUploadUrlRawForOwner(
     contentType: input.contentType,
     sessionId: "verification",
     expiresAt: expiresMs,
+    // KYC files have their own cap; videos do not flow through this
+    // path. Pass the cap explicitly so the ticket carries its own
+    // limit (ADR-015 made the ticket-level cap per-kind).
+    maxBytes: VERIFICATION_LIMITS.fileMaxBytes,
   });
 
   return {

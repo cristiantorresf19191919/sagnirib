@@ -10,10 +10,18 @@ interface HeartButtonProps {
   /**
    * Listing id this heart represents. When provided, the pressed state is
    * driven by the global favorites store (persisted across pages and tabs
-   * via localStorage). When omitted, the button keeps the legacy local
-   * state — useful in isolated previews / Storybook contexts.
+   * via localStorage and, for signed-in users, the `favorites/` Firestore
+   * collection per ADR-013). When omitted, the button keeps the legacy
+   * local state — useful in isolated previews / Storybook contexts.
    */
   listingId?: string;
+  /**
+   * Listing slug — captured as a snapshot for the server-side favorite
+   * record (ADR-013 §"Shape"). Required when `listingId` is provided so
+   * the favorites collection has a slug to display when the underlying
+   * listing has been deleted or renamed.
+   */
+  listingSlug?: string;
   /** Initial pressed state (only used when `listingId` is omitted). */
   initialActive?: boolean;
   /** Optional aria label override. */
@@ -32,6 +40,7 @@ interface HeartButtonProps {
  */
 export function HeartButton({
   listingId,
+  listingSlug,
   initialActive = false,
   label,
   className = "",
@@ -40,6 +49,7 @@ export function HeartButton({
     return (
       <ConnectedHeart
         listingId={listingId}
+        listingSlug={listingSlug}
         label={label}
         className={className}
       />
@@ -56,12 +66,14 @@ export function HeartButton({
 
 interface ConnectedHeartProps {
   listingId: string;
+  listingSlug?: string;
   label?: string;
   className?: string;
 }
 
 function ConnectedHeart({
   listingId,
+  listingSlug,
   label,
   className = "",
 }: Readonly<ConnectedHeartProps>) {
@@ -83,7 +95,7 @@ function ConnectedHeart({
         e.preventDefault();
         e.stopPropagation();
         const next = !active;
-        toggleFavorite(listingId);
+        toggleFavorite(listingId, listingSlug);
         // Only fire the pop when toggling ON — releasing a favorite
         // shouldn't celebrate.
         if (next && !reduced) fire();

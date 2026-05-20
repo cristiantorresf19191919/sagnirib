@@ -16,6 +16,7 @@ import { seoConfig } from "@/core/seo/seo-config";
 import { personJsonLd } from "@/core/seo/structured-data";
 import { findBySlug, getListingReviews } from "@/server/biringas";
 import { CardStackGallery } from "@/features/biringas/components/CardStackGallery";
+import { VideoPlayer } from "@/features/biringas/components/VideoPlayer";
 import { AvailabilityStrip } from "@/features/biringas/components/AvailabilityStrip";
 import { BookingRequestModal } from "@/features/biringas/components/BookingRequestModal";
 import { ContactReveal } from "@/features/biringas/components/ContactReveal";
@@ -191,6 +192,32 @@ export default async function ProfilePage({ params }: Readonly<ProfilePageProps>
               altBase={`${listing.name} en ${listing.city}`}
             />
 
+            {/* Videos (ADR-015) — short clips uploaded by the owner.
+                Renders below the photo gallery in a 1-or-2 column grid.
+                Hidden when the listing has none. */}
+            {listing.videos && listing.videos.length > 0 && (
+              <div className="mt-5 flex flex-col gap-3">
+                <span className="text-xs uppercase tracking-[0.32em] text-[var(--color-text-subtle)]">
+                  {listing.videos.length === 1 ? "Video" : "Videos"}
+                </span>
+                <div
+                  className={
+                    listing.videos.length === 1
+                      ? "grid grid-cols-1 gap-3"
+                      : "grid grid-cols-1 gap-3 sm:grid-cols-2"
+                  }
+                >
+                  {listing.videos.map((video) => (
+                    <VideoPlayer
+                      key={video.path}
+                      video={video}
+                      posterUrl={listing.mainImage}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
+
             {/* Photo-verification timestamp — anchors the trust promise
                 of the verified shield with a concrete date. Pulled from
                 `daysSinceVerification` so it stays accurate without an
@@ -218,13 +245,19 @@ export default async function ProfilePage({ params }: Readonly<ProfilePageProps>
             )}
 
             <div className="mt-6 flex flex-wrap items-center justify-center gap-3 text-xs text-[var(--color-text-muted)]">
-              {listing.hasVideo && (
+              {/* Stricter than `hasVideo` (the cached query flag): show
+                  only when there's at least one actual clip attached
+                  (ADR-015). Keeps the chip honest if the flag and the
+                  array ever drift. */}
+              {listing.videos && listing.videos.length > 0 && (
                 <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--color-surface)] px-3 py-1.5 ring-1 ring-[var(--color-border)]">
                   <Film
                     className="h-3.5 w-3.5 text-[var(--color-brand-primary)]"
                     aria-hidden
                   />
-                  Vídeo disponible
+                  {listing.videos.length === 1
+                    ? "Vídeo disponible"
+                    : `${listing.videos.length} vídeos disponibles`}
                 </span>
               )}
               {listing.hasAudio && (
@@ -343,7 +376,10 @@ export default async function ProfilePage({ params }: Readonly<ProfilePageProps>
                 </div>
 
                 <div className="mt-5">
-                  <AvailabilityStrip listingSlug={listing.slug} />
+                  <AvailabilityStrip
+                    listingSlug={listing.slug}
+                    avgReplyMinutes={listing.reputation.replyMedianMinutes}
+                  />
                 </div>
                 </Card>
               </RevealItem>

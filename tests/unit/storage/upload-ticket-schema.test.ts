@@ -24,8 +24,41 @@ describe("uploadTicketSchema.parse", () => {
 
   it("rejects unknown kinds", () => {
     expect(() =>
-      uploadTicketSchema.parse({ ...VALID_INPUT, kind: "video" }),
+      uploadTicketSchema.parse({ ...VALID_INPUT, kind: "audio" }),
     ).toThrow(/kind must be one of/);
+  });
+
+  it("accepts a well-formed video input (ADR-015)", () => {
+    const out = uploadTicketSchema.parse({
+      kind: "video",
+      sessionId: "abc12345xyz",
+      contentType: "video/mp4",
+      sizeBytes: 12 * 1024 * 1024,
+    });
+    expect(out.kind).toBe("video");
+    expect(out.contentType).toBe("video/mp4");
+  });
+
+  it("rejects video MIMEs outside the allowlist", () => {
+    expect(() =>
+      uploadTicketSchema.parse({
+        kind: "video",
+        sessionId: "abc12345xyz",
+        contentType: "video/quicktime",
+        sizeBytes: 5 * 1024 * 1024,
+      }),
+    ).toThrow(/contentType must be one of/);
+  });
+
+  it("rejects videos above the 35MB cap", () => {
+    expect(() =>
+      uploadTicketSchema.parse({
+        kind: "video",
+        sessionId: "abc12345xyz",
+        contentType: "video/mp4",
+        sizeBytes: 40 * 1024 * 1024,
+      }),
+    ).toThrow(/sizeBytes/);
   });
 
   it("rejects sessionId with invalid characters", () => {

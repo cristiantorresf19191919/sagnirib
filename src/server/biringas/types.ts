@@ -1,5 +1,7 @@
 import "server-only";
 
+import type { PlanTier } from "./checkout-types";
+
 /**
  * Domain types for the Biringa listings catalog.
  *
@@ -25,6 +27,25 @@ export type AttentionTarget =
 
 export type ContactChannel = "llamada" | "whatsapp" | "telegram";
 
+/**
+ * A short-form video attached to a listing (ADR-015).
+ *
+ * `path` is the canonical bucket path under `listings/{slug}/videos/`
+ * (post-promotion from `listing_drafts/{draftId}/videos/...`). Features
+ * must NOT treat the path as a public URL; the catalog reads videos
+ * through signed READ URLs minted server-side or via Firebase Storage
+ * public-download semantics on the listing surface.
+ *
+ * `durationSeconds` is the client-reported clip length. Server-side
+ * Cloud Function validation (delete-if-overrun) is a future ADR; for
+ * MVP this value is trusted but capped (3..30) by the create-draft
+ * schema.
+ */
+export interface BiringaVideo {
+  path: string;
+  durationSeconds: number;
+}
+
 export interface BiringaAttributes {
   ethnicity?: string;
   hair?: string;
@@ -45,6 +66,14 @@ export interface BiringaReputation {
   daysFeatured: number;
   /** Public review count — drives the "Con experiencias" content filter. */
   reviewCount: number;
+  /**
+   * Median minutes between a booking submission and the owner's first
+   * response (`pending → confirmed | declined`). Recomputed and persisted
+   * by `respondToBooking`. Absent when the owner has not yet responded
+   * to any booking — surfaces SHOULD hide the "Responde ~Xmin" chip
+   * rather than synthesise a value.
+   */
+  replyMedianMinutes?: number;
 }
 
 export interface BiringaListing {
@@ -58,7 +87,19 @@ export interface BiringaListing {
   mainImage: string;
   gallery: ReadonlyArray<string>;
   verified: boolean;
+  /**
+   * True iff `videos.length > 0`. Kept as a stored boolean for cheap
+   * Firestore equality queries (`withVideo` catalog filter) — the
+   * write path keeps it in sync with the videos array.
+   */
   hasVideo: boolean;
+  /**
+   * Owner-uploaded short clips (ADR-015). At most
+   * `STORAGE_LIMITS.videoMaxPerListing` entries (today: 2). Absent /
+   * empty when the listing has no videos — the catalog surfaces hide
+   * the player and the play overlay.
+   */
+  videos?: ReadonlyArray<BiringaVideo>;
   hasAudio: boolean;
   tags: ReadonlyArray<string>;
   bio: string;
@@ -105,6 +146,32 @@ export interface BiringaListing {
    * `createdAt` so the tile never reads as "hace 0d" by accident.
    */
   verifiedAt?: string;
+
+  /**
+   * Active paid plan, if any. Drives the "Destacada" badge (any active
+   * plan) and future tier-specific perks (e.g. an "Elite" ribbon when
+   * `tier === 'elite'`). `undefined` means the listing is on the free
+   * tier and no paid-plan UI affordances should render.
+   *
+   * Lifecycle (to be wired when the checkout flow goes live — today
+   * planes están deshabilitados):
+   *   1. `createCheckoutSession` mints the session.
+   *   2. The payment provider's webhook (or `completeMockCheckout` in
+   *      dev) flips the session to `succeeded` and writes this `plan`
+   *      onto every listing owned by the buyer with
+   *      `activeUntil = now + cadence`.
+   *   3. A scheduled job (or read-time check) clears the field once
+   *      `activeUntil` is in the past.
+   *
+   * Read-time check: `plan && new Date(plan.activeUntil) > new Date()`.
+   * Use `isPlanActive(listing)` from the barrel — never inline that
+   * comparison at call sites.
+   */
+  plan?: {
+    tier: PlanTier;
+    /** ISO timestamp. The plan stops counting as active at this moment. */
+    activeUntil: string;
+  };
 }
 
 export interface ListingsFilters {

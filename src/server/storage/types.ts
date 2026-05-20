@@ -19,7 +19,7 @@ import "server-only";
  * even if the sessionId leaks, the URL only PUTs the one expected file.
  */
 
-export const STORAGE_ASSET_KINDS = ["photo"] as const;
+export const STORAGE_ASSET_KINDS = ["photo", "video"] as const;
 export type StorageAssetKind = (typeof STORAGE_ASSET_KINDS)[number];
 
 export const STORAGE_LIMITS = {
@@ -29,16 +29,37 @@ export const STORAGE_LIMITS = {
   photoMinBytes: 4 * 1024,
   /** Allowed MIME types for photo uploads. */
   photoMimes: ["image/jpeg", "image/webp"] as const,
-  /** Signed URL TTL. Long enough for a 4MB upload over LTE, short enough
-   *  that a leaked URL is dead before it can be reused. */
+  /**
+   * Per-video cap (ADR-015). ~30s of phone-grade MP4 at 8–10Mbps fits
+   * comfortably. The signed URL byte range rejects anything larger
+   * before a byte is stored.
+   */
+  videoMaxBytes: 35 * 1024 * 1024,
+  /** Anything smaller than this is a broken capture, not a 30s clip. */
+  videoMinBytes: 50 * 1024,
+  /** Allowed MIME types for video uploads. QuickTime intentionally
+   *  omitted — Safari exports have edge-case audio compatibility. */
+  videoMimes: ["video/mp4", "video/webm"] as const,
+  /** Hard duration cap enforced client-side (server cannot inspect
+   *  media content from a signed PUT URL). */
+  videoMaxDurationSeconds: 30,
+  /** Anything shorter is an accidental 0.5s tap that no one wants. */
+  videoMinDurationSeconds: 3,
+  /** Founder cap (ADR-015): at most 2 videos per listing. */
+  videoMaxPerListing: 2,
+  /** Signed URL TTL for photos. */
   ticketTtlSeconds: 5 * 60,
+  /** Longer TTL for videos — slower uploads over LTE need the headroom. */
+  videoTicketTtlSeconds: 10 * 60,
   /** Max staged files per session — protects against pathological clients
    *  that hammer requestUploadTicket. The wizard never goes near this; the
    *  hardest tier (Premium) is at 24. */
   maxStagedPerSession: 30,
 } as const;
 
-export type StorageMime = (typeof STORAGE_LIMITS.photoMimes)[number];
+export type StorageMime =
+  | (typeof STORAGE_LIMITS.photoMimes)[number]
+  | (typeof STORAGE_LIMITS.videoMimes)[number];
 
 /**
  * Inbound shape to `requestUploadTicket`. The client supplies what it knows

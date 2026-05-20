@@ -166,17 +166,23 @@ export async function listAll(
 }
 
 /**
- * Featured listings — verified + high score, sorted by daysFeatured.
- * Used by surfaces that want a curated list (home hero, OG previews, etc.).
+ * Featured listings — verified profiles with an active paid plan
+ * (`plan.activeUntil > now`). Sorted by score so the best-rated of the
+ * paying cohort surface first. When no listing has an active plan
+ * (the current state — planes están deshabilitados), the function
+ * returns an empty array and consumer surfaces render their empty
+ * state. That is intentional honesty: nothing is "Destacada" without
+ * payment behind it.
  */
 export async function listFeatured(
   limit = 8,
 ): Promise<ReadonlyArray<BiringaListing>> {
+  const { isPlanActive } = await import("@/server/biringas/plan-status");
   return BIRINGA_LISTINGS.filter(
-    (ad) => ad.verified && ad.reputation.score >= 4.5,
+    (ad) => ad.verified && isPlanActive(ad),
   )
     .slice()
-    .sort((a, b) => b.reputation.daysFeatured - a.reputation.daysFeatured)
+    .sort((a, b) => b.reputation.score - a.reputation.score)
     .slice(0, limit);
 }
 
@@ -293,9 +299,13 @@ export {
   listBookingsForListingsRaw,
   updateBookingStatusRaw,
   attachBuyerReviewRaw,
+  computeReplyMedianMinutesForSlug,
+  setListingReplyMedianMinutesRaw,
 } from "./request-booking";
 export { reportListingRaw, listReportsRaw } from "./report-listing";
 export { recordListingViewRaw } from "./record-view";
+export { setListingAvailableNowRaw } from "./set-availability";
+export { setListingPlanRaw } from "./set-plan";
 export {
   listDraftsByOwnerRaw,
   getDraftByIdForOwnerRaw,

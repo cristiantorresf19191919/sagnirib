@@ -16,10 +16,20 @@ import { Toaster } from "@/shared/ui/toast";
  *    tab is visible; surfaces a countdown banner while armed and an
  *    alert modal when a deadline crosses. Pure client-side; no
  *    network traffic at any point.
+ *
+ * `initialFavorites` is supplied by the Server Component layout (ADR-013).
+ * The provider merges it with localStorage on first paint so signed-in
+ * users see their cross-device shortlist without a hydration flash.
  */
-export function Providers({ children }: { children: React.ReactNode }) {
+export function Providers({
+  children,
+  initialFavorites,
+}: {
+  children: React.ReactNode;
+  initialFavorites?: ReadonlyArray<string>;
+}) {
   return (
-    <FavoritesProvider>
+    <FavoritesProvider initialFavorites={initialFavorites}>
       {children}
       <Toaster />
       <BackOnlinePill />

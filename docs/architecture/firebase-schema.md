@@ -9,7 +9,9 @@ is provisioned, the barrel falls back to the in-memory mock.
 ```
 listings/{listingId}
 listings/{listingId}/reviews/{reviewId}
-listing_drafts/{draftId}            # see ADR-011
+listing_drafts/{draftId}                       # see ADR-011
+favorites/{uid}/items/{listingId}              # see ADR-013
+bookings/{bookingId}                           # see ADR-016
 ```
 
 `{listingId}` is an opaque Firestore-generated id. The user-facing slug is
@@ -53,6 +55,8 @@ can change without doc rewrites.
 | `createdAt`       | Timestamp                  |                                                           |
 | `updatedAt`       | Timestamp                  | Default `orderBy` for `listAll`.                          |
 | `verifiedAt`      | Timestamp \| null          | Set when `verified` flips to `true`. Mapper falls back to `createdAt` when missing on a verified listing. |
+| `plan`            | map \| null                | Active paid plan. Drives the "Destacada" badge and `listFeatured`. See § "`plan` map". |
+| `videos`          | array\<map\> \| null       | Short-form clips (ADR-015). At most `STORAGE_LIMITS.videoMaxPerListing` (today: 2). See § "`videos` array". |
 
 ### `reputation` map
 
@@ -74,6 +78,57 @@ them on every read so the profile tiles never go stale.
 
 `totalViews` is incremented by `recordListingViewRaw` (one write per visitor
 per listing per 24h — dedupe lives in the action wrapper).
+
+### `plan` map (optional — `undefined` = free tier)
+
+```
+{
+  tier: 'boost' | 'elite',            // matches PlanTier in checkout-types.ts
+  activeUntil: Timestamp              // plan stops counting as active at this moment
+}
+```
+
+Set by the payment flow when a checkout session reaches `succeeded`
+(today the flow is `completeMockCheckout`; webhooks from Stripe /
+MercadoPago later). Cleared by a scheduled job once `activeUntil` is in
+the past, or by the read-time `isPlanActive()` helper which treats an
+expired plan as absent.
+
+Read-time predicate lives in `src/server/biringas/plan-status.ts` —
+`isPlanActive(listing)` and `activePlanTier(listing)`. Catalog
+surfaces and queries (`listFeatured`, the "Destacada" badge in
+`CatalogGrid`) consume the helper exclusively; call sites must NOT
+inline the date comparison.
+
+### `videos` array (optional — `undefined` = no clips)
+
+```
+[
+  {
+    path: string,             // canonical bucket path, e.g.
+                              //   listings/<slug>/videos/<id>.mp4
+    durationSeconds: number   // client-reported, validated 3..30 at submit
+  },
+  …
+]
+```
+
+Set when an `approved` draft was created with one or two clips (ADR-015).
+The wizard uploads each clip to staging, the submit Server Action copies
+to the draft prefix, and the admin promotion (Fase 2) copies again into
+`listings/{slug}/videos/...`.
+
+`hasVideo` (top-level boolean) MUST stay in sync with `videos.length > 0`
+so the catalog's `withVideo` equality filter works on the cheap. The
+write path is the place that bridges them; mappers never derive one from
+the other (the boolean is the authority for queries, the array is the
+authority for rendering).
+
+Reading: `resolveAssetUrl(video.path)` (in
+`src/features/biringas/lib/asset-url.ts`) handles the mock-vs-prod URL
+construction. Surfaces consume `VideoPlayer` from
+`src/features/biringas/components/VideoPlayer.tsx` — never reach into the
+storage adapter directly.
 
 ### `attributes` map (all optional)
 
@@ -153,6 +208,70 @@ Notes:
   the published listing have different fields, and approval is a transform,
   not a copy.
 
+## Collection — `favorites/{uid}/items/{listingId}`
+
+Per-user shortlist persisted across devices for signed-in visitors. The
+parent `favorites/{uid}` document is empty — it is created lazily as a
+side effect of writing the first item and is never read directly. See
+ADR-013 for the lifecycle (anonymous → signed-in merge, optimistic
+client updates, audit + cache semantics).
+
+| Field         | Type      | Notes                                                                  |
+| ------------- | --------- | ---------------------------------------------------------------------- |
+| `listingId`   | string    | == document id. Opaque Firestore listing id; survives slug renames.    |
+| `listingSlug` | string    | Snapshot at add time. Used for display fallback when the listing is gone. |
+| `addedAt`     | Timestamp | `serverTimestamp()` — orders the user's shortlist newest-first.        |
+
+No composite indexes required. The read path is
+`favorites/{uid}/items.orderBy('addedAt', 'desc')`, satisfied by the
+implicit document-creation index.
+
+## Collection — `bookings/{bookingId}`
+
+Buyer-side booking requests + seller responses (ADR-016). Auto-id;
+written by `requestBookingRaw`, updated by `updateBookingStatusRaw` and
+`attachBuyerReviewRaw`.
+
+| Field              | Type              | Notes                                                   |
+| ------------------ | ----------------- | ------------------------------------------------------- |
+| `listingSlug`      | string            | Slug of the listing being requested. Equality-indexed.  |
+| `requesterUid`     | string            | Firebase Auth uid of the buyer.                          |
+| `proposedAt`       | Timestamp         | Buyer's proposed encounter datetime.                    |
+| `durationHours`    | number            | `1 \| 2 \| 3 \| 4 \| 8 \| 12 \| 24`.                    |
+| `meetingType`      | string            | `outcall \| incall \| videocall`.                       |
+| `contactPreference`| string            | `whatsapp \| telegram \| platform`.                     |
+| `message`          | string            | Freeform 12..1000 chars; trimmed server-side.           |
+| `submittedAt`      | Timestamp         | `serverTimestamp()` at write.                           |
+| `respondedAt`      | Timestamp \| null | Set the first time status leaves `pending`.             |
+| `status`           | string            | `pending \| confirmed \| declined \| cancelled \| completed`. |
+| `buyerReview`      | map \| null       | Seller-to-buyer mutual review. See below.               |
+
+`buyerReview` (optional, attached post-`completed`):
+
+```
+{
+  rating: 1..5 integer,
+  comment?: string,
+  submittedAt: Timestamp
+}
+```
+
+Reads:
+
+- **Inbox** (`listBookingsForListingsRaw`): one or more chunks of
+  `where('listingSlug', 'in', [...])` + `orderBy('submittedAt', 'desc')`.
+  Sellers with > 30 slugs see one chunk per 30; results merged in
+  memory.
+- **Reply median** (`computeReplyMedianMinutesForSlug`):
+  `where('listingSlug', '==', slug)` +
+  `orderBy('respondedAt', 'desc')` + `limit(20)`. The orderBy
+  naturally excludes pending bookings (Firestore skips `null` on
+  orderBy fields).
+
+Writes always go through the Server Action stack
+(`requestBooking`, `respondToBooking`, `submitBuyerReview`,
+`completeMockCheckout` for the plan side-effect).
+
 ## Composite indexes
 
 Required to satisfy the queries in `src/server/adapters/firebase/biringas/index.ts`:
@@ -163,8 +282,10 @@ Required to satisfy the queries in `src/server/adapters/firebase/biringas/index.
 | `listings` | `city ASC`, `updatedAt DESC`                                        | `listAll` with city filter.            |
 | `listings` | `verified ASC`, `updatedAt DESC`                                    | `listAll` with verifiedOnly.           |
 | `listings` | `verified ASC`, `availableNow ASC`, `updatedAt DESC`                | `listHeroMosaic` (live).               |
-| `listings` | `verified ASC`, `reputation.score ASC`, `reputation.daysFeatured DESC` | `listFeatured`.                     |
+| `listings` | `plan.activeUntil ASC`                                              | `listFeatured` (single-field, automatic). |
 | `listings` | `slug ASC`                                                          | `findBySlug` (single-field, automatic).|
+| `bookings` | `listingSlug ASC`, `submittedAt DESC`                               | `listBookingsForListingsRaw` (inbox).  |
+| `bookings` | `listingSlug ASC`, `respondedAt DESC`                               | `computeReplyMedianMinutesForSlug`.    |
 
 Firestore prompts for any missing index at first run with a console URL — apply when they appear. Add new entries here as queries grow.
 
