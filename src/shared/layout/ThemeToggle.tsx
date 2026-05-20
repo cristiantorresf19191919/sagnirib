@@ -1,12 +1,38 @@
 "use client";
 
-import { Flame, Moon, Sparkles, Sun, X } from "lucide-react";
+import {
+  Cherry,
+  Flame,
+  Heart,
+  Moon,
+  MoonStar,
+  Sparkles,
+  Sun,
+  X,
+} from "lucide-react";
 import { useEffect, useState, useSyncExternalStore } from "react";
 
 const STORAGE_KEY = "biringas:theme";
 const HINT_DISMISSED_KEY = "biringas:theme-hint-dismissed";
 
-type Theme = "light" | "dark" | "bloom" | "desire";
+type Theme =
+  | "light"
+  | "dark"
+  | "desire"
+  | "bloom"
+  | "ember"
+  | "amour"
+  | "noir";
+
+const VALID_THEMES: ReadonlySet<Theme> = new Set([
+  "light",
+  "dark",
+  "desire",
+  "bloom",
+  "ember",
+  "amour",
+  "noir",
+]);
 
 const listeners = new Set<() => void>();
 
@@ -35,9 +61,7 @@ function subscribe(cb: () => void) {
 
 function getSnapshot(): Theme {
   const attr = document.documentElement.getAttribute("data-theme");
-  if (attr === "dark") return "dark";
-  if (attr === "bloom") return "bloom";
-  if (attr === "desire") return "desire";
+  if (attr && VALID_THEMES.has(attr as Theme)) return attr as Theme;
   return "light";
 }
 
@@ -47,58 +71,115 @@ function getServerSnapshot(): Theme {
   return "light";
 }
 
-/** Cycle: light → dark → desire (violet dark) → bloom (violet light) → light. */
+/**
+ * Cycle:
+ *   light → dark
+ *        → desire (dark violet)
+ *        → bloom  (light violet)
+ *        → ember  (dark passion red)
+ *        → amour  (light passion rose)
+ *        → noir   (dark sapphire)
+ *        → light
+ *
+ * Order is deliberate: each step is a clear vibe shift, dark/light
+ * alternates inside each color family, and the visit order roughly
+ * matches editorial gravity (familiar → adventurous → sophisticated).
+ */
 const NEXT_THEME: Record<Theme, Theme> = {
   light: "dark",
   dark: "desire",
   desire: "bloom",
-  bloom: "light",
+  bloom: "ember",
+  ember: "amour",
+  amour: "noir",
+  noir: "light",
 };
 
 const LABEL: Record<Theme, string> = {
   light: "Cambiar a tema oscuro",
   dark: "Cambiar a tema violeta oscuro",
   desire: "Cambiar a tema violeta claro",
-  bloom: "Cambiar a tema claro",
+  bloom: "Cambiar a tema pasión oscuro",
+  ember: "Cambiar a tema pasión claro",
+  amour: "Cambiar a tema zafiro",
+  noir: "Cambiar a tema claro",
 };
 
 /**
  * Visual signature per theme — the small chip/halo color that
  * telegraphs what the toggle will switch INTO on the next click.
- * Light → forest green. Dark → mint. Bloom → royal mauve. Desire →
- * iridescent rose-mauve. Used by the icon tint AND the halo glow so
- * the switcher itself acts as a tiny color preview.
+ * Used by the corner-dot preview, halo, and (where applicable) the
+ * conic iridescent ring.
  */
 const ACCENT: Record<Theme, string> = {
   light: "#2F5D43",
   dark: "#88BDA1",
-  bloom: "#6E2A82",
   desire: "#EFC3E4",
+  bloom: "#6E2A82",
+  ember: "#F4828B",
+  amour: "#9A1F35",
+  noir: "#8FB3FF",
 };
 
+/** Soft radial halo behind the icon for "colored" themes — keeps the
+ *  toggle visually quiet in plain light/dark, lit in every other mood. */
 const HALO: Record<Theme, string> = {
   light: "rgba(47,93,67,0)",
   dark: "rgba(136,189,161,0)",
-  bloom: "rgba(110,42,130,0.32)",
   desire: "rgba(239,195,228,0.42)",
+  bloom: "rgba(110,42,130,0.32)",
+  ember: "rgba(244,130,139,0.40)",
+  amour: "rgba(154,31,53,0.30)",
+  noir: "rgba(143,179,255,0.38)",
+};
+
+/** Per-theme conic-gradient ring painted INSIDE the toggle border for the
+ *  colored themes. Each one is a different chord of its palette so the
+ *  toggle reads as a tiny preview of the active mood. `null` means no
+ *  ring (light + dark stay calm). */
+const RING: Record<Theme, string | null> = {
+  light: null,
+  dark: null,
+  desire:
+    "conic-gradient(from 0deg, rgba(239,195,228,0) 0deg, rgba(239,195,228,0.65) 80deg, rgba(255,107,170,0.5) 160deg, rgba(239,199,133,0.55) 240deg, rgba(239,195,228,0) 360deg)",
+  bloom:
+    "conic-gradient(from 0deg, rgba(110,42,130,0) 0deg, rgba(110,42,130,0.45) 80deg, rgba(209,65,134,0.4) 160deg, rgba(217,146,94,0.45) 240deg, rgba(110,42,130,0) 360deg)",
+  ember:
+    "conic-gradient(from 0deg, rgba(244,130,139,0) 0deg, rgba(244,130,139,0.65) 80deg, rgba(255,90,122,0.55) 160deg, rgba(240,172,122,0.55) 240deg, rgba(244,130,139,0) 360deg)",
+  amour:
+    "conic-gradient(from 0deg, rgba(154,31,53,0) 0deg, rgba(154,31,53,0.5) 80deg, rgba(209,65,134,0.45) 160deg, rgba(201,145,97,0.5) 240deg, rgba(154,31,53,0) 360deg)",
+  noir:
+    "conic-gradient(from 0deg, rgba(143,179,255,0) 0deg, rgba(143,179,255,0.65) 80deg, rgba(102,232,255,0.55) 160deg, rgba(226,198,133,0.5) 240deg, rgba(143,179,255,0) 360deg)",
+};
+
+/** Lucide icon per theme. */
+const ICON: Record<Theme, typeof Sun> = {
+  light: Sun,
+  dark: Moon,
+  desire: Flame,
+  bloom: Sparkles,
+  ember: Heart,
+  amour: Cherry,
+  noir: MoonStar,
 };
 
 /**
- * Header-mounted theme toggle. Four moods on a cycle:
- *  - `light`  → cream paper + forest CTAs.
- *  - `dark`   → candlelit ink + mint CTAs.
- *  - `bloom`  → pale lavender paper + royal-mauve CTAs (light violet).
- *  - `desire` → midnight aubergine + iridescent mauve CTAs (dark violet).
+ * Header-mounted theme toggle. Seven moods on a cycle.
  *
- * Four icons stacked (sun, moon, sparkles, flame) crossfade + rotate +
- * scale as the cycle progresses. The button also paints a soft halo
- * tinted with the OUTGOING accent and a conic-gradient ring that only
- * shows in the two violet states — turning the switcher itself into a
- * tiny mood preview. Uses `useSyncExternalStore` to read the canonical
- * theme directly from the DOM — no `useEffect` sync, no cascade renders.
- * `suppressHydrationWarning` on the icons + halo because the post-paint
- * theme can legitimately differ from the server default once
- * `ThemeScript` has run.
+ * The button always shows the icon + accent dot of the CURRENT theme so
+ * the toggle is also a status indicator. The corner preview dot shows
+ * the NEXT theme's primary so users get a one-glance preview of what
+ * clicking will do.
+ *
+ * Implementation notes:
+ *  - `useSyncExternalStore` reads the canonical theme directly from the
+ *    DOM — no `useEffect` sync, no cascade renders.
+ *  - `suppressHydrationWarning` on the icons + halo because the post-
+ *    paint theme can legitimately differ from the server default once
+ *    `ThemeScript` has run.
+ *  - First-time hint: on the second click (when the user lands in
+ *    `dark`), a small popover offers a preview of the violet+passion
+ *    moods so users discover them without having to cycle blindly.
  */
 export function ThemeToggle() {
   const theme = useSyncExternalStore(
@@ -111,13 +192,14 @@ export function ThemeToggle() {
     applyTheme(NEXT_THEME[theme]);
     dismissHint();
   };
-  const isViolet = theme === "bloom" || theme === "desire";
 
-  // First-time hint: nudge dark-mode users toward the violet variants
-  // they may never discover. Shows ONCE per browser, only when the user
-  // landed in `dark` (already past the first cycle step) and has not
-  // dismissed the hint before. Auto-dismisses after 8s; clicking the
-  // toggle dismisses it permanently.
+  // "Colored" themes get the halo + conic ring; plain light/dark stay
+  // visually quiet so the toggle doesn't compete with the rest of the
+  // header chrome at rest.
+  const isColored = theme !== "light" && theme !== "dark";
+
+  // First-time hint shown once the user has reached `dark` — surfaces
+  // the colored mood palette they may never otherwise discover.
   const [hintVisible, setHintVisible] = useState(false);
   useEffect(() => {
     if (theme !== "dark") return;
@@ -127,7 +209,6 @@ export function ThemeToggle() {
     } catch {
       return;
     }
-    // Small delay so the hint doesn't appear during page-load animations.
     const showTimer = window.setTimeout(() => setHintVisible(true), 1200);
     const hideTimer = window.setTimeout(() => {
       setHintVisible(false);
@@ -147,6 +228,8 @@ export function ThemeToggle() {
     }
   }
 
+  const ring = RING[theme];
+
   return (
     <span className="relative inline-flex">
       {hintVisible && (
@@ -156,17 +239,10 @@ export function ThemeToggle() {
           aria-live="polite"
           className="motion-safe:motion-hero-reveal absolute right-0 top-12 z-50 w-64 rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-surface)] p-3 shadow-[var(--shadow-md)]"
         >
-          {/* Caret pointing back to the toggle. Border on two sides + matching
-              surface fill makes it look like a continuation of the popover
-              edge. Anchored under the toggle's horizontal midpoint. */}
           <span
             aria-hidden
             className="absolute -top-1.5 right-[14px] h-3 w-3 rotate-45 border-l border-t border-[var(--color-border)] bg-[var(--color-surface)]"
           />
-
-          {/* Top row: eyebrow + close. The X is the only focusable element
-              inside the hint so dismiss is keyboard-reachable; clicking the
-              toggle below also dismisses (existing behavior). */}
           <div className="flex items-center justify-between gap-2">
             <span className="inline-flex items-center gap-1.5">
               <Sparkles
@@ -190,36 +266,39 @@ export function ThemeToggle() {
               <X className="h-3 w-3" aria-hidden />
             </button>
           </div>
-
-          {/* Body copy — natural two-line flow at this width. */}
           <p className="mt-1.5 text-[12px] leading-relaxed text-[var(--color-foreground)]">
-            Toca otra vez para probar el modo{" "}
+            Toca otra vez y vas a recorrer{" "}
             <span className="font-semibold" style={{ color: "#E5B7DA" }}>
               violeta
             </span>
+            ,{" "}
+            <span className="font-semibold" style={{ color: ACCENT.ember }}>
+              pasión
+            </span>{" "}
+            y{" "}
+            <span className="font-semibold" style={{ color: ACCENT.noir }}>
+              zafiro
+            </span>
             .
           </p>
-
-          {/* Palette preview — three swatches that telegraph the violet
-              moods the user will unlock. Order goes deep → soft to read
-              left-to-right like a gradient. */}
+          {/* Palette preview — 5 swatches, one per colored mood, in the
+              cycle order. Reads as a horizontal gradient of available
+              vibes. */}
           <div className="mt-3 flex items-center gap-2">
             <span className="text-[9px] uppercase tracking-[0.2em] text-[var(--color-text-subtle)]">
               Vista previa
             </span>
             <span aria-hidden className="inline-flex items-center gap-1.5">
-              <span
-                className="h-3 w-3 rounded-full ring-1 ring-[var(--color-border)]"
-                style={{ background: "#6E2A82" }}
-              />
-              <span
-                className="h-3 w-3 rounded-full ring-1 ring-[var(--color-border)]"
-                style={{ background: "#FF6BAA" }}
-              />
-              <span
-                className="h-3 w-3 rounded-full ring-1 ring-[var(--color-border)]"
-                style={{ background: "#EFC3E4" }}
-              />
+              {(["desire", "bloom", "ember", "amour", "noir"] as Theme[]).map(
+                (t) => (
+                  <span
+                    key={t}
+                    title={t}
+                    className="h-3 w-3 rounded-full ring-1 ring-[var(--color-border)]"
+                    style={{ background: ACCENT[t] }}
+                  />
+                ),
+              )}
             </span>
           </div>
         </div>
@@ -229,114 +308,101 @@ export function ThemeToggle() {
         onClick={toggle}
         data-testid="theme-toggle"
         data-theme-state={theme}
-      aria-label={LABEL[theme]}
-      title={LABEL[theme]}
-      className="group relative inline-flex h-11 w-11 items-center justify-center overflow-hidden rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-foreground)] transition-[border-color,background,transform,box-shadow] duration-200 ease-[var(--ease-standard)] hover:-translate-y-[1px] hover:border-[var(--color-brand-primary-soft)] hover:bg-[var(--color-background-elevated)] hover:shadow-[var(--shadow-glow-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-background)]"
-    >
-      {/* Conic iridescent ring — only paints in the two violet states.
-          Sits just inside the border and slowly rotates, giving the
-          switcher a premium "lit" feel when the user is in a violet
-          mood. Hidden in light/dark to keep the default toggle calm. */}
-      <span
-        aria-hidden
-        suppressHydrationWarning
-        className={`pointer-events-none absolute inset-[2px] rounded-full transition-opacity duration-500 ease-[var(--ease-standard)] motion-safe:animate-[border-flow_9s_linear_infinite] ${
-          isViolet ? "opacity-100" : "opacity-0"
-        }`}
-        style={{
-          background:
-            theme === "desire"
-              ? "conic-gradient(from 0deg, rgba(239,195,228,0) 0deg, rgba(239,195,228,0.65) 80deg, rgba(255,107,170,0.5) 160deg, rgba(239,199,133,0.55) 240deg, rgba(239,195,228,0) 360deg)"
-              : "conic-gradient(from 0deg, rgba(110,42,130,0) 0deg, rgba(110,42,130,0.45) 80deg, rgba(209,65,134,0.4) 160deg, rgba(217,146,94,0.45) 240deg, rgba(110,42,130,0) 360deg)",
-          WebkitMask:
-            "linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0)",
-          WebkitMaskComposite: "xor",
-          maskComposite: "exclude",
-          padding: "1px",
-        }}
-      />
-
-      {/* Sun — visible in `light` state. */}
-      <span
-        suppressHydrationWarning
-        className={`absolute inline-flex h-4 w-4 items-center justify-center transition-[opacity,transform] duration-300 ease-[var(--ease-standard)] ${
-          theme === "light"
-            ? "opacity-100 rotate-0 scale-100"
-            : "opacity-0 rotate-90 scale-50"
-        }`}
+        aria-label={LABEL[theme]}
+        title={LABEL[theme]}
+        className="group relative inline-flex h-11 w-11 items-center justify-center overflow-hidden rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-foreground)] transition-[border-color,background,transform,box-shadow] duration-200 ease-[var(--ease-standard)] hover:-translate-y-[1px] hover:border-[var(--color-brand-primary-soft)] hover:bg-[var(--color-background-elevated)] hover:shadow-[var(--shadow-glow-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-background)]"
       >
-        <Sun className="h-4 w-4" aria-hidden />
-      </span>
+        {/* Conic iridescent ring — paints in every "colored" state with a
+            palette-specific gradient. Slowly rotates so the switcher
+            feels lit when not in plain light/dark. */}
+        <span
+          aria-hidden
+          suppressHydrationWarning
+          className={`pointer-events-none absolute inset-[2px] rounded-full transition-opacity duration-500 ease-[var(--ease-standard)] motion-safe:animate-[border-flow_9s_linear_infinite] ${
+            ring ? "opacity-100" : "opacity-0"
+          }`}
+          style={
+            ring
+              ? {
+                  background: ring,
+                  WebkitMask:
+                    "linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0)",
+                  WebkitMaskComposite: "xor",
+                  maskComposite: "exclude",
+                  padding: "1px",
+                }
+              : undefined
+          }
+        />
 
-      {/* Moon — visible in `dark` state. */}
-      <span
-        suppressHydrationWarning
-        className={`absolute inline-flex h-4 w-4 items-center justify-center text-[var(--color-brand-primary)] transition-[opacity,transform] duration-300 ease-[var(--ease-standard)] ${
-          theme === "dark"
-            ? "opacity-100 rotate-0 scale-100"
-            : "opacity-0 -rotate-90 scale-50"
-        }`}
-      >
-        <Moon className="h-4 w-4" aria-hidden />
-      </span>
+        {/* Stacked per-theme icons — only the active one is visible. The
+            rotation direction varies so the icon swap feels different
+            in each cycle step (less mechanical than a single keyframe). */}
+        {(Object.keys(ICON) as Theme[]).map((t) => {
+          const Icon = ICON[t];
+          const isActive = theme === t;
+          // Rotation direction differs per theme for variety.
+          const rest =
+            t === "light"
+              ? "rotate-90 scale-50"
+              : t === "dark"
+                ? "-rotate-90 scale-50"
+                : t === "desire"
+                  ? "rotate-180 scale-50"
+                  : t === "bloom"
+                    ? "rotate-45 scale-50"
+                    : t === "ember"
+                      ? "-rotate-45 scale-50"
+                      : t === "amour"
+                        ? "rotate-12 scale-50"
+                        : "-rotate-180 scale-50";
+          const colorStyle: React.CSSProperties =
+            t === "dark"
+              ? {}
+              : t === "light"
+                ? {}
+                : { color: ACCENT[t] };
+          return (
+            <span
+              key={t}
+              suppressHydrationWarning
+              className={`absolute inline-flex h-4 w-4 items-center justify-center transition-[opacity,transform] duration-300 ease-[var(--ease-standard)] ${
+                t === "dark" ? "text-[var(--color-brand-primary)]" : ""
+              } ${isActive ? "opacity-100 rotate-0 scale-100" : `opacity-0 ${rest}`}`}
+              style={colorStyle}
+            >
+              <Icon className="h-4 w-4" aria-hidden />
+            </span>
+          );
+        })}
 
-      {/* Sparkles — visible in `bloom` state. Renders in deep mauve so
-          it telegraphs the royal-violet primary it'll switch INTO on
-          the next click. */}
-      <span
-        suppressHydrationWarning
-        className={`absolute inline-flex h-4 w-4 items-center justify-center transition-[opacity,transform] duration-300 ease-[var(--ease-standard)] ${
-          theme === "bloom"
-            ? "opacity-100 rotate-0 scale-100"
-            : "opacity-0 rotate-45 scale-50"
-        }`}
-        style={{ color: ACCENT.bloom }}
-      >
-        <Sparkles className="h-4 w-4" aria-hidden />
-      </span>
+        {/* Soft glow halo behind the icon — tinted with the CURRENT theme
+            accent so the button itself signals the mood the user just
+            chose. Only the colored themes light this up. */}
+        <span
+          aria-hidden
+          suppressHydrationWarning
+          className={`pointer-events-none absolute inset-0 rounded-full transition-opacity duration-500 ease-[var(--ease-standard)] ${
+            isColored ? "opacity-100" : "opacity-0"
+          }`}
+          style={{
+            background: `radial-gradient(closest-side, ${HALO[theme]}, transparent 78%)`,
+          }}
+        />
 
-      {/* Flame — visible in `desire` state. Renders in iridescent rose-
-          mauve so it telegraphs the dark-violet mood. */}
-      <span
-        suppressHydrationWarning
-        className={`absolute inline-flex h-4 w-4 items-center justify-center transition-[opacity,transform] duration-300 ease-[var(--ease-standard)] ${
-          theme === "desire"
-            ? "opacity-100 rotate-0 scale-100"
-            : "opacity-0 rotate-180 scale-50"
-        }`}
-        style={{ color: ACCENT.desire }}
-      >
-        <Flame className="h-4 w-4" aria-hidden />
-      </span>
-
-      {/* Soft glow halo behind the icon — tinted with the OUTGOING
-          accent so the button itself signals the mood the user just
-          chose. Only the two violet states light this up. */}
-      <span
-        aria-hidden
-        suppressHydrationWarning
-        className={`pointer-events-none absolute inset-0 rounded-full transition-opacity duration-500 ease-[var(--ease-standard)] ${
-          isViolet ? "opacity-100" : "opacity-0"
-        }`}
-        style={{
-          background: `radial-gradient(closest-side, ${HALO[theme]}, transparent 78%)`,
-        }}
-      />
-
-      {/* Tiny accent dot in the bottom-right corner — a 4px chip in the
-          NEXT theme's primary color so users get a one-glance preview
-          of what clicking will do. Always visible; crossfades on cycle. */}
-      <span
-        aria-hidden
-        suppressHydrationWarning
-        className="pointer-events-none absolute bottom-[6px] right-[6px] h-1.5 w-1.5 rounded-full ring-1 ring-[var(--color-surface)] transition-colors duration-300 ease-[var(--ease-standard)]"
-        style={{
-          background: ACCENT[NEXT_THEME[theme]],
-          boxShadow: isViolet
-            ? `0 0 6px ${ACCENT[NEXT_THEME[theme]]}`
-            : "none",
-        }}
-      />
+        {/* Corner dot — 4 px chip in the NEXT theme's primary color so
+            users get a one-glance preview of what clicking will do. */}
+        <span
+          aria-hidden
+          suppressHydrationWarning
+          className="pointer-events-none absolute bottom-[6px] right-[6px] h-1.5 w-1.5 rounded-full ring-1 ring-[var(--color-surface)] transition-colors duration-300 ease-[var(--ease-standard)]"
+          style={{
+            background: ACCENT[NEXT_THEME[theme]],
+            boxShadow: isColored
+              ? `0 0 6px ${ACCENT[NEXT_THEME[theme]]}`
+              : "none",
+          }}
+        />
       </button>
     </span>
   );

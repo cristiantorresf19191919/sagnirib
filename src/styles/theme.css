@@ -298,3 +298,187 @@ html[data-theme="bloom"] {
   --shadow-glow-secondary: 0 14px 36px -18px rgba(142, 106, 156, 0.45);
   --shadow-glow-accent: 0 14px 36px -18px rgba(201, 133, 97, 0.50);
 }
+
+/*
+ * "Ember" theme — flipped via `data-theme="ember"` on <html>.
+ *
+ * Dark crimson passion — aged red wine on velvet. Sensual without
+ * being gaudy: the ground is near-black with a warm rust undertone,
+ * surfaces step toward burgundy, primary CTAs are a warm coral-rose
+ * (light pill on dark surface, ~5:1 contrast against the cream pill
+ * text), and the accent is a rose-copper that reads as rosé gold next
+ * to the rose primary. Highlights flash hot fuchsia for moments of
+ * urgency (live pills, badges) without overwhelming.
+ *
+ * Same surface-vs-primary inversion as the other dark themes:
+ * brand-primary is LIGHT so `text-[var(--color-surface)]` (deep wine)
+ * stays dark-on-light on the buttons.
+ */
+html[data-theme="ember"] {
+  --color-background: #150307;
+  --color-background-elevated: #20080F;
+  --color-surface: #2A0E15;
+  --color-surface-muted: #391921;
+  --color-border: #5A2A35;
+
+  --color-brand-primary: #F4828B;
+  --color-brand-primary-strong: #FA9DA4;
+  --color-brand-primary-soft: #802F38;
+
+  --color-brand-secondary: #C2A1A4;
+  --color-brand-secondary-strong: #D6B7B9;
+
+  --color-brand-accent: #F0AC7A;
+  --color-brand-accent-strong: #F8C195;
+
+  --color-brand-highlight: #FF5A7A;
+  --color-brand-warn: #F0AC7A;
+
+  --color-foreground: #FBE6E9;
+  --color-text-muted: #D7B0B5;
+  --color-text-subtle: #9C7C82;
+
+  /* Editorial vocabulary remap: "cream" reads as the candlelit wine
+     surface; "ink" stays the warm off-cream; "forest" becomes the
+     coral-rose primary so the gradient and "tu Biringa" gold sweep
+     still align with brand-primary. */
+  --color-cream: #20080F;
+  --color-cream-deep: #150307;
+  --color-cream-soft: #2A0E15;
+  --color-ink: #FBE6E9;
+  --color-ink-soft: #DDB8BD;
+  --color-forest: #F4828B;
+  --color-forest-deep: #FA9DA4;
+  --color-gold: #F0AC7A;
+  --color-gold-deep: #CF8A57;
+  --color-line: rgba(251, 230, 233, 0.13);
+  --color-line-soft: rgba(251, 230, 233, 0.06);
+
+  --shadow-sm: 0 1px 2px rgba(10, 1, 3, 0.65);
+  --shadow-md: 0 10px 28px -12px rgba(10, 1, 3, 0.75);
+  --shadow-lg: 0 26px 56px -20px rgba(10, 1, 3, 0.85);
+  --shadow-glow-primary:
+    0 16px 40px -18px rgba(244, 130, 139, 0.70),
+    0 0 0 1px rgba(244, 130, 139, 0.10);
+  --shadow-glow-secondary: 0 14px 36px -18px rgba(194, 161, 164, 0.45);
+  --shadow-glow-accent: 0 14px 36px -18px rgba(240, 172, 122, 0.55);
+}
+
+/*
+ * "Amour" theme — flipped via `data-theme="amour"` on <html>.
+ *
+ * Light cousin of `ember`: pale rose-petal paper with a deep cherry-
+ * burgundy primary and warm copper accents. Reads like sunlit
+ * dawn-light through a sheer curtain — romantic, confident, never
+ * cloying. The primary is bold enough (deep burgundy on near-white
+ * pills) to anchor as the page's centre of gravity while the paper
+ * surfaces stay warm and inviting.
+ *
+ * Unlike `ember`, this is a LIGHT theme: brand-primary is the deep
+ * burgundy CTA and `text-[var(--color-surface)]` (near-white) is the
+ * pill label — same idiom as the default cream/forest theme.
+ */
+html[data-theme="amour"] {
+  --color-background: #FBF1F0;
+  --color-background-elevated: #FFF8F7;
+  --color-surface: #FFFFFF;
+  --color-surface-muted: #F1E0DD;
+  --color-border: #E5CCC9;
+
+  --color-brand-primary: #9A1F35;
+  --color-brand-primary-strong: #B1263E;
+  --color-brand-primary-soft: #E5BCC4;
+
+  --color-brand-secondary: #B47B82;
+  --color-brand-secondary-strong: #93565F;
+
+  --color-brand-accent: #C99161;
+  --color-brand-accent-strong: #A77544;
+
+  --color-brand-highlight: #D14186;
+  --color-brand-warn: #C99161;
+
+  --color-foreground: #2C0F12;
+  --color-text-muted: #6F535A;
+  --color-text-subtle: #A18C90;
+
+  --color-cream: #F4E0DD;
+  --color-cream-deep: #ECD0CC;
+  --color-cream-soft: #FBF1F0;
+  --color-ink: #2C0F12;
+  --color-ink-soft: #5A2F33;
+  --color-forest: #9A1F35;
+  --color-forest-deep: #82182C;
+  --color-gold: #BF8856;
+  --color-gold-deep: #936038;
+  --color-line: rgba(44, 15, 18, 0.14);
+  --color-line-soft: rgba(44, 15, 18, 0.06);
+
+  --shadow-sm: 0 1px 2px rgba(80, 18, 26, 0.09);
+  --shadow-md: 0 10px 28px -12px rgba(80, 18, 26, 0.20);
+  --shadow-lg: 0 26px 56px -20px rgba(80, 18, 26, 0.26);
+  --shadow-glow-primary:
+    0 16px 40px -18px rgba(154, 31, 53, 0.50),
+    0 0 0 1px rgba(154, 31, 53, 0.06);
+  --shadow-glow-secondary: 0 14px 36px -18px rgba(180, 123, 130, 0.45);
+  --shadow-glow-accent: 0 14px 36px -18px rgba(201, 145, 97, 0.50);
+}
+
+/*
+ * "Noir" theme — flipped via `data-theme="noir"` on <html>.
+ *
+ * Sapphire midnight — deep navy velvet with luminous sky-blue CTAs,
+ * pale-gold leaf accents, and an electric cyan highlight reserved for
+ * urgency. The cool counterpart to ember: same dramatic depth, but
+ * intellectual where ember is sensual. Pairs well with magazine-style
+ * editorial layouts (think Wallpaper / Monocle covers at dusk).
+ *
+ * Same surface-vs-primary inversion as the other dark themes:
+ * brand-primary is LIGHT so `text-[var(--color-surface)]` (deep navy)
+ * stays dark-on-light on the buttons.
+ */
+html[data-theme="noir"] {
+  --color-background: #060B1B;
+  --color-background-elevated: #0D152F;
+  --color-surface: #131D38;
+  --color-surface-muted: #1D2A49;
+  --color-border: #2F3F60;
+
+  --color-brand-primary: #8FB3FF;
+  --color-brand-primary-strong: #B1C8FF;
+  --color-brand-primary-soft: #2F4D80;
+
+  --color-brand-secondary: #9CAACA;
+  --color-brand-secondary-strong: #B6C0DA;
+
+  --color-brand-accent: #E2C685;
+  --color-brand-accent-strong: #F0D8A6;
+
+  --color-brand-highlight: #66E8FF;
+  --color-brand-warn: #E2C685;
+
+  --color-foreground: #E7ECF7;
+  --color-text-muted: #AAB5CC;
+  --color-text-subtle: #6F7B95;
+
+  --color-cream: #0D152F;
+  --color-cream-deep: #060B1B;
+  --color-cream-soft: #131D38;
+  --color-ink: #E7ECF7;
+  --color-ink-soft: #C0CAE0;
+  --color-forest: #8FB3FF;
+  --color-forest-deep: #B1C8FF;
+  --color-gold: #E2C685;
+  --color-gold-deep: #C5A965;
+  --color-line: rgba(231, 236, 247, 0.12);
+  --color-line-soft: rgba(231, 236, 247, 0.06);
+
+  --shadow-sm: 0 1px 2px rgba(2, 4, 12, 0.65);
+  --shadow-md: 0 10px 28px -12px rgba(2, 4, 12, 0.75);
+  --shadow-lg: 0 26px 56px -20px rgba(2, 4, 12, 0.85);
+  --shadow-glow-primary:
+    0 16px 40px -18px rgba(143, 179, 255, 0.65),
+    0 0 0 1px rgba(143, 179, 255, 0.10);
+  --shadow-glow-secondary: 0 14px 36px -18px rgba(156, 170, 202, 0.45);
+  --shadow-glow-accent: 0 14px 36px -18px rgba(226, 198, 133, 0.55);
+}
