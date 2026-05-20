@@ -20,6 +20,14 @@ import {
 } from "lucide-react";
 
 import type { SupportedLocale } from "@/core/branding/brand-config";
+import {
+  translateAppearance,
+  translateAttention,
+  translateContact,
+  translateMeetingContext,
+  translateService,
+  translateSpecialService,
+} from "@/core/i18n/domain-labels";
 import { readLocale } from "@/core/i18n/locale";
 import { t } from "@/core/i18n/messages";
 import type { ListingsFilters } from "@/server/biringas";
@@ -185,7 +193,9 @@ function buildChips(
   filters.attention?.forEach((v) =>
     chips.push({
       key: `attention-${v}`,
-      label: t(locale, "chip.attention", { value: v }),
+      label: t(locale, "chip.attention", {
+        value: translateAttention(locale, v),
+      }),
       tone: "highlight",
       icon: Heart,
       next: withoutMulti("attention", v),
@@ -194,7 +204,9 @@ function buildChips(
   filters.contactChannels?.forEach((v) =>
     chips.push({
       key: `contact-${v}`,
-      label: t(locale, "chip.contact", { value: v }),
+      label: t(locale, "chip.contact", {
+        value: translateContact(locale, v),
+      }),
       tone: "secondary",
       icon: MessageSquare,
       next: withoutMulti("contactChannels", v),
@@ -203,7 +215,7 @@ function buildChips(
   filters.services?.forEach((v) =>
     chips.push({
       key: `service-${v}`,
-      label: v,
+      label: translateService(locale, v),
       tone: "primary",
       icon: Sparkles,
       next: withoutMulti("services", v),
@@ -212,7 +224,7 @@ function buildChips(
   filters.specialServices?.forEach((v) =>
     chips.push({
       key: `special-${v}`,
-      label: v,
+      label: translateSpecialService(locale, v),
       tone: "accent",
       icon: Star,
       next: withoutMulti("specialServices", v),
@@ -221,7 +233,7 @@ function buildChips(
   filters.meetingContexts?.forEach((v) =>
     chips.push({
       key: `place-${v}`,
-      label: v,
+      label: translateMeetingContext(locale, v),
       tone: "secondary",
       icon: MapPin,
       next: withoutMulti("meetingContexts", v),
@@ -233,7 +245,7 @@ function buildChips(
       values.forEach((v) =>
         chips.push({
           key: `attr-${attrKey}-${v}`,
-          label: v,
+          label: translateAppearance(locale, v),
           tone: "neutral",
           icon: UserSquare,
           next: {

@@ -11,6 +11,15 @@ import {
   Sparkles,
 } from "lucide-react";
 
+import {
+  translateAppearance,
+  translateLanguage,
+  translateMeetingContext,
+  translateService,
+  translateTag,
+} from "@/core/i18n/domain-labels";
+import { readLocale } from "@/core/i18n/locale";
+import { t } from "@/core/i18n/messages";
 import { buildPageMetadata } from "@/core/seo/build-page-metadata";
 import { seoConfig } from "@/core/seo/seo-config";
 import { personJsonLd } from "@/core/seo/structured-data";
@@ -47,20 +56,22 @@ export async function generateMetadata({
   params,
 }: Readonly<ProfilePageProps>): Promise<Metadata> {
   const { slug } = await params;
+  const localePromise = readLocale();
   // Metadata generation must never crash — fall back to the not-found
   // shell if findBySlug throws (Firestore hiccup, etc.). The page-level
   // findBySlug call below decides the actual render.
   const listing = await findBySlug(slug).catch(() => null);
+  const locale = await localePromise;
   if (!listing) {
     return buildPageMetadata({
-      title: "Perfil no encontrado",
-      description: "El perfil solicitado no existe o fue retirado.",
+      title: t(locale, "listing.notFound.title"),
+      description: t(locale, "listing.notFound.body"),
       path: `/p/${slug}`,
       indexable: false,
     });
   }
   return buildPageMetadata({
-    title: `${listing.name} en Biringas`,
+    title: t(locale, "listing.metaTitle", { name: listing.name }),
     description: listing.bio,
     path: `/p/${slug}`,
     // Per p-slug.md: per-profile gate. Until the verification flow lands
@@ -81,21 +92,24 @@ export default async function ProfilePage({ params }: Readonly<ProfilePageProps>
   const { slug } = await params;
   // Reviews are auxiliary content — degrade to null on failure so the
   // profile keeps rendering. ReviewsSection is conditionally mounted below.
-  const [listing, reviews] = await Promise.all([
+  const [listing, reviews, locale] = await Promise.all([
     findBySlug(slug),
     getListingReviews(slug).catch(() => null),
+    readLocale(),
   ]);
   if (!listing) notFound();
 
   const galleryImages =
     listing.gallery.length > 0 ? listing.gallery : [listing.mainImage];
+  const tx = (value: string | null | undefined) =>
+    value ? translateAppearance(locale, value) : "—";
   const attributeEntries: Array<[label: string, value: string]> = [
-    ["Etnia", listing.attributes.ethnicity ?? "—"],
-    ["Cabello", listing.attributes.hair ?? "—"],
-    ["Estatura", listing.attributes.height ?? "—"],
-    ["Cuerpo", listing.attributes.body ?? "—"],
-    ["Senos", listing.attributes.breast ?? "—"],
-    ["País", listing.attributes.country ?? "—"],
+    [t(locale, "listing.attr.ethnicity"), tx(listing.attributes.ethnicity)],
+    [t(locale, "listing.attr.hair"), tx(listing.attributes.hair)],
+    [t(locale, "listing.attr.height"), tx(listing.attributes.height)],
+    [t(locale, "listing.attr.body"), tx(listing.attributes.body)],
+    [t(locale, "listing.attr.breast"), tx(listing.attributes.breast)],
+    [t(locale, "listing.attr.country"), tx(listing.attributes.country)],
   ];
   const languages = listing.attributes.languages ?? [];
 
@@ -143,8 +157,10 @@ export default async function ProfilePage({ params }: Readonly<ProfilePageProps>
             className="inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap text-xs uppercase tracking-[0.28em] text-[var(--color-text-subtle)] transition-colors hover:text-[var(--color-foreground)]"
           >
             <ArrowLeft className="h-3 w-3" aria-hidden />
-            <span className="hidden sm:inline">Volver al catálogo</span>
-            <span className="sm:hidden">Volver</span>
+            <span className="hidden sm:inline">
+              {t(locale, "listing.backFull")}
+            </span>
+            <span className="sm:hidden">{t(locale, "listing.backShort")}</span>
           </Link>
           <div className="inline-flex shrink-0 items-center gap-2">
             <ShareMenu
@@ -178,7 +194,7 @@ export default async function ProfilePage({ params }: Readonly<ProfilePageProps>
           <FadeIn
             delay={0.05}
             y={12}
-            aria-label={`Galería de ${listing.name}`}
+            aria-label={t(locale, "listing.gallery.aria", { name: listing.name })}
             className="lg:col-span-6 xl:col-span-7"
           >
             <CardStackGallery
@@ -196,18 +212,19 @@ export default async function ProfilePage({ params }: Readonly<ProfilePageProps>
                 <Link
                   href="/verificacion"
                   className="inline-flex items-center gap-2 rounded-full border border-[var(--color-gold)]/45 bg-[var(--color-cream-soft)]/80 px-3.5 py-1.5 text-[11px] font-semibold text-[var(--color-foreground)] shadow-[inset_0_1px_0_rgba(255,255,255,0.6)] transition-colors duration-200 ease-[var(--ease-standard)] hover:border-[var(--color-gold)] hover:bg-[var(--color-cream)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-gold)]"
-                  title="Cómo funciona la verificación"
+                  title={t(locale, "listing.verified.howWorks")}
                 >
                   <ShieldCheck
                     className="h-3.5 w-3.5 text-[var(--color-brand-primary)]"
                     aria-hidden
                   />
-                  Fotos verificadas{" "}
                   {listing.reputation.daysSinceVerification < 30
-                    ? "este mes"
-                    : `hace ${Math.floor(
-                        listing.reputation.daysSinceVerification / 30,
-                      )} mes(es)`}
+                    ? t(locale, "listing.verified.thisMonth")
+                    : t(locale, "listing.verified.monthsAgo", {
+                        n: Math.floor(
+                          listing.reputation.daysSinceVerification / 30,
+                        ),
+                      })}
                 </Link>
               </div>
             )}
@@ -219,7 +236,7 @@ export default async function ProfilePage({ params }: Readonly<ProfilePageProps>
                     className="h-3.5 w-3.5 text-[var(--color-brand-primary)]"
                     aria-hidden
                   />
-                  Vídeo disponible
+                  {t(locale, "listing.media.video")}
                 </span>
               )}
               {listing.hasAudio && (
@@ -228,7 +245,7 @@ export default async function ProfilePage({ params }: Readonly<ProfilePageProps>
                     className="h-3.5 w-3.5 text-[var(--color-brand-secondary-strong)]"
                     aria-hidden
                   />
-                  Audio disponible
+                  {t(locale, "listing.media.audio")}
                 </span>
               )}
               <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--color-surface)] px-3 py-1.5 ring-1 ring-[var(--color-border)]">
@@ -236,7 +253,9 @@ export default async function ProfilePage({ params }: Readonly<ProfilePageProps>
                   className="h-3.5 w-3.5 text-[var(--color-brand-accent-strong)]"
                   aria-hidden
                 />
-                {listing.reputation.storiesRecorded} historias
+                {t(locale, "listing.media.stories", {
+                  count: listing.reputation.storiesRecorded,
+                })}
               </span>
             </div>
           </FadeIn>
@@ -246,7 +265,7 @@ export default async function ProfilePage({ params }: Readonly<ProfilePageProps>
             <Reveal as="div" className="lg:sticky lg:top-24 flex flex-col gap-7">
               <RevealItem>
                 <span className="text-xs uppercase tracking-[0.32em] text-[var(--color-text-subtle)]">
-                  Perfil
+                  {t(locale, "listing.eyebrow")}
                 </span>
                 <h1 className="mt-3 text-4xl font-bold leading-[1.05] tracking-tight text-[var(--color-foreground)] sm:text-5xl">
                   {listing.name}
@@ -267,9 +286,9 @@ export default async function ProfilePage({ params }: Readonly<ProfilePageProps>
                     count={listing.reputation.reviewCount}
                     size="md"
                   />
-                  {listing.tags.map((t) => (
-                    <Tag key={t} tone="primary">
-                      {t}
+                  {listing.tags.map((tag) => (
+                    <Tag key={tag} tone="primary">
+                      {translateTag(locale, tag)}
                     </Tag>
                   ))}
                 </div>
@@ -285,19 +304,21 @@ export default async function ProfilePage({ params }: Readonly<ProfilePageProps>
               <RevealItem as="div">
                 <dl className="grid grid-cols-3 gap-3">
                 <StatTile
-                  label="Vistas"
+                  label={t(locale, "listing.stat.views")}
                   value={formatViews(listing.reputation.totalViews)}
                   icon={<Eye className="h-3.5 w-3.5" aria-hidden />}
                 />
                 <StatTile
-                  label="Días activa"
+                  label={t(locale, "listing.stat.daysActive")}
                   value={NUMBER_FORMAT.format(
                     listing.reputation.daysAdvertised,
                   )}
                 />
                 <StatTile
-                  label="Verificada"
-                  value={`hace ${listing.reputation.daysSinceVerification}d`}
+                  label={t(locale, "listing.stat.verified")}
+                  value={t(locale, "listing.stat.daysAgo", {
+                    n: listing.reputation.daysSinceVerification,
+                  })}
                   icon={
                     <ShieldCheck
                       className="h-3.5 w-3.5 text-[var(--color-brand-primary)]"
@@ -314,7 +335,7 @@ export default async function ProfilePage({ params }: Readonly<ProfilePageProps>
                 <div className="flex items-end justify-between gap-4">
                   <div>
                     <span className="text-xs uppercase tracking-[0.22em] text-[var(--color-text-subtle)]">
-                      Tarifa
+                      {t(locale, "listing.priceLabel")}
                     </span>
                     <PriceTag
                       value={formatPricePerHour(listing.pricePerHour)}
@@ -345,7 +366,7 @@ export default async function ProfilePage({ params }: Readonly<ProfilePageProps>
 
               {/* Attributes */}
               <RevealItem>
-                <Section title="Características">
+                <Section title={t(locale, "listing.section.features")}>
                 <dl className="grid grid-cols-2 gap-x-6 gap-y-3 text-sm">
                   {attributeEntries.map(([label, value]) => (
                     <div key={label} className="flex flex-col">
@@ -361,11 +382,11 @@ export default async function ProfilePage({ params }: Readonly<ProfilePageProps>
                 {languages.length > 0 && (
                   <div className="mt-4 flex flex-wrap items-center gap-2">
                     <span className="text-[11px] uppercase tracking-[0.18em] text-[var(--color-text-subtle)]">
-                      Idiomas
+                      {t(locale, "listing.section.languages")}
                     </span>
                     {languages.map((lang) => (
                       <Tag key={lang} tone="accent">
-                        {lang}
+                        {translateLanguage(locale, lang)}
                       </Tag>
                     ))}
                   </div>
@@ -374,11 +395,11 @@ export default async function ProfilePage({ params }: Readonly<ProfilePageProps>
               </RevealItem>
 
               <RevealItem>
-                <Section title="Servicios">
+                <Section title={t(locale, "listing.section.services")}>
                   <div className="flex flex-wrap gap-2">
                     {listing.services.map((s) => (
                       <Tag key={s} tone="secondary">
-                        {s}
+                        {translateService(locale, s)}
                       </Tag>
                     ))}
                   </div>
@@ -386,11 +407,11 @@ export default async function ProfilePage({ params }: Readonly<ProfilePageProps>
               </RevealItem>
 
               <RevealItem>
-                <Section title="Lugares de encuentro">
+                <Section title={t(locale, "listing.section.places")}>
                   <div className="flex flex-wrap gap-2">
                     {listing.meetingContexts.map((m) => (
                       <Tag key={m} tone="neutral">
-                        {m}
+                        {translateMeetingContext(locale, m)}
                       </Tag>
                     ))}
                   </div>
@@ -405,7 +426,7 @@ export default async function ProfilePage({ params }: Readonly<ProfilePageProps>
             contribute it. Anonymous users see a sign-in prompt instead
             of the full form. */}
         <section
-          aria-label="Califica este perfil"
+          aria-label={t(locale, "listing.rate.aria")}
           className="border-t border-[var(--color-border)]/50 bg-[var(--color-background-elevated)]/40"
         >
           <Container width="wide" className="py-10 lg:py-12">

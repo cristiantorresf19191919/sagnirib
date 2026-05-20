@@ -5,6 +5,8 @@ import { Loader2, Lock, MessageCircle, Phone, Send } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
+import { useLocale } from "@/core/i18n/LocaleProvider";
+import { t } from "@/core/i18n/messages";
 import { useAuthSession } from "@/features/auth/lib/use-auth-session";
 import { revealContact } from "@/features/biringas/actions/reveal-contact";
 import type { ContactChannel } from "@/server/biringas";
@@ -49,6 +51,7 @@ export function ContactReveal({
   listingName,
   contactChannels,
 }: Readonly<ContactRevealProps>) {
+  const locale = useLocale();
   const [state, setState] = useState<RevealState>({ kind: "idle" });
   const { status } = useAuthSession();
   const router = useRouter();
@@ -71,7 +74,7 @@ export function ContactReveal({
       }
       setState({
         kind: "error",
-        message: "No pudimos revelar el contacto. Intenta de nuevo.",
+        message: t(locale, "contact.reveal.failed"),
       });
       return;
     }
@@ -95,6 +98,7 @@ export function ContactReveal({
               listingName={listingName}
               contactChannels={contactChannels}
               contact={state.data}
+              locale={locale}
             />
           </motion.div>
         ) : (
@@ -106,32 +110,34 @@ export function ContactReveal({
             transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
             className="flex flex-col gap-3"
           >
-            <BlurredPreview />
+            <BlurredPreview locale={locale} />
             <Button
               onClick={handleReveal}
               variant="primary"
               size="lg"
               glow
               disabled={isLoading}
-              aria-label={`Revelar contacto de ${listingName}`}
+              aria-label={t(locale, "contact.reveal.aria", {
+                name: listingName,
+              })}
               className="w-full"
             >
               {isLoading ? (
                 <>
                   <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
-                  Revelando…
+                  {t(locale, "contact.reveal.loading")}
                 </>
               ) : (
                 <>
                   <Lock className="h-4 w-4" aria-hidden />
-                  Revelar contacto
+                  {t(locale, "contact.reveal.cta")}
                 </>
               )}
             </Button>
             <p className="text-xs text-[var(--color-text-subtle)]">
               {status === "authenticated"
-                ? "Toca para mostrar los canales privados de este perfil."
-                : "Inicia sesión para ver los canales privados de este perfil."}
+                ? t(locale, "contact.reveal.hintAuth")
+                : t(locale, "contact.reveal.hintAnon")}
             </p>
             {state.kind === "error" && (
               <p
@@ -148,7 +154,11 @@ export function ContactReveal({
   );
 }
 
-function BlurredPreview() {
+function BlurredPreview({
+  locale,
+}: {
+  locale: import("@/core/branding/brand-config").SupportedLocale;
+}) {
   return (
     <div
       aria-hidden
@@ -156,7 +166,7 @@ function BlurredPreview() {
     >
       <div className="flex items-center justify-between">
         <span className="text-[10px] uppercase tracking-[0.22em] text-[var(--color-text-subtle)]">
-          Canales privados
+          {t(locale, "contact.preview.title")}
         </span>
         <Lock className="h-3.5 w-3.5 text-[var(--color-text-subtle)]" />
       </div>
@@ -171,12 +181,14 @@ interface RevealedChannelsProps {
   listingName: string;
   contactChannels: ReadonlyArray<ContactChannel>;
   contact: PrivateContact;
+  locale: import("@/core/branding/brand-config").SupportedLocale;
 }
 
 function RevealedChannels({
   listingName,
   contactChannels,
   contact,
+  locale,
 }: Readonly<RevealedChannelsProps>) {
   const accepts = new Set(contactChannels);
   const phoneDigits = digitsOnly(contact.privatePhone);
@@ -191,12 +203,12 @@ function RevealedChannels({
 
   if (accepts.has("whatsapp") && whatsappDigits) {
     const text = encodeURIComponent(
-      `Hola ${listingName}, vi tu perfil en Biringas.`,
+      t(locale, "contact.whatsapp.template", { name: listingName }),
     );
     buttons.push({
       key: "whatsapp",
       href: `https://wa.me/${whatsappDigits}?text=${text}`,
-      label: "WhatsApp",
+      label: t(locale, "contact.button.whatsapp"),
       Icon: MessageCircle,
     });
   }
@@ -204,7 +216,7 @@ function RevealedChannels({
     buttons.push({
       key: "llamada",
       href: `tel:+${phoneDigits}`,
-      label: "Llamar",
+      label: t(locale, "contact.button.call"),
       Icon: Phone,
     });
   }
@@ -212,7 +224,7 @@ function RevealedChannels({
     buttons.push({
       key: "telegram",
       href: `https://t.me/+${phoneDigits}`,
-      label: "Telegram",
+      label: t(locale, "contact.button.telegram"),
       Icon: Send,
     });
   }
@@ -224,18 +236,17 @@ function RevealedChannels({
         role="status"
         className="rounded-[var(--radius-lg)] bg-[var(--color-surface-muted)] px-4 py-3 text-sm text-[var(--color-text-muted)] ring-1 ring-[var(--color-border)]"
       >
-        Este perfil no tiene canales públicos disponibles ahora.
+        {t(locale, "contact.empty")}
       </div>
     );
   }
 
-  return (
-    <RevealedChannelsView buttons={buttons} />
-  );
+  return <RevealedChannelsView buttons={buttons} locale={locale} />;
 }
 
 function RevealedChannelsView({
   buttons,
+  locale,
 }: Readonly<{
   buttons: ReadonlyArray<{
     key: ContactChannel;
@@ -243,6 +254,7 @@ function RevealedChannelsView({
     label: string;
     Icon: typeof MessageCircle;
   }>;
+  locale: import("@/core/branding/brand-config").SupportedLocale;
 }>) {
   const reduced = useReducedMotion();
   const stagger = reduced ? 0 : 0.06;
@@ -250,7 +262,7 @@ function RevealedChannelsView({
   return (
     <div id="contacto" className="flex flex-col gap-3">
       <span className="text-[10px] uppercase tracking-[0.22em] text-[var(--color-text-subtle)]">
-        Canales disponibles
+        {t(locale, "contact.revealed.title")}
       </span>
       <motion.div
         className="grid grid-cols-1 gap-2 sm:grid-cols-2"

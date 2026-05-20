@@ -18,6 +18,14 @@ import {
 } from "lucide-react";
 
 import type { SupportedLocale } from "@/core/branding/brand-config";
+import {
+  translateAppearance,
+  translateAttention,
+  translateContact,
+  translateMeetingContext,
+  translateService,
+  translateSpecialService,
+} from "@/core/i18n/domain-labels";
 import { readLocale } from "@/core/i18n/locale";
 import { t } from "@/core/i18n/messages";
 import {
@@ -298,13 +306,13 @@ export async function FiltersPanel({ filters, view }: FiltersPanelProps) {
               >
                 <Field label={t(locale, "filters.field.attentionTo")}>
                   <ChipRow>
-                    {ATTENTION_CATALOG.map(({ id, label }) => (
+                    {ATTENTION_CATALOG.map(({ id }) => (
                       <CheckChip
                         key={id}
                         name="attention"
                         value={id}
                         checked={filters.attention?.includes(id) ?? false}
-                        label={label}
+                        label={translateAttention(locale, id)}
                       />
                     ))}
                   </ChipRow>
@@ -312,7 +320,7 @@ export async function FiltersPanel({ filters, view }: FiltersPanelProps) {
 
                 <Field label={t(locale, "filters.field.contactChannel")}>
                   <ChipRow>
-                    {CONTACT_CATALOG.map(({ id, label }) => (
+                    {CONTACT_CATALOG.map(({ id }) => (
                       <CheckChip
                         key={id}
                         name="contact"
@@ -320,7 +328,7 @@ export async function FiltersPanel({ filters, view }: FiltersPanelProps) {
                         checked={
                           filters.contactChannels?.includes(id) ?? false
                         }
-                        label={label}
+                        label={translateContact(locale, id)}
                       />
                     ))}
                   </ChipRow>
@@ -344,7 +352,7 @@ export async function FiltersPanel({ filters, view }: FiltersPanelProps) {
                       checked={
                         filters.meetingContexts?.includes(place) ?? false
                       }
-                      label={place}
+                      label={translateMeetingContext(locale, place)}
                     />
                   ))}
                 </ChipRow>
@@ -368,7 +376,7 @@ export async function FiltersPanel({ filters, view }: FiltersPanelProps) {
                         name="service"
                         value={service}
                         checked={filters.services?.includes(service) ?? false}
-                        label={service}
+                        label={translateService(locale, service)}
                       />
                     ))}
                   </ChipRow>
@@ -384,7 +392,7 @@ export async function FiltersPanel({ filters, view }: FiltersPanelProps) {
                         checked={
                           filters.specialServices?.includes(service) ?? false
                         }
-                        label={service}
+                        label={translateSpecialService(locale, service)}
                       />
                     ))}
                   </ChipRow>
@@ -461,7 +469,7 @@ export async function FiltersPanel({ filters, view }: FiltersPanelProps) {
                             filters.attributes?.[key]?.includes(value) ??
                             false
                           }
-                          label={value}
+                          label={translateAppearance(locale, value)}
                         />
                       ))}
                     </ChipRow>
