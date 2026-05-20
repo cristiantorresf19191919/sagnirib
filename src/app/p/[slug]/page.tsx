@@ -13,6 +13,7 @@ import {
 
 import { buildPageMetadata } from "@/core/seo/build-page-metadata";
 import { seoConfig } from "@/core/seo/seo-config";
+import { personJsonLd } from "@/core/seo/structured-data";
 import { findBySlug, getListingReviews } from "@/server/biringas";
 import { CardStackGallery } from "@/features/biringas/components/CardStackGallery";
 import { AvailabilityStrip } from "@/features/biringas/components/AvailabilityStrip";
@@ -98,8 +99,34 @@ export default async function ProfilePage({ params }: Readonly<ProfilePageProps>
   ];
   const languages = listing.attributes.languages ?? [];
 
+  // Build the Person schema once; only emit `aggregateRating` when there
+  // are real reviews to back it up so Google's rich-result validator
+  // doesn't flag the schema.
+  const profileJsonLd = personJsonLd({
+    name: listing.name,
+    slug: listing.slug,
+    city: listing.city,
+    description: listing.shortBio || listing.bio,
+    imageUrl: new URL(listing.mainImage, seoConfig.metadataBase).toString(),
+    rating:
+      listing.reputation.reviewCount > 0
+        ? {
+            score: listing.reputation.score,
+            reviewCount: listing.reputation.reviewCount,
+          }
+        : null,
+  });
+
   return (
     <>
+      {/* Person schema — VISIBLE-content-backed per Addendum 001 §6.
+          Browsers don't execute application/ld+json so this is safe to
+          inline without an extra escaping pass; JSON.stringify only
+          renders data we own. */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(profileJsonLd) }}
+      />
       <Header />
       <main className="relative isolate flex flex-1 flex-col">
         <div

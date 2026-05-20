@@ -92,6 +92,7 @@ export const requestBookingRaw = adapter.requestBookingRaw;
 export const reportListingRaw = adapter.reportListingRaw;
 const listBookingsForListingsRaw = adapter.listBookingsForListingsRaw;
 const updateBookingStatusRaw = adapter.updateBookingStatusRaw;
+const attachBuyerReviewRaw = adapter.attachBuyerReviewRaw;
 const listDraftsByOwnerRaw = adapter.listDraftsByOwnerRaw;
 export type { DraftSummary } from "@/server/mocks/biringas/create-draft";
 /** Internal: probes whether a slug is already claimed by a non-rejected
@@ -510,6 +511,96 @@ export async function respondToBooking(
     actorId: user.uid,
     resource: `booking:${id}`,
     metadata: { action, listingSlug: target.listingSlug },
+  });
+
+  updateTag(CACHE_TAGS.bookingsForListing(target.listingSlug));
+
+  return updated;
+}
+
+import type {
+  BookingRequestRecord as _BookingRequestRecord,
+  SubmitBuyerReviewInput,
+} from "./booking-types";
+import { BUYER_REVIEW_LIMITS } from "./booking-types";
+
+/**
+ * Mutual reviews — seller-side. Attaches a 1-5 rating + optional
+ * private comment to a `completed` booking. Standard mutation
+ * contract: validate → requireAuth → ownership check (booking belongs
+ * to a listing the caller owns) → status guard (booking must be
+ * `completed`) → adapter → audit → updateTag.
+ *
+ * The review is currently used only to compute internal trust scores.
+ * Surfacing buyer ratings on a future buyer-profile page is a v2
+ * decision; for now the seller dashboard renders "Calificado X★" as
+ * an inline badge on the booking card.
+ */
+export async function submitBuyerReview(
+  rawInput: unknown,
+): Promise<_BookingRequestRecord> {
+  if (!rawInput || typeof rawInput !== "object") {
+    throw new Error("submitBuyerReview: input must be an object");
+  }
+  const r = rawInput as Record<string, unknown>;
+  const bookingId = typeof r.bookingId === "string" ? r.bookingId : null;
+  const ratingNum = typeof r.rating === "number" ? r.rating : null;
+  const rating: SubmitBuyerReviewInput["rating"] | null =
+    ratingNum !== null &&
+    Number.isInteger(ratingNum) &&
+    ratingNum >= 1 &&
+    ratingNum <= 5
+      ? (ratingNum as SubmitBuyerReviewInput["rating"])
+      : null;
+  if (!bookingId || !rating) {
+    throw new Error(
+      "submitBuyerReview: bookingId (string) and rating (1-5 integer) are required",
+    );
+  }
+  let comment: string | undefined;
+  if (r.comment !== undefined && r.comment !== null && r.comment !== "") {
+    if (typeof r.comment !== "string") {
+      throw new Error("submitBuyerReview: comment must be a string");
+    }
+    const trimmed = r.comment.trim();
+    if (trimmed.length > BUYER_REVIEW_LIMITS.commentMax) {
+      throw new Error(
+        `submitBuyerReview: comment must be at most ${BUYER_REVIEW_LIMITS.commentMax} characters`,
+      );
+    }
+    comment = trimmed || undefined;
+  }
+
+  const user = await requireAuth();
+
+  const ownedSlugs = new Set(
+    (await listDraftsByOwnerRaw(user.uid)).map((d) => d.preferredSlug),
+  );
+  const inbox = await listBookingsForListingsRaw([...ownedSlugs]);
+  const target = inbox.find((b) => b.id === bookingId);
+  if (!target) {
+    throw new Error("submitBuyerReview: booking not found or not yours");
+  }
+  if (target.status !== "completed") {
+    throw new Error(
+      "submitBuyerReview: only completed bookings can be rated",
+    );
+  }
+
+  const updated = await attachBuyerReviewRaw(bookingId, {
+    rating,
+    comment,
+    submittedAt: new Date().toISOString(),
+  });
+  if (!updated) {
+    throw new Error("submitBuyerReview: booking no longer exists");
+  }
+
+  await auditLog({
+    event: "biringa.buyer_review.submitted",
+    actorId: user.uid,
+    resource: `booking:${bookingId}`,
+    metadata: { rating, listingSlug: target.listingSlug },
   });
 
   updateTag(CACHE_TAGS.bookingsForListing(target.listingSlug));

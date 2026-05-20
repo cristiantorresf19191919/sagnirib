@@ -58,6 +58,16 @@ export async function updateBookingStatusRaw(
   );
 }
 
+/** Same Firestore-collection dependency as the other booking helpers. */
+export async function attachBuyerReviewRaw(
+  _bookingId: string,
+  _review: NonNullable<BookingRequestRecord["buyerReview"]>,
+): Promise<BookingRequestRecord | null> {
+  throw new BookingDisabledError(
+    "Las reseñas mutuas requieren la colección `bookings` en Firestore.",
+  );
+}
+
 class BookingDisabledError extends Error {
   readonly kind = "booking-disabled" as const;
   constructor(message: string) {

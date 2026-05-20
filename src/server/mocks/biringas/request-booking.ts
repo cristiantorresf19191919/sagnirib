@@ -82,3 +82,22 @@ export async function updateBookingStatusRaw(
   STORE[idx] = { ...STORE[idx]!, status };
   return STORE[idx];
 }
+
+/**
+ * Attaches a seller-to-buyer review to a completed booking. Idempotent
+ * at the booking level — re-submitting overwrites the previous review.
+ * Returns the updated record so the caller can immediately render the
+ * new state without a round-trip.
+ *
+ * Authorization (caller owns the booking's listing) lives in the
+ * barrel — this raw helper trusts the wrapper.
+ */
+export async function attachBuyerReviewRaw(
+  bookingId: string,
+  review: NonNullable<BookingRequestRecord["buyerReview"]>,
+): Promise<BookingRequestRecord | null> {
+  const idx = STORE.findIndex((b) => b.id === bookingId);
+  if (idx < 0) return null;
+  STORE[idx] = { ...STORE[idx]!, buyerReview: review };
+  return STORE[idx];
+}

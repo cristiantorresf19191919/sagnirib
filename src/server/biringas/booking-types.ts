@@ -47,7 +47,34 @@ export interface BookingRequestRecord extends BookingRequestInput {
     | "declined"
     | "cancelled"
     | "completed";
+  /** Seller's review of the buyer, attached after a `completed` booking.
+   *  Missing when the seller hasn't rated yet. Anonymous reviewers
+   *  (seller-side) — we never display the seller name on the buyer's
+   *  profile. Mutual-review system follows Airbnb's "rate within 14
+   *  days" model; expiry isn't enforced yet. */
+  buyerReview?: {
+    rating: 1 | 2 | 3 | 4 | 5;
+    /** Optional private comment. Visible to internal moderation only. */
+    comment?: string;
+    submittedAt: string;
+  };
 }
+
+/**
+ * Input for `submitBuyerReview`. The seller rating a buyer post
+ * `completed` booking. `bookingId` is the binding key; the barrel
+ * resolves the listing slug from it and enforces that the caller
+ * actually owns the listing before persisting.
+ */
+export interface SubmitBuyerReviewInput {
+  bookingId: string;
+  rating: 1 | 2 | 3 | 4 | 5;
+  comment?: string;
+}
+
+export const BUYER_REVIEW_LIMITS = {
+  commentMax: 600,
+} as const;
 
 /**
  * Limits enforced by the schema. UI mirrors these client-side for the

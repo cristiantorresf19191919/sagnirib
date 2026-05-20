@@ -249,6 +249,7 @@ export {
   requestBookingRaw,
   listBookingsForListingsRaw,
   updateBookingStatusRaw,
+  attachBuyerReviewRaw,
 } from "./request-booking";
 export { reportListingRaw } from "./report-listing";
 export { listDraftsByOwnerRaw, type DraftSummary } from "./create-draft";

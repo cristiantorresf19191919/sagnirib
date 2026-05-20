@@ -24,6 +24,7 @@ import type {
 import { toast } from "@/shared/ui/toast";
 
 import { respondToBooking } from "../actions/respond-booking";
+import { RateBuyerInline } from "./RateBuyerInline";
 
 const STATUS_LABEL: Record<BookingRequestRecord["status"], string> = {
   pending: "Pendiente",
@@ -244,6 +245,7 @@ function BookingCard({ booking, busy, onAction }: Readonly<BookingCardProps>) {
   const submittedDate = new Date(booking.submittedAt);
   const isPending = booking.status === "pending";
   const isConfirmed = booking.status === "confirmed";
+  const isCompleted = booking.status === "completed";
 
   return (
     <motion.li
@@ -336,6 +338,15 @@ function BookingCard({ booking, busy, onAction }: Readonly<BookingCardProps>) {
               <CheckCircle2 className="h-3.5 w-3.5" aria-hidden />
               Marcar como completada
             </button>
+          </div>
+        )}
+
+        {isCompleted && (
+          <div className="border-t border-[var(--color-border)]/60 pt-3">
+            <RateBuyerInline
+              bookingId={booking.id}
+              existingRating={booking.buyerReview?.rating}
+            />
           </div>
         )}
       </div>
