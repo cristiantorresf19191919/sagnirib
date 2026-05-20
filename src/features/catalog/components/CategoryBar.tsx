@@ -1,3 +1,5 @@
+import { readLocale } from "@/core/i18n/locale";
+import { t } from "@/core/i18n/messages";
 import { CATEGORIES, type ListingsFilters } from "@/server/biringas";
 import { Container } from "@/shared/design-system/components/Container";
 import { AnimatedTabs } from "@/shared/motion/AnimatedTabs";
@@ -15,20 +17,21 @@ interface CategoryBarProps {
  * `layoutId`. URLs remain the source of truth — page is server-rendered
  * against the resulting filter state.
  */
-export function CategoryBar({ filters, view }: CategoryBarProps) {
+export async function CategoryBar({ filters, view }: CategoryBarProps) {
+  const locale = await readLocale();
   const activeCategory = filters.category;
 
   const categoryItems = [
     {
       id: "all",
       href: withFilter(filters, "category", undefined as never, view),
-      label: "Todas",
+      label: t(locale, "category.all"),
       active: activeCategory === undefined,
     },
-    ...CATEGORIES.map(({ id, label }) => ({
+    ...CATEGORIES.map(({ id }) => ({
       id,
       href: withFilter(filters, "category", id, view),
-      label,
+      label: t(locale, `category.${id}`),
       active: activeCategory === id,
     })),
   ];
@@ -37,7 +40,7 @@ export function CategoryBar({ filters, view }: CategoryBarProps) {
     {
       id: "mujeres",
       href: withFilter(filters, "sex", "mujeres", view),
-      label: "Mujeres",
+      label: t(locale, "category.sexLabel"),
       active: true,
     },
   ];
@@ -45,7 +48,7 @@ export function CategoryBar({ filters, view }: CategoryBarProps) {
   return (
     <section
       data-testid="category-bar"
-      aria-label="Categorías"
+      aria-label={t(locale, "category.aria")}
       className="border-b border-[var(--color-border)]/60 bg-[var(--color-background)]"
     >
       <Container width="wide" className="py-4">
@@ -65,7 +68,7 @@ export function CategoryBar({ filters, view }: CategoryBarProps) {
             <AnimatedTabs
               groupId="category"
               items={categoryItems}
-              ariaLabel="Categoría"
+              ariaLabel={t(locale, "category.categoryAria")}
               className="!flex-nowrap shrink-0 md:!flex-wrap"
             />
             <span
@@ -75,7 +78,7 @@ export function CategoryBar({ filters, view }: CategoryBarProps) {
             <AnimatedTabs
               groupId="sex"
               items={sexItems}
-              ariaLabel="Sexo"
+              ariaLabel={t(locale, "category.sexAria")}
               className="!flex-nowrap shrink-0 md:!flex-wrap"
             />
           </div>

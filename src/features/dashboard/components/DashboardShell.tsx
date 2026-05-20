@@ -10,6 +10,9 @@ import {
 } from "lucide-react";
 import { useState, type ReactNode } from "react";
 
+import { useLocale } from "@/core/i18n/LocaleProvider";
+import { t } from "@/core/i18n/messages";
+
 import { InstallAppPill } from "./InstallAppPill";
 
 interface TabDef {
@@ -57,29 +60,30 @@ export function DashboardShell({
   pendingCount = 0,
   tabs,
 }: Readonly<DashboardShellProps>) {
+  const locale = useLocale();
   const TABS: ReadonlyArray<TabDef> = [
     {
       id: "inbox",
-      label: "Solicitudes",
+      label: t(locale, "dashboard.tab.requests"),
       icon: Inbox,
       badge: pendingCount > 0 ? pendingCount : undefined,
       content: tabs.inbox,
     },
     {
       id: "profile",
-      label: "Mi perfil",
+      label: t(locale, "dashboard.tab.profile"),
       icon: UserCircle,
       content: tabs.profile,
     },
     {
       id: "agenda",
-      label: "Agenda",
+      label: t(locale, "dashboard.tab.schedule"),
       icon: Calendar,
       content: tabs.agenda,
     },
     {
       id: "referrals",
-      label: "Invitar",
+      label: t(locale, "dashboard.tab.invite"),
       icon: Gift,
       content: tabs.referrals,
     },
@@ -100,19 +104,25 @@ export function DashboardShell({
             aria-hidden
             className="inline-block h-1.5 w-1.5 rotate-45 bg-[var(--color-gold)] shadow-[0_0_0_3px_rgba(200,166,118,0.18)]"
           />
-          Mi cuenta
+          {t(locale, "dashboard.title")}
         </span>
         <h1 className="font-[var(--font-display)] text-[clamp(28px,3.4vw,38px)] font-[370] leading-[1.05] tracking-[-0.025em] text-[var(--color-foreground)]">
-          Hola,{" "}
-          <span className="italic font-[340] text-[var(--color-brand-primary)]">
-            {greetingName}
-          </span>
-          .
+          {(() => {
+            const tpl = t(locale, "dashboard.greeting", { name: "__N__" });
+            const [before, after] = tpl.split("__N__");
+            return (
+              <>
+                {before}
+                <span className="italic font-[340] text-[var(--color-brand-primary)]">
+                  {greetingName}
+                </span>
+                {after}
+              </>
+            );
+          })()}
         </h1>
         <p className="max-w-2xl font-[var(--font-serif)] text-[15px] leading-[1.55] text-[var(--color-text-muted)]">
-          Aquí gestionás las solicitudes que recibís, editás tu perfil y
-          ajustás tu agenda. Discreto, sin notificaciones invasivas — vos
-          decidís cuándo entrar.
+          {t(locale, "dashboard.intro")}
         </p>
       </header>
 
@@ -122,7 +132,7 @@ export function DashboardShell({
 
       <div
         role="tablist"
-        aria-label="Secciones del panel"
+        aria-label={t(locale, "dashboard.tablistAria")}
         className="flex flex-wrap items-center gap-1 rounded-full border border-[var(--color-border)] bg-[var(--color-surface)]/70 p-1 backdrop-blur-sm sm:w-fit"
       >
         {TABS.map((tab) => {
@@ -147,7 +157,9 @@ export function DashboardShell({
               {tab.label}
               {tab.badge !== undefined && (
                 <span
-                  aria-label={`${tab.badge} pendientes`}
+                  aria-label={t(locale, "dashboard.pendingBadge", {
+                    count: tab.badge,
+                  })}
                   className={`inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-[10px] font-bold tabular-nums ${
                     isActive
                       ? "bg-[var(--color-surface)] text-[var(--color-brand-primary)]"

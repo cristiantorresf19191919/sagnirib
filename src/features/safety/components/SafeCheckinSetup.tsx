@@ -4,6 +4,8 @@ import { motion } from "framer-motion";
 import { ShieldCheck, Sparkles } from "lucide-react";
 import { useState } from "react";
 
+import { useLocale } from "@/core/i18n/LocaleProvider";
+import { t } from "@/core/i18n/messages";
 import { toast } from "@/shared/ui/toast";
 
 import { useSafeCheckins } from "../lib/use-safe-checkins";
@@ -45,6 +47,7 @@ export function SafeCheckinSetup({
   defaultMinutes,
   onClose,
 }: Readonly<SafeCheckinSetupProps>) {
+  const locale = useLocale();
   const { arm } = useSafeCheckins();
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
@@ -55,12 +58,12 @@ export function SafeCheckinSetup({
     e.preventDefault();
     setError(null);
     if (!name.trim()) {
-      setError("Agregá el nombre de tu contacto.");
+      setError(t(locale, "safe.contactNameMissing"));
       return;
     }
     const digits = phone.replace(/[^\d+]/g, "");
     if (digits.length < 8) {
-      setError("Ingresá un número de WhatsApp válido (incluí el país).");
+      setError(t(locale, "safe.whatsappInvalid"));
       return;
     }
     const totalMs = (defaultMinutes + bufferMin) * 60_000;
@@ -72,8 +75,10 @@ export function SafeCheckinSetup({
       deadlineMs: Date.now() + totalMs,
     });
     toast.success(
-      "Safe Check-in activado",
-      `Te avisamos en ${Math.round((defaultMinutes + bufferMin) / 60)}h si no marcaste "Estoy bien".`,
+      t(locale, "safe.toast.title"),
+      t(locale, "safe.toastShort", {
+        hours: Math.round((defaultMinutes + bufferMin) / 60),
+      }),
     );
     onClose();
   };
@@ -95,15 +100,13 @@ export function SafeCheckinSetup({
         <div className="flex min-w-0 flex-col">
           <span className="inline-flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.22em] text-[var(--color-brand-primary)]">
             <Sparkles className="h-3 w-3" aria-hidden />
-            Nuevo · Safe Check-in
+            {t(locale, "safe.eyebrow")}
           </span>
           <h3 className="mt-1 text-base font-semibold text-[var(--color-foreground)]">
-            Avisá a alguien de confianza
+            {t(locale, "safe.heading")}
           </h3>
           <p className="mt-0.5 text-xs leading-relaxed text-[var(--color-text-muted)]">
-            Si no tocás "Estoy bien" al final del encuentro, te ayudamos a
-            avisar a esa persona con un mensaje prearmado. Todo queda en
-            tu dispositivo.
+            {t(locale, "safe.body")}
           </p>
         </div>
       </div>
@@ -112,28 +115,28 @@ export function SafeCheckinSetup({
         <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
           <label className="flex flex-col gap-1">
             <span className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--color-text-subtle)]">
-              Nombre del contacto
+              {t(locale, "safe.contactNameLabel")}
             </span>
             <input
               type="text"
               required
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="Andrea"
+              placeholder={t(locale, "safe.namePlaceholder")}
               maxLength={40}
               className="h-10 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-background)] px-3 text-sm text-[var(--color-foreground)] placeholder:text-[var(--color-text-subtle)] focus:border-[var(--color-brand-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-brand-primary)]/30"
             />
           </label>
           <label className="flex flex-col gap-1">
             <span className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--color-text-subtle)]">
-              WhatsApp (con país)
+              {t(locale, "safe.whatsappLabelShort")}
             </span>
             <input
               type="tel"
               required
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
-              placeholder="+57 300 1234567"
+              placeholder={t(locale, "safe.whatsappPlaceholder")}
               inputMode="tel"
               autoComplete="tel"
               className="h-10 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-background)] px-3 text-sm text-[var(--color-foreground)] placeholder:text-[var(--color-text-subtle)] focus:border-[var(--color-brand-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-brand-primary)]/30"
@@ -143,7 +146,11 @@ export function SafeCheckinSetup({
 
         <fieldset className="flex flex-col gap-1">
           <legend className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--color-text-subtle)]">
-            Avisarme {defaultMinutes >= 60 ? `+${defaultMinutes / 60}h después` : `+${defaultMinutes}min después`} +
+            {t(locale, "safe.notifyMe")}{" "}
+            {defaultMinutes >= 60
+              ? t(locale, "safe.afterHours", { n: defaultMinutes / 60 })
+              : t(locale, "safe.afterMinutes", { n: defaultMinutes })}{" "}
+            +
           </legend>
           <div className="flex flex-wrap gap-1.5">
             {BUFFER_PRESETS.map((mins) => {
@@ -165,7 +172,9 @@ export function SafeCheckinSetup({
                     onChange={() => setBufferMin(mins)}
                     className="sr-only"
                   />
-                  {mins >= 60 ? `${mins / 60}h después` : `${mins}min`}
+                  {mins >= 60
+                    ? t(locale, "safe.bufferHoursShort", { n: mins / 60 })
+                    : t(locale, "safe.bufferMinutesShort", { n: mins })}
                 </label>
               );
             })}
@@ -187,14 +196,14 @@ export function SafeCheckinSetup({
             onClick={onClose}
             className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--color-text-muted)] transition-colors hover:text-[var(--color-foreground)]"
           >
-            Más tarde
+            {t(locale, "safe.skip")}
           </button>
           <button
             type="submit"
             className="inline-flex h-10 items-center gap-1.5 rounded-full bg-[var(--color-brand-primary)] px-4 text-xs font-semibold text-[var(--color-surface)] shadow-[var(--shadow-glow-primary)] transition-[background,transform] duration-200 hover:-translate-y-[1px] hover:bg-[var(--color-brand-primary-strong)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)]"
           >
             <ShieldCheck className="h-3.5 w-3.5" aria-hidden />
-            Activar
+            {t(locale, "safe.activateShort")}
           </button>
         </div>
       </form>

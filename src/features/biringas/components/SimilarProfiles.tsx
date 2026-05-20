@@ -1,3 +1,5 @@
+import { readLocale } from "@/core/i18n/locale";
+import { t } from "@/core/i18n/messages";
 import { listSimilar } from "@/server/biringas";
 import { CatalogCard } from "@/features/catalog/components/CatalogCard";
 import { Container } from "@/shared/design-system/components/Container";
@@ -21,9 +23,10 @@ interface SimilarProfilesProps {
  */
 export async function SimilarProfiles({
   slug,
-  heading = "Perfiles similares",
+  heading,
   limit = 4,
 }: Readonly<SimilarProfilesProps>) {
+  const localePromise = readLocale();
   // Auxiliary rail — degrade to nothing on failure so the profile page
   // doesn't 500 because of a "more like this" hiccup.
   const similar = await listSimilar(slug, limit).catch((err) => {
@@ -31,7 +34,8 @@ export async function SimilarProfiles({
     return [] as Awaited<ReturnType<typeof listSimilar>>;
   });
   if (similar.length === 0) return null;
-
+  const locale = await localePromise;
+  const resolvedHeading = heading ?? t(locale, "similar.heading");
   return (
     <section
       data-testid="similar-profiles"
@@ -41,18 +45,18 @@ export async function SimilarProfiles({
       <Container width="wide">
         <header className="flex flex-col gap-1">
           <span className="text-[10px] font-semibold uppercase tracking-[0.28em] text-[var(--color-text-subtle)]">
-            Sigue explorando
+            {t(locale, "similar.eyebrow")}
           </span>
           <h2
             id="similar-profiles-title"
             className="text-2xl font-bold tracking-tight text-[var(--color-foreground)] sm:text-3xl"
           >
-            {heading}
+            {resolvedHeading}
           </h2>
         </header>
         <ul
           data-testid="similar-profiles-list"
-          aria-label="Perfiles similares"
+          aria-label={resolvedHeading}
           className="mt-8 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4"
         >
           {similar.map((listing) => (
@@ -60,7 +64,7 @@ export async function SimilarProfiles({
               key={listing.id}
               data-testid={`similar-profile-${listing.slug}`}
             >
-              <CatalogCard listing={listing} view="grid3" />
+              <CatalogCard listing={listing} view="grid3" locale={locale} />
             </li>
           ))}
         </ul>

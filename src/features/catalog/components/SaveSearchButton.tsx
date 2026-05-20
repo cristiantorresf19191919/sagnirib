@@ -2,6 +2,8 @@
 
 import { Bookmark, BookmarkCheck } from "lucide-react";
 
+import { useLocale } from "@/core/i18n/LocaleProvider";
+import { t } from "@/core/i18n/messages";
 import { toast } from "@/shared/ui/toast";
 
 import { useSavedSearches } from "../lib/use-saved-searches";
@@ -25,14 +27,20 @@ export function SaveSearchButton({
   href,
   className,
 }: Readonly<SaveSearchButtonProps>) {
+  const locale = useLocale();
   const { ready, searches, save } = useSavedSearches();
   const already = ready && searches.some((s) => s.href === href);
 
   const handleClick = () => {
     save({ label, href });
     toast.success(
-      already ? "Búsqueda actualizada" : "Búsqueda guardada",
-      "La encontrarás en tu sección de favoritas.",
+      t(
+        locale,
+        already
+          ? "savedSearch.toast.updatedTitle"
+          : "savedSearch.toast.savedTitle",
+      ),
+      t(locale, "savedSearch.toast.body"),
     );
   };
 
@@ -52,7 +60,9 @@ export function SaveSearchButton({
       ) : (
         <Bookmark className="h-4 w-4" aria-hidden />
       )}
-      {already ? "Búsqueda guardada" : "Guardar búsqueda"}
+      {already
+        ? t(locale, "savedSearch.saved")
+        : t(locale, "savedSearch.save")}
     </button>
   );
 }

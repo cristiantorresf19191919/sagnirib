@@ -6,6 +6,8 @@ import Link from "next/link";
 import { useEffect, useId, useRef, useState } from "react";
 import type { LucideIcon } from "lucide-react";
 
+import { useLocale } from "@/core/i18n/LocaleProvider";
+import { t } from "@/core/i18n/messages";
 import type { ListingsFilters } from "@/server/biringas";
 
 import { encodeFilters, type CatalogView } from "../lib/encode-filters";
@@ -19,34 +21,34 @@ interface SortMenuProps {
 
 interface Option {
   id: SortKey | "default";
-  label: string;
-  hint: string;
+  labelKey: string;
+  hintKey: string;
   icon: LucideIcon;
 }
 
 const OPTIONS: ReadonlyArray<Option> = [
   {
     id: "default",
-    label: "Recientes",
-    hint: "Lo más nuevo primero",
+    labelKey: "sort.recent.label",
+    hintKey: "sort.recent.help",
     icon: Clock,
   },
   {
     id: "rating",
-    label: "Mejor calificadas",
-    hint: "Top reseñas",
+    labelKey: "sort.rating.label",
+    hintKey: "sort.rating.help",
     icon: Star,
   },
   {
     id: "price_asc",
-    label: "Precio · menor a mayor",
-    hint: "Más asequibles arriba",
+    labelKey: "sort.priceAsc.label",
+    hintKey: "sort.priceAsc.help",
     icon: ArrowUpAZ,
   },
   {
     id: "price_desc",
-    label: "Precio · mayor a menor",
-    hint: "Lujo arriba",
+    labelKey: "sort.priceDesc.label",
+    hintKey: "sort.priceDesc.help",
     icon: ArrowDownAZ,
   },
 ];
@@ -72,6 +74,7 @@ const SPRING = { type: "spring", stiffness: 300, damping: 26, mass: 0.5 } as con
  * client purely for affordance and motion.
  */
 export function SortMenu({ filters, view }: SortMenuProps) {
+  const locale = useLocale();
   const [open, setOpen] = useState(false);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const popoverRef = useRef<HTMLDivElement>(null);
@@ -129,10 +132,10 @@ export function SortMenu({ filters, view }: SortMenuProps) {
             id={labelId}
             className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--color-text-muted)]"
           >
-            Ordenar por
+            {t(locale, "sort.by")}
           </span>
           <span className="text-[13px] text-[var(--color-foreground)]">
-            {active.label}
+            {t(locale, active.labelKey)}
           </span>
         </span>
         <ArrowDown
@@ -195,10 +198,10 @@ export function SortMenu({ filters, view }: SortMenuProps) {
                               : "text-[var(--color-foreground)]"
                           }`}
                         >
-                          {option.label}
+                          {t(locale, option.labelKey)}
                         </span>
                         <span className="text-[11px] text-[var(--color-text-subtle)]">
-                          {option.hint}
+                          {t(locale, option.hintKey)}
                         </span>
                       </span>
                       {isActive && (

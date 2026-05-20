@@ -5,6 +5,8 @@ import Link from "next/link";
 import { Sparkles, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
+import { useLocale } from "@/core/i18n/LocaleProvider";
+import { t } from "@/core/i18n/messages";
 import { useFavorites } from "@/features/favorites/store/use-favorites";
 
 import {
@@ -59,6 +61,7 @@ function writeDismissed(ids: ReadonlySet<string>) {
  * are online — invisible by default.
  */
 export function BackOnlinePill() {
+  const locale = useLocale();
   const { favorites, ready } = useFavorites();
   const [online, setOnline] = useState<ReadonlyArray<OnlineFavorite>>([]);
   const [dismissed, setDismissed] = useState<ReadonlySet<string>>(
@@ -124,7 +127,7 @@ export function BackOnlinePill() {
   return (
     <aside
       aria-live="polite"
-      aria-label="Favoritas disponibles ahora"
+      aria-label={t(locale, "backOnline.title")}
       className="pointer-events-none fixed bottom-4 left-1/2 z-[110] flex w-full max-w-sm -translate-x-1/2 flex-col gap-2 px-4 sm:bottom-6 sm:left-auto sm:right-6 sm:translate-x-0 sm:px-0"
     >
       <AnimatePresence initial={false}>
@@ -164,14 +167,14 @@ export function BackOnlinePill() {
               <span className="min-w-0 truncate text-sm text-[var(--color-foreground)]">
                 <span className="font-semibold">{fav.name}</span>{" "}
                 <span className="text-[var(--color-text-muted)]">
-                  está en línea
+                  {t(locale, "backOnline.suffix")}
                 </span>
               </span>
             </Link>
             <button
               type="button"
               onClick={() => dismissOne(fav.id)}
-              aria-label={`Ocultar aviso de ${fav.name}`}
+              aria-label={t(locale, "backOnline.hideAria", { name: fav.name })}
               className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[var(--color-text-subtle)] transition-colors hover:bg-[var(--color-surface-muted)] hover:text-[var(--color-foreground)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)]"
             >
               <X className="h-3 w-3" aria-hidden />

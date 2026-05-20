@@ -123,6 +123,7 @@ export async function FeaturedStrip() {
                 featured
                 priority={idx === 0}
                 view="grid3"
+                locale={locale}
               />
             </div>
           ))}

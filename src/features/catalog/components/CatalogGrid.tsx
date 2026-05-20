@@ -1,5 +1,8 @@
 import Link from "next/link";
 
+import type { SupportedLocale } from "@/core/branding/brand-config";
+import { readLocale } from "@/core/i18n/locale";
+import { t } from "@/core/i18n/messages";
 import { listAll, type ListingsFilters } from "@/server/biringas";
 import { Button } from "@/shared/design-system/components/Button";
 import { Container } from "@/shared/design-system/components/Container";
@@ -41,6 +44,7 @@ export async function CatalogGrid({
   filters,
   view = "grid3",
 }: CatalogGridProps) {
+  const localePromise = readLocale();
   // Primary list. Catch + log so a Firestore outage renders the empty
   // state instead of 500'ing the catalog, and the underlying error
   // surfaces in Netlify function logs for diagnosis.
@@ -65,6 +69,7 @@ export async function CatalogGrid({
     return { data: [], meta };
   });
   const showSpecialTiles = view !== "list";
+  const locale = await localePromise;
 
   return (
     <section
@@ -91,7 +96,9 @@ export async function CatalogGrid({
                 id="catalog-title"
                 className="max-w-3xl text-2xl font-bold leading-tight tracking-tight text-[var(--color-foreground)] sm:text-3xl"
               >
-                Biringas verificadas en {filters.city ?? "Colombia"}
+                {t(locale, "grid.headingCity", {
+                  city: filters.city ?? "Colombia",
+                })}
               </h2>
             </div>
             <div className="self-start sm:self-end">
@@ -101,11 +108,11 @@ export async function CatalogGrid({
         </FadeIn>
 
         {data.length === 0 ? (
-          <EmptyState />
+          <EmptyState locale={locale} />
         ) : (
           <ul
             data-testid="catalog-grid-list"
-            aria-label="Biringas en el catálogo"
+            aria-label={t(locale, "grid.heading")}
             className={GRID_CLASS[view]}
           >
             {showSpecialTiles && (
@@ -131,6 +138,7 @@ export async function CatalogGrid({
                     priority={index === 0}
                     featured={listing.reputation.score >= FEATURED_THRESHOLD}
                     view={view}
+                    locale={locale}
                   />
                 </CardReveal>
               );
@@ -151,13 +159,25 @@ export async function CatalogGrid({
 }
 
 const EMPTY_STATE_SHORTCUTS = [
-  { label: "Disponibles ahora · Bogotá", href: "/explorar?now=1&city=Bogot%C3%A1" },
-  { label: "Verificadas · Medellín", href: "/explorar?verified=1&city=Medell%C3%ADn" },
-  { label: "Videollamada", href: "/explorar?category=videollamadas" },
-  { label: "Top calificadas", href: "/explorar?sort=rating&reviews=1" },
+  {
+    i18nKey: "grid.shortcut.availableNowBogota",
+    href: "/explorar?now=1&city=Bogot%C3%A1",
+  },
+  {
+    i18nKey: "grid.shortcut.verifiedMedellin",
+    href: "/explorar?verified=1&city=Medell%C3%ADn",
+  },
+  {
+    i18nKey: "grid.shortcut.videocall",
+    href: "/explorar?category=videollamadas",
+  },
+  {
+    i18nKey: "grid.shortcut.topRated",
+    href: "/explorar?sort=rating&reviews=1",
+  },
 ] as const;
 
-function EmptyState() {
+function EmptyState({ locale }: { locale: SupportedLocale }) {
   return (
     <div
       data-testid="catalog-grid-empty"
@@ -165,17 +185,16 @@ function EmptyState() {
     >
       <Sparkle tone="muted" size={32} />
       <span className="text-[11px] uppercase tracking-[0.28em] text-[var(--color-text-subtle)]">
-        Sin resultados
+        {t(locale, "grid.empty.title")}
       </span>
       <h3 className="text-xl font-semibold text-[var(--color-foreground)]">
-        Ningún perfil coincide con esta combinación
+        {t(locale, "grid.empty.subtitle")}
       </h3>
       <p className="max-w-sm text-sm leading-relaxed text-[var(--color-text-muted)]">
-        Prueba a ampliar la ciudad, soltar la edad o quitar algún chip de
-        servicio. También puedes empezar de cero.
+        {t(locale, "grid.empty.body")}
       </p>
       <Button href="/explorar" variant="primary" size="md" className="mt-2" glow>
-        Borrar todos los filtros
+        {t(locale, "grid.empty.clearAll")}
       </Button>
 
       {/* Popular search shortcuts — turn the dead end into a discovery
@@ -185,16 +204,16 @@ function EmptyState() {
         className="mt-4 flex w-full flex-col gap-2 border-t border-[var(--color-border)]/70 pt-5"
       >
         <span className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[var(--color-text-subtle)]">
-          O prueba una búsqueda popular
+          {t(locale, "grid.empty.popular")}
         </span>
         <div className="flex flex-wrap items-center justify-center gap-1.5">
           {EMPTY_STATE_SHORTCUTS.map((s) => (
             <Link
-              key={s.label}
+              key={s.i18nKey}
               href={s.href}
               className="inline-flex items-center rounded-full border border-[var(--color-border)] bg-[var(--color-background)] px-3 py-1.5 text-xs font-medium text-[var(--color-text-muted)] transition-[border-color,color,background] duration-150 ease-[var(--ease-standard)] hover:border-[var(--color-brand-primary-soft)] hover:text-[var(--color-foreground)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)]"
             >
-              {s.label}
+              {t(locale, s.i18nKey)}
             </Link>
           ))}
         </div>

@@ -3,6 +3,7 @@
 import { useMemo } from "react";
 import { ArrowRight, GitCompareArrows, Heart } from "lucide-react";
 
+import { useLocale } from "@/core/i18n/LocaleProvider";
 import type { BiringaListing } from "@/server/biringas";
 import { CatalogCard } from "@/features/catalog/components/CatalogCard";
 import { Button } from "@/shared/design-system/components/Button";
@@ -16,6 +17,7 @@ interface FavoritesViewProps {
 }
 
 export function FavoritesView({ listings }: Readonly<FavoritesViewProps>) {
+  const locale = useLocale();
   const {
     favorites,
     compareIds,
@@ -140,7 +142,7 @@ export function FavoritesView({ listings }: Readonly<FavoritesViewProps>) {
       <ul className="mt-8 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         {favoriteListings.map((listing, i) => (
           <li key={listing.id} className="flex flex-col gap-2">
-            <CatalogCard listing={listing} priority={i === 0} />
+            <CatalogCard listing={listing} priority={i === 0} locale={locale} />
             <CompareToggle listingId={listing.id} variant="block" />
           </li>
         ))}

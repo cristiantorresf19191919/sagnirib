@@ -4,6 +4,8 @@ import { motion } from "framer-motion";
 import Link from "next/link";
 import { ArrowRight, Sparkles } from "lucide-react";
 
+import { useLocale } from "@/core/i18n/LocaleProvider";
+import { t } from "@/core/i18n/messages";
 import { Sparkle } from "@/shared/design-system/components/Sparkle";
 
 interface TileProps {
@@ -31,6 +33,7 @@ const SPRING_TAP = { scale: 0.985, transition: { duration: 0.12 } } as const;
  * stays clean.
  */
 export function HistoriasTopTile({ href }: TileProps) {
+  const locale = useLocale();
   return (
     <motion.div
       whileHover={SPRING_HOVER}
@@ -106,7 +109,7 @@ export function HistoriasTopTile({ href }: TileProps) {
 
         <div className="relative flex items-start justify-end">
           <span className="rounded-full bg-[var(--color-brand-warn)]/15 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.22em] text-[var(--color-brand-accent-strong)] ring-1 ring-[var(--color-brand-warn)]/30">
-            Top
+            {t(locale, "tile.top")}
           </span>
         </div>
 
@@ -152,17 +155,16 @@ export function HistoriasTopTile({ href }: TileProps) {
 
         <div className="relative">
           <p className="text-[10px] font-semibold uppercase tracking-[0.32em] text-[var(--color-brand-accent-strong)]">
-            Editorial
+            {t(locale, "tile.editorial")}
           </p>
           <h3 className="mt-2 font-[var(--font-display)] text-[1.65rem] font-[440] leading-tight tracking-tight text-[var(--color-foreground)]">
-            Historias TOP
+            {t(locale, "tile.historiasTop")}
           </h3>
           <p className="mt-2 font-[var(--font-serif)] text-[12.5px] leading-snug text-[var(--color-text-muted)]">
-            Las stories más vistas de la semana. Verificadas y con mejor
-            reputación.
+            {t(locale, "tile.historiasTop.body")}
           </p>
           <span className="mt-3 inline-flex items-center gap-1 text-[12px] font-semibold text-[var(--color-brand-accent-strong)]">
-            Ver más historias
+            {t(locale, "tile.seeMoreStories")}
             <ArrowRight
               className="h-3.5 w-3.5 transition-transform duration-200 ease-[var(--ease-standard)] group-hover:translate-x-0.5"
               aria-hidden
@@ -178,6 +180,7 @@ export function HistoriasTopTile({ href }: TileProps) {
  * "Disponibles AHORA" tile — links to `?now=1`.
  */
 export function DisponiblesAhoraTile({ href }: TileProps) {
+  const locale = useLocale();
   return (
     <motion.div
       whileHover={SPRING_HOVER}
@@ -207,19 +210,19 @@ export function DisponiblesAhoraTile({ href }: TileProps) {
               aria-hidden
               className="h-1.5 w-1.5 rounded-full bg-[var(--color-surface)] motion-safe:animate-pulse"
             />
-            En vivo
+            {t(locale, "tile.live")}
           </span>
         </div>
 
         <div className="relative mt-auto">
           <p className="text-[10px] font-semibold uppercase tracking-[0.32em] text-[var(--color-brand-primary-soft)]">
-            Online
+            {t(locale, "tile.online")}
           </p>
           <h3 className="mt-2 text-2xl font-bold leading-tight text-[var(--color-surface)] sm:text-[1.65rem]">
-            Disponibles AHORA
+            {t(locale, "tile.availableNow")}
           </h3>
           <p className="mt-2 text-xs leading-relaxed text-[var(--color-surface)]/85">
-            Atención inmediata, hoy mismo. Filtra el catálogo por disponibilidad.
+            {t(locale, "tile.availableNow.body")}
           </p>
         </div>
       </Link>
