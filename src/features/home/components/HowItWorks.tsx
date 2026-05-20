@@ -70,6 +70,8 @@ const CARD_GROW_VARIANTS: Variants = {
   hover: { y: -6 },
 };
 
+import { useLocale } from "@/core/i18n/LocaleProvider";
+import { t } from "@/core/i18n/messages";
 import { Container } from "@/shared/design-system/components/Container";
 
 import { HowItWorksConnector } from "./HowItWorksConnector";
@@ -82,44 +84,35 @@ import {
 interface Step {
   numeral: string;
   icon: LucideIcon;
-  eyebrow: string;
-  title: string;
-  description: string;
+  /** i18n key prefix — `how.step1`, `how.step2`, `how.step3`. The
+   *  render layer composes `.eyebrow`, `.title`, `.body`. */
+  i18nKey: string;
   /** Renders the per-step inline SVG art in the bottom half of the card. */
   illustration: (props: { inView: boolean }) => React.ReactNode;
   /** Marks the funnel-closing card — adds the explicit CTA button and a
-   *  full-card <Link> overlay. */
-  cta?: { href: string; label: string };
+   *  full-card <Link> overlay. The CTA label comes from `${i18nKey}.cta`. */
+  cta?: { href: string };
 }
 
 const STEPS: ReadonlyArray<Step> = [
   {
     numeral: "01",
     icon: BookOpen,
-    eyebrow: "Catálogo",
-    title: "Hojea el catálogo",
-    description:
-      "Filtra por ciudad, categoría o disponibilidad y revisa perfiles con fotos, idiomas y reseñas.",
+    i18nKey: "how.step1",
     illustration: ({ inView }) => <IllustrationStep01 inView={inView} />,
   },
   {
     numeral: "02",
     icon: ShieldCheck,
-    eyebrow: "Confianza",
-    title: "Verifica antes de elegir",
-    description:
-      "Cada acompañante destacada pasa por un check de identidad y consentimiento de imagen documentado.",
+    i18nKey: "how.step2",
     illustration: ({ inView }) => <IllustrationStep02 inView={inView} />,
   },
   {
     numeral: "03",
     icon: CalendarCheck,
-    eyebrow: "Reserva",
-    title: "Contrata sin fricción",
-    description:
-      "Reserva directo desde el perfil con discreción absoluta. Mensajería y pago integrados se suman muy pronto a tu experiencia.",
+    i18nKey: "how.step3",
     illustration: ({ inView }) => <IllustrationStep03 inView={inView} />,
-    cta: { href: "/explorar", label: "Explorar el catálogo" },
+    cta: { href: "/explorar" },
   },
 ];
 
@@ -157,6 +150,7 @@ const ICON_HOVER: TargetAndTransition = {
 
 export function HowItWorks() {
   const reduced = useReducedMotion();
+  const locale = useLocale();
 
   return (
     <section
@@ -189,7 +183,7 @@ export function HowItWorks() {
               aria-hidden
               className="inline-block h-1.5 w-1.5 rotate-45 bg-[var(--color-gold)] shadow-[0_0_0_3px_rgba(200,166,118,0.18)]"
             />
-            Cómo funciona
+            {t(locale, "how.eyebrow")}
             <span
               aria-hidden
               className="inline-block h-1.5 w-1.5 rotate-45 bg-[var(--color-brand-primary)]/70"
@@ -204,9 +198,9 @@ export function HowItWorks() {
             transition={{ duration: 0.7, delay: 0.05, ease: [0.22, 1, 0.36, 1] }}
             className="mt-5 font-[var(--font-display)] text-[clamp(30px,4.2vw,52px)] font-[370] leading-[1.02] tracking-[-0.028em] text-[var(--color-foreground)]"
           >
-            Tres pasos para encontrar la{" "}
+            {t(locale, "how.title.before")}{" "}
             <span className="relative inline-block italic font-[340] text-[var(--color-brand-primary)]">
-              compañía adecuada
+              {t(locale, "how.title.gold")}
               <span
                 aria-hidden
                 className="pointer-events-none absolute -bottom-1 left-0 h-[3px] w-full -skew-x-12 bg-[var(--color-gold)] opacity-45"
@@ -255,8 +249,7 @@ export function HowItWorks() {
             transition={{ duration: 0.6, delay: 0.45, ease: [0.22, 1, 0.36, 1] }}
             className="mx-auto mt-5 max-w-xl font-[var(--font-serif)] text-[16px] leading-[1.55] text-[var(--color-text-muted)]"
           >
-            Reservar es simple. Antes vamos por la confianza —{" "}
-            <em>verificación, consentimiento, transparencia.</em>
+            {t(locale, "how.subtitle")}
           </motion.p>
         </header>
 
@@ -299,6 +292,13 @@ function StepCard({ step, index, reduced }: Readonly<StepCardProps>) {
   const Icon = step.icon;
   const isCta = !!step.cta;
   const ref = useRef<HTMLLIElement>(null);
+  const locale = useLocale();
+  // Per-step copy, resolved at render so a locale switch re-renders
+  // the cards in the user's chosen language.
+  const eyebrow = t(locale, `${step.i18nKey}.eyebrow`);
+  const title = t(locale, `${step.i18nKey}.title`);
+  const body = t(locale, `${step.i18nKey}.body`);
+  const ctaLabel = isCta ? t(locale, `${step.i18nKey}.cta`) : "";
   // Per-card in-view trigger drives only the *inner* per-element
   // stagger (numeral / icon / copy / illustration). The CARD's own
   // entrance is now choreographed by the parent <motion.ol>'s variants
@@ -356,11 +356,11 @@ function StepCard({ step, index, reduced }: Readonly<StepCardProps>) {
       {step.cta && (
         <Link
           href={step.cta.href}
-          aria-label={`${step.title} — ${step.cta.label}`}
+          aria-label={`${title} — ${ctaLabel}`}
           className="absolute inset-0 z-10 rounded-[var(--radius-2xl)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-background-elevated)]"
           data-testid={`how-it-works-step-${step.numeral}-cta-overlay`}
         >
-          <span className="sr-only">{step.cta.label}</span>
+          <span className="sr-only">{ctaLabel}</span>
         </Link>
       )}
 
@@ -405,19 +405,19 @@ function StepCard({ step, index, reduced }: Readonly<StepCardProps>) {
             variants={reduced ? undefined : ITEM_RISE}
             className="text-[10px] font-semibold uppercase tracking-[0.32em] text-[var(--color-text-subtle)]"
           >
-            {step.eyebrow}
+            {eyebrow}
           </motion.span>
           <motion.h3
             variants={reduced ? undefined : ITEM_RISE}
             className="text-2xl font-semibold leading-tight tracking-tight text-[var(--color-foreground)]"
           >
-            {step.title}
+            {title}
           </motion.h3>
           <motion.p
             variants={reduced ? undefined : ITEM_RISE}
             className="text-sm leading-relaxed text-[var(--color-text-muted)]"
           >
-            {step.description}
+            {body}
           </motion.p>
         </div>
 
@@ -440,7 +440,7 @@ function StepCard({ step, index, reduced }: Readonly<StepCardProps>) {
               variants={reduced ? undefined : ITEM_RISE}
               className="group/cta inline-flex items-center gap-2 rounded-full bg-[var(--color-forest)] px-5 py-2.5 text-sm font-semibold text-[var(--color-cream)] shadow-[0_8px_22px_-10px_rgba(31,61,46,0.55)] transition-[background,box-shadow,transform] duration-200 ease-[var(--ease-standard)] group-hover:-translate-y-[1px] group-hover:bg-[var(--color-forest-deep)] group-hover:shadow-[0_14px_30px_-10px_rgba(31,61,46,0.6)]"
             >
-              {step.cta.label}
+              {ctaLabel}
               <ArrowRight
                 className="h-4 w-4 transition-transform duration-200 ease-[var(--ease-standard)] group-hover:translate-x-0.5"
                 aria-hidden
@@ -460,6 +460,7 @@ function StepCard({ step, index, reduced }: Readonly<StepCardProps>) {
  * circles; the row stacks vertically on mobile.
  */
 function PrivacyTrustBar({ reduced }: Readonly<{ reduced: boolean }>) {
+  const locale = useLocale();
   return (
     <motion.div
       data-testid="how-it-works-trust-bar"
@@ -478,21 +479,21 @@ function PrivacyTrustBar({ reduced }: Readonly<{ reduced: boolean }>) {
         </span>
         <div className="flex flex-col">
           <span className="font-[var(--font-display)] text-[18px] font-[480] leading-tight tracking-tight text-[var(--color-foreground)]">
-            Tu privacidad es primero
+            {t(locale, "how.trust.title")}
           </span>
           <span className="mt-0.5 font-[var(--font-serif)] text-[14px] italic leading-snug text-[var(--color-text-muted)]">
-            Discreción, seguridad y respeto en cada paso.
+            {t(locale, "how.trust.subtitle")}
           </span>
         </div>
       </div>
 
       <ul
-        aria-label="Garantías de privacidad"
+        aria-label={t(locale, "how.trust.ariaLabel")}
         className="flex flex-col gap-3 text-[13px] text-[var(--color-text-muted)] sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-6 sm:gap-y-2 md:justify-end"
       >
-        <TrustItem icon={Lock} label="Perfiles verificados" />
-        <TrustItem icon={UserCheck} label="Consentimiento documentado" />
-        <TrustItem icon={EyeOff} label="100% confidencial" />
+        <TrustItem icon={Lock} label={t(locale, "how.trust.verified")} />
+        <TrustItem icon={UserCheck} label={t(locale, "how.trust.consent")} />
+        <TrustItem icon={EyeOff} label={t(locale, "how.trust.confidential")} />
       </ul>
     </motion.div>
   );

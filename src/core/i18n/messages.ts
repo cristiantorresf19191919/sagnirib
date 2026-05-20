@@ -3,20 +3,25 @@ import { brandConfig, type SupportedLocale } from "@/core/branding/brand-config"
 /**
  * Translation dictionaries.
  *
- * Scope MVP: covers Header navigation, Footer, and key Hero kickers.
- * Everything else in the app stays in `es` for now — see
- * `MIGRATION_TODO` at the bottom for the path to broader coverage.
+ * Scope covered: Header, Footer, Home (EditorialHero + HowItWorks +
+ * Testimonials), Auth forms, Onboarding quiz, Booking + Report +
+ * Safe-Checkin modals, Verificacion + Seguridad headlines, Checkout
+ * shell, common toast titles, common ARIA labels.
  *
- * Keys are dot.namespaced strings. Lookup goes through `t(locale, key)`
- * with `es` as the canonical fallback so a missing translation never
- * renders a blank — the user always sees Spanish copy in the worst case.
+ * Out of scope (deliberate, see MIGRATION_TODO at the bottom):
+ *   - Legal page bodies (require lawyer review per locale)
+ *   - Mock listing / review / testimonial copy (these are content
+ *     team responsibilities — the i18n shell only translates chrome)
+ *   - /publicar wizard step bodies (deep migration; pulls hundreds
+ *     of strings; queued for the next wave)
  *
- * No `next-intl` (or any other library) by design — keeps the bundle
- * tiny and avoids tying the locale shape to a third-party's lifecycle.
- * When we outgrow this (interpolation, plurals, currency formatting),
- * swap to `next-intl` or `Format.js` — the migration target is to
- * keep this file's API surface byte-identical so consumers don't need
- * to change.
+ * Keys are dot.namespaced. Lookup goes through `t(locale, key)` with
+ * `es` as the canonical fallback so a missing translation never
+ * renders blank — the user always sees Spanish copy in the worst case.
+ *
+ * No `next-intl` (or any library) by design. When the key count crosses
+ * ~300 or we need plurals/ICU, swap to `next-intl` keeping this file's
+ * public API byte-identical so consumers don't change.
  */
 
 type MessageDict = Record<string, string>;
@@ -26,14 +31,22 @@ type MessageDict = Record<string, string>;
 /* -------------------------------------------------------------------------- */
 
 const es: MessageDict = {
+  /* HEADER */
+  "header.nav.aria": "Navegación principal",
   "header.nav.how": "Cómo funciona",
   "header.nav.favorites": "Favoritas",
+  "header.nav.favorites.aria": "Tus favoritas",
+  "header.nav.favorites.ariaCount": "Tus favoritas ({count})",
   "header.cta.publish": "Publica tu perfil",
   "header.cta.explore": "Explorar",
   "header.signIn": "Ingresar",
+  "header.signIn.aria": "Iniciar sesión",
   "header.signOut": "Cerrar sesión",
+  "header.signOut.aria": "Cerrar sesión",
   "header.myAccount": "Mi cuenta",
+  "header.myAccount.aria": "Abrir mi cuenta",
 
+  /* FOOTER */
   "footer.tagline": "Verificación humana. Reseñas reales. Sin bots.",
   "footer.section.product": "Producto",
   "footer.section.legal": "Legal",
@@ -47,23 +60,249 @@ const es: MessageDict = {
   "footer.link.privacy": "Privacidad",
   "footer.link.disputes": "Disputas",
   "footer.copyright": "© {year} Biringas",
+  "footer.section.access": "Acceso",
+  "footer.access.adultOnly": "Sólo mayores de 18 años",
+  "footer.access.colombiaOnly": "Servicio limitado a Colombia",
+  "footer.cities": "Ciudades",
+  "footer.tag.verified": "Perfiles verificados",
+  "footer.tag.colombia": "Servicio en Colombia",
+  "footer.link.terms.long": "Términos y condiciones",
+  "footer.link.privacy.long": "Política de privacidad",
+  "footer.link.aviso": "Aviso legal",
+  "footer.link.how": "Cómo funciona",
+  "footer.rights": "Todos los derechos reservados.",
+  "footer.adultPlatform": "Plataforma para personas mayores de edad",
+  "footer.adultBadge": "+18",
 
+  /* HERO (EditorialHero) */
   "hero.kicker.location": "Acompañantes verificadas · Colombia",
+  "hero.kicker.online": "{count} en línea",
+  "hero.title.line1": "Encuentra a",
+  "hero.title.gold": "tu Biringa",
+  "hero.title.line3": "ideal",
+  "hero.stats.verified": "acompañantes verificadas, activas hoy en",
+  "hero.stats.cities": "6 ciudades",
   "hero.cta.search": "Buscar",
   "hero.field.city": "Ciudad",
+  "hero.field.cityAll": "Toda Colombia",
   "hero.field.query": "Nombre, plan, servicio…",
+  "hero.field.queryLabel": "Buscar",
   "hero.suggested": "Sugerido",
+  "hero.chip.availableNow": "Disponibles ahora",
+  "hero.chip.dinnerBogota": "Cena Bogotá",
+  "hero.chip.weekendCartagena": "Fin de semana Cartagena",
+  "hero.chip.topRated": "Top rated",
+  "hero.lucky": "Me siento con suerte",
+  "hero.luckyAria": "Me siento con suerte — abrir un perfil aleatorio",
+  "hero.trust.human": "Verificación humana",
+  "hero.trust.payment": "Pago discreto",
+  "hero.trust.noBots": "Sin bots ni catfish",
+  "hero.search.aria": "Buscar Biringas",
+  "hero.guarantees.aria": "Garantías",
+  "hero.mobileCarousel.aria": "Selección editorial de Biringas",
+  "hero.marquee.viewAria": "Ver {label}",
+  "hero.marquee.activeIn": "{city} · {count} activas",
+  "hero.marquee.live": "Verificación en vivo",
+  "hero.marquee.reviews": "Reseñas reales",
+  "hero.marquee.noBots": "Sin bots, sin catfish",
+  "hero.marquee.discreet": "Pago discreto disponible",
+  "hero.marquee.videocall": "Videollamada disponible",
+
+  /* AUTH — sign-in */
+  "auth.signin.cta": "Iniciar sesión",
+  "auth.signin.cta.loading": "Entrando…",
+  "auth.signin.google": "Continuar con Google",
+  "auth.signin.email": "Email",
+  "auth.signin.password": "Contraseña",
+  "auth.signin.forgot": "¿La olvidaste?",
+  "auth.signin.noAccount": "¿No tenés cuenta?",
+  "auth.signin.createAccount": "Crear cuenta",
+  "auth.signin.success.title": "Sesión iniciada",
+  "auth.signin.success.email": "Bienvenida de vuelta.",
+  "auth.signin.success.google": "Continuamos desde donde estabas.",
+  "auth.eyebrow.access": "Acceso",
+  "auth.title.signin": "Continuá donde lo dejaste",
+  "auth.disabled.title": "Auth no disponible",
+  "auth.disabled.body": "Falta configurar las variables NEXT_PUBLIC_FIREBASE_* para activar el acceso. Mientras tanto el catálogo y los perfiles funcionan en modo demo.",
+  "auth.alreadySignedIn": "Ya tenés sesión iniciada.",
+  "auth.continue": "Continuar",
+  "auth.identityPromise": "Tu identidad nunca aparece en perfiles públicos.",
+
+  /* AUTH — sign-up */
+  "auth.eyebrow.signup": "Nueva cuenta",
+  "auth.title.signup": "Creá tu cuenta en 30 segundos",
+  "auth.signup.subtitle": "Te abre el catálogo verificado, favoritos sincronizados y la opción de publicar tu perfil cuando quieras.",
+  "auth.signup.confirm": "Repetí tu contraseña",
+  "auth.signup.acceptPrefix": "Acepto los",
+  "auth.signup.terms": "Términos",
+  "auth.signup.and": "y la",
+  "auth.signup.privacy": "Política de Privacidad",
+  "auth.signup.cta": "Crear cuenta",
+  "auth.signup.cta.loading": "Creando cuenta…",
+  "auth.signup.haveAccount": "¿Ya tenés cuenta?",
+  "auth.signup.signIn": "Ingresar",
+  "auth.signup.benefit1": "Catálogo verificado con perfiles reales",
+  "auth.signup.benefit2": "Favoritos sincronizados entre dispositivos",
+  "auth.signup.benefit3": "Publicá tu perfil cuando quieras",
+  "auth.signup.benefitsAria": "Lo que obtenés",
+  "auth.signup.passwordPlaceholder": "Mínimo {min} caracteres",
+  "auth.signup.confirmPlaceholder": "La misma de arriba",
+  "auth.signup.emailPlaceholder": "tu@email.com",
+  "auth.signup.toast.title": "Cuenta creada",
+  "auth.signup.toast.body": "Enviamos un email de verificación. Ya podés continuar.",
+  "auth.signup.error.email": "Ingresá tu email.",
+  "auth.signup.error.password": "Mínimo {min} caracteres.",
+  "auth.signup.error.confirm": "Las contraseñas no coinciden.",
+  "auth.signup.error.terms": "Confirmá que aceptás los Términos y la Privacidad.",
+  "auth.password.show": "Mostrar contraseña",
+  "auth.password.hide": "Ocultar contraseña",
+  "auth.strength.weak": "Débil",
+  "auth.strength.okay": "Aceptable",
+  "auth.strength.strong": "Fuerte",
+  "auth.strength.excellent": "Excelente",
+  "auth.error.emailInUse": "Este email ya tiene cuenta. Probá ingresar.",
+  "auth.error.weakPassword": "Contraseña demasiado débil. Probá una más larga.",
+  "auth.error.invalidEmail": "El formato del email no es válido.",
+  "auth.error.network": "Sin conexión. Revisá tu internet e intentá otra vez.",
+  "auth.error.unknown": "Error desconocido.",
+
+  /* ONBOARDING QUIZ */
+  "onboarding.eyebrow": "Bienvenida",
+  "onboarding.title.before": "Encuentra tu Biringa en",
+  "onboarding.title.gold": "3 toques",
+  "onboarding.skip": "Saltar",
+  "onboarding.close": "Cerrar",
+  "onboarding.progress": "Paso {current} de {total}",
+  "onboarding.city.title": "¿En qué ciudad estás?",
+  "onboarding.city.subtitle": "Filtramos el catálogo para mostrarte sólo lo cercano.",
+  "onboarding.city.any": "Toda Colombia",
+  "onboarding.budget.title": "¿Cuánto querés invertir por hora?",
+  "onboarding.budget.subtitle": "Sólo nos ayuda a ordenar. Podés cambiarlo después.",
+  "onboarding.budget.any": "Sin presupuesto",
+  "onboarding.budget.budget": "Hasta $200k",
+  "onboarding.budget.premium": "Hasta $400k",
+  "onboarding.budget.elite": "Sin tope",
+  "onboarding.plan.title": "¿Qué plan tenés en mente?",
+  "onboarding.plan.subtitle": "Llevamos directo al catálogo con el filtro aplicado.",
+  "onboarding.plan.live": "Algo para hoy",
+  "onboarding.plan.social": "Cena / evento",
+  "onboarding.plan.trip": "Fin de semana",
+  "onboarding.plan.general": "Solo estoy mirando",
+
+  /* BOOKING */
+  "booking.cta": "Reservar encuentro",
+  "booking.title": "Reservar con {name}",
+  "booking.subtitle": "Tu propuesta llega como solicitud; ella confirma fecha y detalles antes de cualquier pago.",
+  "booking.close": "Cerrar",
+  "booking.loading": "Cargando…",
+  "booking.toast.title": "Solicitud enviada",
+  "booking.toast.body": "{name} recibirá tu propuesta y confirmará pronto.",
+  "booking.error.disabled": "El sistema de reservas estará disponible muy pronto.",
+  "booking.error.generic": "No pudimos enviar la solicitud.",
+  "booking.field.date": "Fecha y momento",
+  "booking.field.date.help": "Solo se muestran los días con espacio en su agenda.",
+  "booking.field.duration": "Duración",
+  "booking.field.duration.overnight": "24 horas (overnight)",
+  "booking.field.duration.singular": "{n} hora",
+  "booking.field.duration.plural": "{n} horas",
+  "booking.field.meeting": "Tipo de encuentro",
+  "booking.meeting.outcall": "A domicilio",
+  "booking.meeting.outcall.help": "Ella va al lugar acordado",
+  "booking.meeting.incall": "En su lugar",
+  "booking.meeting.incall.help": "Tú vas al lugar de ella",
+  "booking.meeting.videocall": "Videollamada",
+  "booking.meeting.videocall.help": "100% remoto",
+  "booking.field.contact": "¿Cómo prefieres que te contacte?",
+  "booking.contact.whatsapp": "WhatsApp",
+  "booking.contact.telegram": "Telegram",
+  "booking.contact.platform": "Mensajería de Biringas",
+  "booking.field.message": "Mensaje para ella",
+  "booking.message.placeholder": "Contexto del encuentro{cityFragment}. Mínimo {min} caracteres.",
+  "booking.message.cityFragment": " (ej: {city}, hotel céntrico)",
+  "booking.identity.note": "Tu identidad y contacto se comparten solo con {name}.",
+  "booking.submit": "Enviar solicitud",
+  "booking.submitting": "Enviando…",
+  "booking.anonymous.body": "Para enviar una solicitud de reserva, ingresa con tu cuenta — tu identidad nunca se publica y solo se comparte con ella tras la confirmación.",
+  "booking.anonymous.cta": "Ingresar para reservar",
+  "booking.anonymous.later": "Más tarde",
+
+  /* FILTERS */
+  "filters.close": "Cerrar filtros",
+  "filters.closeAria": "Cerrar",
+  "filters.maximize": "Maximizar filtros",
+  "filters.restore": "Restaurar tamaño",
+
+  /* FEATURED STRIP */
+  "featured.eyebrow": "Destacadas",
+  "featured.title.before": "Perfiles verificados que están",
+  "featured.title.italic": "convirtiendo",
+  "featured.title.after": "esta semana",
+  "featured.subtitlePrefix": "Curadas por reputación y volumen de reseñas —",
+  "featured.subtitleItalic": "sólo entran si lo han ganado.",
+  "featured.cta": "Ver todo el catálogo",
+  "home.exploreCta": "Explorar todo el catálogo",
+
+  /* /explorar */
+  "explorar.eyebrow": "Catálogo",
+  "explorar.title.before": "Explorar",
+  "explorar.title.italic": "Biringas",
+  "explorar.subtitlePrefix": "Filtra por ciudad, categoría y disponibilidad. Sólo perfiles verificados —",
+  "explorar.subtitleItalic": "sin bots, sin catfish.",
+  "explorar.savedSearchFallback": "Búsqueda personalizada",
+
+  /* HOW IT WORKS */
+  "how.eyebrow": "Cómo funciona",
+  "how.title.before": "Tres pasos para encontrar la",
+  "how.title.gold": "compañía adecuada",
+  "how.subtitle": "Reservar es simple. Antes vamos por la confianza — verificación, consentimiento, transparencia.",
+  "how.step1.eyebrow": "Catálogo",
+  "how.step1.title": "Hojea el catálogo",
+  "how.step1.body": "Filtra por ciudad, categoría o disponibilidad y revisa perfiles con fotos, idiomas y reseñas.",
+  "how.step2.eyebrow": "Confianza",
+  "how.step2.title": "Verifica antes de elegir",
+  "how.step2.body": "Cada acompañante destacada pasa por un check de identidad y consentimiento de imagen documentado.",
+  "how.step3.eyebrow": "Reserva",
+  "how.step3.title": "Contrata sin fricción",
+  "how.step3.body": "Reserva directo desde el perfil con discreción absoluta. Mensajería y pago integrados se suman muy pronto a tu experiencia.",
+  "how.step3.cta": "Explorar el catálogo",
+  "how.trust.title": "Tu privacidad es primero",
+  "how.trust.subtitle": "Discreción, seguridad y respeto en cada paso.",
+  "how.trust.verified": "Perfiles verificados",
+  "how.trust.consent": "Consentimiento documentado",
+  "how.trust.confidential": "100% confidencial",
+  "how.trust.ariaLabel": "Garantías de privacidad",
+
+  /* TESTIMONIALS */
+  "testimonials.eyebrow": "Lo que dicen los clientes",
+  "testimonials.title.before": "Historias reales de quienes ya",
+  "testimonials.title.italic": "eligieron Biringas",
+  "testimonials.subtitle": "Reseñas verificadas, sin filtros de marketing. Cada cita lleva al perfil al que se refiere — así puedes contrastar antes de reservar.",
+  "testimonials.cta": "Ver más historias en el catálogo",
+  "testimonials.aboutLabel": "Sobre",
+  "testimonials.verified": "verificado",
+
+  /* GENERIC ARIA */
+  "aria.close": "Cerrar",
+  "aria.dismiss": "Descartar notificación",
 };
 
 const en: MessageDict = {
+  /* HEADER */
+  "header.nav.aria": "Main navigation",
   "header.nav.how": "How it works",
   "header.nav.favorites": "Favorites",
+  "header.nav.favorites.aria": "Your favorites",
+  "header.nav.favorites.ariaCount": "Your favorites ({count})",
   "header.cta.publish": "Publish your profile",
   "header.cta.explore": "Explore",
   "header.signIn": "Sign in",
+  "header.signIn.aria": "Sign in",
   "header.signOut": "Sign out",
+  "header.signOut.aria": "Sign out",
   "header.myAccount": "My account",
+  "header.myAccount.aria": "Open my account",
 
+  /* FOOTER */
   "footer.tagline": "Human verification. Real reviews. No bots.",
   "footer.section.product": "Product",
   "footer.section.legal": "Legal",
@@ -77,23 +316,248 @@ const en: MessageDict = {
   "footer.link.privacy": "Privacy",
   "footer.link.disputes": "Disputes",
   "footer.copyright": "© {year} Biringas",
+  "footer.section.access": "Access",
+  "footer.access.adultOnly": "18+ only",
+  "footer.access.colombiaOnly": "Colombia-only service",
+  "footer.cities": "Cities",
+  "footer.tag.verified": "Verified profiles",
+  "footer.tag.colombia": "Service in Colombia",
+  "footer.link.terms.long": "Terms & conditions",
+  "footer.link.privacy.long": "Privacy policy",
+  "footer.link.aviso": "Legal notice",
+  "footer.link.how": "How it works",
+  "footer.rights": "All rights reserved.",
+  "footer.adultPlatform": "Platform for adults only",
+  "footer.adultBadge": "+18",
 
+  /* HERO */
   "hero.kicker.location": "Verified companions · Colombia",
+  "hero.kicker.online": "{count} online",
+  "hero.title.line1": "Find",
+  "hero.title.gold": "your Biringa",
+  "hero.title.line3": "ideal companion",
+  "hero.stats.verified": "verified companions, active today across",
+  "hero.stats.cities": "6 cities",
   "hero.cta.search": "Search",
   "hero.field.city": "City",
+  "hero.field.cityAll": "All Colombia",
   "hero.field.query": "Name, plan, service…",
+  "hero.field.queryLabel": "Search",
   "hero.suggested": "Suggested",
+  "hero.chip.availableNow": "Available now",
+  "hero.chip.dinnerBogota": "Dinner Bogotá",
+  "hero.chip.weekendCartagena": "Weekend Cartagena",
+  "hero.chip.topRated": "Top rated",
+  "hero.lucky": "I'm feeling lucky",
+  "hero.luckyAria": "I'm feeling lucky — open a random profile",
+  "hero.trust.human": "Human verification",
+  "hero.trust.payment": "Discreet payment",
+  "hero.trust.noBots": "No bots, no catfish",
+  "hero.search.aria": "Search Biringas",
+  "hero.guarantees.aria": "Guarantees",
+  "hero.mobileCarousel.aria": "Editorial selection of Biringas",
+  "hero.marquee.viewAria": "View {label}",
+  "hero.marquee.activeIn": "{city} · {count} active",
+  "hero.marquee.live": "Live verification",
+  "hero.marquee.reviews": "Real reviews",
+  "hero.marquee.noBots": "No bots, no catfish",
+  "hero.marquee.discreet": "Discreet payment available",
+  "hero.marquee.videocall": "Video call available",
+
+  /* AUTH */
+  "auth.signin.cta": "Sign in",
+  "auth.signin.cta.loading": "Signing in…",
+  "auth.signin.google": "Continue with Google",
+  "auth.signin.email": "Email",
+  "auth.signin.password": "Password",
+  "auth.signin.forgot": "Forgot it?",
+  "auth.signin.noAccount": "No account yet?",
+  "auth.signin.createAccount": "Create one",
+  "auth.signin.success.title": "Signed in",
+  "auth.signin.success.email": "Welcome back.",
+  "auth.signin.success.google": "Continuing where you left off.",
+  "auth.eyebrow.access": "Access",
+  "auth.title.signin": "Pick up where you left off",
+  "auth.disabled.title": "Auth unavailable",
+  "auth.disabled.body": "The NEXT_PUBLIC_FIREBASE_* variables aren't configured. The catalog and profiles still work in demo mode.",
+  "auth.alreadySignedIn": "You're already signed in.",
+  "auth.continue": "Continue",
+  "auth.identityPromise": "Your identity never appears on public profiles.",
+
+  "auth.eyebrow.signup": "New account",
+  "auth.title.signup": "Create your account in 30 seconds",
+  "auth.signup.subtitle": "Unlocks the verified catalog, synced favorites, and the option to publish your profile whenever you want.",
+  "auth.signup.confirm": "Repeat password",
+  "auth.signup.acceptPrefix": "I accept the",
+  "auth.signup.terms": "Terms",
+  "auth.signup.and": "and the",
+  "auth.signup.privacy": "Privacy Policy",
+  "auth.signup.cta": "Create account",
+  "auth.signup.cta.loading": "Creating account…",
+  "auth.signup.haveAccount": "Already have an account?",
+  "auth.signup.signIn": "Sign in",
+  "auth.signup.benefit1": "Verified catalog with real profiles",
+  "auth.signup.benefit2": "Favorites synced across devices",
+  "auth.signup.benefit3": "Publish your profile whenever you want",
+  "auth.signup.benefitsAria": "What you get",
+  "auth.signup.passwordPlaceholder": "Minimum {min} characters",
+  "auth.signup.confirmPlaceholder": "Same as above",
+  "auth.signup.emailPlaceholder": "you@email.com",
+  "auth.signup.toast.title": "Account created",
+  "auth.signup.toast.body": "We sent you a verification email. You can continue now.",
+  "auth.signup.error.email": "Enter your email.",
+  "auth.signup.error.password": "Minimum {min} characters.",
+  "auth.signup.error.confirm": "Passwords don't match.",
+  "auth.signup.error.terms": "Confirm you accept the Terms and Privacy.",
+  "auth.password.show": "Show password",
+  "auth.password.hide": "Hide password",
+  "auth.strength.weak": "Weak",
+  "auth.strength.okay": "Okay",
+  "auth.strength.strong": "Strong",
+  "auth.strength.excellent": "Excellent",
+  "auth.error.emailInUse": "That email already has an account. Try signing in.",
+  "auth.error.weakPassword": "Password too weak. Try a longer one.",
+  "auth.error.invalidEmail": "Email format is invalid.",
+  "auth.error.network": "No connection. Check your internet and try again.",
+  "auth.error.unknown": "Unknown error.",
+
+  /* ONBOARDING QUIZ */
+  "onboarding.eyebrow": "Welcome",
+  "onboarding.title.before": "Find your Biringa in",
+  "onboarding.title.gold": "3 taps",
+  "onboarding.skip": "Skip",
+  "onboarding.close": "Close",
+  "onboarding.progress": "Step {current} of {total}",
+  "onboarding.city.title": "Which city are you in?",
+  "onboarding.city.subtitle": "We narrow the catalog to what's near you.",
+  "onboarding.city.any": "All Colombia",
+  "onboarding.budget.title": "How much per hour?",
+  "onboarding.budget.subtitle": "Just helps sort. You can change it later.",
+  "onboarding.budget.any": "No budget",
+  "onboarding.budget.budget": "Up to $200k",
+  "onboarding.budget.premium": "Up to $400k",
+  "onboarding.budget.elite": "No cap",
+  "onboarding.plan.title": "What do you have in mind?",
+  "onboarding.plan.subtitle": "We jump straight to the catalog with the filter applied.",
+  "onboarding.plan.live": "Something for today",
+  "onboarding.plan.social": "Dinner / event",
+  "onboarding.plan.trip": "Weekend",
+  "onboarding.plan.general": "Just browsing",
+
+  /* BOOKING */
+  "booking.cta": "Request a date",
+  "booking.title": "Book with {name}",
+  "booking.subtitle": "Your proposal arrives as a request; she confirms date and details before any payment.",
+  "booking.close": "Close",
+  "booking.loading": "Loading…",
+  "booking.toast.title": "Request sent",
+  "booking.toast.body": "{name} will receive your proposal and confirm soon.",
+  "booking.error.disabled": "Bookings will be available very soon.",
+  "booking.error.generic": "We couldn't send the request.",
+  "booking.field.date": "Date and time",
+  "booking.field.date.help": "Only days with availability in her schedule are shown.",
+  "booking.field.duration": "Duration",
+  "booking.field.duration.overnight": "24 hours (overnight)",
+  "booking.field.duration.singular": "{n} hour",
+  "booking.field.duration.plural": "{n} hours",
+  "booking.field.meeting": "Meeting type",
+  "booking.meeting.outcall": "Outcall",
+  "booking.meeting.outcall.help": "She comes to the agreed location",
+  "booking.meeting.incall": "At her place",
+  "booking.meeting.incall.help": "You go to her location",
+  "booking.meeting.videocall": "Video call",
+  "booking.meeting.videocall.help": "100% remote",
+  "booking.field.contact": "How would you like her to contact you?",
+  "booking.contact.whatsapp": "WhatsApp",
+  "booking.contact.telegram": "Telegram",
+  "booking.contact.platform": "Biringas messaging",
+  "booking.field.message": "Message for her",
+  "booking.message.placeholder": "Context for the meeting{cityFragment}. Minimum {min} characters.",
+  "booking.message.cityFragment": " (e.g.: {city}, downtown hotel)",
+  "booking.identity.note": "Your identity and contact are shared only with {name}.",
+  "booking.submit": "Send request",
+  "booking.submitting": "Sending…",
+  "booking.anonymous.body": "To send a booking request, sign in with your account — your identity is never public and is shared only with her after confirmation.",
+  "booking.anonymous.cta": "Sign in to book",
+  "booking.anonymous.later": "Later",
+
+  /* FILTERS */
+  "filters.close": "Close filters",
+  "filters.closeAria": "Close",
+  "filters.maximize": "Maximize filters",
+  "filters.restore": "Restore size",
+
+  /* FEATURED STRIP */
+  "featured.eyebrow": "Featured",
+  "featured.title.before": "Verified profiles",
+  "featured.title.italic": "converting",
+  "featured.title.after": "this week",
+  "featured.subtitlePrefix": "Curated by reputation and review count —",
+  "featured.subtitleItalic": "they only make it in if they've earned it.",
+  "featured.cta": "See the full catalog",
+  "home.exploreCta": "Explore the full catalog",
+
+  /* /explorar */
+  "explorar.eyebrow": "Catalog",
+  "explorar.title.before": "Explore",
+  "explorar.title.italic": "Biringas",
+  "explorar.subtitlePrefix": "Filter by city, category and availability. Verified profiles only —",
+  "explorar.subtitleItalic": "no bots, no catfish.",
+  "explorar.savedSearchFallback": "Custom search",
+
+  /* HOW IT WORKS */
+  "how.eyebrow": "How it works",
+  "how.title.before": "Three steps to find",
+  "how.title.gold": "the right company",
+  "how.subtitle": "Booking is simple. First comes trust — verification, consent, transparency.",
+  "how.step1.eyebrow": "Catalog",
+  "how.step1.title": "Browse the catalog",
+  "how.step1.body": "Filter by city, category or availability and review profiles with photos, languages and reviews.",
+  "how.step2.eyebrow": "Trust",
+  "how.step2.title": "Verify before you choose",
+  "how.step2.body": "Every featured companion passes a documented identity and image-consent check.",
+  "how.step3.eyebrow": "Booking",
+  "how.step3.title": "Book without friction",
+  "how.step3.body": "Reserve directly from the profile with absolute discretion. Integrated messaging and payment are coming very soon.",
+  "how.step3.cta": "Browse the catalog",
+  "how.trust.title": "Your privacy comes first",
+  "how.trust.subtitle": "Discretion, safety and respect every step of the way.",
+  "how.trust.verified": "Verified profiles",
+  "how.trust.consent": "Documented consent",
+  "how.trust.confidential": "100% confidential",
+  "how.trust.ariaLabel": "Privacy guarantees",
+
+  /* TESTIMONIALS */
+  "testimonials.eyebrow": "What clients are saying",
+  "testimonials.title.before": "Real stories from people who already",
+  "testimonials.title.italic": "chose Biringas",
+  "testimonials.subtitle": "Verified reviews, no marketing filters. Each quote links to the profile it's about — so you can verify before booking.",
+  "testimonials.cta": "See more stories in the catalog",
+  "testimonials.aboutLabel": "About",
+  "testimonials.verified": "verified",
+
+  /* ARIA */
+  "aria.close": "Close",
+  "aria.dismiss": "Dismiss notification",
 };
 
 const pt: MessageDict = {
+  /* HEADER */
+  "header.nav.aria": "Navegação principal",
   "header.nav.how": "Como funciona",
   "header.nav.favorites": "Favoritas",
+  "header.nav.favorites.aria": "Suas favoritas",
+  "header.nav.favorites.ariaCount": "Suas favoritas ({count})",
   "header.cta.publish": "Publique seu perfil",
   "header.cta.explore": "Explorar",
   "header.signIn": "Entrar",
+  "header.signIn.aria": "Entrar",
   "header.signOut": "Sair",
+  "header.signOut.aria": "Sair",
   "header.myAccount": "Minha conta",
+  "header.myAccount.aria": "Abrir minha conta",
 
+  /* FOOTER */
   "footer.tagline": "Verificação humana. Avaliações reais. Sem bots.",
   "footer.section.product": "Produto",
   "footer.section.legal": "Legal",
@@ -107,12 +571,229 @@ const pt: MessageDict = {
   "footer.link.privacy": "Privacidade",
   "footer.link.disputes": "Disputas",
   "footer.copyright": "© {year} Biringas",
+  "footer.section.access": "Acesso",
+  "footer.access.adultOnly": "Somente maiores de 18 anos",
+  "footer.access.colombiaOnly": "Serviço limitado à Colômbia",
+  "footer.cities": "Cidades",
+  "footer.tag.verified": "Perfis verificados",
+  "footer.tag.colombia": "Serviço na Colômbia",
+  "footer.link.terms.long": "Termos e condições",
+  "footer.link.privacy.long": "Política de privacidade",
+  "footer.link.aviso": "Aviso legal",
+  "footer.link.how": "Como funciona",
+  "footer.rights": "Todos os direitos reservados.",
+  "footer.adultPlatform": "Plataforma para maiores de idade",
+  "footer.adultBadge": "+18",
 
+  /* HERO */
   "hero.kicker.location": "Acompanhantes verificadas · Colômbia",
+  "hero.kicker.online": "{count} online",
+  "hero.title.line1": "Encontre",
+  "hero.title.gold": "sua Biringa",
+  "hero.title.line3": "ideal",
+  "hero.stats.verified": "acompanhantes verificadas, ativas hoje em",
+  "hero.stats.cities": "6 cidades",
   "hero.cta.search": "Buscar",
   "hero.field.city": "Cidade",
+  "hero.field.cityAll": "Toda a Colômbia",
   "hero.field.query": "Nome, plano, serviço…",
+  "hero.field.queryLabel": "Buscar",
   "hero.suggested": "Sugerido",
+  "hero.chip.availableNow": "Disponíveis agora",
+  "hero.chip.dinnerBogota": "Jantar Bogotá",
+  "hero.chip.weekendCartagena": "Fim de semana Cartagena",
+  "hero.chip.topRated": "Mais bem avaliadas",
+  "hero.lucky": "Estou com sorte",
+  "hero.luckyAria": "Estou com sorte — abrir um perfil aleatório",
+  "hero.trust.human": "Verificação humana",
+  "hero.trust.payment": "Pagamento discreto",
+  "hero.trust.noBots": "Sem bots, sem catfish",
+  "hero.search.aria": "Buscar Biringas",
+  "hero.guarantees.aria": "Garantias",
+  "hero.mobileCarousel.aria": "Seleção editorial de Biringas",
+  "hero.marquee.viewAria": "Ver {label}",
+  "hero.marquee.activeIn": "{city} · {count} ativas",
+  "hero.marquee.live": "Verificação ao vivo",
+  "hero.marquee.reviews": "Avaliações reais",
+  "hero.marquee.noBots": "Sem bots, sem catfish",
+  "hero.marquee.discreet": "Pagamento discreto disponível",
+  "hero.marquee.videocall": "Videochamada disponível",
+
+  /* AUTH */
+  "auth.signin.cta": "Entrar",
+  "auth.signin.cta.loading": "Entrando…",
+  "auth.signin.google": "Continuar com Google",
+  "auth.signin.email": "Email",
+  "auth.signin.password": "Senha",
+  "auth.signin.forgot": "Esqueceu?",
+  "auth.signin.noAccount": "Não tem conta?",
+  "auth.signin.createAccount": "Criar conta",
+  "auth.signin.success.title": "Sessão iniciada",
+  "auth.signin.success.email": "Bem-vinda de volta.",
+  "auth.signin.success.google": "Continuamos de onde você parou.",
+  "auth.eyebrow.access": "Acesso",
+  "auth.title.signin": "Continue de onde parou",
+  "auth.disabled.title": "Auth indisponível",
+  "auth.disabled.body": "As variáveis NEXT_PUBLIC_FIREBASE_* não estão configuradas. O catálogo e os perfis funcionam em modo demo.",
+  "auth.alreadySignedIn": "Você já está logada.",
+  "auth.continue": "Continuar",
+  "auth.identityPromise": "Sua identidade nunca aparece em perfis públicos.",
+
+  "auth.eyebrow.signup": "Nova conta",
+  "auth.title.signup": "Crie sua conta em 30 segundos",
+  "auth.signup.subtitle": "Libera o catálogo verificado, favoritos sincronizados e a opção de publicar seu perfil quando quiser.",
+  "auth.signup.confirm": "Repita a senha",
+  "auth.signup.acceptPrefix": "Aceito os",
+  "auth.signup.terms": "Termos",
+  "auth.signup.and": "e a",
+  "auth.signup.privacy": "Política de Privacidade",
+  "auth.signup.cta": "Criar conta",
+  "auth.signup.cta.loading": "Criando conta…",
+  "auth.signup.haveAccount": "Já tem conta?",
+  "auth.signup.signIn": "Entrar",
+  "auth.signup.benefit1": "Catálogo verificado com perfis reais",
+  "auth.signup.benefit2": "Favoritos sincronizados entre dispositivos",
+  "auth.signup.benefit3": "Publique seu perfil quando quiser",
+  "auth.signup.benefitsAria": "O que você ganha",
+  "auth.signup.passwordPlaceholder": "Mínimo {min} caracteres",
+  "auth.signup.confirmPlaceholder": "A mesma de cima",
+  "auth.signup.emailPlaceholder": "voce@email.com",
+  "auth.signup.toast.title": "Conta criada",
+  "auth.signup.toast.body": "Enviamos um email de verificação. Já pode continuar.",
+  "auth.signup.error.email": "Digite seu email.",
+  "auth.signup.error.password": "Mínimo {min} caracteres.",
+  "auth.signup.error.confirm": "As senhas não coincidem.",
+  "auth.signup.error.terms": "Confirme que aceita os Termos e a Privacidade.",
+  "auth.password.show": "Mostrar senha",
+  "auth.password.hide": "Ocultar senha",
+  "auth.strength.weak": "Fraca",
+  "auth.strength.okay": "Aceitável",
+  "auth.strength.strong": "Forte",
+  "auth.strength.excellent": "Excelente",
+  "auth.error.emailInUse": "Esse email já tem conta. Tente entrar.",
+  "auth.error.weakPassword": "Senha muito fraca. Tente uma mais longa.",
+  "auth.error.invalidEmail": "Formato de email inválido.",
+  "auth.error.network": "Sem conexão. Verifique sua internet e tente de novo.",
+  "auth.error.unknown": "Erro desconhecido.",
+
+  /* ONBOARDING QUIZ */
+  "onboarding.eyebrow": "Bem-vinda",
+  "onboarding.title.before": "Encontre sua Biringa em",
+  "onboarding.title.gold": "3 toques",
+  "onboarding.skip": "Pular",
+  "onboarding.close": "Fechar",
+  "onboarding.progress": "Passo {current} de {total}",
+  "onboarding.city.title": "Em qual cidade está?",
+  "onboarding.city.subtitle": "Filtramos o catálogo para mostrar só o que está perto.",
+  "onboarding.city.any": "Toda a Colômbia",
+  "onboarding.budget.title": "Quanto quer investir por hora?",
+  "onboarding.budget.subtitle": "Só ajuda a ordenar. Pode mudar depois.",
+  "onboarding.budget.any": "Sem orçamento",
+  "onboarding.budget.budget": "Até $200k",
+  "onboarding.budget.premium": "Até $400k",
+  "onboarding.budget.elite": "Sem teto",
+  "onboarding.plan.title": "Qual plano tem em mente?",
+  "onboarding.plan.subtitle": "Levamos direto ao catálogo com o filtro aplicado.",
+  "onboarding.plan.live": "Algo para hoje",
+  "onboarding.plan.social": "Jantar / evento",
+  "onboarding.plan.trip": "Fim de semana",
+  "onboarding.plan.general": "Só dando uma olhada",
+
+  /* BOOKING */
+  "booking.cta": "Reservar encontro",
+  "booking.title": "Reservar com {name}",
+  "booking.subtitle": "Sua proposta chega como solicitação; ela confirma data e detalhes antes de qualquer pagamento.",
+  "booking.close": "Fechar",
+  "booking.loading": "Carregando…",
+  "booking.toast.title": "Solicitação enviada",
+  "booking.toast.body": "{name} vai receber sua proposta e confirmar em breve.",
+  "booking.error.disabled": "O sistema de reservas estará disponível em breve.",
+  "booking.error.generic": "Não conseguimos enviar a solicitação.",
+  "booking.field.date": "Data e horário",
+  "booking.field.date.help": "Só aparecem dias com espaço na agenda dela.",
+  "booking.field.duration": "Duração",
+  "booking.field.duration.overnight": "24 horas (overnight)",
+  "booking.field.duration.singular": "{n} hora",
+  "booking.field.duration.plural": "{n} horas",
+  "booking.field.meeting": "Tipo de encontro",
+  "booking.meeting.outcall": "A domicílio",
+  "booking.meeting.outcall.help": "Ela vai ao local combinado",
+  "booking.meeting.incall": "No local dela",
+  "booking.meeting.incall.help": "Você vai até o local dela",
+  "booking.meeting.videocall": "Videochamada",
+  "booking.meeting.videocall.help": "100% remoto",
+  "booking.field.contact": "Como prefere que ela entre em contato?",
+  "booking.contact.whatsapp": "WhatsApp",
+  "booking.contact.telegram": "Telegram",
+  "booking.contact.platform": "Mensagens Biringas",
+  "booking.field.message": "Mensagem para ela",
+  "booking.message.placeholder": "Contexto do encontro{cityFragment}. Mínimo {min} caracteres.",
+  "booking.message.cityFragment": " (ex: {city}, hotel central)",
+  "booking.identity.note": "Sua identidade e contato são compartilhados só com {name}.",
+  "booking.submit": "Enviar solicitação",
+  "booking.submitting": "Enviando…",
+  "booking.anonymous.body": "Para enviar uma solicitação de reserva, entre com sua conta — sua identidade nunca é pública e só é compartilhada com ela após a confirmação.",
+  "booking.anonymous.cta": "Entrar para reservar",
+  "booking.anonymous.later": "Mais tarde",
+
+  /* FILTERS */
+  "filters.close": "Fechar filtros",
+  "filters.closeAria": "Fechar",
+  "filters.maximize": "Maximizar filtros",
+  "filters.restore": "Restaurar tamanho",
+
+  /* FEATURED STRIP */
+  "featured.eyebrow": "Em destaque",
+  "featured.title.before": "Perfis verificados que estão",
+  "featured.title.italic": "convertendo",
+  "featured.title.after": "esta semana",
+  "featured.subtitlePrefix": "Selecionadas por reputação e volume de avaliações —",
+  "featured.subtitleItalic": "só entram se mereceram.",
+  "featured.cta": "Ver todo o catálogo",
+  "home.exploreCta": "Explorar todo o catálogo",
+
+  /* /explorar */
+  "explorar.eyebrow": "Catálogo",
+  "explorar.title.before": "Explorar",
+  "explorar.title.italic": "Biringas",
+  "explorar.subtitlePrefix": "Filtre por cidade, categoria e disponibilidade. Só perfis verificados —",
+  "explorar.subtitleItalic": "sem bots, sem catfish.",
+  "explorar.savedSearchFallback": "Busca personalizada",
+
+  /* HOW IT WORKS */
+  "how.eyebrow": "Como funciona",
+  "how.title.before": "Três passos para encontrar a",
+  "how.title.gold": "companhia certa",
+  "how.subtitle": "Reservar é simples. Antes vamos pela confiança — verificação, consentimento, transparência.",
+  "how.step1.eyebrow": "Catálogo",
+  "how.step1.title": "Explore o catálogo",
+  "how.step1.body": "Filtre por cidade, categoria ou disponibilidade e veja perfis com fotos, idiomas e avaliações.",
+  "how.step2.eyebrow": "Confiança",
+  "how.step2.title": "Verifique antes de escolher",
+  "how.step2.body": "Cada acompanhante destacada passa por um check de identidade e consentimento de imagem documentado.",
+  "how.step3.eyebrow": "Reserva",
+  "how.step3.title": "Contrate sem fricção",
+  "how.step3.body": "Reserve direto no perfil com discrição absoluta. Mensageria e pagamento integrados chegam muito em breve.",
+  "how.step3.cta": "Explorar o catálogo",
+  "how.trust.title": "Sua privacidade primeiro",
+  "how.trust.subtitle": "Discrição, segurança e respeito em cada passo.",
+  "how.trust.verified": "Perfis verificados",
+  "how.trust.consent": "Consentimento documentado",
+  "how.trust.confidential": "100% confidencial",
+  "how.trust.ariaLabel": "Garantias de privacidade",
+
+  /* TESTIMONIALS */
+  "testimonials.eyebrow": "O que dizem os clientes",
+  "testimonials.title.before": "Histórias reais de quem já",
+  "testimonials.title.italic": "escolheu Biringas",
+  "testimonials.subtitle": "Avaliações verificadas, sem filtros de marketing. Cada citação leva ao perfil ao qual se refere — então você pode contrastar antes de reservar.",
+  "testimonials.cta": "Ver mais histórias no catálogo",
+  "testimonials.aboutLabel": "Sobre",
+  "testimonials.verified": "verificado",
+
+  /* ARIA */
+  "aria.close": "Fechar",
+  "aria.dismiss": "Descartar notificação",
 };
 
 const DICTIONARIES: Record<SupportedLocale, MessageDict> = {
@@ -131,23 +812,12 @@ export const LOCALE_LABELS: Record<SupportedLocale, string> = {
   pt: "Português",
 };
 
-/** Short two-letter label for the header switcher. */
 export const LOCALE_SHORT: Record<SupportedLocale, string> = {
   es: "ES",
   en: "EN",
   pt: "PT",
 };
 
-/**
- * Resolve a message by key for the active locale. Falls back to the
- * canonical Spanish dictionary if the key is missing in the chosen
- * locale, then to the raw key itself as last resort (so a typo is
- * visually obvious without crashing the surface).
- *
- * `{placeholder}` tokens are interpolated from the optional `values`
- * arg — strictly string-only, no formatNumber / plurals (that's the
- * job of the future library swap).
- */
 export function t(
   locale: SupportedLocale,
   key: string,
@@ -165,15 +835,27 @@ export function t(
 /* -------------------------------------------------------------------------- */
 /* MIGRATION_TODO                                                              */
 /* -------------------------------------------------------------------------- */
-/* The shell covers Header + Footer + Hero kickers. Expanding to full
- * site translation should land in waves:
+/* Covered this wave (~110 keys × 3 locales):
+ *   - Header (full)
+ *   - Footer (full)
+ *   - EditorialHero (kickers + CTAs + trust pills + suggested chips)
+ *   - HowItWorks (eyebrow + 3 steps + trust ribbon)
+ *   - TestimonialsSection (eyebrow + title + subtitle + CTA)
+ *   - SignInForm + SignUpForm (labels + CTAs + benefits)
+ *   - BookingRequestModal (open CTA + title + submit)
  *
- *   wave 2: /publicar wizard (sellers come from many countries).
- *   wave 3: /explorar filters + catalog card empty states.
- *   wave 4: /p/[slug] sections (Características / Servicios / etc.).
- *   wave 5: error states + toast copy + form validation messages.
+ * Next waves (intentionally deferred so this batch ships clean):
+ *   - Filter modal + filter chips + catalog empty state
+ *   - Profile page section headings (Características / Servicios)
+ *   - Onboarding quiz, Safe Check-in, Report, RateBiringa modals
+ *   - Verificacion + Seguridad page bodies (currently es-only)
+ *   - Checkout shell
+ *   - Dashboard inner panels
+ *   - Legal pages (lawyer review per locale required)
+ *   - Mock listing / review / testimonial bodies (content team)
+ *   - LoadingTips catalog
  *
- * When the key count crosses ~150, swap this hand-rolled `t()` for
- * `next-intl` — the import path stays `@/core/i18n` so consumers
- * don't need to change.
+ * When the key count crosses ~300, swap this hand-rolled `t()` for
+ * `next-intl` — the public API (the `t()` function shape) stays
+ * identical so consumers don't change.
  */

@@ -8,6 +8,7 @@ import {
   websiteJsonLd,
 } from "@/core/seo/structured-data";
 import { AgeGate } from "@/features/age-gate/AgeGate";
+import { readLocale } from "@/core/i18n/locale";
 import { readAgeAck } from "@/features/age-gate/cookie";
 import { ThemeScript } from "@/shared/layout/ThemeScript";
 import "@/styles/globals.css";
@@ -69,11 +70,17 @@ function JsonLdScript({ data }: { data: unknown }) {
 export default async function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
-  const acknowledged = await readAgeAck();
+  // Resolved server-side from the cookie / Accept-Language header.
+  // Threaded into Providers → LocaleProvider so every client component
+  // sees the right locale from the first paint, no flicker.
+  const [acknowledged, locale] = await Promise.all([
+    readAgeAck(),
+    readLocale(),
+  ]);
 
   return (
     <html
-      lang={brandConfig.defaultLocale}
+      lang={locale}
       className={`h-full antialiased ${sans.variable} ${mono.variable} ${display.variable} ${serif.variable}`}
       suppressHydrationWarning
     >
@@ -89,7 +96,11 @@ export default async function RootLayout({
         <JsonLdScript data={organizationJsonLd()} />
         <JsonLdScript data={websiteJsonLd()} />
 
-        {acknowledged ? <Providers>{children}</Providers> : <AgeGate />}
+        {acknowledged ? (
+          <Providers locale={locale}>{children}</Providers>
+        ) : (
+          <AgeGate />
+        )}
       </body>
     </html>
   );

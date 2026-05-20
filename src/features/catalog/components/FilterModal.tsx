@@ -3,6 +3,9 @@
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { Maximize2, Minimize2, X } from "lucide-react";
 import { createPortal } from "react-dom";
+
+import { useLocale } from "@/core/i18n/LocaleProvider";
+import { t } from "@/core/i18n/messages";
 import {
   useCallback,
   useEffect,
@@ -56,6 +59,7 @@ export function FilterModal({
   subtitle,
   children,
 }: FilterModalProps) {
+  const locale = useLocale();
   const [open, setOpen] = useState(false);
   const [maximized, setMaximized] = useState(false);
   const reduceMotion = useReducedMotion();
@@ -114,7 +118,7 @@ export function FilterModal({
         >
           <button
             type="button"
-            aria-label="Cerrar filtros"
+            aria-label={t(locale, "filters.close")}
             onClick={close}
             className="absolute inset-0 cursor-default bg-[rgba(27,26,23,0.55)] backdrop-blur-sm"
           />
@@ -182,7 +186,9 @@ export function FilterModal({
                   type="button"
                   onClick={() => setMaximized((value) => !value)}
                   aria-label={
-                    maximized ? "Restaurar tamaño" : "Maximizar filtros"
+                    maximized
+                      ? t(locale, "filters.restore")
+                      : t(locale, "filters.maximize")
                   }
                   className="hidden h-9 w-9 items-center justify-center rounded-full text-[var(--color-text-muted)] transition-colors hover:bg-[var(--color-surface-muted)] hover:text-[var(--color-foreground)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)] sm:inline-flex"
                 >
@@ -195,7 +201,7 @@ export function FilterModal({
                 <button
                   type="button"
                   onClick={close}
-                  aria-label="Cerrar"
+                  aria-label={t(locale, "filters.closeAria")}
                   className="inline-flex h-9 w-9 items-center justify-center rounded-full text-[var(--color-text-muted)] transition-colors hover:bg-[var(--color-surface-muted)] hover:text-[var(--color-foreground)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)]"
                 >
                   <X className="h-4 w-4" aria-hidden />

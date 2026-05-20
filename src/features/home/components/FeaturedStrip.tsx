@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 
+import { readLocale } from "@/core/i18n/locale";
+import { t } from "@/core/i18n/messages";
 import { CatalogCard } from "@/features/catalog/components/CatalogCard";
 import { listFeatured } from "@/server/biringas";
 import { Container } from "@/shared/design-system/components/Container";
@@ -20,10 +22,13 @@ export async function FeaturedStrip() {
   // Auxiliary content — degrade to null on failure so the home page still
   // renders. See note in EditorialHero re: missing Firestore indexes on
   // first production read.
-  const featured = await listFeatured(4).catch((err) => {
-    console.error("[home] listFeatured failed", err);
-    return [] as Awaited<ReturnType<typeof listFeatured>>;
-  });
+  const [featured, locale] = await Promise.all([
+    listFeatured(4).catch((err) => {
+      console.error("[home] listFeatured failed", err);
+      return [] as Awaited<ReturnType<typeof listFeatured>>;
+    }),
+    readLocale(),
+  ]);
   if (featured.length === 0) return null;
 
   return (
@@ -56,7 +61,7 @@ export async function FeaturedStrip() {
                 aria-hidden
                 className="inline-block h-1.5 w-1.5 rotate-45 bg-[var(--color-gold)] shadow-[0_0_0_3px_rgba(200,166,118,0.18)]"
               />
-              Destacadas
+              {t(locale, "featured.eyebrow")}
               <span
                 aria-hidden
                 className="inline-block h-px w-10 bg-gradient-to-l from-transparent via-[var(--color-gold)] to-[var(--color-brand-primary)]/40"
@@ -66,15 +71,15 @@ export async function FeaturedStrip() {
               id="featured-title"
               className="font-[var(--font-display)] text-[clamp(28px,3.8vw,44px)] leading-[1.02] tracking-[-0.025em] text-[var(--color-foreground)]"
             >
-              Perfiles verificados que están{" "}
+              {t(locale, "featured.title.before")}{" "}
               <span className="italic font-[360] text-[var(--color-brand-primary)]">
-                convirtiendo
+                {t(locale, "featured.title.italic")}
               </span>{" "}
-              esta semana
+              {t(locale, "featured.title.after")}
             </h2>
             <p className="max-w-xl font-[var(--font-serif)] text-[15px] leading-[1.55] text-[var(--color-text-muted)]">
-              Curadas por reputación y volumen de reseñas —{" "}
-              <em>sólo entran si lo han ganado.</em>
+              {t(locale, "featured.subtitlePrefix")}{" "}
+              <em>{t(locale, "featured.subtitleItalic")}</em>
             </p>
           </div>
           <Link
@@ -82,7 +87,7 @@ export async function FeaturedStrip() {
             className="group/seeall inline-flex items-center gap-1.5 self-start rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-2 text-sm font-semibold text-[var(--color-brand-primary)] transition-[border-color,background,transform] duration-200 ease-[var(--ease-standard)] hover:-translate-y-[1px] hover:border-[var(--color-brand-primary)]/40 hover:bg-[var(--color-background-elevated)] sm:self-auto"
           >
             <span className="relative">
-              Ver todo el catálogo
+              {t(locale, "featured.cta")}
               <span
                 aria-hidden
                 className="absolute -bottom-0.5 left-0 h-px w-full origin-left scale-x-0 bg-[var(--color-brand-primary-strong)] transition-transform duration-300 ease-[var(--ease-standard)] group-hover/seeall:scale-x-100"

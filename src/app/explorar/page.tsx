@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 
+import { readLocale } from "@/core/i18n/locale";
+import { t } from "@/core/i18n/messages";
 import { buildPageMetadata } from "@/core/seo/build-page-metadata";
 import { RecentlyViewedStrip } from "@/features/biringas/components/RecentlyViewedStrip";
 import { CatalogGrid } from "@/features/catalog/components/CatalogGrid";
@@ -41,6 +43,7 @@ export default async function ExplorarPage({
   const params = await searchParams;
   const filters = parseFilters(params);
   const view = parseView(params);
+  const locale = await readLocale();
 
   // Compose a short label for the "guardar búsqueda" pill — only shows
   // when the user has applied at least one real filter. Pure read; no
@@ -61,7 +64,7 @@ export default async function ExplorarPage({
   ]
     .filter(Boolean)
     .slice(0, 3)
-    .join(" · ") || "Búsqueda personalizada";
+    .join(" · ") || t(locale, "explorar.savedSearchFallback");
 
   return (
     <>
@@ -86,17 +89,17 @@ export default async function ExplorarPage({
               aria-hidden
               className="inline-block h-1.5 w-1.5 rotate-45 bg-[var(--color-gold)] shadow-[0_0_0_3px_rgba(200,166,118,0.18)]"
             />
-            Catálogo
+            {t(locale, "explorar.eyebrow")}
           </span>
           <h1 className="font-[var(--font-display)] text-[clamp(34px,5vw,56px)] font-[360] leading-[1.02] tracking-[-0.03em] text-[var(--color-foreground)]">
-            Explorar{" "}
+            {t(locale, "explorar.title.before")}{" "}
             <span className="italic font-[340] text-[var(--color-brand-primary)]">
-              Biringas
+              {t(locale, "explorar.title.italic")}
             </span>
           </h1>
           <p className="max-w-2xl font-[var(--font-serif)] text-[15px] leading-[1.55] text-[var(--color-text-muted)] sm:text-base">
-            Filtra por ciudad, categoría y disponibilidad. Sólo perfiles
-            verificados — <em>sin bots, sin catfish.</em>
+            {t(locale, "explorar.subtitlePrefix")}{" "}
+            <em>{t(locale, "explorar.subtitleItalic")}</em>
           </p>
           {filterCount > 0 && (
             <div className="mt-2 flex">

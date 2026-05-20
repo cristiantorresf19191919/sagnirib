@@ -16,6 +16,8 @@ import {
 } from "lucide-react";
 import { useState, type FormEvent } from "react";
 
+import { useLocale } from "@/core/i18n/LocaleProvider";
+import { t } from "@/core/i18n/messages";
 import { toast } from "@/shared/ui/toast";
 
 import { useAuthSession } from "../lib/use-auth-session";
@@ -62,6 +64,7 @@ const STAGGER: Variants = {
  */
 export function SignInForm({ next }: Readonly<SignInFormProps> = {}) {
   const router = useRouter();
+  const locale = useLocale();
   const { status, signInWithEmail, signInWithGoogle } = useAuthSession();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -81,10 +84,10 @@ export function SignInForm({ next }: Readonly<SignInFormProps> = {}) {
 
   function finishSuccess(method: "email" | "google") {
     toast.success(
-      "Sesión iniciada",
+      t(locale, "auth.signin.success.title"),
       method === "google"
-        ? "Continuamos desde donde estabas."
-        : "Bienvenida de vuelta.",
+        ? t(locale, "auth.signin.success.google")
+        : t(locale, "auth.signin.success.email"),
     );
     router.push(safeNext);
     router.refresh();
@@ -136,10 +139,10 @@ export function SignInForm({ next }: Readonly<SignInFormProps> = {}) {
         <div className="flex flex-col">
           <span className="inline-flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.28em] text-[var(--color-gold-deep)]">
             <Sparkles className="h-3 w-3" aria-hidden />
-            Acceso
+            {t(locale, "auth.eyebrow.access")}
           </span>
           <h2 className="mt-1 font-[var(--font-display)] text-2xl font-[370] tracking-tight text-[var(--color-foreground)]">
-            Continuá donde lo dejaste
+            {t(locale, "auth.title.signin")}
           </h2>
         </div>
       </motion.div>
@@ -149,7 +152,7 @@ export function SignInForm({ next }: Readonly<SignInFormProps> = {}) {
           htmlFor="auth-email"
           className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--color-text-subtle)]"
         >
-          Email
+          {t(locale, "auth.signin.email")}
         </label>
         <div className="relative">
           <Mail
@@ -175,13 +178,13 @@ export function SignInForm({ next }: Readonly<SignInFormProps> = {}) {
             htmlFor="auth-password"
             className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--color-text-subtle)]"
           >
-            Contraseña
+            {t(locale, "auth.signin.password")}
           </label>
           <Link
             href="/recuperar"
             className="text-[11px] font-semibold text-[var(--color-brand-primary)] underline-offset-2 hover:underline"
           >
-            ¿La olvidaste?
+            {t(locale, "auth.signin.forgot")}
           </Link>
         </div>
         <div className="relative">
@@ -193,13 +196,17 @@ export function SignInForm({ next }: Readonly<SignInFormProps> = {}) {
             minLength={6}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            placeholder="Mínimo 6 caracteres"
+            placeholder={t(locale, "auth.signin.password")}
             className="h-12 w-full rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-background)] pl-3.5 pr-12 text-sm text-[var(--color-foreground)] placeholder:text-[var(--color-text-subtle)] focus:border-[var(--color-brand-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-brand-primary)]/30"
           />
           <button
             type="button"
             onClick={() => setShowPassword((v) => !v)}
-            aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
+            aria-label={
+              showPassword
+                ? t(locale, "auth.passwordHide") || "Ocultar contraseña"
+                : t(locale, "auth.passwordShow") || "Mostrar contraseña"
+            }
             className="absolute right-2 top-1/2 inline-flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full text-[var(--color-text-subtle)] transition-colors hover:bg-[var(--color-surface-muted)] hover:text-[var(--color-foreground)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)]"
           >
             {showPassword ? (
@@ -228,7 +235,9 @@ export function SignInForm({ next }: Readonly<SignInFormProps> = {}) {
         className="btn-pulse inline-flex h-12 items-center justify-center gap-2 rounded-full bg-[var(--color-brand-primary)] px-5 text-sm font-semibold text-[var(--color-surface)] shadow-[var(--shadow-glow-primary)] transition-[background,transform] duration-200 ease-[var(--ease-standard)] hover:-translate-y-[1px] hover:bg-[var(--color-brand-primary-strong)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-background)] disabled:cursor-not-allowed disabled:opacity-70"
       >
         <LogIn className="h-4 w-4" aria-hidden />
-        {submitting ? "Entrando…" : "Iniciar sesión"}
+        {submitting
+          ? t(locale, "auth.signin.cta.loading")
+          : t(locale, "auth.signin.cta")}
       </motion.button>
 
       <motion.div
@@ -238,7 +247,7 @@ export function SignInForm({ next }: Readonly<SignInFormProps> = {}) {
         className="flex items-center gap-3 text-[10px] uppercase tracking-[0.22em] text-[var(--color-text-subtle)]"
       >
         <span className="h-px flex-1 bg-[var(--color-border)]" aria-hidden />
-        <span>o</span>
+        <span>{t(locale, "auth.signin.separator") || "o"}</span>
         <span className="h-px flex-1 bg-[var(--color-border)]" aria-hidden />
       </motion.div>
 
@@ -250,7 +259,7 @@ export function SignInForm({ next }: Readonly<SignInFormProps> = {}) {
         className="inline-flex h-12 items-center justify-center gap-2 rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] px-5 text-sm font-semibold text-[var(--color-foreground)] transition-[border-color,background,transform] duration-200 ease-[var(--ease-standard)] hover:-translate-y-[1px] hover:border-[var(--color-brand-primary-soft)] hover:bg-[var(--color-background-elevated)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-background)] disabled:cursor-not-allowed disabled:opacity-70"
       >
         <GoogleGlyph />
-        Continuar con Google
+        {t(locale, "auth.signin.google")}
       </motion.button>
 
       <motion.div
@@ -261,14 +270,14 @@ export function SignInForm({ next }: Readonly<SignInFormProps> = {}) {
           className="h-3.5 w-3.5 text-[var(--color-brand-primary)]"
           aria-hidden
         />
-        Tu identidad nunca aparece en perfiles públicos.
+        {t(locale, "auth.identityPromise")}
       </motion.div>
 
       <motion.p
         variants={REVEAL}
         className="text-center text-xs text-[var(--color-text-muted)]"
       >
-        ¿No tenés cuenta?{" "}
+        {t(locale, "auth.signin.noAccount")}{" "}
         <Link
           href={
             safeNext === "/"
@@ -277,7 +286,7 @@ export function SignInForm({ next }: Readonly<SignInFormProps> = {}) {
           }
           className="font-semibold text-[var(--color-brand-primary)] underline-offset-2 hover:underline"
         >
-          Crear cuenta
+          {t(locale, "auth.signin.createAccount")}
         </Link>
       </motion.p>
     </motion.form>
@@ -285,6 +294,7 @@ export function SignInForm({ next }: Readonly<SignInFormProps> = {}) {
 }
 
 function DisabledNotice() {
+  const locale = useLocale();
   return (
     <div
       role="status"
@@ -292,13 +302,9 @@ function DisabledNotice() {
     >
       <span className="inline-flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.22em] text-[var(--color-brand-highlight)]">
         <ShieldCheck className="h-3 w-3" aria-hidden />
-        Auth no disponible
+        {t(locale, "auth.disabled.title")}
       </span>
-      <p>
-        Falta configurar las variables <code className="font-mono text-xs">NEXT_PUBLIC_FIREBASE_*</code>{" "}
-        para activar el acceso. Mientras tanto el catálogo y los perfiles
-        funcionan en modo demo.
-      </p>
+      <p>{t(locale, "auth.disabled.body")}</p>
     </div>
   );
 }
@@ -325,6 +331,7 @@ function DisabledNotice() {
  */
 function AlreadySignedIn({ next }: { next: string }) {
   const router = useRouter();
+  const locale = useLocale();
   const { serverSession, refreshServerSession, signOut } = useAuthSession();
   const [busy, setBusy] = useState<"continue" | "signout" | null>(null);
   const [localError, setLocalError] = useState<string | null>(null);
@@ -363,7 +370,7 @@ function AlreadySignedIn({ next }: { next: string }) {
 
   return (
     <div className="flex w-full max-w-md flex-col gap-4 rounded-[var(--radius-2xl)] border border-[var(--color-border)] bg-[var(--color-surface)] p-6 text-sm text-[var(--color-text-muted)] shadow-[var(--shadow-sm)]">
-      <p>Ya tenés sesión iniciada.</p>
+      <p>{t(locale, "auth.alreadySignedIn")}</p>
 
       {errorMessage && (
         <div
@@ -395,10 +402,10 @@ function AlreadySignedIn({ next }: { next: string }) {
             <RefreshCcw className="h-4 w-4" aria-hidden />
           ) : null}
           {busy === "continue"
-            ? "Verificando…"
+            ? t(locale, "auth.signin.cta.loading")
             : errorMessage
-              ? "Reintentar"
-              : "Continuar"}
+              ? t(locale, "auth.signin.cta")
+              : t(locale, "auth.continue")}
         </button>
 
         {errorMessage && (
@@ -409,7 +416,9 @@ function AlreadySignedIn({ next }: { next: string }) {
             className="inline-flex h-11 items-center gap-2 rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] px-4 text-sm font-semibold text-[var(--color-foreground)] transition-[border-color,background] duration-200 ease-[var(--ease-standard)] hover:border-[var(--color-brand-primary-soft)] hover:bg-[var(--color-background-elevated)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-background)] disabled:cursor-not-allowed disabled:opacity-70"
           >
             <LogOut className="h-4 w-4" aria-hidden />
-            {busy === "signout" ? "Cerrando…" : "Cerrar sesión"}
+            {busy === "signout"
+              ? t(locale, "auth.signin.cta.loading")
+              : t(locale, "header.signOut")}
           </button>
         )}
       </div>

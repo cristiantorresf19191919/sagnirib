@@ -68,7 +68,7 @@ export async function Header({ hideCatalogCta = false }: HeaderProps) {
 
         <nav
           data-testid="header-nav"
-          aria-label="Navegación principal"
+          aria-label={t(locale, "header.nav.aria")}
           className="flex items-center gap-0.5 sm:gap-1"
         >
           {/* 1. DISCOVERY — How (learn) + Favorites (engage with what

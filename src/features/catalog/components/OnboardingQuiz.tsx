@@ -14,45 +14,48 @@ import {
 import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 
+import { useLocale } from "@/core/i18n/LocaleProvider";
+import { t } from "@/core/i18n/messages";
+
 const STORAGE_KEY = "biringas:onboarding-quiz:v1";
 
-const CITIES = [
-  { value: "Bogotá", label: "Bogotá", icon: MapPin },
-  { value: "Medellín", label: "Medellín", icon: MapPin },
-  { value: "Cartagena", label: "Cartagena", icon: MapPin },
-  { value: "Cali", label: "Cali", icon: MapPin },
-  { value: "any", label: "Toda Colombia", icon: Compass },
+const CITY_DEFS = [
+  { value: "Bogotá", label: "Bogotá", icon: MapPin, i18nKey: null },
+  { value: "Medellín", label: "Medellín", icon: MapPin, i18nKey: null },
+  { value: "Cartagena", label: "Cartagena", icon: MapPin, i18nKey: null },
+  { value: "Cali", label: "Cali", icon: MapPin, i18nKey: null },
+  { value: "any", label: "Toda Colombia", icon: Compass, i18nKey: "onboarding.city.any" },
 ] as const;
 
-const BUDGETS = [
-  { value: "any", label: "Sin presupuesto", icon: Wallet, max: undefined },
-  { value: "budget", label: "Hasta $200k", icon: Wallet, max: 200000 },
-  { value: "premium", label: "Hasta $400k", icon: Wallet, max: 400000 },
-  { value: "elite", label: "Sin tope", icon: Crown, max: undefined },
+const BUDGET_DEFS = [
+  { value: "any", i18nKey: "onboarding.budget.any", icon: Wallet, max: undefined },
+  { value: "budget", i18nKey: "onboarding.budget.budget", icon: Wallet, max: 200000 },
+  { value: "premium", i18nKey: "onboarding.budget.premium", icon: Wallet, max: 400000 },
+  { value: "elite", i18nKey: "onboarding.budget.elite", icon: Crown, max: undefined },
 ] as const;
 
-const PLANS = [
+const PLAN_DEFS = [
   {
     value: "live",
-    label: "Algo para hoy",
+    i18nKey: "onboarding.plan.live",
     icon: Sparkles,
     href: "/explorar?available=1",
   },
   {
     value: "social",
-    label: "Cena / evento",
+    i18nKey: "onboarding.plan.social",
     icon: HeartHandshake,
     href: "/explorar?meetingContexts=cena",
   },
   {
     value: "trip",
-    label: "Fin de semana",
+    i18nKey: "onboarding.plan.trip",
     icon: Compass,
     href: "/explorar?meetingContexts=viaje",
   },
   {
     value: "general",
-    label: "Solo estoy mirando",
+    i18nKey: "onboarding.plan.general",
     icon: Sparkles,
     href: "/explorar",
   },
@@ -71,6 +74,7 @@ const PLANS = [
  */
 export function OnboardingQuiz() {
   const router = useRouter();
+  const locale = useLocale();
   const [open, setOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [step, setStep] = useState(0);
@@ -132,7 +136,7 @@ export function OnboardingQuiz() {
       planHref.startsWith("http") ? planHref : `http://x${planHref}`,
     );
     if (city && city !== "any") url.searchParams.set("city", city);
-    const budgetEntry = BUDGETS.find((b) => b.value === budget);
+    const budgetEntry = BUDGET_DEFS.find((b) => b.value === budget);
     if (budgetEntry?.max) {
       url.searchParams.set("priceMax", String(budgetEntry.max));
     }
@@ -141,6 +145,23 @@ export function OnboardingQuiz() {
     setOpen(false);
     router.push(finalHref);
   };
+
+  const cities = CITY_DEFS.map((c) => ({
+    value: c.value,
+    label: c.i18nKey ? t(locale, c.i18nKey) : c.label,
+    icon: c.icon,
+  }));
+  const budgets = BUDGET_DEFS.map((b) => ({
+    value: b.value,
+    label: t(locale, b.i18nKey),
+    icon: b.icon,
+  }));
+  const plans = PLAN_DEFS.map((p) => ({
+    value: p.value,
+    label: t(locale, p.i18nKey),
+    icon: p.icon,
+    href: p.href,
+  }));
 
   // Render through a portal to `document.body` so the dialog escapes any
   // ancestor that has accidentally established a containing block for
@@ -165,7 +186,7 @@ export function OnboardingQuiz() {
         >
           <button
             type="button"
-            aria-label="Cerrar"
+            aria-label={t(locale, "onboarding.close")}
             onClick={close}
             className="absolute inset-0 cursor-default bg-[rgba(20,28,24,0.55)] backdrop-blur-sm"
           />
@@ -184,22 +205,22 @@ export function OnboardingQuiz() {
             <header className="flex items-start justify-between gap-3 border-b border-[var(--color-border)] bg-[var(--color-surface)] px-5 py-4">
               <div className="flex min-w-0 flex-col">
                 <span className="text-[10px] font-semibold uppercase tracking-[0.24em] text-[var(--color-gold-deep)]">
-                  Bienvenida
+                  {t(locale, "onboarding.eyebrow")}
                 </span>
                 <h2
                   id="onboarding-title"
                   className="font-[var(--font-display)] text-lg font-[370] tracking-tight text-[var(--color-foreground)]"
                 >
-                  Encuentra tu Biringa en{" "}
+                  {t(locale, "onboarding.title.before")}{" "}
                   <span className="italic text-[var(--color-brand-primary)]">
-                    3 toques
+                    {t(locale, "onboarding.title.gold")}
                   </span>
                 </h2>
               </div>
               <button
                 type="button"
                 onClick={close}
-                aria-label="Saltar"
+                aria-label={t(locale, "onboarding.skip")}
                 className="inline-flex h-9 w-9 items-center justify-center rounded-full text-[var(--color-text-muted)] transition-colors hover:bg-[var(--color-surface-muted)] hover:text-[var(--color-foreground)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)]"
               >
                 <X className="h-4 w-4" aria-hidden />
@@ -226,9 +247,9 @@ export function OnboardingQuiz() {
 
               {step === 0 && (
                 <Step
-                  title="¿En qué ciudad estás?"
-                  subtitle="Filtramos el catálogo para mostrarte sólo lo cercano."
-                  options={CITIES}
+                  title={t(locale, "onboarding.city.title")}
+                  subtitle={t(locale, "onboarding.city.subtitle")}
+                  options={cities}
                   selected={city}
                   onSelect={(v) => {
                     setCity(v);
@@ -239,9 +260,9 @@ export function OnboardingQuiz() {
 
               {step === 1 && (
                 <Step
-                  title="¿Cuánto querés invertir por hora?"
-                  subtitle="Sólo nos ayuda a ordenar. Podés cambiarlo después."
-                  options={BUDGETS}
+                  title={t(locale, "onboarding.budget.title")}
+                  subtitle={t(locale, "onboarding.budget.subtitle")}
+                  options={budgets}
                   selected={budget}
                   onSelect={(v) => {
                     setBudget(v);
@@ -252,12 +273,12 @@ export function OnboardingQuiz() {
 
               {step === 2 && (
                 <Step
-                  title="¿Qué plan tenés en mente?"
-                  subtitle="Llevamos directo al catálogo con el filtro aplicado."
-                  options={PLANS}
+                  title={t(locale, "onboarding.plan.title")}
+                  subtitle={t(locale, "onboarding.plan.subtitle")}
+                  options={plans}
                   selected={null}
                   onSelect={(value) => {
-                    const plan = PLANS.find((p) => p.value === value);
+                    const plan = PLAN_DEFS.find((p) => p.value === value);
                     if (plan) finish(plan.href);
                   }}
                 />
@@ -270,10 +291,13 @@ export function OnboardingQuiz() {
                 onClick={close}
                 className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--color-text-muted)] transition-colors hover:text-[var(--color-foreground)]"
               >
-                Saltar
+                {t(locale, "onboarding.skip")}
               </button>
               <span className="text-[10px] text-[var(--color-text-subtle)]">
-                Paso {step + 1} de 3
+                {t(locale, "onboarding.progress", {
+                  current: step + 1,
+                  total: 3,
+                })}
               </span>
             </footer>
           </motion.div>

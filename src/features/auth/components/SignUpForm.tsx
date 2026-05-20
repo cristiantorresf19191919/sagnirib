@@ -14,6 +14,8 @@ import {
 } from "lucide-react";
 import { useMemo, useState, type FormEvent } from "react";
 
+import { useLocale } from "@/core/i18n/LocaleProvider";
+import { t } from "@/core/i18n/messages";
 import { toast } from "@/shared/ui/toast";
 
 import { useAuthSession } from "../lib/use-auth-session";
@@ -64,6 +66,7 @@ const STAGGER: Variants = {
  */
 export function SignUpForm({ next }: Readonly<SignUpFormProps> = {}) {
   const router = useRouter();
+  const locale = useLocale();
   const { status, signUpWithEmail } = useAuthSession();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -83,13 +86,17 @@ export function SignUpForm({ next }: Readonly<SignUpFormProps> = {}) {
 
   function validate(): FieldErrors | null {
     const next: FieldErrors = {};
-    if (!email.trim()) next.email = "Ingresá tu email.";
+    if (!email.trim()) next.email = t(locale, "auth.signup.error.email");
     if (password.length < MIN_PASSWORD_LENGTH) {
-      next.password = `Mínimo ${MIN_PASSWORD_LENGTH} caracteres.`;
+      next.password = t(locale, "auth.signup.error.password", {
+        min: MIN_PASSWORD_LENGTH,
+      });
     }
-    if (confirm !== password) next.confirm = "Las contraseñas no coinciden.";
+    if (confirm !== password) {
+      next.confirm = t(locale, "auth.signup.error.confirm");
+    }
     if (!acceptTerms) {
-      next.terms = "Confirmá que aceptás los Términos y la Privacidad.";
+      next.terms = t(locale, "auth.signup.error.terms");
     }
     return Object.keys(next).length > 0 ? next : null;
   }
@@ -106,13 +113,13 @@ export function SignUpForm({ next }: Readonly<SignUpFormProps> = {}) {
     try {
       await signUpWithEmail(email, password);
       toast.success(
-        "Cuenta creada",
-        "Enviamos un email de verificación. Ya podés continuar.",
+        t(locale, "auth.signup.toast.title"),
+        t(locale, "auth.signup.toast.body"),
       );
       router.push(safeNext);
       router.refresh();
     } catch (err) {
-      setErrors({ form: humanizeAuthError(err) });
+      setErrors({ form: humanizeAuthError(err, locale) });
     } finally {
       setSubmitting(false);
     }
@@ -135,14 +142,13 @@ export function SignUpForm({ next }: Readonly<SignUpFormProps> = {}) {
       <motion.div variants={REVEAL} className="flex flex-col gap-1">
         <span className="inline-flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.28em] text-[var(--color-gold-deep)]">
           <Sparkles className="h-3 w-3" aria-hidden />
-          Nueva cuenta
+          {t(locale, "auth.eyebrow.signup")}
         </span>
         <h2 className="font-[var(--font-display)] text-2xl font-[370] tracking-tight text-[var(--color-foreground)]">
-          Creá tu cuenta en 30 segundos
+          {t(locale, "auth.title.signup")}
         </h2>
         <p className="text-sm leading-relaxed text-[var(--color-text-muted)]">
-          Te abre el catálogo verificado, favoritos sincronizados y la opción
-          de publicar tu perfil cuando quieras.
+          {t(locale, "auth.signup.subtitle")}
         </p>
       </motion.div>
 
@@ -151,7 +157,7 @@ export function SignUpForm({ next }: Readonly<SignUpFormProps> = {}) {
           htmlFor="signup-email"
           className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--color-text-subtle)]"
         >
-          Email
+          {t(locale, "auth.signin.email")}
         </label>
         <div className="relative">
           <Mail
@@ -165,7 +171,7 @@ export function SignUpForm({ next }: Readonly<SignUpFormProps> = {}) {
             required
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            placeholder="tu@email.com"
+            placeholder={t(locale, "auth.signup.emailPlaceholder")}
             className="h-12 w-full rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-background)] pl-10 pr-3 text-sm text-[var(--color-foreground)] placeholder:text-[var(--color-text-subtle)] focus:border-[var(--color-brand-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-brand-primary)]/30"
           />
         </div>
@@ -181,7 +187,7 @@ export function SignUpForm({ next }: Readonly<SignUpFormProps> = {}) {
           htmlFor="signup-password"
           className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--color-text-subtle)]"
         >
-          Contraseña
+          {t(locale, "auth.signin.password")}
         </label>
         <div className="relative">
           <input
@@ -192,13 +198,19 @@ export function SignUpForm({ next }: Readonly<SignUpFormProps> = {}) {
             minLength={MIN_PASSWORD_LENGTH}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            placeholder={`Mínimo ${MIN_PASSWORD_LENGTH} caracteres`}
+            placeholder={t(locale, "auth.signup.passwordPlaceholder", {
+              min: MIN_PASSWORD_LENGTH,
+            })}
             className="h-12 w-full rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-background)] pl-3.5 pr-12 text-sm text-[var(--color-foreground)] placeholder:text-[var(--color-text-subtle)] focus:border-[var(--color-brand-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-brand-primary)]/30"
           />
           <button
             type="button"
             onClick={() => setShowPassword((v) => !v)}
-            aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
+            aria-label={
+              showPassword
+                ? t(locale, "auth.password.hide")
+                : t(locale, "auth.password.show")
+            }
             className="absolute right-2 top-1/2 inline-flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full text-[var(--color-text-subtle)] transition-colors hover:bg-[var(--color-surface-muted)] hover:text-[var(--color-foreground)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)]"
           >
             {showPassword ? (
@@ -208,7 +220,7 @@ export function SignUpForm({ next }: Readonly<SignUpFormProps> = {}) {
             )}
           </button>
         </div>
-        <StrengthMeter score={strength} />
+        <StrengthMeter score={strength} locale={locale} />
         {errors.password && (
           <p className="text-[11px] text-[var(--color-brand-highlight)]">
             {errors.password}
@@ -221,7 +233,7 @@ export function SignUpForm({ next }: Readonly<SignUpFormProps> = {}) {
           htmlFor="signup-confirm"
           className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--color-text-subtle)]"
         >
-          Repetí tu contraseña
+          {t(locale, "auth.signup.confirm")}
         </label>
         <input
           id="signup-confirm"
@@ -230,7 +242,7 @@ export function SignUpForm({ next }: Readonly<SignUpFormProps> = {}) {
           required
           value={confirm}
           onChange={(e) => setConfirm(e.target.value)}
-          placeholder="La misma de arriba"
+          placeholder={t(locale, "auth.signup.confirmPlaceholder")}
           className="h-12 w-full rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-background)] px-3.5 text-sm text-[var(--color-foreground)] placeholder:text-[var(--color-text-subtle)] focus:border-[var(--color-brand-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-brand-primary)]/30"
         />
         {errors.confirm && (
@@ -251,19 +263,19 @@ export function SignUpForm({ next }: Readonly<SignUpFormProps> = {}) {
           className="mt-0.5 h-4 w-4 cursor-pointer accent-[var(--color-brand-primary)]"
         />
         <span>
-          Acepto los{" "}
+          {t(locale, "auth.signup.acceptPrefix")}{" "}
           <Link
             href="/legal/terminos"
             className="font-semibold text-[var(--color-brand-primary)] underline-offset-2 hover:underline"
           >
-            Términos
+            {t(locale, "auth.signup.terms")}
           </Link>{" "}
-          y la{" "}
+          {t(locale, "auth.signup.and")}{" "}
           <Link
             href="/legal/privacidad"
             className="font-semibold text-[var(--color-brand-primary)] underline-offset-2 hover:underline"
           >
-            Política de Privacidad
+            {t(locale, "auth.signup.privacy")}
           </Link>
           .
         </span>
@@ -291,18 +303,20 @@ export function SignUpForm({ next }: Readonly<SignUpFormProps> = {}) {
         className="btn-pulse inline-flex h-12 items-center justify-center gap-2 rounded-full bg-[var(--color-brand-primary)] px-5 text-sm font-semibold text-[var(--color-surface)] shadow-[var(--shadow-glow-primary)] transition-[background,transform] duration-200 ease-[var(--ease-standard)] hover:-translate-y-[1px] hover:bg-[var(--color-brand-primary-strong)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-background)] disabled:cursor-not-allowed disabled:opacity-70"
       >
         <UserPlus className="h-4 w-4" aria-hidden />
-        {submitting ? "Creando cuenta…" : "Crear cuenta"}
+        {submitting
+          ? t(locale, "auth.signup.cta.loading")
+          : t(locale, "auth.signup.cta")}
       </motion.button>
 
       <motion.ul
         variants={REVEAL}
         className="grid grid-cols-1 gap-1.5 rounded-[var(--radius-md)] bg-[var(--color-background-elevated)] p-3 text-[11px] text-[var(--color-text-muted)]"
-        aria-label="Lo que obtenés"
+        aria-label={t(locale, "auth.signup.benefitsAria")}
       >
         {[
-          "Catálogo verificado con perfiles reales",
-          "Favoritos sincronizados entre dispositivos",
-          "Publicá tu perfil cuando quieras",
+          t(locale, "auth.signup.benefit1"),
+          t(locale, "auth.signup.benefit2"),
+          t(locale, "auth.signup.benefit3"),
         ].map((item) => (
           <li key={item} className="inline-flex items-center gap-2">
             <Check
@@ -322,14 +336,14 @@ export function SignUpForm({ next }: Readonly<SignUpFormProps> = {}) {
           className="h-3.5 w-3.5 text-[var(--color-brand-primary)]"
           aria-hidden
         />
-        Tu identidad nunca aparece en perfiles públicos.
+        {t(locale, "auth.identityPromise")}
       </motion.div>
 
       <motion.p
         variants={REVEAL}
         className="text-center text-xs text-[var(--color-text-muted)]"
       >
-        ¿Ya tenés cuenta?{" "}
+        {t(locale, "auth.signup.haveAccount")}{" "}
         <Link
           href={
             safeNext === "/"
@@ -338,7 +352,7 @@ export function SignUpForm({ next }: Readonly<SignUpFormProps> = {}) {
           }
           className="font-semibold text-[var(--color-brand-primary)] underline-offset-2 hover:underline"
         >
-          Ingresar
+          {t(locale, "auth.signup.signIn")}
         </Link>
       </motion.p>
     </motion.form>
@@ -347,7 +361,13 @@ export function SignUpForm({ next }: Readonly<SignUpFormProps> = {}) {
 
 /** Live password-strength meter. Heuristic-only (length + variety) — the
  *  server enforces the real minimums. Renders nothing for empty input. */
-function StrengthMeter({ score }: { score: number }) {
+function StrengthMeter({
+  score,
+  locale,
+}: {
+  score: number;
+  locale: import("@/core/branding/brand-config").SupportedLocale;
+}) {
   if (score === 0) return null;
   const cls =
     score === 1
@@ -359,12 +379,12 @@ function StrengthMeter({ score }: { score: number }) {
           : "w-full bg-[var(--color-brand-primary)]";
   const label =
     score === 1
-      ? "Débil"
+      ? t(locale, "auth.strength.weak")
       : score === 2
-        ? "Aceptable"
+        ? t(locale, "auth.strength.okay")
         : score === 3
-          ? "Fuerte"
-          : "Excelente";
+          ? t(locale, "auth.strength.strong")
+          : t(locale, "auth.strength.excellent");
   return (
     <div className="flex flex-col gap-1">
       <span className="block h-1 overflow-hidden rounded-full bg-[var(--color-surface-muted)]">
@@ -390,6 +410,7 @@ function scorePassword(pw: string): number {
 }
 
 function DisabledNotice() {
+  const locale = useLocale();
   return (
     <div
       role="status"
@@ -397,23 +418,19 @@ function DisabledNotice() {
     >
       <span className="inline-flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.22em] text-[var(--color-brand-highlight)]">
         <ShieldCheck className="h-3 w-3" aria-hidden />
-        Auth no disponible
+        {t(locale, "auth.disabled.title")}
       </span>
-      <p>
-        Falta configurar las variables{" "}
-        <code className="font-mono text-xs">NEXT_PUBLIC_FIREBASE_*</code> para
-        activar el registro. Mientras tanto el catálogo y los perfiles
-        funcionan en modo demo.
-      </p>
+      <p>{t(locale, "auth.disabled.body")}</p>
     </div>
   );
 }
 
 function AlreadySignedIn({ next }: { next: string }) {
   const router = useRouter();
+  const locale = useLocale();
   return (
     <div className="flex w-full max-w-md flex-col gap-3 rounded-[var(--radius-2xl)] border border-[var(--color-border)] bg-[var(--color-surface)] p-6 text-sm text-[var(--color-text-muted)] shadow-[var(--shadow-sm)]">
-      <p>Ya tenés sesión iniciada.</p>
+      <p>{t(locale, "auth.alreadySignedIn")}</p>
       <button
         type="button"
         onClick={() => {
@@ -422,27 +439,30 @@ function AlreadySignedIn({ next }: { next: string }) {
         }}
         className="inline-flex h-11 w-fit items-center gap-2 rounded-full bg-[var(--color-brand-primary)] px-5 text-sm font-semibold text-[var(--color-surface)] shadow-[var(--shadow-glow-primary)] transition-[background,transform] duration-200 ease-[var(--ease-standard)] hover:-translate-y-[1px] hover:bg-[var(--color-brand-primary-strong)]"
       >
-        Continuar
+        {t(locale, "auth.continue")}
       </button>
     </div>
   );
 }
 
-function humanizeAuthError(err: unknown): string {
+function humanizeAuthError(
+  err: unknown,
+  locale: import("@/core/branding/brand-config").SupportedLocale,
+): string {
   const code =
     typeof (err as { code?: unknown } | undefined)?.code === "string"
       ? (err as { code: string }).code
       : "";
   switch (code) {
     case "auth/email-already-in-use":
-      return "Este email ya tiene cuenta. Probá ingresar.";
+      return t(locale, "auth.error.emailInUse");
     case "auth/weak-password":
-      return "Contraseña demasiado débil. Probá una más larga.";
+      return t(locale, "auth.error.weakPassword");
     case "auth/invalid-email":
-      return "El formato del email no es válido.";
+      return t(locale, "auth.error.invalidEmail");
     case "auth/network-request-failed":
-      return "Sin conexión. Revisá tu internet e intentá otra vez.";
+      return t(locale, "auth.error.network");
     default:
-      return (err as Error)?.message ?? "Error desconocido.";
+      return (err as Error)?.message ?? t(locale, "auth.error.unknown");
   }
 }

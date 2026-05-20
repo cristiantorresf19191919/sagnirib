@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { Search } from "lucide-react";
 
+import { readLocale } from "@/core/i18n/locale";
+import { t } from "@/core/i18n/messages";
 import { listHeroMosaic } from "@/server/biringas";
 import { CountUp } from "@/shared/motion/CountUp";
 import { UnderlineSweep } from "@/shared/motion/UnderlineSweep";
@@ -10,47 +12,32 @@ import { HeroCitySelect } from "./HeroCitySelect";
 import { HeroMosaicCard } from "./HeroMosaicCard";
 import { LuckyButton } from "./LuckyButton";
 
-const HERO_CITIES = [
-  { value: "", label: "Toda Colombia" },
-  { value: "Bogotá", label: "Bogotá" },
-  { value: "Medellín", label: "Medellín" },
-  { value: "Cartagena", label: "Cartagena" },
-  { value: "Cali", label: "Cali" },
-  { value: "Barranquilla", label: "Barranquilla" },
-  { value: "Bucaramanga", label: "Bucaramanga" },
-] as const;
+function buildHeroCities(allLabel: string) {
+  return [
+    { value: "", label: allLabel },
+    { value: "Bogotá", label: "Bogotá" },
+    { value: "Medellín", label: "Medellín" },
+    { value: "Cartagena", label: "Cartagena" },
+    { value: "Cali", label: "Cali" },
+    { value: "Barranquilla", label: "Barranquilla" },
+    { value: "Bucaramanga", label: "Bucaramanga" },
+  ] as const;
+}
 
 interface EditorialHeroProps {
   /** Optional location label rendered as the kicker. */
   location?: string;
 }
 
-/** Quick-prompt chips — V5 keeps four mutually scannable categories.
- *  The first chip is the hero's "default action" highlighted in forest
- *  (mint in dark mode); the rest are outline pills. No icons — V5's
- *  whole bet is text-first chips that read at a glance. */
-const CHIPS: ReadonlyArray<{ label: string; href: string }> = [
-  { label: "Disponibles ahora", href: "/explorar?available=1" },
-  { label: "Cena Bogotá", href: "/explorar?city=Bogot%C3%A1" },
-  { label: "Fin de semana Cartagena", href: "/explorar?city=Cartagena" },
-  { label: "Top rated", href: "/explorar?sort=rating" },
-];
-
-/** Marquee items — city entries are interactive (jump straight into the
- *  filtered catalog); the value-prop lines stay non-link so the user
- *  doesn't accidentally navigate. */
-const MARQUEE_ITEMS: ReadonlyArray<{ label: string; href?: string }> = [
-  { label: "Bogotá · 142 activas", href: "/explorar?city=Bogot%C3%A1" },
-  { label: "Medellín · 88 activas", href: "/explorar?city=Medell%C3%ADn" },
-  { label: "Cartagena · 41 activas", href: "/explorar?city=Cartagena" },
-  { label: "Cali · 37 activas", href: "/explorar?city=Cali" },
-  { label: "Verificación en vivo" },
-  { label: "Reseñas reales" },
-  { label: "Sin bots, sin catfish" },
-  { label: "Pago discreto disponible" },
-  { label: "Barranquilla · 24 activas", href: "/explorar?city=Barranquilla" },
-  { label: "Videollamada disponible", href: "/explorar?category=videollamadas" },
-];
+const CHIP_KEYS = [
+  { i18nKey: "hero.chip.availableNow", href: "/explorar?available=1" },
+  { i18nKey: "hero.chip.dinnerBogota", href: "/explorar?city=Bogot%C3%A1" },
+  {
+    i18nKey: "hero.chip.weekendCartagena",
+    href: "/explorar?city=Cartagena",
+  },
+  { i18nKey: "hero.chip.topRated", href: "/explorar?sort=rating" },
+] as const;
 
 const TILE_HEIGHTS_A = [240, 320, 240, 320] as const;
 const TILE_HEIGHTS_B = [360, 220, 360, 220] as const;
@@ -90,14 +77,67 @@ const MOSAIC_TOTAL_TILES = MOSAIC_COL_C_END;
  * mockup falls out naturally under `[data-theme="dark"]`.
  */
 export async function EditorialHero({
-  location = "Acompañantes verificadas · Colombia",
+  location,
 }: Readonly<EditorialHeroProps>) {
+  const localePromise = readLocale();
   // Degrade to empty on failure so the hero copy + CTA still render — common
   // failure mode is Firestore composite indexes not yet deployed.
   const mosaic = await listHeroMosaic(MOSAIC_TOTAL_TILES).catch((err) => {
     console.error("[home] listHeroMosaic failed", err);
     return [] as Awaited<ReturnType<typeof listHeroMosaic>>;
   });
+  const locale = await localePromise;
+  // Allow callers to override the kicker via prop; otherwise fall back
+  // to the localized default. Keeps existing callsites that pass an
+  // explicit location working unchanged.
+  const kickerLabel = location ?? t(locale, "hero.kicker.location");
+  const heroCities = buildHeroCities(t(locale, "hero.field.cityAll"));
+  const chips = CHIP_KEYS.map((chip) => ({
+    href: chip.href,
+    label: t(locale, chip.i18nKey),
+  }));
+  const marqueeItems: ReadonlyArray<{ label: string; href?: string }> = [
+    {
+      label: t(locale, "hero.marquee.activeIn", {
+        city: "Bogotá",
+        count: 142,
+      }),
+      href: "/explorar?city=Bogot%C3%A1",
+    },
+    {
+      label: t(locale, "hero.marquee.activeIn", {
+        city: "Medellín",
+        count: 88,
+      }),
+      href: "/explorar?city=Medell%C3%ADn",
+    },
+    {
+      label: t(locale, "hero.marquee.activeIn", {
+        city: "Cartagena",
+        count: 41,
+      }),
+      href: "/explorar?city=Cartagena",
+    },
+    {
+      label: t(locale, "hero.marquee.activeIn", { city: "Cali", count: 37 }),
+      href: "/explorar?city=Cali",
+    },
+    { label: t(locale, "hero.marquee.live") },
+    { label: t(locale, "hero.marquee.reviews") },
+    { label: t(locale, "hero.marquee.noBots") },
+    { label: t(locale, "hero.marquee.discreet") },
+    {
+      label: t(locale, "hero.marquee.activeIn", {
+        city: "Barranquilla",
+        count: 24,
+      }),
+      href: "/explorar?city=Barranquilla",
+    },
+    {
+      label: t(locale, "hero.marquee.videocall"),
+      href: "/explorar?category=videollamadas",
+    },
+  ];
 
   const colA = mosaic.slice(MOSAIC_COL_A_START, MOSAIC_COL_A_END);
   const colB = mosaic.slice(MOSAIC_COL_B_START, MOSAIC_COL_B_END);
@@ -230,7 +270,7 @@ export async function EditorialHero({
                   className="inline-block h-1.5 w-1.5 shrink-0 rotate-45 bg-[var(--color-gold)] shadow-[0_0_0_3px_rgba(200,166,118,0.18)]"
                 />
                 <span className="truncate text-[10px] font-medium uppercase tracking-[0.22em] text-[var(--color-ink-soft)]">
-                  {location}
+                  {kickerLabel}
                 </span>
               </div>
               <div
@@ -245,7 +285,19 @@ export async function EditorialHero({
                   <span className="relative inline-block h-2 w-2 rounded-full bg-[#4D9B6E] motion-safe:motion-hero-pulse" />
                 </span>
                 <span className="whitespace-nowrap text-xs font-medium tabular-nums text-[var(--color-ink)]">
-                  <CountUp to={38} /> en línea
+                  {(() => {
+                    const tpl = t(locale, "hero.kicker.online", {
+                      count: "__N__",
+                    });
+                    const [before, after] = tpl.split("__N__");
+                    return (
+                      <>
+                        {before}
+                        <CountUp to={38} />
+                        {after}
+                      </>
+                    );
+                  })()}
                 </span>
               </div>
             </div>
@@ -265,10 +317,10 @@ export async function EditorialHero({
                 lineHeight: 0.98,
               }}
             >
-              Encuentra a
+              {t(locale, "hero.title.line1")}
               <br />
-              {/* pr-2 widens the inline-block past "tu Biringa"'s logical
-                  width so the italic 'a' swash has room. The underline
+              {/* pr-2 widens the inline-block past the gold middle line's
+                  logical width so italic glyphs have room. The underline
                   stops at right-2 so it still ends under the glyph, not
                   the padding. Sheen animation removed: its background-
                   clip:text + transparent fill could leave the swash
@@ -276,7 +328,7 @@ export async function EditorialHero({
                   is solid gold italic anyway. */}
               <span className="relative inline-block pb-2 pr-2">
                 <span className="font-[var(--font-display)] font-[320] italic text-[var(--color-gold-deep)]">
-                  tu Biringa
+                  {t(locale, "hero.title.gold")}
                 </span>
                 <UnderlineSweep
                   delay={0.4}
@@ -284,7 +336,7 @@ export async function EditorialHero({
                 />
               </span>
               <br />
-              <span>ideal</span>
+              <span>{t(locale, "hero.title.line3")}</span>
               <span className="text-[var(--color-forest)]">.</span>
             </h1>
 
@@ -297,9 +349,9 @@ export async function EditorialHero({
               <strong className="font-semibold tabular-nums text-[var(--color-ink)]">
                 <CountUp to={247} duration={1.6} />
               </strong>{" "}
-              acompañantes verificadas, activas hoy en{" "}
+              {t(locale, "hero.stats.verified")}{" "}
               <strong className="font-semibold text-[var(--color-ink)]">
-                6 ciudades
+                {t(locale, "hero.stats.cities")}
               </strong>
               {"."}
             </p>
@@ -313,7 +365,7 @@ export async function EditorialHero({
               className="motion-safe:motion-hero-reveal mb-10 mt-14 flex flex-wrap gap-2.5 lg:mb-12 lg:mt-16"
               style={{ animationDelay: "0.35s" }}
             >
-              {CHIPS.map((chip, i) => {
+              {chips.map((chip, i) => {
                 const isActive = i === 0;
                 const cls = isActive
                   ? "inline-flex items-center rounded-full bg-[var(--color-forest)] px-4 py-2 text-[12.5px] font-semibold text-[var(--color-cream)] shadow-[0_4px_14px_-4px_rgba(31,61,46,0.45)] transition-[background,box-shadow,transform] duration-200 hover:-translate-y-[1px] hover:bg-[var(--color-forest-deep)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-forest)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-cream)]"
@@ -353,23 +405,23 @@ export async function EditorialHero({
                 action="/explorar"
                 method="get"
                 role="search"
-                aria-label="Buscar Biringas"
+                aria-label={t(locale, "hero.search.aria")}
                 className="group/search flex max-w-[560px] flex-col items-stretch gap-1.5 rounded-[var(--radius-2xl)] border border-[var(--color-line)] bg-[var(--color-cream-soft)] p-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.7),0_18px_48px_-12px_rgba(31,61,46,0.18),0_8px_22px_-10px_rgba(31,61,46,0.08)] transition-[border-color,box-shadow,transform] duration-300 ease-[var(--ease-standard)] hover:-translate-y-[1px] focus-within:border-[var(--color-forest)] focus-within:shadow-[inset_0_1px_0_rgba(255,255,255,0.7),0_22px_56px_-12px_rgba(31,61,46,0.26),0_10px_24px_-10px_rgba(31,61,46,0.14)] md:flex-row md:gap-0 md:rounded-full md:p-1.5"
               >
                 <HeroCitySelect
                   name="city"
-                  cities={HERO_CITIES}
+                  cities={heroCities}
                   defaultValue=""
                 />
                 <label className="block flex-1 px-4 py-2">
                   <span className="block text-[9.5px] uppercase tracking-[0.16em] text-[var(--color-ink-soft)] opacity-80">
-                    Buscar
+                    {t(locale, "hero.field.queryLabel")}
                   </span>
                   <input
                     data-testid="editorial-hero-search-input"
                     type="text"
                     name="q"
-                    placeholder="Nombre, plan, servicio…"
+                    placeholder={t(locale, "hero.field.query")}
                     className="mt-0.5 w-full bg-transparent text-sm italic text-[var(--color-ink)] placeholder:italic placeholder:text-[var(--color-ink-soft)] focus:outline-none"
                   />
                 </label>
@@ -384,7 +436,9 @@ export async function EditorialHero({
                     className="pointer-events-none absolute inset-y-0 -left-1/3 block w-1/3 bg-gradient-to-r from-transparent via-[rgba(200,166,118,0.55)] to-transparent opacity-0 group-hover/submit:opacity-100 motion-safe:group-hover/submit:motion-shimmer-sweep"
                   />
                   <Search className="relative h-3.5 w-3.5" aria-hidden />
-                  <span className="relative">Buscar</span>
+                  <span className="relative">
+                    {t(locale, "hero.cta.search")}
+                  </span>
                 </button>
               </form>
             </div>
@@ -394,19 +448,19 @@ export async function EditorialHero({
             <ul
               className="motion-safe:motion-hero-reveal mt-9 flex flex-wrap items-center gap-x-3.5 gap-y-2 text-[11.5px] text-[var(--color-ink-soft)]"
               style={{ animationDelay: "0.55s" }}
-              aria-label="Garantías"
+              aria-label={t(locale, "hero.guarantees.aria")}
             >
-              <li>Verificación humana</li>
+              <li>{t(locale, "hero.trust.human")}</li>
               <li
                 aria-hidden
                 className="inline-block h-[3px] w-[3px] rotate-45 bg-[var(--color-gold)] opacity-70"
               />
-              <li>Pago discreto</li>
+              <li>{t(locale, "hero.trust.payment")}</li>
               <li
                 aria-hidden
                 className="inline-block h-[3px] w-[3px] rotate-45 bg-[var(--color-gold)] opacity-70"
               />
-              <li>Sin bots ni catfish</li>
+              <li>{t(locale, "hero.trust.noBots")}</li>
             </ul>
           </div>
         </div>
@@ -421,7 +475,7 @@ export async function EditorialHero({
         <div
           data-testid="editorial-hero-mosaic-mobile-track"
           className="flex snap-x snap-mandatory gap-2.5 overflow-x-auto px-6 pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-          aria-label="Selección editorial de Biringas"
+          aria-label={t(locale, "hero.mobileCarousel.aria")}
         >
           {mosaic.map((listing, idx) => (
             <div
@@ -446,7 +500,7 @@ export async function EditorialHero({
       >
         <div className="flex w-[200%] gap-15 whitespace-nowrap motion-safe:motion-hero-marquee group-hover/marquee:[animation-play-state:paused]">
           {[0, 1].map((dup) =>
-            MARQUEE_ITEMS.map((item) => {
+            marqueeItems.map((item) => {
               const inner = (
                 <>
                   {item.label}
@@ -463,7 +517,9 @@ export async function EditorialHero({
                   key={`${dup}-${item.label}`}
                   href={item.href}
                   className={`${cls} transition-colors duration-200 ease-[var(--ease-standard)] hover:text-[var(--color-forest)]`}
-                  aria-label={`Ver ${item.label}`}
+                  aria-label={t(locale, "hero.marquee.viewAria", {
+                    label: item.label,
+                  })}
                 >
                   {inner}
                 </Link>

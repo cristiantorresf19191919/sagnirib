@@ -7,6 +7,8 @@ import { createPortal } from "react-dom";
 import { useCallback, useEffect, useMemo, useState, useTransition } from "react";
 
 import { usePathname } from "next/navigation";
+import { useLocale } from "@/core/i18n/LocaleProvider";
+import { t } from "@/core/i18n/messages";
 import { useAuthSession } from "@/features/auth/lib/use-auth-session";
 import { toast } from "@/shared/ui/toast";
 
@@ -34,15 +36,27 @@ const BOOKING_LIMITS = {
 } as const;
 
 const DURATIONS = [1, 2, 3, 4, 8, 12, 24] as const;
-const MEETING_TYPES = [
-  { value: "outcall", label: "A domicilio", help: "Ella va al lugar acordado" },
-  { value: "incall", label: "En su lugar", help: "Tú vas al lugar de ella" },
-  { value: "videocall", label: "Videollamada", help: "100% remoto" },
+const MEETING_TYPE_KEYS = [
+  {
+    value: "outcall",
+    labelKey: "booking.meeting.outcall",
+    helpKey: "booking.meeting.outcall.help",
+  },
+  {
+    value: "incall",
+    labelKey: "booking.meeting.incall",
+    helpKey: "booking.meeting.incall.help",
+  },
+  {
+    value: "videocall",
+    labelKey: "booking.meeting.videocall",
+    helpKey: "booking.meeting.videocall.help",
+  },
 ] as const;
-const CONTACT_PREFS = [
-  { value: "whatsapp", label: "WhatsApp" },
-  { value: "telegram", label: "Telegram" },
-  { value: "platform", label: "Mensajería de Biringas" },
+const CONTACT_PREF_KEYS = [
+  { value: "whatsapp", labelKey: "booking.contact.whatsapp" },
+  { value: "telegram", labelKey: "booking.contact.telegram" },
+  { value: "platform", labelKey: "booking.contact.platform" },
 ] as const;
 
 interface BookingRequestModalProps {
@@ -70,6 +84,7 @@ export function BookingRequestModal({
   listingName,
   defaultCity,
 }: Readonly<BookingRequestModalProps>) {
+  const locale = useLocale();
   const [open, setOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
 
@@ -98,7 +113,7 @@ export function BookingRequestModal({
         className="btn-pulse inline-flex h-12 w-full items-center justify-center gap-2 rounded-full bg-[var(--color-brand-primary)] px-6 text-sm font-semibold text-[var(--color-surface)] shadow-[var(--shadow-glow-primary)] transition-[background,transform] duration-200 ease-[var(--ease-standard)] hover:-translate-y-[1px] hover:bg-[var(--color-brand-primary-strong)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-background)]"
       >
         <Calendar className="h-4 w-4" aria-hidden />
-        Reservar encuentro
+        {t(locale, "booking.cta")}
       </button>
 
       {mounted &&
@@ -132,6 +147,7 @@ function BookingRequestOverlay({
   defaultCity,
   onClose,
 }: Readonly<OverlayProps>) {
+  const locale = useLocale();
   const { status } = useAuthSession();
 
   // Seed the picker on the first day that actually has at least one open
@@ -187,15 +203,15 @@ function BookingRequestOverlay({
       });
       if (result.ok) {
         toast.success(
-          "Solicitud enviada",
-          `${listingName} recibirá tu propuesta y confirmará pronto.`,
+          t(locale, "booking.toast.title"),
+          t(locale, "booking.toast.body", { name: listingName }),
         );
         setShowSafeCheckin(true);
       } else {
         const friendly =
           result.error?.kind === "booking-disabled"
-            ? "El sistema de reservas estará disponible muy pronto."
-            : result.error?.message ?? "No pudimos enviar la solicitud.";
+            ? t(locale, "booking.error.disabled")
+            : result.error?.message ?? t(locale, "booking.error.generic");
         setError(friendly);
       }
     });
@@ -215,7 +231,7 @@ function BookingRequestOverlay({
     >
       <button
         type="button"
-        aria-label="Cerrar"
+        aria-label={t(locale, "booking.close")}
         onClick={onClose}
         className="absolute inset-0 cursor-default bg-[rgba(20,28,24,0.55)] backdrop-blur-sm"
       />
@@ -233,17 +249,16 @@ function BookingRequestOverlay({
               id="booking-title"
               className="text-base font-semibold tracking-tight text-[var(--color-foreground)] sm:text-lg"
             >
-              Reservar con {listingName}
+              {t(locale, "booking.title", { name: listingName })}
             </h2>
             <p className="text-xs text-[var(--color-text-muted)]">
-              Tu propuesta llega como solicitud; ella confirma fecha y
-              detalles antes de cualquier pago.
+              {t(locale, "booking.subtitle")}
             </p>
           </div>
           <button
             type="button"
             onClick={onClose}
-            aria-label="Cerrar"
+            aria-label={t(locale, "booking.close")}
             className="inline-flex h-9 w-9 items-center justify-center rounded-full text-[var(--color-text-muted)] transition-colors hover:bg-[var(--color-surface-muted)] hover:text-[var(--color-foreground)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)]"
           >
             <X className="h-4 w-4" aria-hidden />
@@ -254,7 +269,9 @@ function BookingRequestOverlay({
           {status === "anonymous" ? (
             <AnonymousNudge onClose={onClose} />
           ) : status === "loading" ? (
-            <p className="text-sm text-[var(--color-text-muted)]">Cargando…</p>
+            <p className="text-sm text-[var(--color-text-muted)]">
+              {t(locale, "booking.loading")}
+            </p>
           ) : showSafeCheckin ? (
             <SafeCheckinSetup
               listingName={listingName}
@@ -276,8 +293,8 @@ function BookingRequestOverlay({
                   mobile. */}
               <Field
                 icon={Calendar}
-                label="Fecha y momento"
-                help="Solo se muestran los días con espacio en su agenda."
+                label={t(locale, "booking.field.date")}
+                help={t(locale, "booking.field.date.help")}
               >
                 <BookingDatePicker
                   listingSlug={listingSlug}
@@ -286,7 +303,7 @@ function BookingRequestOverlay({
                   onChange={handleDateChange}
                 />
               </Field>
-              <Field icon={Clock} label="Duración">
+              <Field icon={Clock} label={t(locale, "booking.field.duration")}>
                 <select
                   value={durationHours}
                   onChange={(e) => setDurationHours(Number(e.target.value))}
@@ -294,16 +311,27 @@ function BookingRequestOverlay({
                 >
                   {DURATIONS.map((h) => (
                     <option key={h} value={h}>
-                      {h === 24 ? "24 horas (overnight)" : `${h} hora${h === 1 ? "" : "s"}`}
+                      {h === 24
+                        ? t(locale, "booking.field.duration.overnight")
+                        : t(
+                            locale,
+                            h === 1
+                              ? "booking.field.duration.singular"
+                              : "booking.field.duration.plural",
+                            { n: h },
+                          )}
                     </option>
                   ))}
                 </select>
               </Field>
 
               {/* Meeting type */}
-              <Field icon={MapPinned} label="Tipo de encuentro">
+              <Field
+                icon={MapPinned}
+                label={t(locale, "booking.field.meeting")}
+              >
                 <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
-                  {MEETING_TYPES.map((opt) => {
+                  {MEETING_TYPE_KEYS.map((opt) => {
                     const checked = meetingType === opt.value;
                     return (
                       <label
@@ -323,10 +351,10 @@ function BookingRequestOverlay({
                           className="sr-only"
                         />
                         <span className="block text-sm font-semibold text-[var(--color-foreground)]">
-                          {opt.label}
+                          {t(locale, opt.labelKey)}
                         </span>
                         <span className="mt-0.5 block text-[11px] text-[var(--color-text-muted)]">
-                          {opt.help}
+                          {t(locale, opt.helpKey)}
                         </span>
                       </label>
                     );
@@ -335,9 +363,12 @@ function BookingRequestOverlay({
               </Field>
 
               {/* Contact preference */}
-              <Field icon={MessageSquare} label="¿Cómo prefieres que te contacte?">
+              <Field
+                icon={MessageSquare}
+                label={t(locale, "booking.field.contact")}
+              >
                 <div className="flex flex-wrap gap-2">
-                  {CONTACT_PREFS.map((opt) => {
+                  {CONTACT_PREF_KEYS.map((opt) => {
                     const checked = contactPreference === opt.value;
                     return (
                       <label
@@ -356,7 +387,7 @@ function BookingRequestOverlay({
                           onChange={() => setContactPreference(opt.value)}
                           className="sr-only"
                         />
-                        {opt.label}
+                        {t(locale, opt.labelKey)}
                       </label>
                     );
                   })}
@@ -364,16 +395,24 @@ function BookingRequestOverlay({
               </Field>
 
               {/* Message */}
-              <Field icon={MessageSquare} label="Mensaje para ella">
+              <Field
+                icon={MessageSquare}
+                label={t(locale, "booking.field.message")}
+              >
                 <textarea
                   required
                   minLength={BOOKING_LIMITS.messageMin}
                   maxLength={BOOKING_LIMITS.messageMax}
                   value={message}
                   onChange={(e) => setMessage(e.target.value)}
-                  placeholder={`Contexto del encuentro${
-                    defaultCity ? ` (ej: ${defaultCity}, hotel céntrico)` : ""
-                  }. Mínimo ${BOOKING_LIMITS.messageMin} caracteres.`}
+                  placeholder={t(locale, "booking.message.placeholder", {
+                    cityFragment: defaultCity
+                      ? t(locale, "booking.message.cityFragment", {
+                          city: defaultCity,
+                        })
+                      : "",
+                    min: BOOKING_LIMITS.messageMin,
+                  })}
                   rows={4}
                   className="w-full rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-background)] px-3.5 py-2.5 text-sm leading-relaxed text-[var(--color-foreground)] placeholder:text-[var(--color-text-subtle)] focus:border-[var(--color-brand-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-brand-primary)]/30"
                 />
@@ -393,14 +432,16 @@ function BookingRequestOverlay({
 
               <div className="flex items-center justify-between gap-3">
                 <p className="text-[11px] text-[var(--color-text-subtle)]">
-                  Tu identidad y contacto se comparten solo con {listingName}.
+                  {t(locale, "booking.identity.note", { name: listingName })}
                 </p>
                 <button
                   type="submit"
                   disabled={isPending}
                   className="btn-pulse inline-flex h-11 items-center gap-2 rounded-full bg-[var(--color-brand-primary)] px-5 text-sm font-semibold text-[var(--color-surface)] shadow-[var(--shadow-glow-primary)] transition-[background,transform] duration-200 ease-[var(--ease-standard)] hover:-translate-y-[1px] hover:bg-[var(--color-brand-primary-strong)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-background)] disabled:cursor-not-allowed disabled:opacity-70"
                 >
-                  {isPending ? "Enviando…" : "Enviar solicitud"}
+                  {isPending
+                    ? t(locale, "booking.submitting")
+                    : t(locale, "booking.submit")}
                 </button>
               </div>
             </form>
@@ -437,6 +478,7 @@ function Field({ icon: Icon, label, children, help }: Readonly<FieldProps>) {
 }
 
 function AnonymousNudge({ onClose }: Readonly<{ onClose: () => void }>) {
+  const locale = useLocale();
   const pathname = usePathname();
   const ingresarHref = pathname
     ? `/ingresar?next=${encodeURIComponent(pathname)}`
@@ -444,9 +486,7 @@ function AnonymousNudge({ onClose }: Readonly<{ onClose: () => void }>) {
   return (
     <div className="flex flex-col gap-4 py-2">
       <p className="text-sm text-[var(--color-text-muted)]">
-        Para enviar una solicitud de reserva, ingresa con tu cuenta — tu
-        identidad nunca se publica y solo se comparte con ella tras la
-        confirmación.
+        {t(locale, "booking.anonymous.body")}
       </p>
       <div className="flex items-center gap-3">
         <Link
@@ -454,14 +494,14 @@ function AnonymousNudge({ onClose }: Readonly<{ onClose: () => void }>) {
           onClick={onClose}
           className="inline-flex h-11 items-center gap-2 rounded-full bg-[var(--color-brand-primary)] px-5 text-sm font-semibold text-[var(--color-surface)] shadow-[var(--shadow-glow-primary)] transition-[background,transform] duration-200 ease-[var(--ease-standard)] hover:-translate-y-[1px] hover:bg-[var(--color-brand-primary-strong)]"
         >
-          Ingresar para reservar
+          {t(locale, "booking.anonymous.cta")}
         </Link>
         <button
           type="button"
           onClick={onClose}
           className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--color-text-muted)] transition-colors hover:text-[var(--color-foreground)]"
         >
-          Más tarde
+          {t(locale, "booking.anonymous.later")}
         </button>
       </div>
     </div>
