@@ -5,6 +5,8 @@ import { ArrowLeft, ArrowRight, Loader2, PartyPopper } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 
+import { useLocale } from "@/core/i18n/LocaleProvider";
+import { t } from "@/core/i18n/messages";
 import { createListingDraft } from "../actions/create-draft";
 import type { EnrollmentCatalogs } from "../lib/catalogs";
 import {
@@ -35,49 +37,60 @@ import { StepPublish } from "./StepPublish";
 import { Stepper, type StepDescriptor } from "./Stepper";
 import { UsefulTip } from "./UsefulTip";
 
-const STEPS: ReadonlyArray<StepDescriptor> = [
+type StepKey =
+  | "details"
+  | "description"
+  | "attributes"
+  | "publish";
+
+const STEP_DEFS: ReadonlyArray<{
+  id: StepKey;
+  number: number;
+  titleKey: string;
+  descriptionKey: string;
+}> = [
   {
     id: "details",
     number: 1,
-    title: "Detalles",
-    description: "Datos públicos y privados de tu perfil.",
+    titleKey: "enroll.step.details.title",
+    descriptionKey: "enroll.step.details.body",
   },
   {
     id: "description",
     number: 2,
-    title: "Descripción",
-    description: "Lo que las personas verán y leerán.",
+    titleKey: "enroll.step.description.title",
+    descriptionKey: "enroll.step.description.body",
   },
   {
     id: "attributes",
     number: 3,
-    title: "Características",
-    description: "Etnia, cabello, estatura, cuerpo, país e idiomas.",
+    titleKey: "enroll.step.features.title",
+    descriptionKey: "enroll.step.features.body",
   },
   {
     id: "publish",
     number: 4,
-    title: "Publicar",
-    description: "Plan, refuerzos y publicación.",
+    titleKey: "enroll.step.publish.title",
+    descriptionKey: "enroll.step.publish.body",
   },
 ];
 
-const TIPS_BY_STEP: Record<StepId, { title: string; body: string }> = {
+const TIPS_BY_STEP: Record<StepId, { titleKey: string; bodyKey: string }> = {
   details: {
-    title: "Tip — Detalles",
-    body: "Las modelos que usan su nombre artístico real, edad correcta y una sola ciudad reciben un 38% más de clics. La URL preferida también funciona como SEO: usa nombre + ciudad.",
+    titleKey: "enroll.tip.details",
+    bodyKey: "enroll.tip.details.body",
   },
   description: {
-    title: "Tip — Descripción",
-    body: "Las descripciones honestas en primera persona convierten 2.5× más. Evita números de teléfono o enlaces externos en el texto — los marcamos como spam y bloquean tu publicación.",
+    titleKey: "enroll.tip.description",
+    bodyKey: "enroll.tip.description.body",
   },
   attributes: {
-    title: "Tip — Características",
-    body: "Estas etiquetas se muestran en el bloque \"Características\" de tu perfil y son los filtros más usados del catálogo. Sé honesta — coincidencia entre lo que cuentas y lo que ven en las fotos sube tu conversión.",
+    titleKey: "enroll.tip.features",
+    bodyKey: "enroll.tip.features.body",
   },
   publish: {
-    title: "Tip — Plan",
-    body: "El plan Destacada es el que más eligen las modelos verificadas: incluye boost de catálogo, badge y stories diarias. Si tienes alta competencia en tu ciudad, suma un Boost de ciudad de 24h.",
+    titleKey: "enroll.tip.publish",
+    bodyKey: "enroll.tip.publish.body",
   },
 };
 
@@ -93,6 +106,13 @@ interface EnrollmentWizardProps {
 }
 
 export function EnrollmentWizard({ catalogs }: EnrollmentWizardProps) {
+  const locale = useLocale();
+  const STEPS: ReadonlyArray<StepDescriptor> = STEP_DEFS.map((s) => ({
+    id: s.id,
+    number: s.number,
+    title: t(locale, s.titleKey),
+    description: t(locale, s.descriptionKey),
+  }));
   const [draft, setDraft] = useState<EnrollmentDraft>(INITIAL_DRAFT);
   const [current, setCurrent] = useState<StepId>("details");
   const [completed, setCompleted] = useState<ReadonlyArray<StepId>>([]);
@@ -267,7 +287,9 @@ export function EnrollmentWizard({ catalogs }: EnrollmentWizardProps) {
           completed={completed}
           onJump={jump}
         />
-        <UsefulTip title={tip.title}>{tip.body}</UsefulTip>
+        <UsefulTip title={t(locale, tip.titleKey)}>
+          {t(locale, tip.bodyKey)}
+        </UsefulTip>
       </div>
 
       {errorBanner && (

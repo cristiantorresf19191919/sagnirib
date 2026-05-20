@@ -17,6 +17,9 @@ import {
   Video,
 } from "lucide-react";
 
+import type { SupportedLocale } from "@/core/branding/brand-config";
+import { readLocale } from "@/core/i18n/locale";
+import { t } from "@/core/i18n/messages";
 import {
   APPEARANCE_CATALOG,
   ATTENTION_CATALOG,
@@ -43,14 +46,14 @@ interface FiltersPanelProps {
   view?: CatalogView;
 }
 
-const APPEARANCE_LABELS: Record<keyof typeof APPEARANCE_CATALOG, string> = {
-  country: "País",
-  ethnicity: "Etnia",
-  hair: "Pelo",
-  height: "Estatura",
-  body: "Cuerpo",
-  breast: "Pecho",
-  pubis: "Pubis",
+const APPEARANCE_LABEL_KEYS: Record<keyof typeof APPEARANCE_CATALOG, string> = {
+  country: "filters.appearance.country",
+  ethnicity: "filters.appearance.ethnicity",
+  hair: "filters.appearance.hair",
+  height: "filters.appearance.height",
+  body: "filters.appearance.body",
+  breast: "filters.appearance.breast",
+  pubis: "filters.appearance.pubis",
 };
 
 interface SectionCounts {
@@ -169,7 +172,8 @@ function sectionResetHref(
   return qs.length > 0 ? `/?${qs}` : "/";
 }
 
-export function FiltersPanel({ filters, view }: FiltersPanelProps) {
+export async function FiltersPanel({ filters, view }: FiltersPanelProps) {
+  const locale = await readLocale();
   const counts = buildSectionCounts(filters);
   const active = countActiveFilters(filters);
 
@@ -179,14 +183,14 @@ export function FiltersPanel({ filters, view }: FiltersPanelProps) {
   return (
     <div data-testid="filters-panel" className="inline-flex">
       <FilterModal
-        title="Filtros avanzados"
-        subtitle="Refina por precio, edad, servicios y apariencia."
-        trigger={<TriggerPill active={active} />}
+        title={t(locale, "filters.advanced.title")}
+        subtitle={t(locale, "filters.advanced.subtitle")}
+        trigger={<TriggerPill active={active} locale={locale} />}
       >
           {active > 0 && (
             <div className="mb-5 flex flex-col gap-2 rounded-[var(--radius-lg)] bg-[var(--color-surface)] p-3 ring-1 ring-[var(--color-border)] sm:p-4">
               <span className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[var(--color-text-subtle)]">
-                Filtros activos · toca el chip para quitarlo
+                {t(locale, "filters.activeChips.header")}
               </span>
               <ActiveFilterChips filters={filters} />
             </div>
@@ -223,14 +227,15 @@ export function FiltersPanel({ filters, view }: FiltersPanelProps) {
 
             <div className="flex flex-col gap-5">
               <SectionCard
-                title="Precio y edad"
-                eyebrow="Refina por presupuesto y franja de edad."
+                title={t(locale, "filters.section.priceAge")}
+                eyebrow={t(locale, "filters.section.priceAge.help")}
                 icon={<Coins className="h-4 w-4" aria-hidden />}
                 count={counts.priceAge}
                 resetHref={sectionResetHref(filters, "priceAge", view)}
+                locale={locale}
               >
                 <RangeSlider
-                  label="Precio (COP / hora)"
+                  label={t(locale, "filters.field.price")}
                   minName="priceMin"
                   maxName="priceMax"
                   min={0}
@@ -240,9 +245,16 @@ export function FiltersPanel({ filters, view }: FiltersPanelProps) {
                   initialMax={filters.priceMax}
                   format="price-cop"
                   presets={[
-                    { label: "Baratas", max: 150_000 },
-                    { label: "Estándar", min: 150_000, max: 250_000 },
-                    { label: "De lujo", min: 250_000 },
+                    { label: t(locale, "filters.preset.cheap"), max: 150_000 },
+                    {
+                      label: t(locale, "filters.preset.standard"),
+                      min: 150_000,
+                      max: 250_000,
+                    },
+                    {
+                      label: t(locale, "filters.preset.luxury"),
+                      min: 250_000,
+                    },
                   ]}
                 />
                 <ChipRow>
@@ -250,12 +262,12 @@ export function FiltersPanel({ filters, view }: FiltersPanelProps) {
                     name="card"
                     value="1"
                     checked={filters.paymentByCard ?? false}
-                    label="Pago con tarjeta"
+                    label={t(locale, "filters.flag.card")}
                   />
                 </ChipRow>
 
                 <RangeSlider
-                  label="Edad"
+                  label={t(locale, "filters.field.age")}
                   minName="ageMin"
                   maxName="ageMax"
                   min={18}
@@ -265,21 +277,26 @@ export function FiltersPanel({ filters, view }: FiltersPanelProps) {
                   initialMax={filters.ageMax}
                   format="age-years"
                   presets={[
-                    { label: "Jovencitas", max: 25 },
-                    { label: "20s", min: 20, max: 29 },
-                    { label: "Maduras", min: 30 },
+                    { label: t(locale, "filters.preset.young"), max: 25 },
+                    {
+                      label: t(locale, "filters.preset.20s"),
+                      min: 20,
+                      max: 29,
+                    },
+                    { label: t(locale, "filters.preset.mature"), min: 30 },
                   ]}
                 />
               </SectionCard>
 
               <SectionCard
-                title="Atención y contacto"
-                eyebrow="A quién atiende y cómo prefiere que la contacten."
+                title={t(locale, "filters.section.attention")}
+                eyebrow={t(locale, "filters.section.attention.help")}
                 icon={<Heart className="h-4 w-4" aria-hidden />}
                 count={counts.attentionContact}
                 resetHref={sectionResetHref(filters, "attentionContact", view)}
+                locale={locale}
               >
-                <Field label="Atención a">
+                <Field label={t(locale, "filters.field.attentionTo")}>
                   <ChipRow>
                     {ATTENTION_CATALOG.map(({ id, label }) => (
                       <CheckChip
@@ -293,7 +310,7 @@ export function FiltersPanel({ filters, view }: FiltersPanelProps) {
                   </ChipRow>
                 </Field>
 
-                <Field label="Canal de contacto">
+                <Field label={t(locale, "filters.field.contactChannel")}>
                   <ChipRow>
                     {CONTACT_CATALOG.map(({ id, label }) => (
                       <CheckChip
@@ -311,11 +328,12 @@ export function FiltersPanel({ filters, view }: FiltersPanelProps) {
               </SectionCard>
 
               <SectionCard
-                title="Lugar de encuentro"
-                eyebrow="Dónde se da la cita."
+                title={t(locale, "filters.section.place")}
+                eyebrow={t(locale, "filters.section.place.help")}
                 icon={<MapPinned className="h-4 w-4" aria-hidden />}
                 count={counts.meetingContext}
                 resetHref={sectionResetHref(filters, "meetingContext", view)}
+                locale={locale}
               >
                 <ChipRow>
                   {MEETING_CONTEXT_CATALOG.map((place) => (
@@ -335,13 +353,14 @@ export function FiltersPanel({ filters, view }: FiltersPanelProps) {
 
             <div className="flex flex-col gap-5">
               <SectionCard
-                title="Servicios"
-                eyebrow="Lo que ofrece — generales y especiales."
+                title={t(locale, "filters.section.services")}
+                eyebrow={t(locale, "filters.section.services.help")}
                 icon={<Sparkles className="h-4 w-4" aria-hidden />}
                 count={counts.services}
                 resetHref={sectionResetHref(filters, "services", view)}
+                locale={locale}
               >
-                <Field label="Servicios generales">
+                <Field label={t(locale, "filters.field.generalServices")}>
                   <ChipRow>
                     {SERVICE_CATALOG.map((service) => (
                       <CheckChip
@@ -355,7 +374,7 @@ export function FiltersPanel({ filters, view }: FiltersPanelProps) {
                   </ChipRow>
                 </Field>
 
-                <Field label="Servicios especiales">
+                <Field label={t(locale, "filters.field.specialServices")}>
                   <ChipRow>
                     {SPECIAL_SERVICE_CATALOG.map((service) => (
                       <CheckChip
@@ -373,63 +392,65 @@ export function FiltersPanel({ filters, view }: FiltersPanelProps) {
               </SectionCard>
 
               <SectionCard
-                title="Contenido"
-                eyebrow="Verificación, vídeo, audio y reseñas reales."
+                title={t(locale, "filters.section.content")}
+                eyebrow={t(locale, "filters.section.content.help")}
                 icon={<Film className="h-4 w-4" aria-hidden />}
                 count={counts.content}
                 resetHref={sectionResetHref(filters, "content", view)}
+                locale={locale}
               >
                 <ChipRow>
                   <FlagChip
                     name="verified"
                     checked={filters.verifiedOnly ?? false}
-                    label="Fotos verificadas"
+                    label={t(locale, "filters.flag.verified")}
                     icon={<ShieldCheck className="h-3 w-3" aria-hidden />}
                   />
                   <FlagChip
                     name="face"
                     checked={filters.faceVisible ?? false}
-                    label="Cara visible"
+                    label={t(locale, "filters.flag.face")}
                     icon={<Eye className="h-3 w-3" aria-hidden />}
                   />
                   <FlagChip
                     name="video"
                     checked={filters.withVideo ?? false}
-                    label="Con vídeos"
+                    label={t(locale, "filters.flag.video")}
                     icon={<Video className="h-3 w-3" aria-hidden />}
                   />
                   <FlagChip
                     name="audio"
                     checked={filters.withAudio ?? false}
-                    label="Con audio"
+                    label={t(locale, "filters.flag.audio")}
                     icon={<Mic className="h-3 w-3" aria-hidden />}
                   />
                   <FlagChip
                     name="reviews"
                     checked={filters.withReviews ?? false}
-                    label="Con experiencias"
+                    label={t(locale, "filters.flag.reviews")}
                     icon={<MessageSquare className="h-3 w-3" aria-hidden />}
                   />
                   <FlagChip
                     name="now"
                     checked={filters.availableNow ?? false}
-                    label="Disponible ahora"
+                    label={t(locale, "filters.flag.now")}
                     icon={<Clock className="h-3 w-3" aria-hidden />}
                   />
                 </ChipRow>
               </SectionCard>
 
               <SectionCard
-                title="Apariencia"
-                eyebrow="Atributos físicos: país, etnia, cuerpo."
+                title={t(locale, "filters.section.appearance")}
+                eyebrow={t(locale, "filters.section.appearance.help")}
                 icon={<UserSquare className="h-4 w-4" aria-hidden />}
                 count={counts.appearance}
                 resetHref={sectionResetHref(filters, "appearance", view)}
+                locale={locale}
               >
                 {(Object.keys(APPEARANCE_CATALOG) as Array<
                   keyof typeof APPEARANCE_CATALOG
                 >).map((key) => (
-                  <Field key={key} label={APPEARANCE_LABELS[key]}>
+                  <Field key={key} label={t(locale, APPEARANCE_LABEL_KEYS[key])}>
                     <ChipRow>
                       {APPEARANCE_CATALOG[key].map((value: string) => (
                         <CheckChip
@@ -473,8 +494,14 @@ export function FiltersPanel({ filters, view }: FiltersPanelProps) {
               <div className="flex items-center gap-3">
                 <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--color-text-muted)]">
                   {active > 0
-                    ? `${active} ${active === 1 ? "filtro activo" : "filtros activos"}`
-                    : "Sin filtros aplicados"}
+                    ? t(
+                        locale,
+                        active === 1
+                          ? "filters.bar.activeOne"
+                          : "filters.bar.activeMany",
+                        { n: active },
+                      )
+                    : t(locale, "filters.bar.none")}
                 </span>
                 {active > 0 && (
                   <Link
@@ -482,7 +509,7 @@ export function FiltersPanel({ filters, view }: FiltersPanelProps) {
                     className="inline-flex items-center gap-1 rounded-full px-2 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-[var(--color-text-muted)] transition-colors hover:bg-[var(--color-background)] hover:text-[var(--color-brand-highlight)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)]"
                   >
                     <Eraser className="h-3 w-3" aria-hidden />
-                    Limpiar todo
+                    {t(locale, "filters.bar.clearAll")}
                   </Link>
                 )}
               </div>
@@ -492,7 +519,7 @@ export function FiltersPanel({ filters, view }: FiltersPanelProps) {
               >
                 <span className="relative z-10 inline-flex items-center gap-2">
                   <SlidersHorizontal className="h-4 w-4" aria-hidden />
-                  Aplicar filtros
+                  {t(locale, "filters.bar.apply")}
                 </span>
               </button>
             </div>
@@ -504,9 +531,10 @@ export function FiltersPanel({ filters, view }: FiltersPanelProps) {
 
 interface TriggerPillProps {
   active: number;
+  locale: SupportedLocale;
 }
 
-function TriggerPill({ active }: TriggerPillProps) {
+function TriggerPill({ active, locale }: TriggerPillProps) {
   // Compact toolbar trigger — sits alongside SortMenu instead of as the
   // page-wide banner the previous version was. Active filter count
   // anchors as a small forest dot so the chrome stays tight.
@@ -519,7 +547,7 @@ function TriggerPill({ active }: TriggerPillProps) {
       }`}
     >
       <SlidersHorizontal className="h-4 w-4" aria-hidden />
-      <span>Filtros</span>
+      <span>{t(locale, "filters.trigger.label")}</span>
       {active > 0 && (
         <span
           aria-hidden
@@ -541,6 +569,7 @@ interface SectionCardProps {
   /** When provided AND count > 0, renders a "Limpiar" link top-right. */
   resetHref?: string;
   children: React.ReactNode;
+  locale: SupportedLocale;
 }
 
 function SectionCard({
@@ -550,6 +579,7 @@ function SectionCard({
   count = 0,
   resetHref,
   children,
+  locale,
 }: SectionCardProps) {
   const isActive = count > 0;
   const testId = `filters-section-${title
@@ -610,7 +640,7 @@ function SectionCard({
           className="absolute right-4 top-4 inline-flex items-center gap-1 rounded-full px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--color-text-muted)] transition-colors hover:bg-[var(--color-surface-muted)] hover:text-[var(--color-brand-highlight)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)] sm:right-5 sm:top-5"
           data-testid={`${testId}-reset`}
         >
-          Limpiar
+          {t(locale, "filters.reset")}
         </Link>
       ) : null}
       {children}

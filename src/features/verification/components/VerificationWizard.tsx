@@ -13,6 +13,8 @@ import {
 import Link from "next/link";
 import { useRef, useState } from "react";
 
+import { useLocale } from "@/core/i18n/LocaleProvider";
+import { t } from "@/core/i18n/messages";
 import { submitVerification } from "../actions/verify";
 import {
   KycUploadError,
@@ -39,35 +41,31 @@ import type {
 
 const STEP_ORDER: ReadonlyArray<{
   kind: KycUploadKind;
-  title: string;
-  description: string;
+  titleKey: string;
+  descriptionKey: string;
+  helperKey: string;
   icon: typeof IdCard;
-  helper: string;
 }> = [
   {
     kind: "document_front",
-    title: "Documento — anverso",
-    description: "Sube una foto clara del frente de tu cédula o pasaporte.",
+    titleKey: "verify.step.front.title",
+    descriptionKey: "verify.step.front.body",
+    helperKey: "verify.step.front.helper",
     icon: IdCard,
-    helper:
-      "Asegúrate que todos los datos sean legibles. JPG, PNG, WebP o HEIC. Comprimimos en el navegador para protegerte; ningún metadato sale de tu dispositivo.",
   },
   {
     kind: "document_back",
-    title: "Documento — reverso",
-    description: "Ahora el dorso del mismo documento.",
+    titleKey: "verify.step.back.title",
+    descriptionKey: "verify.step.back.body",
+    helperKey: "verify.step.back.helper",
     icon: IdCard,
-    helper:
-      "El número de identificación y los hologramas deben verse. Si tu documento es de una sola cara, repite la foto del anverso aquí.",
   },
   {
     kind: "selfie",
-    title: "Selfie con documento",
-    description:
-      "Una foto de ti sosteniendo el documento al lado de tu rostro.",
+    titleKey: "verify.step.selfie.title",
+    descriptionKey: "verify.step.selfie.body",
+    helperKey: "verify.step.selfie.helper",
     icon: ScanFace,
-    helper:
-      "Tu cara y el documento deben aparecer en la misma toma sin cubrir datos. Esta es la capa más importante: confirma que eres la persona del documento.",
   },
 ];
 
@@ -117,6 +115,7 @@ export function VerificationWizard({
 }
 
 function Form({ previousRejection }: { previousRejection?: string }) {
+  const locale = useLocale();
   const [states, setStates] = useState<Record<KycUploadKind, StepState>>({
     document_front: { kind: "idle" },
     document_back: { kind: "idle" },
@@ -136,7 +135,7 @@ function Form({ previousRejection }: { previousRejection?: string }) {
       setStep(kind, {
         kind: "error",
         previewUrl: URL.createObjectURL(file),
-        message: "Formato no permitido. Usa JPG, PNG, WebP o HEIC.",
+        message: t(locale, "verify.invalidFormat"),
       });
       return;
     }
@@ -144,7 +143,7 @@ function Form({ previousRejection }: { previousRejection?: string }) {
       setStep(kind, {
         kind: "error",
         previewUrl: URL.createObjectURL(file),
-        message: "El archivo pesa más de 40 MB sin comprimir.",
+        message: t(locale, "verify.tooLarge"),
       });
       return;
     }
@@ -178,9 +177,7 @@ function Form({ previousRejection }: { previousRejection?: string }) {
       controllers.current.delete(kind);
       if (err instanceof KycUploadError && err.kind === "aborted") return;
       const message =
-        err instanceof Error
-          ? err.message
-          : "No pudimos subir este archivo.";
+        err instanceof Error ? err.message : t(locale, "verify.uploadFailed");
       setStep(kind, { kind: "error", previewUrl, message });
     }
   }
@@ -197,7 +194,7 @@ function Form({ previousRejection }: { previousRejection?: string }) {
     const back = states.document_back;
     const selfie = states.selfie;
     if (front.kind !== "ready" || back.kind !== "ready" || selfie.kind !== "ready") {
-      setBanner("Completa los tres archivos antes de enviar.");
+      setBanner(t(locale, "verify.completeAll"));
       return;
     }
 
@@ -212,7 +209,7 @@ function Form({ previousRejection }: { previousRejection?: string }) {
 
     if (!res.ok) {
       setBanner(
-        humanizeSubmitError(res.error?.kind, res.error?.message ?? null),
+        humanizeSubmitError(res.error?.kind, res.error?.message ?? null, locale),
       );
       return;
     }
@@ -235,7 +232,9 @@ function Form({ previousRejection }: { previousRejection?: string }) {
           role="alert"
           className="rounded-[var(--radius-md)] border border-[var(--color-brand-highlight)]/40 bg-[var(--color-brand-highlight)]/8 p-4 text-sm text-[var(--color-foreground)]"
         >
-          <span className="font-semibold">Verificación anterior rechazada:</span>{" "}
+          <span className="font-semibold">
+            {t(locale, "verify.previousRejection")}
+          </span>{" "}
           {previousRejection}
         </div>
       )}
@@ -263,9 +262,8 @@ function Form({ previousRejection }: { previousRejection?: string }) {
 
       <div className="flex flex-col gap-3 rounded-[var(--radius-xl)] border border-[var(--color-border)] bg-[var(--color-background-elevated)] p-4 sm:flex-row sm:items-center sm:justify-between">
         <p className="text-[12px] text-[var(--color-text-muted)]">
-          <Shield className="mr-1 inline h-3 w-3" aria-hidden /> Tus archivos
-          quedan privados. Solo el equipo de Biringas puede verlos, por tiempo
-          limitado, durante la revisión.
+          <Shield className="mr-1 inline h-3 w-3" aria-hidden />{" "}
+          {t(locale, "verify.privacy")}
         </p>
         <button
           type="button"
@@ -274,7 +272,9 @@ function Form({ previousRejection }: { previousRejection?: string }) {
           className="inline-flex h-12 items-center justify-center gap-2 rounded-full bg-[var(--color-brand-primary)] px-6 text-sm font-semibold text-[var(--color-surface)] shadow-[var(--shadow-glow-primary)] transition-[background,box-shadow] duration-150 hover:bg-[var(--color-brand-primary-strong)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-background)] disabled:cursor-not-allowed disabled:opacity-60"
         >
           {submitting && <Loader2 className="h-4 w-4 animate-spin" aria-hidden />}
-          {submitting ? "Enviando…" : "Enviar verificación"}
+          {submitting
+            ? t(locale, "verify.submitting")
+            : t(locale, "verify.submit")}
         </button>
       </div>
     </div>
@@ -289,6 +289,7 @@ interface StepCardProps {
 }
 
 function StepCard({ step, state, onPick, onRetry }: StepCardProps) {
+  const locale = useLocale();
   const inputRef = useRef<HTMLInputElement | null>(null);
   const isBusy = state.kind === "compressing" || state.kind === "uploading";
   const isReady = state.kind === "ready";
@@ -313,10 +314,10 @@ function StepCard({ step, state, onPick, onRetry }: StepCardProps) {
         </span>
         <div className="flex flex-col gap-0.5">
           <span className="text-sm font-semibold text-[var(--color-foreground)]">
-            {step.title}
+            {t(locale, step.titleKey)}
           </span>
           <span className="text-[12px] leading-relaxed text-[var(--color-text-muted)]">
-            {step.description}
+            {t(locale, step.descriptionKey)}
           </span>
         </div>
       </div>
@@ -339,7 +340,7 @@ function StepCard({ step, state, onPick, onRetry }: StepCardProps) {
         >
           <Upload className="h-5 w-5" aria-hidden />
           <span className="text-[11px] font-semibold uppercase tracking-[0.18em]">
-            Subir archivo
+            {t(locale, "verify.upload")}
           </span>
         </button>
       ) : (
@@ -347,7 +348,7 @@ function StepCard({ step, state, onPick, onRetry }: StepCardProps) {
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={state.previewUrl}
-            alt={step.title}
+            alt={t(locale, step.titleKey)}
             className={`absolute inset-0 h-full w-full object-cover transition-opacity ${
               isBusy || isError ? "opacity-50" : "opacity-100"
             }`}
@@ -359,14 +360,16 @@ function StepCard({ step, state, onPick, onRetry }: StepCardProps) {
             >
               <Loader2 className="h-5 w-5 animate-spin" aria-hidden />
               <span className="text-[10px] font-semibold uppercase tracking-[0.18em]">
-                {state.kind === "compressing" ? "Comprimiendo" : "Subiendo"}
+                {state.kind === "compressing"
+                  ? t(locale, "verify.compressing")
+                  : t(locale, "verify.uploadingShort")}
               </span>
             </span>
           )}
           {isReady && (
             <span className="absolute right-2 top-2 inline-flex items-center gap-1 rounded-full bg-emerald-600 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-white">
               <CheckCircle2 className="h-3 w-3" aria-hidden />
-              Listo
+              {t(locale, "verify.ready")}
             </span>
           )}
           {isError && (
@@ -379,7 +382,7 @@ function StepCard({ step, state, onPick, onRetry }: StepCardProps) {
               <AlertCircle className="h-5 w-5" aria-hidden />
               <span className="inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-[0.18em]">
                 <RotateCw className="h-3 w-3" aria-hidden />
-                Reintentar
+                {t(locale, "verify.retry")}
               </span>
             </button>
           )}
@@ -387,52 +390,62 @@ function StepCard({ step, state, onPick, onRetry }: StepCardProps) {
       )}
 
       <p className="text-[11px] leading-relaxed text-[var(--color-text-subtle)]">
-        {step.helper}
+        {t(locale, step.helperKey)}
       </p>
     </div>
   );
 }
 
-function humanizeSubmitError(kind: string | undefined, message: string | null): string {
+function humanizeSubmitError(
+  kind: string | undefined,
+  message: string | null,
+  locale: import("@/core/branding/brand-config").SupportedLocale,
+): string {
   if (kind === "no-session") {
-    return "Tu sesión expiró. Vuelve a ingresar.";
+    return t(locale, "verify.error.session");
   }
   if (kind === "permission-denied") {
-    return "Uno o más archivos no son tuyos. Vuelve a subirlos.";
+    return t(locale, "verify.error.permission");
   }
   if (message?.includes("already pending review")) {
-    return "Ya tienes una verificación en revisión. Espera la respuesta antes de reenviar.";
+    return t(locale, "verify.error.alreadyPending");
   }
-  return message ?? "No pudimos enviar la verificación. Intenta de nuevo.";
+  return message ?? t(locale, "verify.error.generic");
 }
 
+const DATE_LOCALES = {
+  es: "es-CO",
+  en: "en-US",
+  pt: "pt-BR",
+} as const;
+
 function SubmittedScreen() {
+  const locale = useLocale();
   return (
     <div className="mx-auto flex max-w-xl flex-col items-center gap-5 rounded-[var(--radius-2xl)] border border-[var(--color-border)] bg-[var(--color-surface)] p-10 text-center shadow-[var(--shadow-md)]">
       <span className="inline-flex h-14 w-14 items-center justify-center rounded-full bg-[var(--color-brand-primary)]/12 text-[var(--color-brand-primary)]">
         <Shield className="h-6 w-6" aria-hidden />
       </span>
       <h2 className="text-2xl font-semibold leading-tight tracking-tight text-[var(--color-foreground)]">
-        Verificación enviada
+        {t(locale, "verify.submitted.title")}
       </h2>
       <p className="text-sm leading-relaxed text-[var(--color-text-muted)]">
-        Tus archivos están en revisión. Confirmamos identidad y consentimiento
-        usualmente en menos de 24 horas. Cuando esté lista te avisamos por
-        WhatsApp y tu perfil queda activo en el catálogo.
+        {t(locale, "verify.submitted.body")}
       </p>
       <Link
         href="/explorar"
         className="inline-flex h-12 items-center justify-center rounded-full bg-[var(--color-brand-primary)] px-6 text-sm font-semibold text-[var(--color-surface)] shadow-[var(--shadow-glow-primary)] transition-colors hover:bg-[var(--color-brand-primary-strong)]"
       >
-        Volver al catálogo
+        {t(locale, "verify.backToCatalog")}
       </Link>
     </div>
   );
 }
 
 function PendingScreen({ record }: { record: VerificationRecord | null }) {
+  const locale = useLocale();
   const submittedAt = record?.submittedAt
-    ? new Date(record.submittedAt).toLocaleString("es-CO", {
+    ? new Date(record.submittedAt).toLocaleString(DATE_LOCALES[locale], {
         dateStyle: "medium",
         timeStyle: "short",
       })
@@ -443,19 +456,19 @@ function PendingScreen({ record }: { record: VerificationRecord | null }) {
         <Loader2 className="h-6 w-6 animate-spin" aria-hidden />
       </span>
       <h2 className="text-2xl font-semibold leading-tight tracking-tight text-[var(--color-foreground)]">
-        Verificación en revisión
+        {t(locale, "verify.pending.title")}
       </h2>
       <p className="text-sm leading-relaxed text-[var(--color-text-muted)]">
-        Recibimos tu documentación el {submittedAt}. Te avisamos en cuanto
-        esté lista.
+        {t(locale, "verify.pending.body", { date: submittedAt })}
       </p>
     </div>
   );
 }
 
 function ApprovedScreen({ record }: { record: VerificationRecord | null }) {
+  const locale = useLocale();
   const approvedAt = record?.approvedAt
-    ? new Date(record.approvedAt).toLocaleString("es-CO", {
+    ? new Date(record.approvedAt).toLocaleString(DATE_LOCALES[locale], {
         dateStyle: "medium",
         timeStyle: "short",
       })
@@ -466,17 +479,16 @@ function ApprovedScreen({ record }: { record: VerificationRecord | null }) {
         <CheckCircle2 className="h-6 w-6" aria-hidden />
       </span>
       <h2 className="text-2xl font-semibold leading-tight tracking-tight text-emerald-950">
-        Identidad verificada
+        {t(locale, "verify.approved.title")}
       </h2>
       <p className="text-sm leading-relaxed text-emerald-900">
-        Tu verificación quedó aprobada el {approvedAt}. Las modelos con
-        identidad verificada aparecen con la insignia dorada en el catálogo.
+        {t(locale, "verify.approved.body", { date: approvedAt })}
       </p>
       <Link
         href="/explorar"
         className="inline-flex h-12 items-center justify-center rounded-full bg-[var(--color-brand-primary)] px-6 text-sm font-semibold text-[var(--color-surface)] shadow-[var(--shadow-glow-primary)] transition-colors hover:bg-[var(--color-brand-primary-strong)]"
       >
-        Volver al catálogo
+        {t(locale, "verify.backToCatalog")}
       </Link>
     </div>
   );
