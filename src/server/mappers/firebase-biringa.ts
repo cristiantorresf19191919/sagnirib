@@ -96,13 +96,31 @@ function asAttributes(value: unknown): BiringaAttributes {
   };
 }
 
-function asReputation(value: unknown): BiringaReputation {
+const MS_PER_DAY = 86_400_000;
+
+function daysSince(iso: string | undefined): number {
+  if (!iso) return 0;
+  const then = new Date(iso).getTime();
+  if (!Number.isFinite(then)) return 0;
+  return Math.max(0, Math.floor((Date.now() - then) / MS_PER_DAY));
+}
+
+/**
+ * `daysAdvertised` / `daysSinceVerification` are derived at read time from
+ * `createdAt` / `verifiedAt`. The stored counters in the doc are ignored —
+ * they were never wired to a writer and stayed at 0, which made the profile
+ * page render "0 días activa" for freshly approved listings. `totalViews`
+ * is still a stored counter (incremented by `recordListingViewRaw`).
+ */
+function asReputation(
+  value: unknown,
+  derived: { createdAtIso: string; verifiedAtIso: string | undefined },
+): BiringaReputation {
   const r = (value ?? {}) as Raw;
   return {
-    daysAdvertised: asNumber(r.daysAdvertised ?? 0, "reputation.daysAdvertised"),
-    daysSinceVerification: asNumber(
-      r.daysSinceVerification ?? 0,
-      "reputation.daysSinceVerification",
+    daysAdvertised: daysSince(derived.createdAtIso),
+    daysSinceVerification: daysSince(
+      derived.verifiedAtIso ?? derived.createdAtIso,
     ),
     storiesRecorded: asNumber(
       r.storiesRecorded ?? 0,
@@ -129,6 +147,13 @@ function asCoords(value: unknown): { lat: number; lng: number } {
  * they cannot accidentally end up in HTML.
  */
 export function mapListing(id: string, data: Raw): BiringaListing {
+  const createdAt = toIso(data.createdAt, "createdAt");
+  const verified = asBool(data.verified);
+  // Fall back to createdAt when the listing is verified but pre-dates the
+  // verifiedAt field. Unverified listings keep verifiedAt undefined so the
+  // mapper computes 0 days, not "hace Xd desde que la subiste".
+  const verifiedAt =
+    toIsoOptional(data.verifiedAt) ?? (verified ? createdAt : undefined);
   return {
     id,
     slug: asString(data.slug, "slug"),
@@ -140,7 +165,7 @@ export function mapListing(id: string, data: Raw): BiringaListing {
     pricePerHour: asNumber(data.pricePerHour, "pricePerHour"),
     mainImage: asString(data.mainImage, "mainImage"),
     gallery: asStringArray(data.gallery),
-    verified: asBool(data.verified),
+    verified,
     hasVideo: asBool(data.hasVideo),
     hasAudio: asBool(data.hasAudio),
     tags: asStringArray(data.tags),
@@ -158,7 +183,10 @@ export function mapListing(id: string, data: Raw): BiringaListing {
     availableNow: asBool(data.availableNow),
     storyAt: toIsoOptional(data.storyAt),
 
-    reputation: asReputation(data.reputation),
+    reputation: asReputation(data.reputation, {
+      createdAtIso: createdAt,
+      verifiedAtIso: verifiedAt,
+    }),
     attributes: asAttributes(data.attributes),
 
     services: asStringArray(data.services),
@@ -166,8 +194,9 @@ export function mapListing(id: string, data: Raw): BiringaListing {
     meetingContexts: asStringArray(data.meetingContexts),
 
     coords: asCoords(data.coords),
-    createdAt: toIso(data.createdAt, "createdAt"),
+    createdAt,
     updatedAt: toIso(data.updatedAt, "updatedAt"),
+    verifiedAt,
   };
 }
 

@@ -180,7 +180,72 @@ Use `getSession()` from `@/server/auth` for optional auth, or
 `requireAuth()` from `@/server/security/require-auth` when auth is
 mandatory. Both are cached per request.
 
-## Scenario 9 — I need to swap providers (e.g. add Postgres alongside Firestore)
+## Scenario 9 — I need to touch KYC verification (ADR-014)
+
+KYC has two halves — modelo upload (this codebase) and admin review (the
+admin codebase). Both write to the same `verifications/{uid}` doc and
+the same `verifications/{uid}/` Storage prefix.
+
+**Authoritative read order:**
+
+1. `docs/adr/ADR-014-kyc-verification-basic.md` — the decision and shape.
+2. `src/server/verification/types.ts` — the canonical KycRecord shape.
+3. This file (Scenario 9).
+
+**Where things live in this codebase (modelo side):**
+
+```
+src/app/verificacion/                       # public explainer + 3-step wizard route
+src/features/verification/
+├── components/VerificationWizard.tsx       # 3-step status-aware form
+├── lib/upload-kyc-file.ts                  # compress + ticket + PUT + confirm
+└── actions/verify.ts                       # "use server" wrappers (3 actions)
+src/server/verification/
+├── index.ts                                # barrel — validateActionInput + requireAuth + audit
+├── schemas.ts                              # path regex, uid cross-check
+└── types.ts                                # canonical types
+src/server/adapters/firebase/verification/  # signs PUT URLs, writes the doc
+src/server/mocks/verification/              # in-memory mock for dev / tests
+```
+
+**Where things live in the admin codebase:**
+
+```
+sagnirib-admin/src/app/verifications/[uid]/page.tsx   # standalone review
+sagnirib-admin/src/app/drafts/[id]/page.tsx           # inline review during draft approval
+sagnirib-admin/src/features/verifications/
+├── components/KycActions.tsx                         # approve/reject buttons + two-step confirm
+└── actions/{approve,reject}.ts                       # "use server" wrappers
+sagnirib-admin/src/server/verification/
+├── index.ts                                          # barrel — validates, calls adapter, backfills
+└── schemas.ts                                        # uid + rejection reason validation
+sagnirib-admin/src/server/adapters/firebase/verification/  # status flip transaction + signed READ URLs
+sagnirib-admin/src/server/adapters/firebase/biringas/mark-verified.ts  # listings.verified backfill
+```
+
+**Two non-obvious invariants:**
+
+1. **Approval gate on listings.** The admin's `approveDraft` refuses if
+   `verifications/{ownerUid}.status !== "approved"`. Pre-ADR-014 listings
+   stay published; only future approvals are gated. Source: ADR-014 §
+   "Approval gate on listings".
+
+2. **Backfill on KYC approve.** When the admin flips a verification to
+   `approved`, every listing owned by that uid gets `verified: true` in
+   a single batch. The barrel invalidates `CACHE_TAGS.listing(slug)` for
+   each. This is what makes the gold badge appear without a separate
+   migration job. Source: ADR-014 § "Migration note" + this file's
+   `markListingsVerifiedByOwnerRaw`.
+
+**Tasks that need an ADR (not a PR comment):**
+
+- Adding a 4th file type (passport scan, address proof…).
+- Adding re-verification periodicity (expiry after N months).
+- Swapping the manual review for a provider (Veriff / Onfido / Trulioo)
+  — Pro level per ADR-014. The adapter pattern makes this a
+  one-folder change, but the contract / audit shape changes need an ADR.
+
+## Scenario 10 — I need to swap providers (e.g. add Postgres alongside Firestore)
 
 The port pattern was designed exactly for this. To add a Postgres adapter
 for the `biringas` port:
@@ -252,10 +317,10 @@ gives the operator the bucket the adapter signs URLs against.
    compressed JPEG should return `200`. If you get `403`, the bucket name
    or the IAM role is wrong; if `4xx` on CORS, re-run step 4.
 
-When **adding a new bucket prefix** (e.g. a future `verifications/{uid}/`
-for KYC documents): treat it as ADR-level work. Open a new ADR, extend
-`storage.rules`, the adapter, and the audit rule for hardcoded prefixes
-(rule 9).
+When **adding a new bucket prefix**: treat it as ADR-level work. Open a
+new ADR, extend `storage.rules`, the adapter, and the audit rule for
+hardcoded prefixes (rule 9). For reference, `verifications/{uid}/` was
+added in ADR-014 (KYC basic level) following exactly this playbook.
 
 ## Anti-patterns refusal list
 
@@ -275,6 +340,9 @@ described and propose the correct path:
 | "Just upload directly with `firebase/storage` from the wizard"       | Server-signed V4 URL via `@/server/storage`. The client never holds upload creds (ADR-012). |
 | "Let the client decide the upload path and just check the prefix"    | The server **mints** the path inside `requestUploadTicket`; the client only sends MIME + size. |
 | "Skip compression — the bucket can hold the 12MB JPEG"               | EXIF + bandwidth + cost. Run `compressImage()` client-side before any upload. |
+| "Approve this draft even though the modelo's KYC isn't done — I trust her" | `approveDraft` refuses by design (ADR-014). Ask the modelo to complete `/verificacion/enviar` first. |
+| "Just flip `verified: true` in Firestore on the listing doc"         | `verified` is backfilled by `approveVerification` (admin codebase). Bypassing the barrel skips the audit log and the cache invalidation. |
+| "Add another KYC file slot (passport, address proof) for this case"  | The 3-file shape is canonical (ADR-014). Adding a 4th is ADR-level. |
 
 ## Deploying rules + indexes
 

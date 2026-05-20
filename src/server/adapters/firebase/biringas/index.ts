@@ -252,7 +252,12 @@ export {
   attachBuyerReviewRaw,
 } from "./request-booking";
 export { reportListingRaw } from "./report-listing";
-export { listDraftsByOwnerRaw, type DraftSummary } from "./create-draft";
+export { recordListingViewRaw } from "./record-view";
+export {
+  listDraftsByOwnerRaw,
+  getDraftByIdForOwnerRaw,
+  type DraftSummary,
+} from "./create-draft";
 export {
   getReferralStatsRaw,
   redeemReferralRaw,

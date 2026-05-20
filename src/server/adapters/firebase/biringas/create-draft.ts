@@ -2,7 +2,12 @@ import "server-only";
 
 import { FieldValue, Timestamp } from "firebase-admin/firestore";
 
-import type { CreateListingDraftRawInput } from "@/server/biringas/draft-types";
+import type {
+  CreateListingDraftRawInput,
+  ListingDraftPayload,
+  ListingDraftRecord,
+  ListingDraftStatus,
+} from "@/server/biringas/draft-types";
 import { getDb } from "@/server/adapters/firebase/client";
 import { wrapFirestoreError } from "@/server/adapters/firebase/errors";
 
@@ -133,7 +138,7 @@ export interface DraftSummary {
   displayName: string;
   city: string;
   category: string;
-  status: "pending_review";
+  status: ListingDraftStatus;
   submittedAt: string;
 }
 
@@ -163,13 +168,142 @@ export async function listDraftsByOwnerRaw(
         displayName: String(details.displayName ?? ""),
         city: String(details.city ?? ""),
         category: String(details.category ?? ""),
-        status: "pending_review" as const,
+        status: coerceStatus(data.status),
         submittedAt: (submitted?.toDate() ?? new Date()).toISOString(),
       };
     });
   } catch (err) {
     throw wrapFirestoreError("listDraftsByOwnerRaw", err);
   }
+}
+
+/**
+ * Owner-gated single-draft read used by `/mi-cuenta/borradores/[id]`.
+ * Returns `null` when the doc does not exist OR when it belongs to a
+ * different user — the latter is treated as a 404 on purpose so an
+ * attacker probing draft ids cannot distinguish "missing" from
+ * "exists but not yours".
+ *
+ * The barrel passes the `requireAuth().uid` as `ownerUid`. The doc
+ * read is a direct `.doc(id).get()` — no index needed.
+ */
+export async function getDraftByIdForOwnerRaw(
+  ownerUid: string,
+  draftId: string,
+): Promise<ListingDraftRecord | null> {
+  try {
+    const doc = await getDb()
+      .collection("listing_drafts")
+      .doc(draftId)
+      .get();
+    if (!doc.exists) return null;
+    const data = doc.data() ?? {};
+    if (data.ownerUid !== ownerUid) return null;
+    const submitted = data.submittedAt as Timestamp | undefined;
+    const rejectionReason =
+      typeof data.rejectionReason === "string" && data.rejectionReason.length > 0
+        ? data.rejectionReason
+        : undefined;
+    return {
+      id: doc.id,
+      ownerUid: String(data.ownerUid),
+      status: coerceStatus(data.status),
+      payload: deserializePayload(data.payload),
+      submittedAt: (submitted?.toDate() ?? new Date()).toISOString(),
+      ...(rejectionReason ? { rejectionReason } : {}),
+    };
+  } catch (err) {
+    throw wrapFirestoreError("getDraftByIdForOwnerRaw", err);
+  }
+}
+
+/**
+ * Coerce the persisted `status` string to the typed enum. Anything we
+ * don't recognize falls back to `pending_review` — the safest default
+ * for the UI (read-only "Ver detalles" path).
+ */
+function coerceStatus(raw: unknown): ListingDraftStatus {
+  if (raw === "approved" || raw === "rejected") return raw;
+  return "pending_review";
+}
+
+/**
+ * Inverse of `serializePayload`. Firestore stored the wizard payload as
+ * a nested plain map; this fills any missing optional fields with safe
+ * defaults so the UI never has to handle `undefined` for required
+ * domain fields. The schema validated everything at write time, so the
+ * only cases we expect to defend against are legacy / partial docs
+ * written before a schema bump.
+ */
+function deserializePayload(raw: unknown): ListingDraftPayload {
+  const p = (raw ?? {}) as Record<string, unknown>;
+  const details = (p.details ?? {}) as Record<string, unknown>;
+  const description = (p.description ?? {}) as Record<string, unknown>;
+  const attributes = (p.attributes ?? {}) as Record<string, unknown>;
+  const publish = (p.publish ?? {}) as Record<string, unknown>;
+  return {
+    details: {
+      displayName: String(details.displayName ?? ""),
+      age: Number(details.age ?? 0),
+      city: String(details.city ?? ""),
+      category:
+        details.category === "prepagos" ||
+        details.category === "masajes" ||
+        details.category === "videollamadas"
+          ? details.category
+          : "prepagos",
+      phone: String(details.phone ?? ""),
+      preferredSlug: String(details.preferredSlug ?? ""),
+      pricePerHour: Number(details.pricePerHour ?? 0),
+      attention: Array.isArray(details.attention)
+        ? (details.attention as ReadonlyArray<string>)
+        : [],
+      contactChannels: Array.isArray(details.contactChannels)
+        ? (details.contactChannels as ReadonlyArray<string>)
+        : [],
+    },
+    description: {
+      shortBio: String(description.shortBio ?? ""),
+      bio: String(description.bio ?? ""),
+      services: Array.isArray(description.services)
+        ? (description.services as ReadonlyArray<string>)
+        : [],
+      meetingContexts: Array.isArray(description.meetingContexts)
+        ? (description.meetingContexts as ReadonlyArray<string>)
+        : [],
+      faceVisible: Boolean(description.faceVisible),
+      paymentByCard: Boolean(description.paymentByCard),
+      availableNow: Boolean(description.availableNow),
+      gallery: Array.isArray(description.gallery)
+        ? (description.gallery as ReadonlyArray<{ path?: unknown }>)
+            .map((g) => ({ path: String(g.path ?? "") }))
+            .filter((g) => g.path.length > 0)
+        : [],
+    },
+    attributes: {
+      ethnicity: String(attributes.ethnicity ?? ""),
+      hair: String(attributes.hair ?? ""),
+      height: String(attributes.height ?? ""),
+      body: String(attributes.body ?? ""),
+      breast: String(attributes.breast ?? ""),
+      country: String(attributes.country ?? ""),
+      ...(typeof attributes.pubis === "string" && attributes.pubis.length > 0
+        ? { pubis: attributes.pubis }
+        : {}),
+      languages: Array.isArray(attributes.languages)
+        ? (attributes.languages as ReadonlyArray<string>)
+        : [],
+    },
+    publish: {
+      packageId: String(publish.packageId ?? "esencial"),
+      addOnIds: Array.isArray(publish.addOnIds)
+        ? (publish.addOnIds as ReadonlyArray<string>)
+        : [],
+      billing: publish.billing === "quarterly" ? "quarterly" : "monthly",
+      acceptsTerms: Boolean(publish.acceptsTerms),
+      acceptsAdult: Boolean(publish.acceptsAdult),
+    },
+  };
 }
 
 // Silence the unused import when this module is consumed without the

@@ -52,20 +52,28 @@ can change without doc rewrites.
 | `coords`          | `{ lat: number, lng: number }` |                                                       |
 | `createdAt`       | Timestamp                  |                                                           |
 | `updatedAt`       | Timestamp                  | Default `orderBy` for `listAll`.                          |
+| `verifiedAt`      | Timestamp \| null          | Set when `verified` flips to `true`. Mapper falls back to `createdAt` when missing on a verified listing. |
 
 ### `reputation` map
 
 ```
 {
-  daysAdvertised: number,
-  daysSinceVerification: number,
+  daysAdvertised: number,           // ignored by the mapper — derived from createdAt at read time
+  daysSinceVerification: number,    // ignored by the mapper — derived from verifiedAt ?? createdAt at read time
   storiesRecorded: number,
-  score: number,           // 0..5
-  totalViews: number,
+  score: number,                    // 0..5
+  totalViews: number,               // incremented by recordListingViewRaw
   daysFeatured: number,
   reviewCount: number
 }
 ```
+
+`daysAdvertised` and `daysSinceVerification` are kept on the doc only for
+admin-tool convenience — the public `findBySlug` / `listAll` paths recompute
+them on every read so the profile tiles never go stale.
+
+`totalViews` is incremented by `recordListingViewRaw` (one write per visitor
+per listing per 24h — dedupe lives in the action wrapper).
 
 ### `attributes` map (all optional)
 

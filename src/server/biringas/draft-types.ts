@@ -85,6 +85,23 @@ export interface ListingDraftPayload {
 }
 
 /**
+ * Full read shape of a stored draft. Distinct from `DraftSummary` (the
+ * lightweight projection used in the dashboard list) — this carries the
+ * full `payload` so the owner-side detail view can render every field
+ * the modelo submitted.
+ *
+ * `rejectionReason` is only present when `status === "rejected"`.
+ */
+export interface ListingDraftRecord {
+  id: string;
+  ownerUid: string;
+  status: ListingDraftStatus;
+  payload: ListingDraftPayload;
+  submittedAt: string;
+  rejectionReason?: string;
+}
+
+/**
  * Input accepted by the public Server Action / barrel function. The wizard
  * sends UI-friendly string-typed fields; the schema (`create-draft-schema.ts`)
  * trims and coerces them into this shape.

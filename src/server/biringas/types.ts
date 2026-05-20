@@ -98,6 +98,13 @@ export interface BiringaListing {
   coords: { lat: number; lng: number };
   createdAt: string;
   updatedAt: string;
+  /**
+   * Set when the listing transitions to `verified: true`. Drives the
+   * "Verificada — hace Xd" tile on the profile page. For listings
+   * verified before this field existed, the mapper falls back to
+   * `createdAt` so the tile never reads as "hace 0d" by accident.
+   */
+  verifiedAt?: string;
 }
 
 export interface ListingsFilters {

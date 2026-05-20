@@ -22,6 +22,7 @@ import { ContactReveal } from "@/features/biringas/components/ContactReveal";
 import { PremiumContentGrid } from "@/features/biringas/components/PremiumContentGrid";
 import { RateBiringaForm } from "@/features/biringas/components/RateBiringaForm";
 import { RecentlyViewedStrip } from "@/features/biringas/components/RecentlyViewedStrip";
+import { RecordListingView } from "@/features/biringas/components/RecordListingView";
 import { RecordRecentView } from "@/features/biringas/components/RecordRecentView";
 import { ReviewsSection } from "@/features/biringas/components/ReviewsSection";
 import { ReportListingMenu } from "@/features/biringas/components/ReportListingMenu";
@@ -169,6 +170,10 @@ export default async function ProfilePage({ params }: Readonly<ProfilePageProps>
           city={listing.city}
           price={formatPricePerHour(listing.pricePerHour)}
         />
+        {/* Server-side view counter — bumps reputation.totalViews via Server
+            Action with 24h httpOnly-cookie dedupe. Drives the "Vistas" stat
+            tile below. */}
+        <RecordListingView slug={listing.slug} />
 
         <Container
           width="wide"

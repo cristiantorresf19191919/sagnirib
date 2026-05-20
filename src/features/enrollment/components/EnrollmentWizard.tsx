@@ -105,6 +105,8 @@ export function EnrollmentWizard({ catalogs }: EnrollmentWizardProps) {
   const [direction, setDirection] = useState<1 | -1>(1);
   const reduced = useReducedMotion();
   const errorBannerRef = useRef<HTMLDivElement | null>(null);
+  const wizardTopRef = useRef<HTMLDivElement | null>(null);
+  const isInitialStepRef = useRef(true);
 
   // When validation fails the banner renders above the step content. On long
   // steps the submit button sits well below the fold, so without this scroll
@@ -117,6 +119,20 @@ export function EnrollmentWizard({ catalogs }: EnrollmentWizardProps) {
       block: "center",
     });
   }, [errorBanner, errorTick, reduced]);
+
+  // Each step's form is long enough that the submit button lives well below
+  // the fold; if we leave the scroll position untouched the next step renders
+  // mid-form and the user has to scroll back up to fill it from the top.
+  useEffect(() => {
+    if (isInitialStepRef.current) {
+      isInitialStepRef.current = false;
+      return;
+    }
+    wizardTopRef.current?.scrollIntoView({
+      behavior: reduced ? "auto" : "smooth",
+      block: "start",
+    });
+  }, [current, reduced]);
   // Stable wizard-mount upload session. Used as the `users/<uid>/staging/<sessionId>/`
   // prefix for every photo uploaded via this wizard instance, and submitted
   // verbatim to `createListingDraft` so the server can scope the staging→draft
@@ -259,7 +275,7 @@ export function EnrollmentWizard({ catalogs }: EnrollmentWizardProps) {
   }
 
   return (
-    <div className="flex flex-col gap-8">
+    <div ref={wizardTopRef} className="flex flex-col gap-8 scroll-mt-24">
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,260px)]">
         <Stepper
           steps={STEPS}

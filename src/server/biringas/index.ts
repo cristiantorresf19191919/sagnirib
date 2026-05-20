@@ -90,10 +90,12 @@ export const getListingReviews = adapter.getListingReviews;
 export const listSimilar = adapter.listSimilar;
 export const requestBookingRaw = adapter.requestBookingRaw;
 export const reportListingRaw = adapter.reportListingRaw;
+const recordListingViewRaw = adapter.recordListingViewRaw;
 const listBookingsForListingsRaw = adapter.listBookingsForListingsRaw;
 const updateBookingStatusRaw = adapter.updateBookingStatusRaw;
 const attachBuyerReviewRaw = adapter.attachBuyerReviewRaw;
 const listDraftsByOwnerRaw = adapter.listDraftsByOwnerRaw;
+const getDraftByIdForOwnerRaw = adapter.getDraftByIdForOwnerRaw;
 const getReferralStatsRaw = adapter.getReferralStatsRaw;
 const redeemReferralRaw = adapter.redeemReferralRaw;
 const createCheckoutSessionRaw = adapter.createCheckoutSessionRaw;
@@ -166,6 +168,7 @@ export type {
   ListingDraftPayloadDescription,
   ListingDraftPayloadPublish,
   ListingDraftPhoto,
+  ListingDraftRecord,
   ListingDraftStatus,
 } from "./draft-types";
 export { DRAFT_LIMITS } from "./draft-types";
@@ -313,6 +316,57 @@ export async function reportListing(
   });
 
   return result;
+}
+
+/**
+ * Per-session dedupe window for view tracking. One increment per visitor per
+ * listing per 24h — refreshes / back-button navigation don't inflate the
+ * counter, but each new day a returning visitor counts once. Cookie is
+ * httpOnly so client JS can't clear it to game the counter.
+ */
+const VIEW_COOKIE_TTL_SECONDS = 60 * 60 * 24;
+/** Slug shape mirrors `preferredSlugSchema` — letters / digits / dashes only. */
+const VIEW_SLUG_REGEX = /^[a-z0-9-]{1,64}$/;
+
+/**
+ * Increments the `reputation.totalViews` counter for a listing.
+ *
+ * Public action — anonymous calls allowed (the catalog is mostly read by
+ * anonymous visitors). Dedupe is per-session via an httpOnly cookie keyed
+ * `bv_view_<slug>` with a 24h TTL; an already-cookied visitor short-circuits
+ * before the Firestore write to keep the per-listing write rate sane.
+ *
+ * Returns `{ recorded }` so the client beacon can decide whether to surface
+ * any UI affordance ("first visit today" etc.) — not used today, kept for
+ * future use without bumping the action signature.
+ */
+export async function recordListingView(
+  rawSlug: unknown,
+): Promise<{ recorded: boolean }> {
+  if (typeof rawSlug !== "string") return { recorded: false };
+  const slug = rawSlug.trim().toLowerCase();
+  if (!VIEW_SLUG_REGEX.test(slug)) return { recorded: false };
+
+  const { cookies } = await import("next/headers");
+  const jar = await cookies();
+  const cookieName = `bv_view_${slug}`;
+  if (jar.get(cookieName)) return { recorded: false };
+
+  await recordListingViewRaw(slug);
+
+  jar.set(cookieName, "1", {
+    maxAge: VIEW_COOKIE_TTL_SECONDS,
+    httpOnly: true,
+    sameSite: "lax",
+    path: "/",
+  });
+
+  // The profile page reads `findBySlug(slug)` through `unstable_cache` tagged
+  // with `biringa:listing:<slug>`. Without this invalidation, the bumped
+  // counter would only become visible after the 5-minute TTL expires.
+  updateTag(CACHE_TAGS.listing(slug));
+
+  return { recorded: true };
 }
 
 /**
@@ -465,6 +519,32 @@ export async function listMyDrafts(): Promise<
 > {
   const user = await requireAuth();
   return listDraftsByOwnerRaw(user.uid);
+}
+
+/**
+ * Full read of a single owner-side draft. Backs the read-only
+ * `/mi-cuenta/borradores/[id]` detail view (the "Ver detalles" button
+ * while a draft is in human review).
+ *
+ * Ownership is enforced by `getDraftByIdForOwnerRaw` — passing a
+ * `draftId` that belongs to another user returns `null` (treated as
+ * 404 by the route, so probing draft ids leaks nothing).
+ *
+ * Audits the read so the trust&safety log shows who looked at which
+ * draft and when. Cheap — only fires when the doc exists.
+ */
+export async function getMyDraft(
+  draftId: string,
+): Promise<import("./draft-types").ListingDraftRecord | null> {
+  const user = await requireAuth();
+  const record = await getDraftByIdForOwnerRaw(user.uid, draftId);
+  if (!record) return null;
+  await auditLog({
+    event: "biringa.draft.viewed",
+    actorId: user.uid,
+    resource: `draft:${draftId}`,
+  });
+  return record;
 }
 
 /**

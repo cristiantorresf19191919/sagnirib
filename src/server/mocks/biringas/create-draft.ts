@@ -1,6 +1,10 @@
 import "server-only";
 
-import type { CreateListingDraftRawInput } from "@/server/biringas/draft-types";
+import type {
+  CreateListingDraftRawInput,
+  ListingDraftRecord,
+  ListingDraftStatus,
+} from "@/server/biringas/draft-types";
 
 /**
  * In-memory mock of `createListingDraftRaw` for `dev` without Firebase.
@@ -12,9 +16,10 @@ import type { CreateListingDraftRawInput } from "@/server/biringas/draft-types";
 interface StoredDraft {
   id: string;
   ownerUid: string;
-  status: "pending_review";
+  status: ListingDraftStatus;
   payload: CreateListingDraftRawInput["payload"];
   submittedAt: Date;
+  rejectionReason?: string;
 }
 
 const DRAFTS: StoredDraft[] = [];
@@ -52,7 +57,7 @@ export interface DraftSummary {
   displayName: string;
   city: string;
   category: string;
-  status: "pending_review";
+  status: ListingDraftStatus;
   submittedAt: string;
 }
 
@@ -79,4 +84,32 @@ export async function listDraftsByOwnerRaw(
         new Date(b.submittedAt).getTime() -
         new Date(a.submittedAt).getTime(),
     );
+}
+
+/**
+ * Returns the full draft record for `(ownerUid, draftId)` or `null` when
+ * it does not exist or belongs to someone else. The ownership filter
+ * here is the safety boundary — barrel code passes the
+ * `requireAuth().uid`, so anonymous / cross-user reads never resolve.
+ *
+ * Used by the seller-side "Ver detalles" view at
+ * `/mi-cuenta/borradores/[id]` to render every field the modelo
+ * submitted while the draft is in human review.
+ */
+export async function getDraftByIdForOwnerRaw(
+  ownerUid: string,
+  draftId: string,
+): Promise<ListingDraftRecord | null> {
+  const found = DRAFTS.find(
+    (d) => d.ownerUid === ownerUid && d.id === draftId,
+  );
+  if (!found) return null;
+  return {
+    id: found.id,
+    ownerUid: found.ownerUid,
+    status: found.status,
+    payload: found.payload,
+    submittedAt: found.submittedAt.toISOString(),
+    ...(found.rejectionReason ? { rejectionReason: found.rejectionReason } : {}),
+  };
 }
