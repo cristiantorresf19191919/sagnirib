@@ -220,7 +220,36 @@ export function CardStackGallery({ images, altBase }: Readonly<CardStackGalleryP
               animate="center"
               exit="exit"
               transition={SLIDE_TRANSITION}
-              className="absolute inset-0 will-change-[transform,opacity,filter] [backface-visibility:hidden]"
+              // Touch-swipe: drag horizontally past 22% of the frame
+              // width OR with enough velocity → advance / rewind. Below
+              // the threshold the spring snaps back. Vertical drag is
+              // disabled so the page can still scroll through the
+              // gallery comfortably.
+              drag={total > 1 ? "x" : false}
+              dragConstraints={{ left: 0, right: 0 }}
+              dragElastic={0.35}
+              dragMomentum={false}
+              onDragEnd={(_, info) => {
+                if (total <= 1) return;
+                const SWIPE_DISTANCE = 80; // px
+                const SWIPE_VELOCITY = 350; // px/s
+                const off =
+                  Math.abs(info.offset.x) * Math.abs(info.velocity.x);
+                if (
+                  info.offset.x < -SWIPE_DISTANCE ||
+                  info.velocity.x < -SWIPE_VELOCITY ||
+                  (info.offset.x < 0 && off > 28_000)
+                ) {
+                  goNext();
+                } else if (
+                  info.offset.x > SWIPE_DISTANCE ||
+                  info.velocity.x > SWIPE_VELOCITY ||
+                  (info.offset.x > 0 && off > 28_000)
+                ) {
+                  goPrev();
+                }
+              }}
+              className="absolute inset-0 cursor-grab touch-pan-y will-change-[transform,opacity,filter] [backface-visibility:hidden] active:cursor-grabbing"
             >
               <Image
                 src={activeSrc}
@@ -228,11 +257,12 @@ export function CardStackGallery({ images, altBase }: Readonly<CardStackGalleryP
                 fill
                 sizes="(max-width: 768px) 90vw, 440px"
                 priority
+                draggable={false}
                 // Ken-burns pan rides on top of the slide so once the
                 // image has settled at center, it continues to drift
                 // slightly to the right until the next swap. Two
                 // transforms on separate elements never conflict.
-                className="object-cover motion-safe:motion-gallery-pan-right"
+                className="select-none object-cover motion-safe:motion-gallery-pan-right"
               />
               <span
                 aria-hidden

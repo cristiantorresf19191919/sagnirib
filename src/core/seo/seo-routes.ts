@@ -75,4 +75,53 @@ export const seoRoutes: ReadonlyArray<SeoRouteEntry> = [
     indexable: false,
     inSitemap: false,
   },
+  {
+    // Per-city landing pages — programmatic SEO. The template itself
+    // is NOT indexable as a literal; the sitemap enumerates concrete
+    // /explorar/{city} entries from SUPPORTED_CITIES at generation time.
+    path: "/explorar/[city]",
+    contractPath: "docs/seo/routes/explorar-city.md",
+    status: "implemented",
+    indexable: false,
+    inSitemap: false,
+    isDynamic: true,
+    changeFrequency: "daily",
+    priority: 0.7,
+  },
+  {
+    path: "/verificacion",
+    contractPath: "docs/seo/routes/verificacion.md",
+    status: "implemented",
+    indexable: true,
+    inSitemap: true,
+    changeFrequency: "monthly",
+    priority: 0.6,
+  },
+  {
+    path: "/seguridad",
+    contractPath: "docs/seo/routes/seguridad.md",
+    status: "implemented",
+    indexable: true,
+    inSitemap: true,
+    changeFrequency: "monthly",
+    priority: 0.6,
+  },
+  {
+    path: "/publicar/planes",
+    contractPath: "docs/seo/routes/publicar-planes.md",
+    status: "implemented",
+    indexable: true,
+    inSitemap: true,
+    changeFrequency: "monthly",
+    priority: 0.5,
+  },
+  {
+    path: "/legal/disputas",
+    contractPath: "docs/seo/routes/legal-disputas.md",
+    status: "implemented",
+    indexable: true,
+    inSitemap: true,
+    changeFrequency: "yearly",
+    priority: 0.2,
+  },
 ];
