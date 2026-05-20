@@ -254,10 +254,11 @@ export async function EditorialHero({
             <h1
               data-testid="editorial-hero-title"
               id="editorial-hero-title"
-              // pr-3 gives the italic glyphs of "tu Biringa" / "ideal." room
-              // for their right-leaning descender + curl so they don't clip
-              // against the mosaic fade veil.
-              className="motion-safe:motion-hero-reveal mt-9 pr-3 font-[var(--font-display)] font-[360] tracking-[-0.025em] text-[var(--color-ink)]"
+              // pr-6 leaves room on the right for the italic 'a' swash of
+              // "tu Biringa" so it doesn't get clipped at the column edge
+              // (Fraunces italic light-weight has visual overflow past the
+              // glyph's logical box on the trailing letter).
+              className="motion-safe:motion-hero-reveal mt-9 pr-6 font-[var(--font-display)] font-[360] tracking-[-0.025em] text-[var(--color-ink)]"
               style={{
                 animationDelay: "0.15s",
                 fontSize: "clamp(44px, 6.2vw, 76px)",
@@ -266,13 +267,20 @@ export async function EditorialHero({
             >
               Encuentra a
               <br />
-              <span className="relative inline-block pb-1">
-                <span className="font-[var(--font-display)] font-[320] italic text-[var(--color-gold-deep)] motion-safe:motion-gold-sheen">
+              {/* pr-2 widens the inline-block past "tu Biringa"'s logical
+                  width so the italic 'a' swash has room. The underline
+                  stops at right-2 so it still ends under the glyph, not
+                  the padding. Sheen animation removed: its background-
+                  clip:text + transparent fill could leave the swash
+                  unfilled at certain frames, reading as "cut". V5's spec
+                  is solid gold italic anyway. */}
+              <span className="relative inline-block pb-2 pr-2">
+                <span className="font-[var(--font-display)] font-[320] italic text-[var(--color-gold-deep)]">
                   tu Biringa
                 </span>
                 <UnderlineSweep
                   delay={0.4}
-                  className="bottom-0 left-0 right-0 h-px bg-gradient-to-r from-[var(--color-gold)] via-[var(--color-gold)]/60 to-transparent"
+                  className="bottom-0 left-0 right-2 h-px bg-gradient-to-r from-[var(--color-gold)] via-[var(--color-gold)]/60 to-transparent"
                 />
               </span>
               <br />

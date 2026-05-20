@@ -8,8 +8,10 @@ import { EnrollmentWizard } from "@/features/enrollment/components/EnrollmentWiz
 import type { EnrollmentCatalogs } from "@/features/enrollment/lib/catalogs";
 import { getSession } from "@/server/auth";
 import {
+  APPEARANCE_CATALOG,
   ATTENTION_CATALOG,
   CONTACT_CATALOG,
+  LANGUAGE_CATALOG,
   MEETING_CONTEXT_CATALOG,
   SERVICE_CATALOG,
   SUPPORTED_CITIES,
@@ -44,6 +46,8 @@ export default async function PublicarPage() {
     meetingContexts: MEETING_CONTEXT_CATALOG,
     attention: ATTENTION_CATALOG,
     contact: CONTACT_CATALOG,
+    appearance: APPEARANCE_CATALOG,
+    languages: LANGUAGE_CATALOG,
   };
 
   return (

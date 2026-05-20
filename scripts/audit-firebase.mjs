@@ -46,6 +46,17 @@ const RULES = [
     message: "Move the call behind the appropriate adapter under src/server/adapters/firebase/<port>/, then expose it through the barrel.",
   },
   {
+    id: "admin-storage-fence",
+    description: "firebase-admin/storage may only be imported from the storage adapter subdir",
+    reference: "ADR-012 § Bucket layout",
+    scan: {
+      include: ["src/server/adapters/firebase/**"],
+      exclude: ["src/server/adapters/firebase/storage/**"],
+    },
+    flag: /from\s+["']firebase-admin\/storage["']/,
+    message: "Cloud Storage access lives in src/server/adapters/firebase/storage/ exclusively. Expose what you need through @/server/storage.",
+  },
+  {
     id: "web-sdk-fence",
     description: "firebase/* (Web SDK) may only be imported from src/features/auth/lib/**",
     reference: "ADR-010 §1",
@@ -87,7 +98,11 @@ const RULES = [
     reference: "ADR-010 §3",
     scan: {
       include: ["src/features/**/*.ts", "src/features/**/*.tsx", "src/app/**/*.ts", "src/app/**/*.tsx"],
-      exclude: [],
+      // Exception: the dev-only mock storage ingestion endpoint IS the
+      // mock's edge (see ADR-012 § "Out of scope"). It must read from the
+      // in-memory store directly. The endpoint itself returns 404 in
+      // configured environments (`isFirebaseConfigured()` guard).
+      exclude: ["src/app/api/_storage-mock/**"],
     },
     flag: /from\s+["']@\/server\/(adapters|mocks)\//,
     message: "Import from the port barrel: @/server/biringas, @/server/auth, etc.",

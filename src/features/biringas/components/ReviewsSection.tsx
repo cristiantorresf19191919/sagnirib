@@ -1,4 +1,7 @@
+"use client";
+
 import { Quote, ShieldCheck, Star, ThumbsDown, ThumbsUp } from "lucide-react";
+import { useMemo, useState } from "react";
 
 import type { ReviewItem, ReviewsAggregate } from "@/server/biringas";
 import { Container } from "@/shared/design-system/components/Container";
@@ -7,6 +10,18 @@ interface ReviewsSectionProps {
   listingName: string;
   reviews: ReviewsAggregate;
 }
+
+type ReviewFilter = "all" | "recent" | "five" | "critical" | "verified";
+
+const FILTER_DEFS: ReadonlyArray<[ReviewFilter, string]> = [
+  ["all", "Todas"],
+  ["recent", "Recientes"],
+  ["five", "5 estrellas"],
+  ["critical", "Críticas"],
+  ["verified", "Verificadas"],
+];
+
+const INITIAL_VISIBLE = 4;
 
 const COMPACT_FORMAT = new Intl.NumberFormat("es-CO", {
   notation: "compact",
@@ -64,6 +79,39 @@ export function ReviewsSection({
   }
 
   return (
+    <ReviewsBody listingName={listingName} reviews={reviews} />
+  );
+}
+
+function ReviewsBody({
+  listingName,
+  reviews,
+}: Readonly<ReviewsSectionProps>) {
+  const [filter, setFilter] = useState<ReviewFilter>("all");
+  const [expanded, setExpanded] = useState(false);
+
+  const filtered = useMemo(() => {
+    const list = [...reviews.reviews];
+    switch (filter) {
+      case "recent":
+        return list.sort(
+          (a, b) => Date.parse(b.date) - Date.parse(a.date),
+        );
+      case "five":
+        return list.filter((r) => r.rating === 5);
+      case "critical":
+        return list.filter((r) => r.rating <= 3);
+      case "verified":
+        return list.filter((r) => r.verified);
+      default:
+        return list;
+    }
+  }, [reviews.reviews, filter]);
+
+  const visible = expanded ? filtered : filtered.slice(0, INITIAL_VISIBLE);
+  const showToggle = filtered.length > INITIAL_VISIBLE;
+
+  return (
     <section
       id="opiniones"
       aria-labelledby="reviews-title"
@@ -115,20 +163,42 @@ export function ReviewsSection({
           </div>
 
           <div className="flex flex-col gap-4 lg:col-span-7">
-            <FilterChips />
-            <ul className="grid grid-cols-1 gap-4">
-              {reviews.reviews.map((review) => (
-                <ReviewCard key={review.id} review={review} />
-              ))}
-            </ul>
-            <div className="mt-2 flex items-center justify-center">
-              <button
-                type="button"
-                className="inline-flex h-11 items-center gap-2 rounded-full border border-[var(--color-border)] bg-[var(--color-surface)]/60 px-5 text-sm font-medium text-[var(--color-foreground)] transition-[border-color,background] duration-200 ease-[var(--ease-standard)] hover:border-[var(--color-brand-primary)]/60 hover:bg-[var(--color-surface)]"
-              >
-                Ver las {formatCount(reviews.total)} opiniones
-              </button>
-            </div>
+            <FilterChips
+              value={filter}
+              onChange={(next) => {
+                setFilter(next);
+                setExpanded(false);
+              }}
+            />
+            {visible.length === 0 ? (
+              <p className="rounded-[var(--radius-xl)] border border-dashed border-[var(--color-border)] bg-[var(--color-surface)]/40 p-6 text-center text-sm text-[var(--color-text-muted)]">
+                Sin opiniones bajo este filtro todavía. Probá con{" "}
+                <em className="font-medium not-italic text-[var(--color-foreground)]">
+                  Todas
+                </em>
+                .
+              </p>
+            ) : (
+              <ul className="grid grid-cols-1 gap-4">
+                {visible.map((review) => (
+                  <ReviewCard key={review.id} review={review} />
+                ))}
+              </ul>
+            )}
+            {showToggle ? (
+              <div className="mt-2 flex items-center justify-center">
+                <button
+                  type="button"
+                  onClick={() => setExpanded((prev) => !prev)}
+                  aria-expanded={expanded}
+                  className="inline-flex h-11 items-center gap-2 rounded-full border border-[var(--color-border)] bg-[var(--color-surface)]/60 px-5 text-sm font-medium text-[var(--color-foreground)] transition-[border-color,background] duration-200 ease-[var(--ease-standard)] hover:border-[var(--color-brand-primary)]/60 hover:bg-[var(--color-surface)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-background)]"
+                >
+                  {expanded
+                    ? "Ver menos opiniones"
+                    : `Ver ${formatCount(filtered.length)} opiniones`}
+                </button>
+              </div>
+            ) : null}
           </div>
         </div>
       </Container>
@@ -326,29 +396,37 @@ function AnonymousReactionsCard({
   );
 }
 
-function FilterChips() {
-  const chips: ReadonlyArray<[string, boolean]> = [
-    ["Todas", true],
-    ["Recientes", false],
-    ["5 estrellas", false],
-    ["Críticas", false],
-    ["Verificadas", false],
-  ];
+interface FilterChipsProps {
+  value: ReviewFilter;
+  onChange: (next: ReviewFilter) => void;
+}
+
+function FilterChips({ value, onChange }: Readonly<FilterChipsProps>) {
   return (
-    <div className="flex flex-wrap items-center gap-2">
-      {chips.map(([label, active]) => (
-        <span
-          key={label}
-          aria-current={active ? "true" : undefined}
-          className={`inline-flex h-8 items-center rounded-full border px-3 text-xs font-medium transition-[border-color,background] duration-200 ease-[var(--ease-standard)] ${
-            active
-              ? "border-[var(--color-brand-primary)]/60 bg-[var(--color-brand-primary)]/12 text-[var(--color-brand-primary-strong)]"
-              : "border-[var(--color-border)] bg-[var(--color-surface)]/40 text-[var(--color-text-muted)]"
-          }`}
-        >
-          {label}
-        </span>
-      ))}
+    <div
+      role="tablist"
+      aria-label="Filtrar opiniones"
+      className="flex flex-wrap items-center gap-2"
+    >
+      {FILTER_DEFS.map(([id, label]) => {
+        const active = id === value;
+        return (
+          <button
+            key={id}
+            type="button"
+            role="tab"
+            aria-selected={active}
+            onClick={() => onChange(id)}
+            className={`inline-flex h-8 items-center rounded-full border px-3 text-xs font-medium transition-[border-color,background,color] duration-200 ease-[var(--ease-standard)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-background)] ${
+              active
+                ? "border-[var(--color-brand-primary)]/60 bg-[var(--color-brand-primary)]/12 text-[var(--color-brand-primary-strong)]"
+                : "border-[var(--color-border)] bg-[var(--color-surface)]/40 text-[var(--color-text-muted)] hover:border-[var(--color-brand-primary)]/40 hover:text-[var(--color-foreground)]"
+            }`}
+          >
+            {label}
+          </button>
+        );
+      })}
     </div>
   );
 }

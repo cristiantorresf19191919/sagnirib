@@ -12,10 +12,29 @@ export interface ContactItem {
   label: string;
 }
 
+/**
+ * Mirrors the keys of the canonical `APPEARANCE_CATALOG` constant in
+ * `src/server/mocks/biringas/data.ts`. Kept as a structural shape (rather
+ * than `typeof APPEARANCE_CATALOG`) so this client-facing module stays free
+ * of `server-only` imports — the page reads the canonical object and passes
+ * it in.
+ */
+export interface AppearanceCatalogs {
+  country: ReadonlyArray<string>;
+  ethnicity: ReadonlyArray<string>;
+  hair: ReadonlyArray<string>;
+  height: ReadonlyArray<string>;
+  body: ReadonlyArray<string>;
+  breast: ReadonlyArray<string>;
+  pubis: ReadonlyArray<string>;
+}
+
 export interface EnrollmentCatalogs {
   cities: ReadonlyArray<string>;
   services: ReadonlyArray<string>;
   meetingContexts: ReadonlyArray<string>;
   attention: ReadonlyArray<AttentionItem>;
   contact: ReadonlyArray<ContactItem>;
+  appearance: AppearanceCatalogs;
+  languages: ReadonlyArray<string>;
 }

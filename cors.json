@@ -1,0 +1,26 @@
+[
+  {
+    "origin": [
+      "http://localhost:3000",
+      "http://localhost:3001",
+      "http://localhost:3002",
+      "http://localhost:3003",
+      "https://biringas.co",
+      "https://www.biringas.co",
+      "https://*.vercel.app",
+      "https://*.netlify.app"
+    ],
+    "method": ["GET", "PUT", "HEAD"],
+    "responseHeader": [
+      "Content-Type",
+      "Content-Length",
+      "Content-MD5",
+      "Cache-Control",
+      "x-goog-content-length-range",
+      "x-goog-meta-owner-uid",
+      "x-goog-meta-session-id",
+      "x-goog-meta-photo-id"
+    ],
+    "maxAgeSeconds": 3600
+  }
+]

@@ -33,7 +33,7 @@ export function Stepper({ steps, current, completed, onJump }: StepperProps) {
     <ol
       role="list"
       aria-label="Progreso de publicación"
-      className="grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-4"
+      className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-4"
     >
       {steps.map((step) => {
         const isActive = step.id === current;

@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, Sparkles, TrendingUp } from "lucide-react";
+import { Check, Gift, Sparkles, TrendingUp } from "lucide-react";
 
 import {
   ADD_ONS,
@@ -8,6 +8,7 @@ import {
   type BillingCycle,
   PACKAGES,
   type PackageId,
+  PLANS_ENABLED,
   formatCop,
 } from "../lib/pricing";
 import type { PublishValues } from "../lib/types";
@@ -24,9 +25,11 @@ export function StepPublish({ values, onChange }: StepPublishProps) {
   }
 
   function selectPackage(id: PackageId) {
+    if (!PLANS_ENABLED) return;
     update("packageId", id);
   }
   function toggleAddOn(id: AddOnId) {
+    if (!PLANS_ENABLED) return;
     const has = values.addOnIds.includes(id);
     update(
       "addOnIds",
@@ -37,22 +40,35 @@ export function StepPublish({ values, onChange }: StepPublishProps) {
   return (
     <SectionShell
       eyebrow="Publicar"
-      title="Elige tu plan y refuerzos de visibilidad"
-      description="Esencial te deja arrancar. Destacada es lo que más eligen las modelos verificadas. Premium te deja siempre arriba."
+      title={
+        PLANS_ENABLED
+          ? "Elige tu plan y refuerzos de visibilidad"
+          : "Lanzamiento gratuito · revisa lo que viene"
+      }
+      description={
+        PLANS_ENABLED
+          ? "Esencial te deja arrancar. Destacada es lo que más eligen las modelos verificadas. Premium te deja siempre arriba."
+          : "Estamos en lanzamiento — todos los perfiles aprobados se publican sin cobro. Los planes que ves abajo son lo que vendrá cuando activemos cobros; por ahora solo informativos."
+      }
     >
-      <BillingToggle
-        billing={values.billing}
-        onChange={(v) => update("billing", v)}
-      />
+      {!PLANS_ENABLED && <FreeLaunchBanner />}
+
+      {PLANS_ENABLED && (
+        <BillingToggle
+          billing={values.billing}
+          onChange={(v) => update("billing", v)}
+        />
+      )}
 
       <div className="grid gap-4 lg:grid-cols-3">
         {PACKAGES.map((pkg) => (
           <PackageCard
             key={pkg.id}
             packageId={pkg.id}
-            selected={values.packageId === pkg.id}
+            selected={PLANS_ENABLED && values.packageId === pkg.id}
             billing={values.billing}
             onSelect={selectPackage}
+            disabled={!PLANS_ENABLED}
           />
         ))}
       </div>
@@ -64,7 +80,9 @@ export function StepPublish({ values, onChange }: StepPublishProps) {
           </span>
           <span className="inline-flex items-center gap-1 text-[11px] text-[var(--color-text-subtle)]">
             <TrendingUp className="h-3 w-3" aria-hidden />
-            Aumentan tu visibilidad temporalmente
+            {PLANS_ENABLED
+              ? "Aumentan tu visibilidad temporalmente"
+              : "Disponibles cuando activemos los planes"}
           </span>
         </div>
         <div className="grid gap-3 md:grid-cols-2">
@@ -76,8 +94,9 @@ export function StepPublish({ values, onChange }: StepPublishProps) {
               description={addOn.description}
               priceLabel={`${formatCop(addOn.priceCop)} ${addOn.unit}`.trim()}
               family={addOn.family}
-              selected={values.addOnIds.includes(addOn.id)}
+              selected={PLANS_ENABLED && values.addOnIds.includes(addOn.id)}
               onToggle={toggleAddOn}
+              disabled={!PLANS_ENABLED}
             />
           ))}
         </div>
@@ -104,6 +123,36 @@ export function StepPublish({ values, onChange }: StepPublishProps) {
         />
       </fieldset>
     </SectionShell>
+  );
+}
+
+/**
+ * Visible banner when `PLANS_ENABLED === false`. Communicates the free
+ * launch + sets expectations for when paid plans land.
+ */
+function FreeLaunchBanner() {
+  return (
+    <div
+      role="status"
+      className="flex items-start gap-3 rounded-[var(--radius-xl)] border border-[var(--color-brand-primary)]/40 bg-[var(--color-brand-primary)]/8 p-4"
+    >
+      <span
+        aria-hidden
+        className="mt-0.5 inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[var(--color-brand-primary)]/15 text-[var(--color-brand-primary)]"
+      >
+        <Gift className="h-4 w-4" aria-hidden />
+      </span>
+      <div className="flex flex-col gap-1">
+        <span className="text-sm font-semibold text-[var(--color-foreground)]">
+          Publicación gratuita durante el lanzamiento
+        </span>
+        <span className="text-[12px] leading-relaxed text-[var(--color-text-muted)]">
+          Las modelos que se sumen ahora publican sin costo hasta que activemos
+          los planes pagos. Cuando esto pase tendrás aviso anticipado y opción
+          de elegir tu plan; entretanto, recibes todos los beneficios base.
+        </span>
+      </div>
+    </div>
   );
 }
 
@@ -168,6 +217,7 @@ interface PackageCardProps {
   selected: boolean;
   billing: BillingCycle;
   onSelect: (id: PackageId) => void;
+  disabled?: boolean;
 }
 
 function PackageCard({
@@ -175,6 +225,7 @@ function PackageCard({
   selected,
   billing,
   onSelect,
+  disabled = false,
 }: PackageCardProps) {
   const pkg = PACKAGES.find((p) => p.id === packageId)!;
   const months = billing === "quarterly" ? 3 : 1;
@@ -182,18 +233,27 @@ function PackageCard({
   const total = Math.round(pkg.monthlyCop * months * (1 - discount));
   const monthly = Math.round(total / months);
 
-  const tone = selected
-    ? "border-[var(--color-brand-primary)] bg-[var(--color-surface)] shadow-[var(--shadow-md)]"
-    : "border-[var(--color-border)] bg-[var(--color-surface)] hover:border-[var(--color-brand-primary-soft)]";
+  const tone = disabled
+    ? "border-[var(--color-border)] bg-[var(--color-surface-muted)] opacity-60"
+    : selected
+      ? "border-[var(--color-brand-primary)] bg-[var(--color-surface)] shadow-[var(--shadow-md)]"
+      : "border-[var(--color-border)] bg-[var(--color-surface)] hover:border-[var(--color-brand-primary-soft)]";
 
   return (
     <button
       type="button"
       onClick={() => onSelect(packageId)}
       aria-pressed={selected}
-      className={`relative flex flex-col gap-4 rounded-[var(--radius-xl)] border p-5 text-left transition-[border-color,background,box-shadow,transform] duration-200 ease-[var(--ease-standard)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-background)] ${tone}`}
+      aria-disabled={disabled || undefined}
+      disabled={disabled}
+      className={`relative flex flex-col gap-4 rounded-[var(--radius-xl)] border p-5 text-left transition-[border-color,background,box-shadow,transform] duration-200 ease-[var(--ease-standard)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-background)] ${disabled ? "cursor-not-allowed" : ""} ${tone}`}
     >
-      {pkg.recommended && (
+      {disabled && (
+        <span className="absolute -top-3 right-5 inline-flex items-center gap-1 rounded-full bg-[var(--color-foreground)]/85 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.22em] text-[var(--color-surface)] shadow-[var(--shadow-sm)]">
+          Próximamente
+        </span>
+      )}
+      {pkg.recommended && !disabled && (
         <span className="absolute -top-3 left-5 inline-flex items-center gap-1 rounded-full bg-[var(--color-brand-primary)] px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.22em] text-[var(--color-surface)] shadow-[var(--shadow-sm)]">
           <Sparkles className="h-3 w-3" aria-hidden />
           Recomendado
@@ -264,6 +324,7 @@ interface AddOnCardProps {
   family: "boost" | "content";
   selected: boolean;
   onToggle: (id: AddOnId) => void;
+  disabled?: boolean;
 }
 
 function AddOnCard({
@@ -274,6 +335,7 @@ function AddOnCard({
   family,
   selected,
   onToggle,
+  disabled = false,
 }: AddOnCardProps) {
   const familyTone =
     family === "boost"
@@ -281,17 +343,27 @@ function AddOnCard({
       : "bg-[var(--color-brand-primary)]/10 text-[var(--color-brand-primary)]";
   const familyLabel = family === "boost" ? "Visibilidad" : "Contenido / SEO";
 
+  let stateTone: string;
+  if (disabled) {
+    stateTone =
+      "border-[var(--color-border)] bg-[var(--color-surface-muted)] opacity-60 cursor-not-allowed";
+  } else if (selected) {
+    stateTone =
+      "border-[var(--color-brand-primary)] bg-[var(--color-brand-primary)]/5";
+  } else {
+    stateTone =
+      "border-[var(--color-border)] bg-[var(--color-surface)] hover:border-[var(--color-brand-primary-soft)]";
+  }
+
   return (
     <button
       type="button"
       role="checkbox"
       aria-checked={selected}
+      aria-disabled={disabled || undefined}
+      disabled={disabled}
       onClick={() => onToggle(id)}
-      className={`flex flex-col gap-3 rounded-[var(--radius-md)] border p-4 text-left transition-[border-color,background,transform] duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-background)] ${
-        selected
-          ? "border-[var(--color-brand-primary)] bg-[var(--color-brand-primary)]/5"
-          : "border-[var(--color-border)] bg-[var(--color-surface)] hover:border-[var(--color-brand-primary-soft)]"
-      }`}
+      className={`flex flex-col gap-3 rounded-[var(--radius-md)] border p-4 text-left transition-[border-color,background,transform] duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-background)] ${stateTone}`}
     >
       <div className="flex items-start justify-between gap-3">
         <div className="flex flex-col gap-1">

@@ -1371,3 +1371,12 @@ export const APPEARANCE_CATALOG = {
   breast: ["Pechos naturales", "Tetonas"],
   pubis: ["Depiladas", "Sin depilar"],
 } as const;
+
+export const LANGUAGE_CATALOG = [
+  "Español",
+  "Inglés",
+  "Portugués",
+  "Francés",
+  "Italiano",
+  "Alemán",
+] as const;

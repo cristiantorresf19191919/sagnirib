@@ -4,13 +4,21 @@ import { AnimatePresence, motion } from "framer-motion";
 import { Calendar, Clock, MapPinned, MessageSquare, X } from "lucide-react";
 import Link from "next/link";
 import { createPortal } from "react-dom";
-import { useEffect, useState, useTransition } from "react";
+import { useCallback, useEffect, useMemo, useState, useTransition } from "react";
 
 import { usePathname } from "next/navigation";
 import { useAuthSession } from "@/features/auth/lib/use-auth-session";
 import { toast } from "@/shared/ui/toast";
 
 import { requestBooking } from "../actions/request-booking";
+import {
+  composeProposedAt,
+  firstAvailableDay,
+  firstAvailableSlot,
+  getUpcomingAvailability,
+  type Slot,
+} from "../lib/availability";
+import { BookingDatePicker } from "./BookingDatePicker";
 
 /**
  * UI mirror of the server-side `BOOKING_LIMITS` constant. See the source
@@ -123,10 +131,32 @@ function BookingRequestOverlay({
   onClose,
 }: Readonly<OverlayProps>) {
   const { status } = useAuthSession();
-  const [proposedAt, setProposedAt] = useState(() => {
-    const tomorrow = new Date(Date.now() + 24 * 60 * 60 * 1000);
-    return tomorrow.toISOString().slice(0, 10);
-  });
+
+  // Seed the picker on the first day that actually has at least one open
+  // slot — keeps the modal from opening on "Hoy" when she's fully booked.
+  // useMemo so the upcoming window is computed once per modal open, not
+  // on every keystroke in the message field.
+  const upcomingDays = useMemo(
+    () => getUpcomingAvailability(listingSlug, 14),
+    [listingSlug],
+  );
+  const initialDay = useMemo(
+    () => firstAvailableDay(upcomingDays),
+    [upcomingDays],
+  );
+  const [proposedDate, setProposedDate] = useState<string>(
+    () => initialDay.isoDate,
+  );
+  const [proposedSlot, setProposedSlot] = useState<Slot>(
+    () => firstAvailableSlot(initialDay),
+  );
+  const handleDateChange = useCallback(
+    (next: { date: string; slot: Slot }) => {
+      setProposedDate(next.date);
+      setProposedSlot(next.slot);
+    },
+    [],
+  );
   const [durationHours, setDurationHours] = useState<number>(2);
   const [meetingType, setMeetingType] = useState<string>("outcall");
   const [contactPreference, setContactPreference] = useState<string>(
@@ -142,7 +172,7 @@ function BookingRequestOverlay({
     startTransition(async () => {
       const result = await requestBooking({
         listingSlug,
-        proposedAt,
+        proposedAt: composeProposedAt(proposedDate, proposedSlot),
         durationHours,
         meetingType,
         contactPreference,
@@ -224,32 +254,34 @@ function BookingRequestOverlay({
               data-testid="booking-request-form"
               className="flex flex-col gap-5"
             >
-              {/* Date + duration row */}
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <Field icon={Calendar} label="Fecha propuesta">
-                  <input
-                    type="date"
-                    required
-                    value={proposedAt}
-                    onChange={(e) => setProposedAt(e.target.value)}
-                    min={new Date().toISOString().slice(0, 10)}
-                    className="w-full rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-background)] px-3.5 py-2 text-sm text-[var(--color-foreground)] focus:border-[var(--color-brand-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-brand-primary)]/30"
-                  />
-                </Field>
-                <Field icon={Clock} label="Duración">
-                  <select
-                    value={durationHours}
-                    onChange={(e) => setDurationHours(Number(e.target.value))}
-                    className="w-full rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-background)] px-3.5 py-2 text-sm text-[var(--color-foreground)] focus:border-[var(--color-brand-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-brand-primary)]/30"
-                  >
-                    {DURATIONS.map((h) => (
-                      <option key={h} value={h}>
-                        {h === 24 ? "24 horas (overnight)" : `${h} hora${h === 1 ? "" : "s"}`}
-                      </option>
-                    ))}
-                  </select>
-                </Field>
-              </div>
+              {/* Date strip (full row) + duration below — the strip needs
+                  the horizontal real estate to keep day cards readable on
+                  mobile. */}
+              <Field
+                icon={Calendar}
+                label="Fecha y momento"
+                help="Solo se muestran los días con espacio en su agenda."
+              >
+                <BookingDatePicker
+                  listingSlug={listingSlug}
+                  selectedDate={proposedDate}
+                  selectedSlot={proposedSlot}
+                  onChange={handleDateChange}
+                />
+              </Field>
+              <Field icon={Clock} label="Duración">
+                <select
+                  value={durationHours}
+                  onChange={(e) => setDurationHours(Number(e.target.value))}
+                  className="w-full rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-background)] px-3.5 py-2 text-sm text-[var(--color-foreground)] focus:border-[var(--color-brand-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-brand-primary)]/30 sm:max-w-[50%]"
+                >
+                  {DURATIONS.map((h) => (
+                    <option key={h} value={h}>
+                      {h === 24 ? "24 horas (overnight)" : `${h} hora${h === 1 ? "" : "s"}`}
+                    </option>
+                  ))}
+                </select>
+              </Field>
 
               {/* Meeting type */}
               <Field icon={MapPinned} label="Tipo de encuentro">
@@ -366,15 +398,22 @@ interface FieldProps {
   icon: React.ComponentType<{ className?: string; "aria-hidden"?: boolean }>;
   label: string;
   children: React.ReactNode;
+  /** Optional inline helper text rendered under the label. */
+  help?: string;
 }
 
-function Field({ icon: Icon, label, children }: Readonly<FieldProps>) {
+function Field({ icon: Icon, label, children, help }: Readonly<FieldProps>) {
   return (
     <label className="flex flex-col gap-1.5">
       <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--color-text-subtle)]">
         <Icon className="h-3 w-3" aria-hidden />
         {label}
       </span>
+      {help && (
+        <span className="text-[11px] leading-snug text-[var(--color-text-muted)]">
+          {help}
+        </span>
+      )}
       {children}
     </label>
   );

@@ -9,7 +9,31 @@
  *
  * Mock-only today. Real billing lands behind
  * `src/server/adapters/<provider>/` once a payment provider is picked.
+ *
+ * MVP free launch (founder decision 2026-05-19): until the payment provider
+ * is wired in, ALL profiles publish for free. The 3 plans remain visible
+ * in the wizard so users see the future offer, but the cards and add-ons
+ * render disabled and a "Lanzamiento gratuito" banner explains why. Flip
+ * `PLANS_ENABLED` to `true` in the same PR that wires the provider.
  */
+
+/**
+ * Master toggle for the paid-plans selection step.
+ *
+ *   - `false` (MVP launch): wizard shows plans visually but locks selection
+ *     to `'esencial'` internally, hides totals, replaces CTA with
+ *     "Publicar gratis", hides billing toggle, disables add-ons.
+ *   - `true`  (post-payment-provider): wizard accepts plan + add-on choice,
+ *     shows totals, CTA reads "Publicar y pagar [TOTAL]".
+ *
+ * Single point of truth — every component reads this flag instead of
+ * branching on env vars or duplicated booleans.
+ */
+export const PLANS_ENABLED = false as boolean;
+
+/** Forced default while `PLANS_ENABLED === false`. Esencial keeps the
+ *  audit / Firestore record consistent with the post-launch contract. */
+export const MVP_LOCKED_PACKAGE_ID = "esencial" as const;
 
 export type PackageId = "esencial" | "destacada" | "premium";
 export type AddOnId =
@@ -154,6 +178,29 @@ const COP_FORMATTER = new Intl.NumberFormat("es-CO", {
 
 export function formatCop(value: number): string {
   return COP_FORMATTER.format(value);
+}
+
+/**
+ * Maximum photos accepted by the wizard's upload section per plan.
+ *
+ *   - Esencial:  3 — matches the "Hasta 3 fotos" perk copy.
+ *   - Destacada: 8 — matches the "1 anuncio + 8 fotos + 1 video" perk copy.
+ *   - Premium:  24 — generous cap; aligned with DRAFT_LIMITS.galleryMax on
+ *     the server (which is the absolute ceiling regardless of plan).
+ *   - MVP free: 8 — generous default until plan tiers turn on. Picked to
+ *     give modelos a real-feeling gallery during launch without blowing
+ *     up storage spend.
+ */
+export const GALLERY_MAX_BY_PACKAGE: Record<PackageId, number> = {
+  esencial: 3,
+  destacada: 8,
+  premium: 24,
+};
+export const GALLERY_MAX_MVP_FREE = 8;
+
+export function galleryMaxFor(packageId: PackageId): number {
+  if (!PLANS_ENABLED) return GALLERY_MAX_MVP_FREE;
+  return GALLERY_MAX_BY_PACKAGE[packageId];
 }
 
 export function findPackage(id: PackageId): Package {

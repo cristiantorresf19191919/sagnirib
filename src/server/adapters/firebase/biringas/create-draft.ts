@@ -7,19 +7,22 @@ import { getDb } from "@/server/adapters/firebase/client";
 import { wrapFirestoreError } from "@/server/adapters/firebase/errors";
 
 /**
- * Writes a new draft under `listing_drafts/{auto-id}` (ADR-011).
+ * Writes a new draft under `listing_drafts/{draftId}` (ADR-011).
  *
  * `status` is always `pending_review` at write time — promotion to
  * `approved` / `rejected` is admin-side and out of scope for this adapter.
+ *
+ * The `draftId` is supplied by the barrel (server-minted UUID v4) so the
+ * Storage `copyStagedToDraftForOwner` call can address the same id BEFORE
+ * the Firestore row exists. If the Firestore write fails after the copy,
+ * the resulting orphan blobs are recoverable via the admin sweep.
  *
  * NEVER expose this directly — features call `createListingDraft` from the
  * barrel, which adds validate + requireAuth + audit + role-grant +
  * revalidate.
  *
- * Returns `{ id, hasOtherDrafts }`. `hasOtherDrafts` is consulted by the
- * barrel to decide whether to grant the `'model'` role (only on the very
- * first draft per user). Reading that flag here keeps the round-trip count
- * down — we already had to query Firestore.
+ * Returns `{ id, hasOtherDrafts }`. `hasOtherDrafts` decides the role-grant
+ * branch in the barrel (only on the very first draft per user).
  */
 export async function createListingDraftRaw(
   input: CreateListingDraftRawInput,
@@ -41,21 +44,51 @@ export async function createListingDraftRaw(
     throw wrapFirestoreError("createListingDraft:probePrior", err);
   }
 
-  let id: string;
   try {
-    const ref = await db.collection("listing_drafts").add({
+    await db.collection("listing_drafts").doc(input.draftId).set({
       ownerUid: input.ownerUid,
       status: "pending_review",
       payload: serializePayload(input.payload),
       submittedAt,
       createdAt: FieldValue.serverTimestamp(),
     });
-    id = ref.id;
   } catch (err) {
-    throw wrapFirestoreError("createListingDraft:add", err);
+    throw wrapFirestoreError("createListingDraft:set", err);
   }
 
-  return { id, hasOtherDrafts };
+  return { id: input.draftId, hasOtherDrafts };
+}
+
+/**
+ * Probe used for slug uniqueness — returns whether ANY non-rejected draft
+ * already claims this `preferredSlug`. Called by the barrel BEFORE writing
+ * a new draft so the caller gets a clean error message instead of two
+ * drafts racing for the same slug at admin-approval time.
+ *
+ * Uses Firestore's automatic single-field index on `payload.details.preferredSlug`.
+ * Status is filtered in memory (rejected drafts are NOT a conflict — the
+ * modelo can re-submit with the same slug after a rejection). Trading a
+ * tiny read overhead (a handful of docs per slug) for one fewer composite
+ * index to maintain.
+ */
+export async function findActiveDraftBySlug(slug: string): Promise<boolean> {
+  const db = getDb();
+  try {
+    const snap = await db
+      .collection("listing_drafts")
+      .where("payload.details.preferredSlug", "==", slug)
+      .limit(20)
+      .get();
+    for (const doc of snap.docs) {
+      const status = (doc.data() as { status?: unknown }).status;
+      if (status === "pending_review" || status === "approved") {
+        return true;
+      }
+    }
+    return false;
+  } catch (err) {
+    throw wrapFirestoreError("findActiveDraftBySlug", err);
+  }
 }
 
 /**
@@ -76,7 +109,11 @@ function serializePayload(
       ...payload.description,
       services: [...payload.description.services],
       meetingContexts: [...payload.description.meetingContexts],
-      gallery: [...payload.description.gallery],
+      gallery: payload.description.gallery.map((g) => ({ path: g.path })),
+    },
+    attributes: {
+      ...payload.attributes,
+      languages: [...payload.attributes.languages],
     },
     publish: {
       ...payload.publish,

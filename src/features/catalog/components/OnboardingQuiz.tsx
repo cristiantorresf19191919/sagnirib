@@ -12,6 +12,7 @@ import {
   X,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 
 const STORAGE_KEY = "biringas:onboarding-quiz:v1";
 
@@ -71,6 +72,7 @@ const PLANS = [
 export function OnboardingQuiz() {
   const router = useRouter();
   const [open, setOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const [step, setStep] = useState(0);
   const [city, setCity] = useState<string | null>(null);
   const [budget, setBudget] = useState<string | null>(null);
@@ -78,20 +80,21 @@ export function OnboardingQuiz() {
 
   // Hydrate visibility after mount so SSR markup stays empty.
   useEffect(() => {
-    if (typeof window === "undefined") return;
+    if (globalThis.window === undefined) return;
+    setMounted(true);
     try {
-      if (window.localStorage.getItem(STORAGE_KEY) === "done") return;
+      if (globalThis.localStorage.getItem(STORAGE_KEY) === "done") return;
     } catch {
       return;
     }
-    const timer = window.setTimeout(() => setOpen(true), 900);
-    return () => window.clearTimeout(timer);
+    const timer = globalThis.setTimeout(() => setOpen(true), 900);
+    return () => globalThis.clearTimeout(timer);
   }, []);
 
   const markDone = useMemo(
     () => () => {
       try {
-        window.localStorage.setItem(STORAGE_KEY, "done");
+        globalThis.localStorage.setItem(STORAGE_KEY, "done");
       } catch {
         // ignore
       }
@@ -103,6 +106,25 @@ export function OnboardingQuiz() {
     setOpen(false);
     markDone();
   };
+
+  // While the dialog is visible, lock body scroll and let Escape dismiss it.
+  // Without the lock, the user can scroll the catalog underneath the backdrop
+  // and lose the modal off-screen.
+  useEffect(() => {
+    if (!open) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") close();
+    };
+    globalThis.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      globalThis.removeEventListener("keydown", onKeyDown);
+    };
+    // `close` is stable enough — the markDone dep would re-bind needlessly.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
 
   const finish = (planHref: string) => {
     // Compose the final URL from the chosen city + budget + plan href.
@@ -120,7 +142,14 @@ export function OnboardingQuiz() {
     router.push(finalHref);
   };
 
-  return (
+  // Render through a portal to `document.body` so the dialog escapes any
+  // ancestor that has accidentally established a containing block for
+  // `position: fixed` (transform, filter, container-type, etc.). Without
+  // this, the modal can land far below the viewport even though it is
+  // `fixed inset-0`.
+  if (!mounted) return null;
+
+  return createPortal(
     <AnimatePresence>
       {open && (
         <motion.div
@@ -250,7 +279,8 @@ export function OnboardingQuiz() {
           </motion.div>
         </motion.div>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body,
   );
 }
 

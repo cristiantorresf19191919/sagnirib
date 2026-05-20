@@ -21,7 +21,7 @@ OG description: igual a description.
 OG image: `/brand/og-default.png` (pendiente — fallback `/favicon.ico` no apto).
 Twitter card: `summary_large_image`.
 Schema JSON-LD: ninguno. Esta ruta no genera rich results.
-CTA principal: "Publicar y pagar [TOTAL]" en el paso 3.
+CTA principal: durante MVP-gratuito = "Publicar gratis" en el paso 3; cuando se activen planes pagos = "Publicar y pagar [TOTAL]".
 CTA secundario: "Volver al catálogo".
 Contenido mínimo requerido: stepper visible, paso actual, panel "Consejo útil", resumen de borrador / orden.
 Internal links requeridos: `/` (link de regreso al catálogo).
@@ -38,6 +38,8 @@ Notas:
 - **Auth gate (PR2a):** la ruta llama `getSession()` en el Server Component y redirige a `/ingresar?next=/publicar` si la sesión es anónima. La Server Action `createListingDraft` además exige `requireAuth()` server-side.
 - **Persistencia (PR2a, ADR-011):** la `submit` action escribe en `listing_drafts/{auto-id}` con `status: 'pending_review'`. La modelo recibe la pantalla de éxito + audit event `biringa.draft.submitted`. La aprobación es manual (admin via consola de Firestore) hasta que llegue el panel de admin.
 - **Role grant (PR2a):** en el primer draft enviado, el usuario obtiene el rol `'model'` vía Firebase Auth custom claims (merge aditivo). Drafts posteriores son no-op a nivel claims.
-- **Photos (PR2b pendiente):** el campo gallery del wizard sigue sin file input — el draft acepta `gallery: []`. La validación "al menos una foto" del paso "description" está temporalmente relajada. Cuando aterrice el adapter de Firebase Storage el flujo será: upload directo a Storage desde el cliente → URLs públicas → `payload.description.gallery`.
-- **Pagos (futuro):** cuando se conecte el provider (Stripe / Wompi), un segundo Server Action `chargeForPlan` correrá tras `createListingDraft`. El flujo actual no cobra — el draft queda registrado y la admin lo aprueba sin step de pago real todavía.
+- **Photos (Fase 1 entregada, ADR-012):** el wizard comprime cada foto en el cliente (`browser-image-compression`, max 2048px, calidad 0.82, ~500KB, EXIF eliminado por privacidad) y la sube por **signed URL V4 server-firmada** a `users/{uid}/staging/{sessionId}/photos/...`. En submit, las fotos se copian a `listing_drafts/{draftId}/photos/...` (server-side, Admin SDK). El client nunca sostiene credenciales de Storage; las Storage Rules son deny-all para todo el tráfico cliente. Galería sigue siendo opcional (admin la complementa en aprobación si falta).
+- **Planes (MVP-gratuito, founder decision 2026-05-19):** durante el lanzamiento los 3 planes (Esencial / Destacada / Premium) se ven en el paso 3 pero están deshabilitados con badge "Próximamente". El flag central `PLANS_ENABLED` en `src/features/enrollment/lib/pricing.ts` controla el toggle; cuando se conecte el provider de pagos, flip a `true` en la misma PR. El payload server-side hardcodea `packageId: 'esencial'`, `addOnIds: []`, `billing: 'monthly'` mientras el flag esté en false (defense in depth — no se confía solo en el UI).
+- **Pagos (futuro):** cuando se conecte el provider (Stripe / Wompi), un segundo Server Action `chargeForPlan` correrá tras `createListingDraft`. Hasta entonces el draft queda registrado y la admin lo aprueba sin step de pago.
+- **Video (Fase 1b pendiente):** los planes Destacada / Premium prometen video pero el slot está oculto en el wizard hasta que llegue un pipeline de transcoding decente. Compresión de video en browser es prohibitiva (FFmpeg.wasm 25MB); preferimos transcoding server-side post-upload.
 - Verificación humana del perfil (KYC) sigue siendo paso obligatorio antes de publicar al catálogo — la pantalla de éxito ya lo comunica.

@@ -19,19 +19,24 @@ interface StoredDraft {
 
 const DRAFTS: StoredDraft[] = [];
 
-let nextSeq = 1;
-
 export async function createListingDraftRaw(
   input: CreateListingDraftRawInput,
 ): Promise<{ id: string; hasOtherDrafts: boolean }> {
   const hasOtherDrafts = DRAFTS.some((d) => d.ownerUid === input.ownerUid);
-  const id = `mock-draft-${nextSeq++}`;
   DRAFTS.push({
-    id,
+    id: input.draftId,
     ownerUid: input.ownerUid,
     status: "pending_review",
     payload: input.payload,
     submittedAt: new Date(),
   });
-  return { id, hasOtherDrafts };
+  return { id: input.draftId, hasOtherDrafts };
+}
+
+/**
+ * Mock parity for `findActiveDraftBySlug`. Active = not rejected. Mock
+ * doesn't model rejection yet, so every stored draft counts as active.
+ */
+export async function findActiveDraftBySlug(slug: string): Promise<boolean> {
+  return DRAFTS.some((d) => d.payload.details.preferredSlug === slug);
 }

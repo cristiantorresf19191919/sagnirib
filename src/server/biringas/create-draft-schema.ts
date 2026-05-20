@@ -1,11 +1,13 @@
 import "server-only";
 
 import type { ActionInputSchema } from "@/server/security/validate-action-input";
+import { APPEARANCE_CATALOG } from "@/server/mocks/biringas/data";
 
 import {
   type CreateListingDraftInput,
   DRAFT_LIMITS,
   type ListingDraftPayload,
+  type ListingDraftPayloadAttributes,
   type ListingDraftPayloadDescription,
   type ListingDraftPayloadDetails,
   type ListingDraftPayloadPublish,
@@ -29,12 +31,20 @@ export const createListingDraftSchema: ActionInputSchema<CreateListingDraftInput
     if (!r.payload || typeof r.payload !== "object") {
       throw new Error("createListingDraft: payload must be an object");
     }
+    const sessionId = expectString(r.sessionId, "sessionId", 8, 64);
+    if (!/^[a-zA-Z0-9_-]+$/.test(sessionId)) {
+      throw new Error(
+        "createListingDraft: sessionId must be alphanumeric / dash / underscore",
+      );
+    }
     const payload = r.payload as Record<string, unknown>;
 
     return {
+      sessionId,
       payload: {
         details: parseDetails(payload.details),
         description: parseDescription(payload.description),
+        attributes: parseAttributes(payload.attributes),
         publish: parsePublish(payload.publish),
       } satisfies ListingDraftPayload,
     };
@@ -133,12 +143,132 @@ function parseDescription(raw: unknown): ListingDraftPayloadDescription {
     faceVisible: expectBool(d.faceVisible, "description.faceVisible"),
     paymentByCard: expectBool(d.paymentByCard, "description.paymentByCard"),
     availableNow: expectBool(d.availableNow, "description.availableNow"),
-    gallery: expectStringArray(
+    gallery: expectStagingPhotoArray(
       d.gallery,
       "description.gallery",
       0,
       DRAFT_LIMITS.galleryMax,
     ),
+  };
+}
+
+/**
+ * Strict shape of a staging photo path the wizard is allowed to submit.
+ *
+ * The barrel does an ADDITIONAL check later that the `users/{uid}` segment
+ * equals the authenticated caller's uid — schema-time we only know the
+ * shape is well-formed. This double-check is intentional: a malformed path
+ * at schema time short-circuits before any auth call, and a forged uid at
+ * the barrel layer fails after `requireAuth`. Both layers cooperate.
+ */
+const STAGING_PHOTO_PATH_REGEX =
+  /^users\/([A-Za-z0-9_-]{6,128})\/staging\/([A-Za-z0-9_-]{8,64})\/photos\/([0-9a-f]{8,64})\.(jpg|webp)$/;
+
+function expectStagingPhotoArray(
+  value: unknown,
+  field: string,
+  min: number,
+  max: number,
+): ReadonlyArray<{ path: string }> {
+  if (!Array.isArray(value)) {
+    throw new Error(`createListingDraft: ${field} must be an array`);
+  }
+  if (value.length < min) {
+    throw new Error(
+      `createListingDraft: ${field} must have at least ${min} item(s)`,
+    );
+  }
+  if (value.length > max) {
+    throw new Error(
+      `createListingDraft: ${field} must have at most ${max} item(s)`,
+    );
+  }
+  const seen = new Set<string>();
+  const out: { path: string }[] = [];
+  for (const item of value) {
+    if (!item || typeof item !== "object") {
+      throw new Error(`createListingDraft: ${field} items must be objects`);
+    }
+    const rec = item as Record<string, unknown>;
+    if (typeof rec.path !== "string") {
+      throw new Error(
+        `createListingDraft: ${field}[].path must be a string`,
+      );
+    }
+    const path = rec.path.trim();
+    if (!STAGING_PHOTO_PATH_REGEX.test(path)) {
+      throw new Error(
+        `createListingDraft: ${field}[].path is not a valid staging photo path`,
+      );
+    }
+    if (seen.has(path)) {
+      throw new Error(
+        `createListingDraft: ${field} has duplicate path ${path}`,
+      );
+    }
+    seen.add(path);
+    out.push({ path });
+  }
+  return out;
+}
+
+function parseAttributes(raw: unknown): ListingDraftPayloadAttributes {
+  if (!raw || typeof raw !== "object") {
+    throw new Error("createListingDraft: payload.attributes must be an object");
+  }
+  const d = raw as Record<string, unknown>;
+
+  // Required appearance fields — values constrained to APPEARANCE_CATALOG so a
+  // hand-crafted POST cannot land arbitrary strings in the published profile's
+  // Characteristics block.
+  const country = expectEnum(
+    d.country,
+    "attributes.country",
+    APPEARANCE_CATALOG.country,
+  );
+  const ethnicity = expectEnum(
+    d.ethnicity,
+    "attributes.ethnicity",
+    APPEARANCE_CATALOG.ethnicity,
+  );
+  const hair = expectEnum(d.hair, "attributes.hair", APPEARANCE_CATALOG.hair);
+  const height = expectEnum(
+    d.height,
+    "attributes.height",
+    APPEARANCE_CATALOG.height,
+  );
+  const body = expectEnum(d.body, "attributes.body", APPEARANCE_CATALOG.body);
+  const breast = expectEnum(
+    d.breast,
+    "attributes.breast",
+    APPEARANCE_CATALOG.breast,
+  );
+
+  // `pubis` is optional. The wizard collapses "" → undefined before sending,
+  // but accept either shape (undefined OR omitted key) here.
+  let pubis: string | undefined;
+  if (d.pubis !== undefined && d.pubis !== null && d.pubis !== "") {
+    pubis = expectEnum(d.pubis, "attributes.pubis", APPEARANCE_CATALOG.pubis);
+  }
+
+  // Languages are open-ended (no enum) but trimmed + bounded so a forged
+  // submission cannot stuff arbitrary blobs into the listing.
+  const languages = expectStringArray(
+    d.languages ?? [],
+    "attributes.languages",
+    0,
+    DRAFT_LIMITS.languagesMax,
+  );
+
+  return {
+    country,
+    ethnicity,
+    hair,
+    height,
+    body,
+    breast,
+    pubis,
+    languages,
   };
 }
 

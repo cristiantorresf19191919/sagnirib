@@ -8,6 +8,8 @@ import { auditLog } from "@/server/security/audit-log";
 import { requireAuth } from "@/server/security/require-auth";
 import { validateActionInput } from "@/server/security/validate-action-input";
 
+import { copyStagedToDraftForOwner } from "@/server/storage";
+
 import { CACHE_TAGS } from "./cache-tags";
 import { createListingDraftSchema } from "./create-draft-schema";
 import type { CreateListingDraftInput } from "./draft-types";
@@ -65,6 +67,7 @@ export {
   BIRINGA_LISTINGS,
   CATEGORIES,
   CONTACT_CATALOG,
+  LANGUAGE_CATALOG,
   MEETING_CONTEXT_CATALOG,
   SERVICE_CATALOG,
   SPECIAL_SERVICE_CATALOG,
@@ -87,6 +90,9 @@ export const getListingReviews = adapter.getListingReviews;
 export const listSimilar = adapter.listSimilar;
 export const requestBookingRaw = adapter.requestBookingRaw;
 export const reportListingRaw = adapter.reportListingRaw;
+/** Internal: probes whether a slug is already claimed by a non-rejected
+ *  draft. Wrapped by `createListingDraft` — features should not call it. */
+const findActiveDraftBySlug = adapter.findActiveDraftBySlug;
 
 /**
  * Curated marketing testimonials for the home page.
@@ -123,9 +129,11 @@ export { CACHE_TAGS } from "./cache-tags";
 export type {
   CreateListingDraftInput,
   ListingDraftPayload,
+  ListingDraftPayloadAttributes,
   ListingDraftPayloadDetails,
   ListingDraftPayloadDescription,
   ListingDraftPayloadPublish,
+  ListingDraftPhoto,
   ListingDraftStatus,
 } from "./draft-types";
 export { DRAFT_LIMITS } from "./draft-types";
@@ -278,19 +286,36 @@ export async function reportListing(
 /**
  * Persists a `listing_drafts/{id}` row submitted from the `/publicar` wizard.
  *
- * Standard mutation contract (ADR-010 §5):
+ * Standard mutation contract (ADR-010 §5) extended for asset attachment
+ * (ADR-012):
  *
- *   1. Validate input via `createListingDraftSchema`.
+ *   1. Validate input via `createListingDraftSchema` (shape + staging-path
+ *      regex on every gallery entry).
  *   2. Authenticate — anonymous submissions are refused.
- *   3. Adapter call — writes `listing_drafts/{auto-id}`. Adapter returns
- *      whether the user already had prior drafts.
- *   4. Audit — `biringa.draft.submitted` with the new draft id.
- *   5. Role grant — first draft promotes the user to `roles: ['model']`
- *      via additive custom claims. Subsequent drafts are a no-op (audit
- *      event is emitted regardless, which is fine for the trail).
- *   6. Revalidate — none today: drafts are not on any cached read path.
- *      When the admin queue / "mis publicaciones" surface lands, add the
- *      relevant cache tag here.
+ *   3. **Slug uniqueness** — refuse if `preferredSlug` is already claimed
+ *      by a published listing or by a non-rejected draft. The wizard will
+ *      surface this as a friendly banner via the action wrapper.
+ *   4. **Cross-check gallery ownership** — every staging path must start
+ *      with `users/<caller.uid>/staging/<input.sessionId>/`. The schema
+ *      already verified the regex shape; this layer is what binds it to
+ *      the authenticated identity. The Storage adapter does a third check
+ *      at copy time (defense in depth).
+ *   5. Server-mint `draftId` (UUID v4). Used by both the Storage copy and
+ *      the Firestore write so they address the same id without two
+ *      sequential writes.
+ *   6. **Copy staging → draft** via `copyStagedToDraftForOwner`. Issues
+ *      audit `biringa.draft.assets_attached`. If the copy throws, no
+ *      Firestore row is created and the modelo can retry with the same
+ *      staged files (still alive in `users/<uid>/staging/`).
+ *   7. Adapter call — writes `listing_drafts/{draftId}` with the final
+ *      draft-prefixed paths.
+ *   8. Audit `biringa.draft.submitted` with the draft id + slug + city
+ *      + category + photo count.
+ *   9. Role grant — first draft promotes the user to `roles: ['model']`
+ *      via additive custom claims. Subsequent drafts are a no-op at the
+ *      claims layer; the audit event still fires.
+ *  10. Revalidate — none today; admin / "mis publicaciones" surfaces are
+ *      Fase 2.
  *
  * Returns the new draft id so the action layer can surface a confirmation
  * code in the UI if desired.
@@ -304,9 +329,62 @@ export async function createListingDraft(
   );
   const user = await requireAuth();
 
+  // Slug uniqueness — published catalog first, then the draft queue.
+  const slug = input.payload.details.preferredSlug;
+  const slugTakenByListing = await adapter.findBySlug(slug);
+  if (slugTakenByListing) {
+    const err = new Error(
+      `createListingDraft: slug "${slug}" is already taken by a published profile`,
+    );
+    (err as { kind?: string }).kind = "invalid-argument";
+    throw err;
+  }
+  const slugTakenByDraft = await findActiveDraftBySlug(slug);
+  if (slugTakenByDraft) {
+    const err = new Error(
+      `createListingDraft: slug "${slug}" is already in another draft awaiting review`,
+    );
+    (err as { kind?: string }).kind = "invalid-argument";
+    throw err;
+  }
+
+  // Gallery cross-ownership. The schema enforced the staging-path shape; we
+  // bind it to the authenticated identity HERE so a malicious client cannot
+  // submit a draft whose photos belong to a different user's session.
+  const stagingPrefix = `users/${user.uid}/staging/${input.sessionId}/`;
+  for (const photo of input.payload.description.gallery) {
+    if (!photo.path.startsWith(stagingPrefix)) {
+      const err = new Error(
+        "createListingDraft: gallery contains a photo not owned by the caller",
+      );
+      (err as { kind?: string }).kind = "permission-denied";
+      throw err;
+    }
+  }
+
+  const draftId = globalThis.crypto.randomUUID();
+
+  // Copy staging → draft. Empty gallery is a no-op.
+  const stagingPaths = input.payload.description.gallery.map((p) => p.path);
+  const { draftPaths } = await copyStagedToDraftForOwner(user.uid, {
+    sessionId: input.sessionId,
+    draftId,
+    paths: stagingPaths,
+  });
+
+  // Rewrite payload with the post-copy draft paths.
+  const finalPayload = {
+    ...input.payload,
+    description: {
+      ...input.payload.description,
+      gallery: draftPaths.map((path) => ({ path })),
+    },
+  };
+
   const result = await adapter.createListingDraftRaw({
     ownerUid: user.uid,
-    payload: input.payload,
+    draftId,
+    payload: finalPayload,
   });
 
   await auditLog({
@@ -314,9 +392,12 @@ export async function createListingDraft(
     actorId: user.uid,
     resource: `draft:${result.id}`,
     metadata: {
-      preferredSlug: input.payload.details.preferredSlug,
+      preferredSlug: slug,
       city: input.payload.details.city,
       category: input.payload.details.category,
+      photoCount: draftPaths.length,
+      packageId: input.payload.publish.packageId,
+      addOnIds: [...input.payload.publish.addOnIds],
     },
   });
 

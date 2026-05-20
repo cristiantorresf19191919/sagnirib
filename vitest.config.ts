@@ -7,6 +7,11 @@ export default defineConfig({
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "src"),
+      // `server-only` throws at module load to fence client bundles in
+      // production. Tests need access to pure helpers under src/server/...
+      // (schemas, mappers) — stub the import to a no-op for vitest only.
+      // The Next.js compiler still gets the real package in dev / build.
+      "server-only": path.resolve(__dirname, "tests/setup/server-only-stub.ts"),
     },
   },
   test: {

@@ -10,9 +10,22 @@ import {
 } from "lucide-react";
 
 import { buildPageMetadata } from "@/core/seo/build-page-metadata";
+import { getSession } from "@/server/auth";
+import { getMyVerification } from "@/server/verification";
 import { Container } from "@/shared/design-system/components/Container";
 import { Footer } from "@/shared/layout/Footer";
 import { Header } from "@/shared/layout/Header";
+
+type CtaState = "anonymous" | "needs_kyc" | "pending" | "approved";
+
+async function resolveCtaState(): Promise<CtaState> {
+  const session = await getSession().catch(() => null);
+  if (!session) return "anonymous";
+  const my = await getMyVerification().catch(() => null);
+  if (my?.status === "approved") return "approved";
+  if (my?.status === "pending_review") return "pending";
+  return "needs_kyc";
+}
 
 /**
  * `/verificacion` — public explainer for the two-layer verification
@@ -76,7 +89,12 @@ const FAQ = [
   },
 ];
 
-export default function VerificacionPage() {
+export default async function VerificacionPage() {
+  // Authenticated modelos see a CTA on the hero. We resolve the session +
+  // current verification status server-side so the call-to-action reflects
+  // the user's actual state (no flash of wrong CTA on client hydration).
+  const ctaState = await resolveCtaState();
+
   return (
     <>
       <Header />
@@ -124,6 +142,8 @@ export default function VerificacionPage() {
                 insignia dorada del escudo no se compra — se gana con dos
                 capas independientes de verificación humana.
               </p>
+
+              <ModeloCta state={ctaState} />
             </div>
           </Container>
         </section>
@@ -250,5 +270,44 @@ export default function VerificacionPage() {
       </main>
       <Footer />
     </>
+  );
+}
+
+/**
+ * State-aware CTA shown inside the hero. Anonymous visitors see the marketing
+ * "qué es verificación" stays without a CTA (this is an explainer for both
+ * publishers and potential modelos). Once authenticated, the CTA reflects
+ * what the modelo actually needs to do.
+ */
+function ModeloCta({ state }: { state: CtaState }) {
+  if (state === "anonymous") return null;
+
+  if (state === "approved") {
+    return (
+      <div className="mx-auto mt-8 inline-flex items-center gap-2 rounded-full border border-emerald-300 bg-emerald-50 px-4 py-2 text-sm font-semibold text-emerald-900">
+        <CheckCircle2 className="h-4 w-4" aria-hidden />
+        Tu identidad ya está verificada
+      </div>
+    );
+  }
+
+  if (state === "pending") {
+    return (
+      <div className="mx-auto mt-8 inline-flex items-center gap-2 rounded-full border border-amber-300 bg-amber-50 px-4 py-2 text-sm font-semibold text-amber-900">
+        <Lock className="h-4 w-4" aria-hidden />
+        Tu verificación está en revisión
+      </div>
+    );
+  }
+
+  // needs_kyc
+  return (
+    <Link
+      href="/verificacion/enviar"
+      className="mx-auto mt-8 inline-flex h-12 items-center justify-center gap-2 rounded-full bg-[var(--color-brand-primary)] px-6 text-sm font-semibold text-[var(--color-surface)] shadow-[var(--shadow-glow-primary)] transition-colors hover:bg-[var(--color-brand-primary-strong)]"
+    >
+      Verificar mi identidad
+      <ArrowRight className="h-4 w-4" aria-hidden />
+    </Link>
   );
 }

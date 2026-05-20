@@ -23,6 +23,17 @@ export interface ListingDraftPayloadDetails {
   contactChannels: ReadonlyArray<string>;
 }
 
+/**
+ * One photo attached to the draft. `path` is the canonical bucket path the
+ * Storage adapter copied into `listing_drafts/{draftId}/photos/...`
+ * (post-copy from staging — ADR-012). Features must NOT treat the path as a
+ * public URL; previews go through short-lived signed READ URLs minted
+ * server-side on demand.
+ */
+export interface ListingDraftPhoto {
+  path: string;
+}
+
 export interface ListingDraftPayloadDescription {
   shortBio: string;
   bio: string;
@@ -32,10 +43,12 @@ export interface ListingDraftPayloadDescription {
   paymentByCard: boolean;
   availableNow: boolean;
   /**
-   * Placeholder gallery — names / labels supplied by the wizard. Replaced
-   * with Firebase Storage URLs once PR2b lands.
+   * Photos attached to this draft. Empty array is allowed (modelo can still
+   * submit a draft for human review without photos — admin attaches the
+   * KYC-verified ones at approval time). When non-empty, each entry holds
+   * the canonical draft path (e.g. `listing_drafts/<draftId>/photos/<id>.jpg`).
    */
-  gallery: ReadonlyArray<string>;
+  gallery: ReadonlyArray<ListingDraftPhoto>;
 }
 
 export interface ListingDraftPayloadPublish {
@@ -46,9 +59,28 @@ export interface ListingDraftPayloadPublish {
   acceptsAdult: boolean;
 }
 
+/**
+ * Appearance attributes captured by the wizard. Mirrors `BiringaAttributes`
+ * on the public listing side so that approving a draft → listing is a 1:1
+ * field copy. `pubis` and `languages` are optional (the public profile's
+ * Characteristics block does not require them); the other six are required
+ * so the profile never renders "—" for a freshly-published listing.
+ */
+export interface ListingDraftPayloadAttributes {
+  ethnicity: string;
+  hair: string;
+  height: string;
+  body: string;
+  breast: string;
+  country: string;
+  pubis?: string;
+  languages: ReadonlyArray<string>;
+}
+
 export interface ListingDraftPayload {
   details: ListingDraftPayloadDetails;
   description: ListingDraftPayloadDescription;
+  attributes: ListingDraftPayloadAttributes;
   publish: ListingDraftPayloadPublish;
 }
 
@@ -56,17 +88,26 @@ export interface ListingDraftPayload {
  * Input accepted by the public Server Action / barrel function. The wizard
  * sends UI-friendly string-typed fields; the schema (`create-draft-schema.ts`)
  * trims and coerces them into this shape.
+ *
+ * `sessionId` ties the submit back to the wizard's upload session, so the
+ * barrel can call `copyStagedToDraftForOwner(uid, { sessionId, draftId, paths })`
+ * with the correct scope. The schema validates the format; ownership of the
+ * staged blobs is verified at copy time by the storage adapter.
  */
 export interface CreateListingDraftInput {
+  sessionId: string;
   payload: ListingDraftPayload;
 }
 
 /**
- * Adapter-facing input. The barrel injects `ownerUid` from `requireAuth`,
- * so adapters never trust an `ownerUid` from the wire.
+ * Adapter-facing input. The barrel injects `ownerUid` (from `requireAuth`)
+ * and `draftId` (server-minted via UUID v4) so adapters never trust those
+ * values from the wire. The `payload.description.gallery` paths at this
+ * stage are the FINAL draft paths (post-copy), never staging paths.
  */
 export interface CreateListingDraftRawInput {
   ownerUid: string;
+  draftId: string;
   payload: ListingDraftPayload;
 }
 
@@ -91,4 +132,5 @@ export const DRAFT_LIMITS = {
   contactChannelsMax: 10,
   galleryMax: 24,
   addOnsMax: 20,
+  languagesMax: 12,
 } as const;

@@ -7,36 +7,20 @@ import {
   type Variants,
 } from "framer-motion";
 import { Clock } from "lucide-react";
-import { useRef } from "react";
+import { useMemo, useRef } from "react";
+
+import {
+  getWeeklyAvailability,
+  synthReplyMinutes,
+  type Slot,
+} from "../lib/availability";
 
 const DAY_NAMES = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
-const SLOT_NAMES = ["Mañana", "Tarde", "Noche"];
-
-/**
- * Deterministic FNV-1a hash → seed for a small PRNG. Same input → same
- * output, so a given listing slug always renders the same week pattern
- * across requests (no hydration churn, no "today she's free / tomorrow
- * she isn't" surprise on refresh). Until a real availability calendar
- * ships, this gives the UI something concrete to render.
- */
-function seedFrom(input: string): number {
-  let hash = 2166136261;
-  for (let i = 0; i < input.length; i += 1) {
-    hash ^= input.charCodeAt(i);
-    hash = (hash * 16777619) >>> 0;
-  }
-  return hash >>> 0;
-}
-
-function mulberry32(seed: number) {
-  let t = seed;
-  return () => {
-    t = (t + 0x6d2b79f5) >>> 0;
-    let r = Math.imul(t ^ (t >>> 15), 1 | t);
-    r = (r + Math.imul(r ^ (r >>> 7), 61 | r)) ^ r;
-    return ((r ^ (r >>> 14)) >>> 0) / 4294967296;
-  };
-}
+const SLOT_ROWS: ReadonlyArray<{ key: Slot; label: string }> = [
+  { key: "morning", label: "Mañana" },
+  { key: "afternoon", label: "Tarde" },
+  { key: "evening", label: "Noche" },
+];
 
 /**
  * Parent stagger — fires once per viewport entry, replays on every
@@ -132,20 +116,11 @@ export function AvailabilityStrip({
   highlightToday = true,
   avgReplyMinutes,
 }: Readonly<AvailabilityStripProps>) {
-  const rng = mulberry32(seedFrom(listingSlug));
-  const availability: ReadonlyArray<ReadonlyArray<0 | 1 | 2>> = Array.from(
-    { length: 7 },
-    () =>
-      Array.from({ length: 3 }, () => {
-        const r = rng();
-        if (r < 0.18) return 0 as const;
-        if (r < 0.42) return 1 as const;
-        return 2 as const;
-      }),
-  );
-
-  const replyMin =
-    avgReplyMinutes ?? Math.max(4, Math.floor(rng() * 38) + 4);
+  // Pull the per-(slug, dayOfWeek, slot) pattern from the shared lib so
+  // this strip and the booking date picker agree cell-for-cell on what
+  // "Disponible" / "Consultar" / "Ocupada" means.
+  const week = useMemo(() => getWeeklyAvailability(listingSlug), [listingSlug]);
+  const replyMin = avgReplyMinutes ?? synthReplyMinutes(listingSlug);
 
   // Highlight today (computed client-side so timezone doesn't drift
   // between SSR and CSR).
@@ -161,22 +136,6 @@ export function AvailabilityStrip({
     amount: 0.4,
     margin: "-40px",
   });
-
-  // Build a flat slot list so the parent stagger can drive a single
-  // ordered cascade across all 21 cells (top-left → bottom-right).
-  // Each slot carries its row/col + state so the render below can pick
-  // the right variant.
-  const orderedSlots: ReadonlyArray<{
-    row: number;
-    col: number;
-    state: 0 | 1 | 2;
-  }> = SLOT_NAMES.flatMap((_, row) =>
-    availability.map((day, col) => ({
-      row,
-      col,
-      state: day[row]!,
-    })),
-  );
 
   return (
     <section
@@ -217,16 +176,16 @@ export function AvailabilityStrip({
           </tr>
         </thead>
         <tbody>
-          {SLOT_NAMES.map((slot, slotIdx) => (
-            <tr key={slot}>
+          {SLOT_ROWS.map(({ key: slotKey, label: slot }) => (
+            <tr key={slotKey}>
               <th
                 scope="row"
                 className="text-left text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--color-text-subtle)]"
               >
                 {slot}
               </th>
-              {availability.map((day, dayIdx) => {
-                const state = day[slotIdx]!;
+              {week.map((day, dayIdx) => {
+                const state = day[slotKey];
                 const isToday = dayIdx === todayDow;
                 const variants =
                   state === 2 ? SPARK_AVAILABLE : FADE_NEUTRAL;
@@ -243,7 +202,7 @@ export function AvailabilityStrip({
                   : "";
 
                 return (
-                  <td key={`${slot}-${dayIdx}`} className="p-0">
+                  <td key={`${slotKey}-${dayIdx}`} className="p-0">
                     <motion.span
                       aria-label={
                         state === 2

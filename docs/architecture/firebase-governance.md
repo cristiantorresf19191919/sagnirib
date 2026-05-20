@@ -199,6 +199,64 @@ for the `biringas` port:
 Features stay untouched. The whole point is that swapping is a one-folder
 change at the adapter layer plus the barrel.
 
+## Scenario 8 — Provisioning the storage bucket (one-time, per environment)
+
+Cloud Storage backs the `/publicar` wizard's photo upload (ADR-012). The
+adapter is server-only; the client never sees credentials. This setup
+gives the operator the bucket the adapter signs URLs against.
+
+1. **Enable Cloud Storage for Firebase.** In the Firebase Console of the
+   target project → `Storage` → "Get started". Choose the **same region**
+   as Firestore. The default name is `<projectId>.appspot.com` for legacy
+   projects, `<projectId>.firebasestorage.app` for projects created after
+   October 2024. Both work — pick the one the console shows you.
+2. **Set `FIREBASE_STORAGE_BUCKET`** in `.env.local` (and the deployment
+   host secrets) to that exact string. `src/core/config/firebase.ts`
+   requires all four FIREBASE_* env vars now — missing the bucket flips
+   the project back to the mock storage adapter.
+3. **Deploy storage rules:** `pnpm firebase:deploy:storage`. The rules
+   in `storage.rules` deny everything to the client SDK; access is
+   exclusively via Admin SDK signed URLs.
+4. **Configure CORS.** Required so the browser can PUT to the signed URL
+   from `localhost` and the production domain. Run **once** per bucket:
+
+   ```
+   gsutil cors set cors.json gs://<your-bucket>
+   ```
+
+   (Requires `gcloud` CLI authenticated against the Firebase project.
+   `gsutil` ships with the Google Cloud SDK.) The allowed origins live in
+   `cors.json` at the repo root — update the production domains there
+   before deploying.
+5. **Add a bucket lifecycle rule.** In the Google Cloud Console →
+   Cloud Storage → your bucket → Lifecycle → "Add a rule":
+   - Action: **Delete object**.
+   - Condition: **Age** = 1 day, **Object name matches prefix** = `users/`.
+   This deletes staged-but-never-submitted uploads after 24 hours. The
+   draft and listing prefixes are never auto-cleaned.
+6. **IAM:** the service account behind `FIREBASE_CLIENT_EMAIL` must have
+   **Storage Object Admin** on the bucket. If the service account was
+   provisioned with `Editor` / `Owner` at the project level it already
+   inherits this; otherwise grant it explicitly:
+
+   ```
+   gcloud storage buckets add-iam-policy-binding gs://<your-bucket> \
+     --member="serviceAccount:<email>" \
+     --role="roles/storage.objectAdmin"
+   ```
+
+7. **Verify.** Boot the app with the env vars set, hit `/publicar`, and
+   inspect the network panel — the `requestUploadTicket` Server Action
+   should return a `uploadUrl` pointing at
+   `https://storage.googleapis.com/...`. A subsequent PUT with the
+   compressed JPEG should return `200`. If you get `403`, the bucket name
+   or the IAM role is wrong; if `4xx` on CORS, re-run step 4.
+
+When **adding a new bucket prefix** (e.g. a future `verifications/{uid}/`
+for KYC documents): treat it as ADR-level work. Open a new ADR, extend
+`storage.rules`, the adapter, and the audit rule for hardcoded prefixes
+(rule 9).
+
 ## Anti-patterns refusal list
 
 If a task description matches any of these, refuse to implement it as
@@ -214,6 +272,9 @@ described and propose the correct path:
 | "Add a new collection under `src/features/...`"                      | Collections live at `src/server/<port>/`; open an ADR.|
 | "Import `firebase/auth` in a Client Component for one button"        | Use `useAuthSession()`.                 |
 | "Write a 'demo data' script under `src/` for Storybook"              | Storybook reads from the mock; do not fork.|
+| "Just upload directly with `firebase/storage` from the wizard"       | Server-signed V4 URL via `@/server/storage`. The client never holds upload creds (ADR-012). |
+| "Let the client decide the upload path and just check the prefix"    | The server **mints** the path inside `requestUploadTicket`; the client only sends MIME + size. |
+| "Skip compression — the bucket can hold the 12MB JPEG"               | EXIF + bandwidth + cost. Run `compressImage()` client-side before any upload. |
 
 ## Deploying rules + indexes
 

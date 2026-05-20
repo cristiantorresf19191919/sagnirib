@@ -23,9 +23,11 @@
     "seed:firebase:dry": "tsx --conditions=react-server scripts/seed-firebase.ts --dry-run",
     "firebase:deploy:rules": "pnpm dlx firebase-tools@latest deploy --only firestore:rules",
     "firebase:deploy:indexes": "pnpm dlx firebase-tools@latest deploy --only firestore:indexes",
-    "firebase:deploy": "pnpm dlx firebase-tools@latest deploy --only firestore"
+    "firebase:deploy:storage": "pnpm dlx firebase-tools@latest deploy --only storage",
+    "firebase:deploy": "pnpm dlx firebase-tools@latest deploy --only firestore,storage"
   },
   "dependencies": {
+    "browser-image-compression": "^2.0.2",
     "firebase": "^12.13.0",
     "firebase-admin": "^13.9.0",
     "framer-motion": "^12.38.0",

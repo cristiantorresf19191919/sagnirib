@@ -1,19 +1,27 @@
-import type { ListingDraftPayload } from "@/server/biringas";
+import type { CreateListingDraftInput } from "@/server/biringas";
 
+import { MVP_LOCKED_PACKAGE_ID, PLANS_ENABLED } from "./pricing";
 import type { EnrollmentDraft } from "./types";
 
 /**
  * Maps the wizard's UI-shaped `EnrollmentDraft` (with string-typed numeric
- * fields and readonly arrays) into the server's `ListingDraftPayload`
- * (with proper number / writable array shapes).
+ * fields and readonly arrays) into the server's `CreateListingDraftInput`
+ * (with proper number / writable array shapes and the canonical storage
+ * paths for the gallery).
  *
  * Trim is best-effort here — the server schema trims again as the
  * source of truth.
+ *
+ * `sessionId` is the wizard-side stable upload session id (generated once
+ * when the wizard mounts). It must match the `users/<uid>/staging/<sessionId>/`
+ * prefix of every gallery `uploadedPath`. The server cross-checks this.
  */
-export function toServerPayload(draft: EnrollmentDraft): {
-  payload: ListingDraftPayload;
-} {
+export function toServerPayload(
+  draft: EnrollmentDraft,
+  sessionId: string,
+): CreateListingDraftInput {
   return {
+    sessionId,
     payload: {
       details: {
         displayName: draft.details.displayName.trim(),
@@ -41,15 +49,47 @@ export function toServerPayload(draft: EnrollmentDraft): {
         faceVisible: draft.description.faceVisible,
         paymentByCard: draft.description.paymentByCard,
         availableNow: draft.description.availableNow,
-        gallery: [...draft.description.galleryFileNames],
+        // Only photos that finished the upload + confirm round-trip have an
+        // `uploadedPath`; anything still queued is silently dropped. The
+        // wizard validator separately refuses to submit while an upload is
+        // in flight, so this filter is belt-and-suspenders.
+        gallery: draft.description.gallery
+          .filter((g): g is typeof g & { uploadedPath: string } => Boolean(g.uploadedPath))
+          .map((g) => ({ path: g.uploadedPath })),
       },
-      publish: {
-        packageId: draft.publish.packageId,
-        addOnIds: [...draft.publish.addOnIds],
-        billing: draft.publish.billing,
-        acceptsTerms: draft.publish.acceptsTerms,
-        acceptsAdult: draft.publish.acceptsAdult,
+      attributes: {
+        ethnicity: draft.attributes.ethnicity.trim(),
+        hair: draft.attributes.hair.trim(),
+        height: draft.attributes.height.trim(),
+        body: draft.attributes.body.trim(),
+        breast: draft.attributes.breast.trim(),
+        // `pubis` is optional UI-side; collapse `""` to undefined so the
+        // schema's required-vs-optional shape stays clean and Firestore
+        // doesn't persist an empty string.
+        pubis: draft.attributes.pubis.trim() || undefined,
+        country: draft.attributes.country.trim(),
+        languages: [...draft.attributes.languages],
       },
+      // MVP launch: server-side guarantee that the payload always reflects
+      // the free tier regardless of what UI state held. The cards in the UI
+      // are disabled so this should already be the case, but force it
+      // anyway — defense in depth (the wizard's onChange could be bypassed
+      // by a savvy user).
+      publish: PLANS_ENABLED
+        ? {
+            packageId: draft.publish.packageId,
+            addOnIds: [...draft.publish.addOnIds],
+            billing: draft.publish.billing,
+            acceptsTerms: draft.publish.acceptsTerms,
+            acceptsAdult: draft.publish.acceptsAdult,
+          }
+        : {
+            packageId: MVP_LOCKED_PACKAGE_ID,
+            addOnIds: [],
+            billing: "monthly",
+            acceptsTerms: draft.publish.acceptsTerms,
+            acceptsAdult: draft.publish.acceptsAdult,
+          },
     },
   };
 }
@@ -69,8 +109,20 @@ export function humanizeDraftError(
       return "Tu sesión expiró. Vuelve a ingresar para enviar tu borrador.";
     case "not-configured":
       return "El backend no está configurado en este ambiente.";
+    case "permission-denied":
+      return "Una o más fotos del borrador no son tuyas. Vuelve al paso de descripción y resubelas.";
     case "invalid-argument":
     case "validation":
+      // The slug-conflict messages are user-facing as-is ("slug ... is
+      // already taken by a published profile" / "... is already in another
+      // draft awaiting review"). Convert them to Spanish here so the
+      // banner reads naturally.
+      if (error.message.includes("is already taken by a published profile")) {
+        return "Ya hay un perfil publicado con esa URL. Elige otra URL preferida.";
+      }
+      if (error.message.includes("is already in another draft awaiting review")) {
+        return "Otro borrador en revisión ya pidió esta URL. Elige una distinta.";
+      }
       return error.message ?? "Revisa los campos del formulario.";
     default:
       return error.message ?? "No se pudo enviar tu borrador.";

@@ -3,7 +3,7 @@ import "server-only";
 /**
  * Firebase environment configuration.
  *
- * Source of truth for Firebase Admin credentials. Validates the three env
+ * Source of truth for Firebase Admin credentials. Validates the four env
  * vars at first read. If any required var is missing the config evaluates
  * to `null` and `isFirebaseConfigured()` returns `false` — the barrel in
  * `@/server/biringas` then falls back to the in-memory mock so local dev
@@ -12,7 +12,15 @@ import "server-only";
  * Required env vars (Service Account JSON, expanded for Vercel-style hosts):
  *   FIREBASE_PROJECT_ID
  *   FIREBASE_CLIENT_EMAIL
- *   FIREBASE_PRIVATE_KEY  (newlines may be escaped as `\n`)
+ *   FIREBASE_PRIVATE_KEY     (newlines may be escaped as `\n`)
+ *   FIREBASE_STORAGE_BUCKET  (e.g. `<projectId>.appspot.com` or
+ *                             `<projectId>.firebasestorage.app`)
+ *
+ * `storageBucket` is required when the storage port (ADR-012) is wired in.
+ * Treat it as part of the same configuration set: either all four are
+ * present, or the project falls back to mocks. This keeps environments
+ * consistent — a Firestore-configured deploy without storage would create
+ * a half-real setup that's easy to misdiagnose.
  *
  * NEVER expose these via NEXT_PUBLIC_*. They are server-only.
  */
@@ -21,14 +29,16 @@ export interface FirebaseConfig {
   readonly projectId: string;
   readonly clientEmail: string;
   readonly privateKey: string;
+  readonly storageBucket: string;
 }
 
 function readConfig(): FirebaseConfig | null {
   const projectId = process.env.FIREBASE_PROJECT_ID?.trim();
   const clientEmail = process.env.FIREBASE_CLIENT_EMAIL?.trim();
   const rawPrivateKey = process.env.FIREBASE_PRIVATE_KEY?.trim();
+  const storageBucket = process.env.FIREBASE_STORAGE_BUCKET?.trim();
 
-  if (!projectId || !clientEmail || !rawPrivateKey) {
+  if (!projectId || !clientEmail || !rawPrivateKey || !storageBucket) {
     return null;
   }
 
@@ -38,7 +48,7 @@ function readConfig(): FirebaseConfig | null {
     .replaceAll(/^"|"$/g, "")
     .replaceAll(String.raw`\n`, "\n");
 
-  return { projectId, clientEmail, privateKey };
+  return { projectId, clientEmail, privateKey, storageBucket };
 }
 
 let cached: FirebaseConfig | null | undefined;
@@ -49,7 +59,7 @@ export function getFirebaseConfig(): FirebaseConfig | null {
     if (cached === null && process.env.NODE_ENV !== "test") {
       // One-shot warning so the fallback to mock data is observable.
       console.warn(
-        "[firebase] FIREBASE_PROJECT_ID / FIREBASE_CLIENT_EMAIL / FIREBASE_PRIVATE_KEY not set — falling back to mock catalog. See .env.example.",
+        "[firebase] One or more of FIREBASE_PROJECT_ID / FIREBASE_CLIENT_EMAIL / FIREBASE_PRIVATE_KEY / FIREBASE_STORAGE_BUCKET not set — falling back to mock catalog + mock storage. See .env.example.",
       );
     }
   }

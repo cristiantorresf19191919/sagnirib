@@ -110,3 +110,86 @@ Status: proposed | accepted | implemented | audited | rejected
 - Owner: camilo-gutierrez.
 - Status: implemented (PR 2 foundation — no UI components yet, since copy
   awaits the Brand Handshake).
+
+### PDR-003 · Storage port (Adapter + Command + State Machine)
+
+- Problem: the `/publicar` wizard needs to attach photos to a `listing_drafts/{id}`
+  document. The browser must not hold storage credentials; the server must
+  decide where bytes land and at what size / MIME; the asset lifecycle has
+  three states (staging → draft → listing) that must be auditable.
+- Pattern chosen: Adapter (Firebase Admin Storage behind a server port) +
+  Command (upload-ticket Server Action) + lightweight State Machine for the
+  per-asset lifecycle.
+- Alternatives considered:
+  - (1) Web SDK direct upload with Storage Rules as the sole guard —
+    rejected, would require relaxing the `firebase-data-ownership` rule that
+    fences the Web SDK to `src/features/auth/lib/**`, and Storage Rules are
+    weaker than IAM-bound signed URLs (see ADR-012 § "Decision").
+  - (2) Server-proxied upload (`POST /api/upload` → server streams to
+    bucket) — rejected, doubles bandwidth + adds a Node route handler that
+    has to babysit multipart bodies. Signed URLs let the client upload
+    directly to GCS without us touching the bytes.
+  - (3) Third-party uploader (UploadThing / Uploadcare) — rejected, adds a
+    second vendor for what is effectively three signed URLs and a copy.
+- Why this pattern applies: same boundary problem as the listings adapter,
+  with one extra dimension (the asset has a lifecycle that survives across
+  Server Actions). The Command is the upload ticket; the State Machine is
+  staging → draft → listing.
+- Why this is not over-engineering: the State Machine has three states and
+  two transitions (`submit` moves staging → draft; admin `approve` moves
+  draft → listing). It is encoded by the path layout itself, not as a
+  separate orchestrator. The Command pattern is a one-function Server
+  Action — it earns the name only because we'll add `revokeUploadTicket` and
+  `confirmUpload` siblings.
+- Layer affected: server + features (enrollment).
+- Server / client boundary: 100% server for the adapter and mock; the
+  client only knows about the returned `{ uploadUrl, path, expiresAt }`
+  shape and `fetch`s against the signed URL.
+- Files created or modified:
+  - `src/server/storage/{types,upload-ticket-schema,index}.ts` (port + barrel).
+  - `src/server/adapters/firebase/storage/{client,errors,sign-upload-url,confirm-upload,copy-to-draft,index}.ts`.
+  - `src/server/mocks/storage/{index,store}.ts` (in-memory blob store with
+    fake signed URL endpoint mounted in `proxy.ts`).
+  - `src/features/enrollment/actions/{request-upload-ticket,confirm-upload}.ts`.
+  - `src/features/enrollment/lib/compress-image.ts` (client-side, wraps
+    `browser-image-compression`).
+  - `src/features/enrollment/components/StepDescription.tsx` (refactored
+    for the per-asset upload state machine).
+  - `src/server/biringas/{draft-types,create-draft-schema,index}.ts` (gallery
+    becomes `{ path: string }[]`; on submit, paths are validated to live
+    under the caller's `users/{uid}/staging/...` prefix and then copied
+    into `listing_drafts/{draftId}/`).
+  - `storage.rules`, `cors.json`, `.env.example` (new env var), `firebase.json`
+    (storage block), `package.json` (deploy script).
+  - `scripts/audit-firebase.mjs` (new boundary rule).
+  - `docs/architecture/firebase-governance.md` (new Scenario 8).
+- Tests required:
+  - Schema unit tests: `uploadTicketSchema` rejects unsupported MIME, sizes
+    above cap, paths outside the caller's staging prefix.
+  - Mapper unit test: server-side path generator emits the documented
+    prefix shape (`users/{uid}/staging/{sessionId}/photos/{photoId}.jpg`).
+  - Adapter integration test (gated by env): signed PUT URL accepts
+    in-range payload, rejects out-of-range payload, expires after TTL.
+  - Boundary test: `pnpm firebase:audit` flags `firebase-admin/storage`
+    outside `src/server/adapters/firebase/storage/**`.
+- Risks:
+  - (1) The 24h staging lifecycle rule is applied at the bucket level
+    (operator step). If the operator skips it, staging blobs accumulate.
+    Mitigation: a `scripts/audit-storage.mjs` (future) can scan and warn.
+  - (2) The mock signed-URL endpoint runs inside the Next.js process; in
+    production-prod it would be a public ingestion point. The mock is gated
+    behind `NODE_ENV !== "production"` and `!isFirebaseConfigured()` — a
+    deployment with real Firebase config skips the mock entirely.
+  - (3) `browser-image-compression` adds ~25KB gzipped to the wizard bundle.
+    Acceptable; the page is funnel-only (noindex) and not in the critical
+    public path.
+- Owner: camilo-gutierrez.
+- Status: implemented (Fase 1 of the publish-profile completion roadmap,
+  ADR-012). Closing summary: 5 rounds delivered — storage port (types,
+  schema, barrel), Firebase adapter (V4 signed URLs, HEAD verify,
+  staging→draft copy), dev mock with route-handler ingestion, draft schema
+  + slug uniqueness, wizard with per-photo FSM and EXIF-stripped
+  compression, MVP-free plans gated by `PLANS_ENABLED`. 40 unit tests
+  pass; firebase:audit clean with 10 rules. Video deferred to Fase 1b.
+  Admin approval / draft promotion deferred to Fase 2 (ADR-013, future).
+

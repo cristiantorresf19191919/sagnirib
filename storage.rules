@@ -1,0 +1,35 @@
+rules_version = '2';
+
+// =========================================================================
+//  Biringas Cloud Storage security rules
+// =========================================================================
+//
+//  Default posture: deny everything from the client SDK. ALL upload and
+//  read access goes through Admin SDK signed URLs issued by Server Actions
+//  under `src/server/adapters/firebase/storage/`. The Admin SDK bypasses
+//  these rules and authenticates via IAM (service account).
+//
+//  This is intentional and audit-enforced (ADR-010 §1 + ADR-012):
+//    - Uploads go through `requestUploadTicket` Server Action which signs
+//      a single-use V4 PUT URL bound to a path, MIME, and byte range.
+//    - Public reads of approved listing photos hit
+//      `https://firebasestorage.googleapis.com/v0/b/<bucket>/o/listings%2F...`
+//      via the Firebase tokenized URL or the bucket's public ACL on the
+//      `listings/` prefix (configured operator-side, not in rules).
+//    - Staging and draft assets are NEVER public; the wizard sees them
+//      via short-lived signed READ URLs generated server-side on demand.
+//
+//  Deploy: `pnpm firebase:deploy:storage`
+//  Reference: docs/adr/ADR-012-storage-adapter-and-asset-lifecycle.md
+// =========================================================================
+
+service firebase.storage {
+  match /b/{bucket}/o {
+    // Catch-all deny. Every prefix MUST be explicitly opted in below, and
+    // today none are — the bucket is fully private to the client SDK by
+    // design.
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

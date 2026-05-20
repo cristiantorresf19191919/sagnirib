@@ -3,13 +3,19 @@
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { ArrowLeft, ArrowRight, Loader2, PartyPopper } from "lucide-react";
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { createListingDraft } from "../actions/create-draft";
 import type { EnrollmentCatalogs } from "../lib/catalogs";
-import { calculateTotal, formatCop } from "../lib/pricing";
+import {
+  calculateTotal,
+  formatCop,
+  galleryMaxFor,
+  PLANS_ENABLED,
+} from "../lib/pricing";
 import { humanizeDraftError, toServerPayload } from "../lib/to-server-payload";
 import {
+  type AttributesValues,
   type DescriptionValues,
   type DetailsValues,
   type EnrollmentDraft,
@@ -18,7 +24,12 @@ import {
   type StepId,
 } from "../lib/types";
 import { OrderSummary } from "./OrderSummary";
-import { StepDescription } from "./StepDescription";
+import { StepAttributes } from "./StepAttributes";
+import {
+  StepDescription,
+  hasErroredUploads,
+  hasInFlightUploads,
+} from "./StepDescription";
 import { StepDetails } from "./StepDetails";
 import { StepPublish } from "./StepPublish";
 import { Stepper, type StepDescriptor } from "./Stepper";
@@ -38,8 +49,14 @@ const STEPS: ReadonlyArray<StepDescriptor> = [
     description: "Lo que las personas verán y leerán.",
   },
   {
-    id: "publish",
+    id: "attributes",
     number: 3,
+    title: "Características",
+    description: "Etnia, cabello, estatura, cuerpo, país e idiomas.",
+  },
+  {
+    id: "publish",
+    number: 4,
     title: "Publicar",
     description: "Plan, refuerzos y publicación.",
   },
@@ -54,13 +71,22 @@ const TIPS_BY_STEP: Record<StepId, { title: string; body: string }> = {
     title: "Tip — Descripción",
     body: "Las descripciones honestas en primera persona convierten 2.5× más. Evita números de teléfono o enlaces externos en el texto — los marcamos como spam y bloquean tu publicación.",
   },
+  attributes: {
+    title: "Tip — Características",
+    body: "Estas etiquetas se muestran en el bloque \"Características\" de tu perfil y son los filtros más usados del catálogo. Sé honesta — coincidencia entre lo que cuentas y lo que ven en las fotos sube tu conversión.",
+  },
   publish: {
     title: "Tip — Plan",
     body: "El plan Destacada es el que más eligen las modelos verificadas: incluye boost de catálogo, badge y stories diarias. Si tienes alta competencia en tu ciudad, suma un Boost de ciudad de 24h.",
   },
 };
 
-const STEP_ORDER: ReadonlyArray<StepId> = ["details", "description", "publish"];
+const STEP_ORDER: ReadonlyArray<StepId> = [
+  "details",
+  "description",
+  "attributes",
+  "publish",
+];
 
 interface EnrollmentWizardProps {
   catalogs: EnrollmentCatalogs;
@@ -73,8 +99,29 @@ export function EnrollmentWizard({ catalogs }: EnrollmentWizardProps) {
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [errorBanner, setErrorBanner] = useState<string | null>(null);
+  // Incremented on every failed validation so repeated clicks with the same
+  // error string still re-trigger the scroll-into-view effect below.
+  const [errorTick, setErrorTick] = useState(0);
   const [direction, setDirection] = useState<1 | -1>(1);
   const reduced = useReducedMotion();
+  const errorBannerRef = useRef<HTMLDivElement | null>(null);
+
+  // When validation fails the banner renders above the step content. On long
+  // steps the submit button sits well below the fold, so without this scroll
+  // the click looks like a no-op. Pull the banner into view so the cause is
+  // immediately visible.
+  useEffect(() => {
+    if (!errorBanner) return;
+    errorBannerRef.current?.scrollIntoView({
+      behavior: reduced ? "auto" : "smooth",
+      block: "center",
+    });
+  }, [errorBanner, errorTick, reduced]);
+  // Stable wizard-mount upload session. Used as the `users/<uid>/staging/<sessionId>/`
+  // prefix for every photo uploaded via this wizard instance, and submitted
+  // verbatim to `createListingDraft` so the server can scope the staging→draft
+  // copy. Regenerated when the wizard remounts (e.g. after a successful submit).
+  const [sessionId] = useState(() => globalThis.crypto.randomUUID());
 
   const tip = TIPS_BY_STEP[current];
 
@@ -83,6 +130,9 @@ export function EnrollmentWizard({ catalogs }: EnrollmentWizardProps) {
   }
   function handleChangeDescription(next: DescriptionValues) {
     setDraft((prev) => ({ ...prev, description: next }));
+  }
+  function handleChangeAttributes(next: AttributesValues) {
+    setDraft((prev) => ({ ...prev, attributes: next }));
   }
   function handleChangePublish(next: PublishValues) {
     setDraft((prev) => ({ ...prev, publish: next }));
@@ -111,8 +161,24 @@ export function EnrollmentWizard({ catalogs }: EnrollmentWizardProps) {
         return "La descripción larga debe tener al menos 60 caracteres.";
       if (d.services.length === 0)
         return "Selecciona al menos un servicio incluido.";
-      // Photo upload lands in PR2b (Firebase Storage). Until then the
-      // gallery is optional — the modelo can attach photos at review time.
+      if (hasInFlightUploads(d.gallery))
+        return "Espera a que terminen de subir las fotos antes de continuar.";
+      if (hasErroredUploads(d.gallery))
+        return "Reintenta las fotos con error o quítalas para continuar.";
+      // Gallery itself is optional — the modelo can submit a draft without
+      // photos and admin reviews + attaches at approval time (ADR-011).
+      return null;
+    }
+    if (current === "attributes") {
+      const a = draft.attributes;
+      // `pubis` and `languages` are optional; the other six are required so
+      // the public profile's Characteristics block never renders "—".
+      if (!a.country) return "Selecciona tu país.";
+      if (!a.ethnicity) return "Selecciona la etnia que mejor te describa.";
+      if (!a.hair) return "Selecciona tu tipo de cabello.";
+      if (!a.height) return "Selecciona tu estatura.";
+      if (!a.body) return "Selecciona tu tipo de cuerpo.";
+      if (!a.breast) return "Selecciona la opción de senos.";
       return null;
     }
     if (current === "publish") {
@@ -129,6 +195,7 @@ export function EnrollmentWizard({ catalogs }: EnrollmentWizardProps) {
     const err = validateCurrent();
     if (err) {
       setErrorBanner(err);
+      setErrorTick((tick) => tick + 1);
       return;
     }
     setErrorBanner(null);
@@ -165,17 +232,19 @@ export function EnrollmentWizard({ catalogs }: EnrollmentWizardProps) {
     const err = validateCurrent();
     if (err) {
       setErrorBanner(err);
+      setErrorTick((tick) => tick + 1);
       return;
     }
     setSubmitting(true);
     setErrorBanner(null);
 
-    const result = await createListingDraft(toServerPayload(draft));
+    const result = await createListingDraft(toServerPayload(draft, sessionId));
 
     setSubmitting(false);
 
     if (!result.ok) {
       setErrorBanner(humanizeDraftError(result.error));
+      setErrorTick((tick) => tick + 1);
       return;
     }
 
@@ -203,6 +272,7 @@ export function EnrollmentWizard({ catalogs }: EnrollmentWizardProps) {
 
       {errorBanner && (
         <div
+          ref={errorBannerRef}
           role="alert"
           className="rounded-[var(--radius-md)] border border-[var(--color-brand-highlight)]/40 bg-[var(--color-brand-highlight)]/8 px-4 py-3 text-sm text-[var(--color-brand-highlight)]"
         >
@@ -256,6 +326,18 @@ export function EnrollmentWizard({ catalogs }: EnrollmentWizardProps) {
                   values={draft.description}
                   catalogs={catalogs}
                   onChange={handleChangeDescription}
+                  sessionId={sessionId}
+                  galleryMax={galleryMaxFor(draft.publish.packageId)}
+                />
+              )}
+              {current === "attributes" && (
+                <StepAttributes
+                  values={draft.attributes}
+                  catalogs={{
+                    appearance: catalogs.appearance,
+                    languages: catalogs.languages,
+                  }}
+                  onChange={handleChangeAttributes}
                 />
               )}
               {current === "publish" && (
@@ -272,7 +354,7 @@ export function EnrollmentWizard({ catalogs }: EnrollmentWizardProps) {
             isLast={current === "publish"}
             submitting={submitting}
             totalLabel={
-              current === "publish"
+              current === "publish" && PLANS_ENABLED
                 ? formatCop(
                     calculateTotal(
                       draft.publish.packageId,
@@ -282,6 +364,7 @@ export function EnrollmentWizard({ catalogs }: EnrollmentWizardProps) {
                   )
                 : null
             }
+            freeMode={current === "publish" && !PLANS_ENABLED}
             onBack={back}
             onNext={next}
             onSubmit={submit}
@@ -309,6 +392,7 @@ interface NavBarProps {
   isLast: boolean;
   submitting: boolean;
   totalLabel: string | null;
+  freeMode: boolean;
   onBack: () => void;
   onNext: () => void;
   onSubmit: () => void;
@@ -319,6 +403,7 @@ function NavBar({
   isLast,
   submitting,
   totalLabel,
+  freeMode,
   onBack,
   onNext,
   onSubmit,
@@ -347,9 +432,11 @@ function NavBar({
           ) : null}
           {submitting
             ? "Publicando..."
-            : totalLabel
-              ? `Publicar y pagar ${totalLabel}`
-              : "Publicar"}
+            : freeMode
+              ? "Publicar gratis"
+              : totalLabel
+                ? `Publicar y pagar ${totalLabel}`
+                : "Publicar"}
         </button>
       ) : (
         <button
@@ -397,8 +484,8 @@ function ProgressRail({ current, draft }: ProgressRailProps) {
     {
       label: "Galería",
       value:
-        draft.description.galleryFileNames.length > 0
-          ? `${draft.description.galleryFileNames.length} fotos`
+        draft.description.gallery.length > 0
+          ? `${draft.description.gallery.length} fotos`
           : "—",
     },
   ];
@@ -453,21 +540,23 @@ function SubmittedScreen({ draft }: { draft: EnrollmentDraft }) {
       </p>
       <dl className="grid w-full grid-cols-2 gap-3 rounded-[var(--radius-md)] bg-[var(--color-background-elevated)] p-4 text-left text-[12px]">
         <div className="flex flex-col">
-          <dt className="text-[var(--color-text-subtle)]">Plan</dt>
+          <dt className="text-[var(--color-text-subtle)]">
+            {PLANS_ENABLED ? "Plan" : "Modo"}
+          </dt>
           <dd className="font-semibold capitalize text-[var(--color-foreground)]">
-            {draft.publish.packageId}
+            {PLANS_ENABLED ? draft.publish.packageId : "Lanzamiento gratuito"}
           </dd>
         </div>
         <div className="flex flex-col">
-          <dt className="text-[var(--color-text-subtle)]">Refuerzos</dt>
+          <dt className="text-[var(--color-text-subtle)]">Fotos enviadas</dt>
           <dd className="font-semibold text-[var(--color-foreground)]">
-            {draft.publish.addOnIds.length}
+            {draft.description.gallery.filter((g) => g.uploadedPath).length}
           </dd>
         </div>
         <div className="flex flex-col">
-          <dt className="text-[var(--color-text-subtle)]">Total cobrado (mock)</dt>
+          <dt className="text-[var(--color-text-subtle)]">Total</dt>
           <dd className="font-semibold text-[var(--color-foreground)]">
-            {formatCop(totals.totalCop)}
+            {PLANS_ENABLED ? formatCop(totals.totalCop) : "Gratis"}
           </dd>
         </div>
         <div className="flex flex-col">
@@ -477,12 +566,25 @@ function SubmittedScreen({ draft }: { draft: EnrollmentDraft }) {
           </dd>
         </div>
       </dl>
-      <Link
-        href="/explorar"
-        className="inline-flex h-12 items-center justify-center rounded-full bg-[var(--color-brand-primary)] px-6 text-sm font-semibold text-[var(--color-surface)] shadow-[var(--shadow-glow-primary)] transition-colors hover:bg-[var(--color-brand-primary-strong)]"
-      >
-        Volver al catálogo
-      </Link>
+      <p className="rounded-[var(--radius-md)] border border-[var(--color-brand-primary)]/30 bg-[var(--color-brand-primary)]/8 p-3 text-[12px] leading-relaxed text-[var(--color-foreground)]">
+        <strong>Antes de que tu perfil quede activo</strong> necesitamos
+        verificar tu identidad. Toma 5 minutos: documento (anverso + reverso)
+        + selfie sosteniéndolo. Sin esto tu publicación no se aprueba.
+      </p>
+      <div className="flex flex-col gap-2 sm:flex-row">
+        <Link
+          href="/verificacion/enviar"
+          className="inline-flex h-12 items-center justify-center rounded-full bg-[var(--color-brand-primary)] px-6 text-sm font-semibold text-[var(--color-surface)] shadow-[var(--shadow-glow-primary)] transition-colors hover:bg-[var(--color-brand-primary-strong)]"
+        >
+          Verificar identidad ahora
+        </Link>
+        <Link
+          href="/explorar"
+          className="inline-flex h-12 items-center justify-center rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] px-6 text-sm font-semibold text-[var(--color-text-muted)] transition-colors hover:border-[var(--color-brand-primary-soft)] hover:text-[var(--color-foreground)]"
+        >
+          Más tarde
+        </Link>
+      </div>
     </div>
   );
 }
