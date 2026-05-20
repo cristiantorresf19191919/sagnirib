@@ -4,10 +4,13 @@ import { motion, type Variants } from "framer-motion";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
+  AlertTriangle,
   Eye,
   EyeOff,
   LogIn,
+  LogOut,
   Mail,
+  RefreshCcw,
   ShieldCheck,
   Sparkles,
 } from "lucide-react";
@@ -300,21 +303,116 @@ function DisabledNotice() {
   );
 }
 
+/**
+ * Rendered when the JS-SDK already has a user but the visitor landed on
+ * `/ingresar` anyway — typically because the gated route did
+ * `redirect("/ingresar?next=…")` after `getSession()` came back null.
+ *
+ * The historical version of this component blindly trusted that the
+ * server-side cookie was in sync and shipped a "Continuar" button that just
+ * called `router.push(next)`. When the cookie was actually missing (e.g.
+ * Firebase Admin env vars not set on the deploy → mock provider → no
+ * cookie can be minted) the gated page redirected the user right back
+ * here — a silent loop with no error surfaced.
+ *
+ * This version:
+ *   1. Reads `serverSession` from the hook so we know whether the cookie
+ *      is healthy without doing extra work.
+ *   2. On "Continuar", does a force-refresh of the ID token + re-mint of
+ *      the cookie and only navigates when the server confirms `ok`.
+ *   3. If the server keeps rejecting, surfaces the error inline + offers
+ *      a "Cerrar sesión" escape so the visitor can recover.
+ */
 function AlreadySignedIn({ next }: { next: string }) {
   const router = useRouter();
+  const { serverSession, refreshServerSession, signOut } = useAuthSession();
+  const [busy, setBusy] = useState<"continue" | "signout" | null>(null);
+  const [localError, setLocalError] = useState<string | null>(null);
+
+  const errorMessage =
+    localError ??
+    (serverSession.status === "failed" ? serverSession.error : null);
+
+  async function onContinue() {
+    setBusy("continue");
+    setLocalError(null);
+    try {
+      const result = await refreshServerSession();
+      if (result.status !== "ok") {
+        setLocalError(result.error ?? "No pudimos confirmar tu sesión.");
+        return;
+      }
+      router.push(next);
+      router.refresh();
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  async function onSignOutAndRetry() {
+    setBusy("signout");
+    try {
+      await signOut();
+      router.refresh();
+    } catch (err) {
+      console.error("[auth] signOut failed", err);
+    } finally {
+      setBusy(null);
+    }
+  }
+
   return (
-    <div className="flex w-full max-w-md flex-col gap-3 rounded-[var(--radius-2xl)] border border-[var(--color-border)] bg-[var(--color-surface)] p-6 text-sm text-[var(--color-text-muted)] shadow-[var(--shadow-sm)]">
+    <div className="flex w-full max-w-md flex-col gap-4 rounded-[var(--radius-2xl)] border border-[var(--color-border)] bg-[var(--color-surface)] p-6 text-sm text-[var(--color-text-muted)] shadow-[var(--shadow-sm)]">
       <p>Ya tenés sesión iniciada.</p>
-      <button
-        type="button"
-        onClick={() => {
-          router.push(next);
-          router.refresh();
-        }}
-        className="inline-flex h-11 w-fit items-center gap-2 rounded-full bg-[var(--color-brand-primary)] px-5 text-sm font-semibold text-[var(--color-surface)] shadow-[var(--shadow-glow-primary)] transition-[background,transform] duration-200 ease-[var(--ease-standard)] hover:-translate-y-[1px] hover:bg-[var(--color-brand-primary-strong)]"
-      >
-        Continuar
-      </button>
+
+      {errorMessage && (
+        <div
+          role="alert"
+          className="flex items-start gap-2 rounded-[var(--radius-md)] border border-[var(--color-brand-highlight)]/40 bg-[var(--color-brand-highlight)]/10 px-3 py-2 text-xs text-[var(--color-brand-highlight)]"
+        >
+          <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden />
+          <span className="flex flex-col gap-1">
+            <span className="font-semibold">No pudimos validar tu sesión en el servidor.</span>
+            <span className="text-[var(--color-text-muted)]">
+              Probá reintentar. Si el problema persiste, cerrá sesión y
+              volvé a entrar.
+            </span>
+            <span className="font-mono text-[10px] text-[var(--color-text-subtle)]">
+              {errorMessage}
+            </span>
+          </span>
+        </div>
+      )}
+
+      <div className="flex flex-wrap items-center gap-2">
+        <button
+          type="button"
+          onClick={onContinue}
+          disabled={busy !== null}
+          className="inline-flex h-11 items-center gap-2 rounded-full bg-[var(--color-brand-primary)] px-5 text-sm font-semibold text-[var(--color-surface)] shadow-[var(--shadow-glow-primary)] transition-[background,transform] duration-200 ease-[var(--ease-standard)] hover:-translate-y-[1px] hover:bg-[var(--color-brand-primary-strong)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-background)] disabled:cursor-not-allowed disabled:opacity-70"
+        >
+          {errorMessage ? (
+            <RefreshCcw className="h-4 w-4" aria-hidden />
+          ) : null}
+          {busy === "continue"
+            ? "Verificando…"
+            : errorMessage
+              ? "Reintentar"
+              : "Continuar"}
+        </button>
+
+        {errorMessage && (
+          <button
+            type="button"
+            onClick={onSignOutAndRetry}
+            disabled={busy !== null}
+            className="inline-flex h-11 items-center gap-2 rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] px-4 text-sm font-semibold text-[var(--color-foreground)] transition-[border-color,background] duration-200 ease-[var(--ease-standard)] hover:border-[var(--color-brand-primary-soft)] hover:bg-[var(--color-background-elevated)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-background)] disabled:cursor-not-allowed disabled:opacity-70"
+          >
+            <LogOut className="h-4 w-4" aria-hidden />
+            {busy === "signout" ? "Cerrando…" : "Cerrar sesión"}
+          </button>
+        )}
+      </div>
     </div>
   );
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   createUserWithEmailAndPassword,
   GoogleAuthProvider,
@@ -46,14 +46,40 @@ export interface SessionUser {
   emailVerified: boolean;
 }
 
+/**
+ * Health of the server-side session cookie (`__session`).
+ *
+ *   - `unknown`  → no push attempted yet, or no signed-in user to push.
+ *   - `ok`       → the most recent `loginWithIdToken` call succeeded.
+ *   - `failed`   → the Server Action rejected the ID token (most often
+ *                  because Firebase Admin env vars are not configured on
+ *                  the deploy). `error` / `errorKind` describe the cause.
+ *
+ * Surfaces the fact that the client is signed in via the JS SDK but the
+ * server has no valid cookie — the symptom that produced the `/publicar`
+ * ↔ `/ingresar` redirect loop.
+ */
+export interface ServerSessionState {
+  status: "unknown" | "ok" | "failed";
+  error: string | null;
+  errorKind: string | null;
+}
+
 export interface UseAuthSession {
   status: AuthStatus;
   user: SessionUser | null;
+  serverSession: ServerSessionState;
   signInWithEmail: (email: string, password: string) => Promise<void>;
   signInWithGoogle: () => Promise<void>;
   signUpWithEmail: (email: string, password: string) => Promise<void>;
   sendPasswordReset: (email: string) => Promise<void>;
   signOut: () => Promise<void>;
+  /**
+   * Forces an ID-token refresh and re-mints the server-side session cookie.
+   * Returns the resolved state — call sites that gate navigation on cookie
+   * presence should `await` this and refuse to navigate on `failed`.
+   */
+  refreshServerSession: () => Promise<ServerSessionState>;
 }
 
 function toSessionUser(u: FirebaseUser): SessionUser {
@@ -66,14 +92,27 @@ function toSessionUser(u: FirebaseUser): SessionUser {
   };
 }
 
-async function pushIdTokenToServer(u: FirebaseUser): Promise<void> {
-  const idToken = await u.getIdToken(/* forceRefresh */ false);
+function toFailedState(
+  prefix: string,
+  result: { error?: { kind?: string; message?: string } },
+): ServerSessionState {
+  return {
+    status: "failed",
+    error: result.error?.message ?? `${prefix}: unknown error`,
+    errorKind: result.error?.kind ?? "unknown",
+  };
+}
+
+async function pushIdTokenToServer(
+  u: FirebaseUser,
+  forceRefresh = false,
+): Promise<ServerSessionState> {
+  const idToken = await u.getIdToken(forceRefresh);
   const result = await loginWithIdToken(idToken);
   if (!result.ok) {
-    throw new Error(
-      `[auth] server rejected session: ${result.error?.message ?? "unknown"}`,
-    );
+    return toFailedState("[auth] server rejected session", result);
   }
+  return { status: "ok", error: null, errorKind: null };
 }
 
 async function pushSignUpIdTokenToServer(u: FirebaseUser): Promise<void> {
@@ -86,6 +125,12 @@ async function pushSignUpIdTokenToServer(u: FirebaseUser): Promise<void> {
   }
 }
 
+const UNKNOWN_SERVER_SESSION: ServerSessionState = {
+  status: "unknown",
+  error: null,
+  errorKind: null,
+};
+
 export function useAuthSession(): UseAuthSession {
   // Initial status is derived from env at render time so the effect does not
   // need to set "disabled" synchronously (React 19 set-state-in-effect rule).
@@ -93,6 +138,9 @@ export function useAuthSession(): UseAuthSession {
     isFirebaseClientConfigured() ? "loading" : "disabled",
   );
   const [user, setUser] = useState<SessionUser | null>(null);
+  const [serverSession, setServerSession] = useState<ServerSessionState>(
+    UNKNOWN_SERVER_SESSION,
+  );
 
   useEffect(() => {
     const auth = getClientAuth();
@@ -102,13 +150,23 @@ export function useAuthSession(): UseAuthSession {
       if (!u) {
         setUser(null);
         setStatus("anonymous");
+        setServerSession(UNKNOWN_SERVER_SESSION);
         return;
       }
+      let next: ServerSessionState;
       try {
-        await pushIdTokenToServer(u);
+        next = await pushIdTokenToServer(u);
       } catch (err) {
-        console.error(err);
+        next = {
+          status: "failed",
+          error: (err as Error)?.message ?? "Unexpected error",
+          errorKind: "client-error",
+        };
       }
+      if (next.status === "failed") {
+        console.error("[auth] server session cookie unavailable:", next.error);
+      }
+      setServerSession(next);
       setUser(toSessionUser(u));
       setStatus("authenticated");
     });
@@ -118,21 +176,56 @@ export function useAuthSession(): UseAuthSession {
     };
   }, []);
 
+  const refreshServerSession = useCallback(async (): Promise<ServerSessionState> => {
+    const auth = getClientAuth();
+    if (!auth?.currentUser) {
+      const next: ServerSessionState = {
+        status: "failed",
+        error: "No client-side user to refresh",
+        errorKind: "no-user",
+      };
+      setServerSession(next);
+      return next;
+    }
+    let next: ServerSessionState;
+    try {
+      next = await pushIdTokenToServer(auth.currentUser, /* forceRefresh */ true);
+    } catch (err) {
+      next = {
+        status: "failed",
+        error: (err as Error)?.message ?? "Unexpected error",
+        errorKind: "client-error",
+      };
+    }
+    setServerSession(next);
+    return next;
+  }, []);
+
   return {
     status,
     user,
+    serverSession,
+    refreshServerSession,
     signInWithEmail: async (email, password) => {
       const auth = getClientAuth();
       if (!auth) throw new Error("[auth] firebase client not configured");
       const cred = await signInWithEmailAndPasswordFb(auth, email, password);
-      await pushIdTokenToServer(cred.user);
+      const next = await pushIdTokenToServer(cred.user);
+      setServerSession(next);
+      if (next.status === "failed") {
+        throw new Error(`[auth] server rejected session: ${next.error}`);
+      }
     },
     signInWithGoogle: async () => {
       const auth = getClientAuth();
       if (!auth) throw new Error("[auth] firebase client not configured");
       const provider = new GoogleAuthProvider();
       const cred = await signInWithPopup(auth, provider);
-      await pushIdTokenToServer(cred.user);
+      const next = await pushIdTokenToServer(cred.user);
+      setServerSession(next);
+      if (next.status === "failed") {
+        throw new Error(`[auth] server rejected session: ${next.error}`);
+      }
     },
     signUpWithEmail: async (email, password) => {
       const auth = getClientAuth();
@@ -157,6 +250,7 @@ export function useAuthSession(): UseAuthSession {
       await signOutAction();
       const auth = getClientAuth();
       if (auth) await signOutFb(auth);
+      setServerSession(UNKNOWN_SERVER_SESSION);
     },
   };
 }
