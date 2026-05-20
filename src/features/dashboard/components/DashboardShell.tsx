@@ -3,11 +3,14 @@
 import { motion, type Variants } from "framer-motion";
 import {
   Calendar,
+  Gift,
   Inbox,
   UserCircle,
   type LucideIcon,
 } from "lucide-react";
 import { useState, type ReactNode } from "react";
+
+import { InstallAppPill } from "./InstallAppPill";
 
 interface TabDef {
   id: string;
@@ -26,6 +29,7 @@ interface DashboardShellProps {
     inbox: ReactNode;
     profile: ReactNode;
     agenda: ReactNode;
+    referrals: ReactNode;
   }>;
 }
 
@@ -73,6 +77,12 @@ export function DashboardShell({
       icon: Calendar,
       content: tabs.agenda,
     },
+    {
+      id: "referrals",
+      label: "Invitar",
+      icon: Gift,
+      content: tabs.referrals,
+    },
   ];
 
   const [activeId, setActiveId] = useState<string>(TABS[0]!.id);
@@ -105,6 +115,10 @@ export function DashboardShell({
           decidís cuándo entrar.
         </p>
       </header>
+
+      {/* Surfaces only when the browser fires `beforeinstallprompt` —
+          invisible by default, so it never feels like a nag. */}
+      <InstallAppPill />
 
       <div
         role="tablist"

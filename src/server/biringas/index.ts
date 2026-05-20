@@ -94,6 +94,17 @@ const listBookingsForListingsRaw = adapter.listBookingsForListingsRaw;
 const updateBookingStatusRaw = adapter.updateBookingStatusRaw;
 const attachBuyerReviewRaw = adapter.attachBuyerReviewRaw;
 const listDraftsByOwnerRaw = adapter.listDraftsByOwnerRaw;
+const getReferralStatsRaw = adapter.getReferralStatsRaw;
+const redeemReferralRaw = adapter.redeemReferralRaw;
+export type {
+  ReferralStats,
+  ReferralRedemption,
+} from "./referral-types";
+export {
+  REFERRAL_REWARD_COP,
+  REFERRAL_CODE_LENGTH,
+  codeForUid as referralCodeForUid,
+} from "./referral-types";
 export type { DraftSummary } from "@/server/mocks/biringas/create-draft";
 /** Internal: probes whether a slug is already claimed by a non-rejected
  *  draft. Wrapped by `createListingDraft` — features should not call it. */
@@ -606,4 +617,51 @@ export async function submitBuyerReview(
   updateTag(CACHE_TAGS.bookingsForListing(target.listingSlug));
 
   return updated;
+}
+
+import type {
+  ReferralStats as _ReferralStats,
+} from "./referral-types";
+
+/**
+ * Returns the current user's referral stats (code + redemption count
+ * + credit + has-already-redeemed flag). Auth-gated — anonymous users
+ * see the dashboard sign-in nudge instead.
+ */
+export async function getMyReferralStats(): Promise<_ReferralStats> {
+  const user = await requireAuth();
+  return getReferralStatsRaw(user.uid);
+}
+
+/**
+ * Redeems someone else's referral code on behalf of the current user.
+ * Auth-gated. Each user can redeem at most ONE code lifetime (first
+ * redemption wins; subsequent attempts return a typed reason the
+ * client surfaces inline).
+ */
+export async function redeemReferralCode(
+  rawInput: unknown,
+): Promise<{ ok: true } | { ok: false; reason: string }> {
+  if (!rawInput || typeof rawInput !== "object") {
+    throw new Error("redeemReferralCode: input must be an object");
+  }
+  const r = rawInput as Record<string, unknown>;
+  const code = typeof r.code === "string" ? r.code.trim().toUpperCase() : "";
+  if (code.length < 4 || code.length > 16) {
+    throw new Error("redeemReferralCode: code length must be 4–16 chars");
+  }
+
+  const user = await requireAuth();
+  const outcome = await redeemReferralRaw({ code, redeemerUid: user.uid });
+
+  if (outcome.ok) {
+    await auditLog({
+      event: "biringa.referral.redeemed",
+      actorId: user.uid,
+      resource: `referral:${code}`,
+      metadata: { referrerUid: outcome.redemption.referrerUid },
+    });
+    return { ok: true };
+  }
+  return { ok: false, reason: outcome.reason };
 }

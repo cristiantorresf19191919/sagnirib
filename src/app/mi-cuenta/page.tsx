@@ -14,11 +14,15 @@ import { buildPageMetadata } from "@/core/seo/build-page-metadata";
 import { AvailabilityStrip } from "@/features/biringas/components/AvailabilityStrip";
 import { BookingInboxList } from "@/features/dashboard/components/BookingInboxList";
 import { DashboardShell } from "@/features/dashboard/components/DashboardShell";
+import { ReferralCard } from "@/features/dashboard/components/ReferralCard";
 import { getSession } from "@/server/auth";
 import {
+  getMyReferralStats,
   listMyDrafts,
   listMyIncomingBookings,
   type DraftSummary,
+  type ReferralStats,
+  referralCodeForUid,
 } from "@/server/biringas";
 import { Container } from "@/shared/design-system/components/Container";
 import { Footer } from "@/shared/layout/Footer";
@@ -52,9 +56,12 @@ export default async function MiCuentaPage() {
     redirect("/ingresar?next=/mi-cuenta");
   }
 
-  // Read both projections in parallel. Both degrade to `[]` on failure
-  // so the dashboard still renders with a friendly empty state.
-  const [drafts, bookings] = await Promise.all([
+  // Read all three projections in parallel. Each degrades on failure
+  // so the dashboard still renders with a friendly empty/zero state.
+  // The referral stats fall back to a uid-derived code-only view so
+  // the share surface keeps working even when the redemption store
+  // is unreachable.
+  const [drafts, bookings, referralStats] = await Promise.all([
     listMyDrafts().catch((err) => {
       console.error("[mi-cuenta] listMyDrafts failed", err);
       return [] as ReadonlyArray<DraftSummary>;
@@ -62,6 +69,15 @@ export default async function MiCuentaPage() {
     listMyIncomingBookings().catch((err) => {
       console.error("[mi-cuenta] listMyIncomingBookings failed", err);
       return [];
+    }),
+    getMyReferralStats().catch((err) => {
+      console.error("[mi-cuenta] getMyReferralStats failed", err);
+      return {
+        code: referralCodeForUid(session.uid),
+        redemptions: 0,
+        creditCop: 0,
+        hasRedeemed: false,
+      } satisfies ReferralStats;
     }),
   ]);
 
@@ -90,6 +106,14 @@ export default async function MiCuentaPage() {
               inbox: <BookingInboxList initialBookings={bookings} />,
               profile: <ProfileTab drafts={drafts} />,
               agenda: <AgendaTab drafts={drafts} />,
+              referrals: (
+                <ReferralCard
+                  code={referralStats.code}
+                  redemptions={referralStats.redemptions}
+                  creditCop={referralStats.creditCop}
+                  hasRedeemed={referralStats.hasRedeemed}
+                />
+              ),
             }}
           />
         </Container>
