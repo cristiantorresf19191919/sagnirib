@@ -13,7 +13,7 @@ export const brandConfig = {
   description:
     "Marketplace donde acompañantes ofrecen servicios para eventos y viajes.",
   defaultLocale: "es",
-  supportedLocales: ["es", "en"] as const,
+  supportedLocales: ["es", "en", "pt"] as const,
   social: {
     twitter: "",
     instagram: "",

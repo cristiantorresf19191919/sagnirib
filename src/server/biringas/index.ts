@@ -96,10 +96,26 @@ const attachBuyerReviewRaw = adapter.attachBuyerReviewRaw;
 const listDraftsByOwnerRaw = adapter.listDraftsByOwnerRaw;
 const getReferralStatsRaw = adapter.getReferralStatsRaw;
 const redeemReferralRaw = adapter.redeemReferralRaw;
+const createCheckoutSessionRaw = adapter.createCheckoutSessionRaw;
+const completeCheckoutMockRaw = adapter.completeCheckoutMockRaw;
+const findCheckoutSessionRaw = adapter.findCheckoutSessionRaw;
 export type {
   ReferralStats,
   ReferralRedemption,
 } from "./referral-types";
+export type {
+  BillingCadence,
+  CheckoutProvider,
+  CheckoutSessionInput,
+  CheckoutSessionRecord,
+  CheckoutStatus,
+  PlanTier,
+} from "./checkout-types";
+export {
+  BILLING_LABELS,
+  PLAN_LABELS,
+  PLAN_PRICING,
+} from "./checkout-types";
 export {
   REFERRAL_REWARD_COP,
   REFERRAL_CODE_LENGTH,
@@ -664,4 +680,103 @@ export async function redeemReferralCode(
     return { ok: true };
   }
   return { ok: false, reason: outcome.reason };
+}
+
+import {
+  PLAN_PRICING as _PLAN_PRICING,
+  type CheckoutSessionInput as _CheckoutSessionInput,
+  type CheckoutSessionRecord as _CheckoutSessionRecord,
+} from "./checkout-types";
+
+/**
+ * Mints a checkout session for a paid plan. Server recomputes the
+ * total from `PLAN_PRICING` — the client never picks a price.
+ *
+ * Mock mode (default in dev) returns a session in `awaiting_payment`
+ * state; the UI calls `completeMockCheckout(id)` to flip it to
+ * `succeeded` after the user clicks the simulated "Pay" button. Real
+ * providers (Stripe / MercadoPago) will skip the manual completion
+ * and rely on webhooks.
+ */
+export async function createCheckoutSession(
+  rawInput: unknown,
+): Promise<_CheckoutSessionRecord> {
+  if (!rawInput || typeof rawInput !== "object") {
+    throw new Error("createCheckoutSession: input must be an object");
+  }
+  const r = rawInput as Record<string, unknown>;
+  const tier =
+    r.tier === "boost" || r.tier === "elite" ? r.tier : null;
+  const billing =
+    r.billing === "monthly" || r.billing === "quarterly" ? r.billing : null;
+  if (!tier || !billing) {
+    throw new Error(
+      "createCheckoutSession: tier ('boost'|'elite') and billing ('monthly'|'quarterly') are required",
+    );
+  }
+
+  const user = await requireAuth();
+  const totalCop = _PLAN_PRICING[tier][billing];
+
+  const input: _CheckoutSessionInput = { tier, billing, provider: "mock" };
+  const record = await createCheckoutSessionRaw({
+    input,
+    ownerUid: user.uid,
+    totalCop,
+  });
+
+  await auditLog({
+    event: "biringa.checkout.created",
+    actorId: user.uid,
+    resource: `checkout:${record.id}`,
+    metadata: { tier, billing, totalCop },
+  });
+
+  return record;
+}
+
+/**
+ * Mock-only completion path. Throws when running against the
+ * Firestore adapter (real flows complete via webhook). Ownership
+ * check ensures only the session's owner can flip it.
+ */
+export async function completeMockCheckout(
+  rawInput: unknown,
+): Promise<_CheckoutSessionRecord> {
+  if (!rawInput || typeof rawInput !== "object") {
+    throw new Error("completeMockCheckout: input must be an object");
+  }
+  const r = rawInput as Record<string, unknown>;
+  const id = typeof r.id === "string" ? r.id : null;
+  if (!id) throw new Error("completeMockCheckout: id is required");
+
+  const user = await requireAuth();
+  const session = await findCheckoutSessionRaw(id);
+  if (!session) throw new Error("completeMockCheckout: session not found");
+  if (session.ownerUid !== user.uid) {
+    throw new Error("completeMockCheckout: not your session");
+  }
+
+  const updated = await completeCheckoutMockRaw(id);
+  if (!updated) throw new Error("completeMockCheckout: session not found");
+
+  await auditLog({
+    event: "biringa.checkout.completed",
+    actorId: user.uid,
+    resource: `checkout:${id}`,
+    metadata: { tier: updated.tier, totalCop: updated.totalCop },
+  });
+
+  return updated;
+}
+
+/** Server-side read for the checkout success page. Owner-gated. */
+export async function getCheckoutSession(
+  id: string,
+): Promise<_CheckoutSessionRecord | null> {
+  const user = await requireAuth();
+  const session = await findCheckoutSessionRaw(id);
+  if (!session) return null;
+  if (session.ownerUid !== user.uid) return null;
+  return session;
 }

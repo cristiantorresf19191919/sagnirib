@@ -68,7 +68,7 @@ const PLANS: ReadonlyArray<Plan> = [
       { label: "Aparición en hero editorial", included: false },
       { label: "Soporte prioritario", included: false },
     ],
-    cta: { label: "Activar Impulso", href: "/publicar?plan=boost" },
+    cta: { label: "Activar Impulso", href: "/publicar/planes/boost/checkout" },
     highlight: true,
   },
   {
@@ -88,7 +88,7 @@ const PLANS: ReadonlyArray<Plan> = [
       { label: "Sesión de fotos profesional (1× / año)", included: true },
       { label: "Cuenta gestionada por un asesor", included: true },
     ],
-    cta: { label: "Solicitar invitación", href: "/publicar?plan=elite" },
+    cta: { label: "Solicitar invitación", href: "/publicar/planes/elite/checkout" },
   },
 ];
 

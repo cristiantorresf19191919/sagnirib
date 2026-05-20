@@ -10,6 +10,8 @@ import { usePathname } from "next/navigation";
 import { useAuthSession } from "@/features/auth/lib/use-auth-session";
 import { toast } from "@/shared/ui/toast";
 
+import { SafeCheckinSetup } from "@/features/safety/components/SafeCheckinSetup";
+
 import { requestBooking } from "../actions/request-booking";
 import {
   composeProposedAt,
@@ -165,6 +167,11 @@ function BookingRequestOverlay({
   const [message, setMessage] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
+  // After a booking is filed we surface the SafeCheckinSetup inside
+  // the same modal — far higher activation than asking on a separate
+  // surface because the user is already in the "I'm planning a
+  // meeting" headspace.
+  const [showSafeCheckin, setShowSafeCheckin] = useState(false);
 
   const onSubmit = (event: React.FormEvent) => {
     event.preventDefault();
@@ -183,7 +190,7 @@ function BookingRequestOverlay({
           "Solicitud enviada",
           `${listingName} recibirá tu propuesta y confirmará pronto.`,
         );
-        onClose();
+        setShowSafeCheckin(true);
       } else {
         const friendly =
           result.error?.kind === "booking-disabled"
@@ -248,6 +255,16 @@ function BookingRequestOverlay({
             <AnonymousNudge onClose={onClose} />
           ) : status === "loading" ? (
             <p className="text-sm text-[var(--color-text-muted)]">Cargando…</p>
+          ) : showSafeCheckin ? (
+            <SafeCheckinSetup
+              listingName={listingName}
+              listingSlug={listingSlug}
+              city={defaultCity}
+              // Deadline buffer = duration of the encounter; the
+              // SafeCheckinSetup adds its own grace period on top.
+              defaultMinutes={durationHours * 60}
+              onClose={onClose}
+            />
           ) : (
             <form
               onSubmit={onSubmit}
