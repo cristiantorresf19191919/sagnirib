@@ -5,10 +5,17 @@ import { findBySlug } from "@/server/biringas";
 /**
  * Dynamic Open Graph image for `/p/[slug]`.
  *
- * Rendered on demand by Next 16's edge `ImageResponse`. Every share to
+ * Rendered on demand by Next 16's `ImageResponse`. Every share to
  * WhatsApp / Telegram / Twitter shows an editorial card with the
  * listing's hero photo, name, city, and rating — turning every shared
  * link into a tiny recruiting ad.
+ *
+ * Runs on the Node runtime (the default — explicitly NOT edge) because
+ * `findBySlug` reaches into `@/server/biringas`, which transitively
+ * pulls `firebase-admin`. Firebase Admin requires Node APIs (`process`,
+ * Buffer, native TLS) that the edge runtime does not expose; setting
+ * `runtime = "edge"` here crashes at build time with
+ * "edge runtime does not support Node.js 'process' module".
  *
  * Fonts use system defaults so no extra ~300 KB font download is
  * incurred on every render. The hero image is fetched via the absolute
@@ -16,7 +23,6 @@ import { findBySlug } from "@/server/biringas";
  * but `ImageResponse` needs a direct fetchable URL — Firebase Storage
  * + Cloudinary etc. all qualify).
  */
-export const runtime = "edge";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 export const alt = "Perfil de Biringas";
