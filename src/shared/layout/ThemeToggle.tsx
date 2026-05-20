@@ -1,6 +1,6 @@
 "use client";
 
-import { Flame, Moon, Sparkles, Sun } from "lucide-react";
+import { Flame, Moon, Sparkles, Sun, X } from "lucide-react";
 import { useEffect, useState, useSyncExternalStore } from "react";
 
 const STORAGE_KEY = "biringas:theme";
@@ -150,28 +150,79 @@ export function ThemeToggle() {
   return (
     <span className="relative inline-flex">
       {hintVisible && (
-        <span
-          aria-hidden
+        <div
           data-testid="theme-hint"
-          className="motion-safe:motion-hero-reveal pointer-events-none absolute right-0 top-12 z-50 inline-flex max-w-[220px] items-center gap-2 rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-[11px] font-medium text-[var(--color-foreground)] shadow-[var(--shadow-md)]"
+          role="status"
+          aria-live="polite"
+          className="motion-safe:motion-hero-reveal absolute right-0 top-12 z-50 w-64 rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-surface)] p-3 shadow-[var(--shadow-md)]"
         >
-          <Sparkles
-            className="h-3.5 w-3.5 shrink-0"
-            style={{ color: "#E5B7DA" }}
+          {/* Caret pointing back to the toggle. Border on two sides + matching
+              surface fill makes it look like a continuation of the popover
+              edge. Anchored under the toggle's horizontal midpoint. */}
+          <span
             aria-hidden
+            className="absolute -top-1.5 right-[14px] h-3 w-3 rotate-45 border-l border-t border-[var(--color-border)] bg-[var(--color-surface)]"
           />
-          <span>
+
+          {/* Top row: eyebrow + close. The X is the only focusable element
+              inside the hint so dismiss is keyboard-reachable; clicking the
+              toggle below also dismisses (existing behavior). */}
+          <div className="flex items-center justify-between gap-2">
+            <span className="inline-flex items-center gap-1.5">
+              <Sparkles
+                className="h-3.5 w-3.5"
+                style={{ color: "#E5B7DA" }}
+                aria-hidden
+              />
+              <span
+                className="text-[10px] font-semibold uppercase tracking-[0.22em]"
+                style={{ color: "#E5B7DA" }}
+              >
+                Nuevo
+              </span>
+            </span>
+            <button
+              type="button"
+              onClick={dismissHint}
+              aria-label="Cerrar sugerencia"
+              className="inline-flex h-6 w-6 items-center justify-center rounded-full text-[var(--color-text-subtle)] transition-colors hover:bg-[var(--color-background-elevated)] hover:text-[var(--color-foreground)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-surface)]"
+            >
+              <X className="h-3 w-3" aria-hidden />
+            </button>
+          </div>
+
+          {/* Body copy — natural two-line flow at this width. */}
+          <p className="mt-1.5 text-[12px] leading-relaxed text-[var(--color-foreground)]">
             Toca otra vez para probar el modo{" "}
             <span className="font-semibold" style={{ color: "#E5B7DA" }}>
               violeta
             </span>
             .
-          </span>
-          <span
-            aria-hidden
-            className="absolute -top-1 right-3 h-2 w-2 rotate-45 border-l border-t border-[var(--color-border)] bg-[var(--color-surface)]"
-          />
-        </span>
+          </p>
+
+          {/* Palette preview — three swatches that telegraph the violet
+              moods the user will unlock. Order goes deep → soft to read
+              left-to-right like a gradient. */}
+          <div className="mt-3 flex items-center gap-2">
+            <span className="text-[9px] uppercase tracking-[0.2em] text-[var(--color-text-subtle)]">
+              Vista previa
+            </span>
+            <span aria-hidden className="inline-flex items-center gap-1.5">
+              <span
+                className="h-3 w-3 rounded-full ring-1 ring-[var(--color-border)]"
+                style={{ background: "#6E2A82" }}
+              />
+              <span
+                className="h-3 w-3 rounded-full ring-1 ring-[var(--color-border)]"
+                style={{ background: "#FF6BAA" }}
+              />
+              <span
+                className="h-3 w-3 rounded-full ring-1 ring-[var(--color-border)]"
+                style={{ background: "#EFC3E4" }}
+              />
+            </span>
+          </div>
+        </div>
       )}
       <button
         type="button"
