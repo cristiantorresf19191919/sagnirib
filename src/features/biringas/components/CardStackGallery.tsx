@@ -11,11 +11,13 @@ interface CardStackGalleryProps {
 }
 
 /**
- * Slow auto-advance interval (ms). Tuned to feel ambient — long enough
- * that the user doesn't perceive it as a slideshow, short enough that
- * a passive viewer sees motion before they look away.
+ * Slow auto-advance interval (ms). Deliberately ambient — long enough
+ * that the user does NOT register it as a slideshow (which would feel
+ * intrusive on a profile page) but short enough that a passive viewer
+ * sees the image rotate once before they look away. Paired with the
+ * 1.6s slide transition below so the swap itself is unhurried.
  */
-const AUTO_ADVANCE_MS = 7000;
+const AUTO_ADVANCE_MS = 12_000;
 
 /**
  * Slide variants for the active image. `direction` is +1 for "next"
@@ -45,10 +47,14 @@ const SLIDE_VARIANTS: Variants = {
 };
 
 const SLIDE_TRANSITION = {
-  x: { duration: 1.2, ease: [0.22, 1, 0.36, 1] as const },
-  opacity: { duration: 0.9, ease: [0.22, 1, 0.36, 1] as const },
-  scale: { duration: 1.2, ease: [0.22, 1, 0.36, 1] as const },
-  filter: { duration: 0.7, ease: [0.22, 1, 0.36, 1] as const },
+  // Unhurried — the slide takes ~1.6s with a soft blur-and-settle
+  // ease so the swap feels like a magazine page-turn rather than a
+  // UI carousel. Opacity peaks faster than the slide finishes so the
+  // overlap reads as a fluid fade between two pages.
+  x: { duration: 1.6, ease: [0.22, 1, 0.36, 1] as const },
+  opacity: { duration: 1.1, ease: [0.22, 1, 0.36, 1] as const },
+  scale: { duration: 1.6, ease: [0.22, 1, 0.36, 1] as const },
+  filter: { duration: 0.9, ease: [0.22, 1, 0.36, 1] as const },
 };
 
 /**

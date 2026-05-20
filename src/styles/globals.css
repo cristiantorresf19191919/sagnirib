@@ -429,7 +429,9 @@ body > *:not([role="dialog"]) {
 }
 
 @utility motion-gallery-pan-right {
-  animation: gallery-pan-right 7s ease-in-out both;
+  /* Match the AUTO_ADVANCE_MS in CardStackGallery (12s) so the pan
+   * lands at its peak just as the slide swaps to the next image. */
+  animation: gallery-pan-right 12s ease-in-out both;
   will-change: transform;
 }
 

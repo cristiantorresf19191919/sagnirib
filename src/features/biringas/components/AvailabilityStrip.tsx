@@ -25,44 +25,54 @@ const SLOT_ROWS: ReadonlyArray<{ key: Slot; label: string }> = [
 /**
  * Parent stagger — fires once per viewport entry, replays on every
  * subsequent re-entry. `delayChildren` gives the eye a beat to land on
- * the calendar before the cells start spark-firing.
+ * the calendar before the cells start spark-firing; `staggerChildren`
+ * is intentionally leisurely (≈1.5s for the full 21-cell cascade)
+ * so the user clearly perceives the wave moving across the grid.
  */
 const STAGGER_PARENT: Variants = {
   hidden: {},
   visible: {
     transition: {
-      staggerChildren: 0.045,
-      delayChildren: 0.12,
+      staggerChildren: 0.07,
+      delayChildren: 0.2,
     },
   },
 };
 
 /**
- * "Disponible" (open green) slot — sparks in with a bright halo, scale
+ * "Disponible" (open) slot — sparks in with a bright halo, scale
  * overshoot, and a soft drop into the resting state. This is the
  * attention-call: the user's eye is drawn directly to the cells they
  * can actually book.
+ *
+ * Halo color reads from `--color-brand-primary` via `color-mix` so the
+ * spark always matches the active theme — forest green on light, mint
+ * on dark, mauve on bloom/desire, coral on ember, sapphire on noir.
+ * Hardcoding rgba() makes the halo invisible against the dark backgrounds
+ * of desire/ember/noir — the bug the founder reported on the dark-violet
+ * profile screenshot.
  */
 const SPARK_AVAILABLE: Variants = {
   hidden: {
     opacity: 0,
     scale: 0.35,
-    boxShadow: "0 0 0 0 rgba(47, 93, 67, 0)",
+    boxShadow:
+      "0 0 0 0 color-mix(in srgb, var(--color-brand-primary) 0%, transparent)",
   },
   visible: {
     opacity: 1,
-    // Slight overshoot → settle = "spark"
-    scale: [0.35, 1.22, 0.98, 1],
+    // Bigger overshoot + longer duration so the spark is unmistakable.
+    scale: [0.35, 1.4, 0.96, 1],
     boxShadow: [
-      "0 0 0 0 rgba(47, 93, 67, 0)",
-      "0 0 22px 6px rgba(47, 93, 67, 0.55)",
-      "0 0 8px 2px rgba(47, 93, 67, 0.25)",
-      "0 2px 6px -2px rgba(47, 93, 67, 0.45)",
+      "0 0 0 0 color-mix(in srgb, var(--color-brand-primary) 0%, transparent)",
+      "0 0 28px 8px color-mix(in srgb, var(--color-brand-primary) 75%, transparent)",
+      "0 0 14px 4px color-mix(in srgb, var(--color-brand-primary) 35%, transparent)",
+      "0 2px 8px -2px color-mix(in srgb, var(--color-brand-primary) 55%, transparent)",
     ],
     transition: {
-      duration: 0.7,
+      duration: 0.95,
       ease: [0.22, 1, 0.36, 1] as const,
-      times: [0, 0.4, 0.7, 1],
+      times: [0, 0.45, 0.75, 1],
     },
   },
 };
