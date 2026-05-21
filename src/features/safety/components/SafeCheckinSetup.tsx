@@ -101,7 +101,7 @@ export function SafeCheckinSetup({
             Avisá a alguien de confianza
           </h3>
           <p className="mt-0.5 text-xs leading-relaxed text-[var(--color-text-muted)]">
-            Si no tocás "Estoy bien" al final del encuentro, te ayudamos a
+            Si no tocás &ldquo;Estoy bien&rdquo; al final del encuentro, te ayudamos a
             avisar a esa persona con un mensaje prearmado. Todo queda en
             tu dispositivo.
           </p>

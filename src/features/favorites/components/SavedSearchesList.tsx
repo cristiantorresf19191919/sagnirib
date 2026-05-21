@@ -58,7 +58,7 @@ export function SavedSearchesList() {
           >
             /explorar
           </Link>
-          , verás un botón <em>"Guardar búsqueda"</em>.
+          , verás un botón <em>&ldquo;Guardar búsqueda&rdquo;</em>.
         </p>
       ) : (
         <ul className="mt-4 flex flex-col gap-2">

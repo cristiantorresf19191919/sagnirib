@@ -2,6 +2,10 @@
 
 import { Check, Gift, Sparkles, TrendingUp } from "lucide-react";
 
+import type { SupportedLocale } from "@/core/branding/brand-config";
+import { t } from "@/core/i18n/messages";
+import { useActiveLocale } from "@/core/i18n/use-active-locale";
+
 import {
   ADD_ONS,
   type AddOnId,
@@ -20,6 +24,8 @@ interface StepPublishProps {
 }
 
 export function StepPublish({ values, onChange }: StepPublishProps) {
+  const locale = useActiveLocale();
+
   function update<K extends keyof PublishValues>(key: K, v: PublishValues[K]) {
     onChange({ ...values, [key]: v });
   }
@@ -39,22 +45,23 @@ export function StepPublish({ values, onChange }: StepPublishProps) {
 
   return (
     <SectionShell
-      eyebrow="Publicar"
+      eyebrow={t(locale, "step.publish.eyebrow")}
       title={
         PLANS_ENABLED
-          ? "Elige tu plan y refuerzos de visibilidad"
-          : "Lanzamiento gratuito · revisa lo que viene"
+          ? t(locale, "step.publish.title.paid")
+          : t(locale, "step.publish.title.free")
       }
       description={
         PLANS_ENABLED
-          ? "Esencial te deja arrancar. Destacada es lo que más eligen las modelos verificadas. Premium te deja siempre arriba."
-          : "Estamos en lanzamiento — todos los perfiles aprobados se publican sin cobro. Los planes que ves abajo son lo que vendrá cuando activemos cobros; por ahora solo informativos."
+          ? t(locale, "step.publish.description.paid")
+          : t(locale, "step.publish.description.free")
       }
     >
-      {!PLANS_ENABLED && <FreeLaunchBanner />}
+      {!PLANS_ENABLED && <FreeLaunchBanner locale={locale} />}
 
       {PLANS_ENABLED && (
         <BillingToggle
+          locale={locale}
           billing={values.billing}
           onChange={(v) => update("billing", v)}
         />
@@ -64,6 +71,7 @@ export function StepPublish({ values, onChange }: StepPublishProps) {
         {PACKAGES.map((pkg) => (
           <PackageCard
             key={pkg.id}
+            locale={locale}
             packageId={pkg.id}
             selected={PLANS_ENABLED && values.packageId === pkg.id}
             billing={values.billing}
@@ -76,19 +84,20 @@ export function StepPublish({ values, onChange }: StepPublishProps) {
       <div className="flex flex-col gap-3">
         <div className="flex items-center justify-between">
           <span className="text-[12px] font-semibold tracking-tight text-[var(--color-foreground)]">
-            Refuerzos opcionales (pago único)
+            {t(locale, "step.publish.addons.title")}
           </span>
           <span className="inline-flex items-center gap-1 text-[11px] text-[var(--color-text-subtle)]">
             <TrendingUp className="h-3 w-3" aria-hidden />
             {PLANS_ENABLED
-              ? "Aumentan tu visibilidad temporalmente"
-              : "Disponibles cuando activemos los planes"}
+              ? t(locale, "step.publish.addons.hint.enabled")
+              : t(locale, "step.publish.addons.hint.disabled")}
           </span>
         </div>
         <div className="grid gap-3 md:grid-cols-2">
           {ADD_ONS.map((addOn) => (
             <AddOnCard
               key={addOn.id}
+              locale={locale}
               id={addOn.id}
               name={addOn.name}
               description={addOn.description}
@@ -104,33 +113,24 @@ export function StepPublish({ values, onChange }: StepPublishProps) {
 
       <fieldset className="flex flex-col gap-3 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-background-elevated)] p-4">
         <legend className="px-2 text-[11px] font-semibold uppercase tracking-[0.22em] text-[var(--color-text-muted)]">
-          Antes de publicar
+          {t(locale, "step.publish.terms.legend")}
         </legend>
         <CheckLine
           checked={values.acceptsAdult}
           onChange={(v) => update("acceptsAdult", v)}
-          label="Confirmo que soy mayor de 18 años y tengo autorización sobre cada foto que subo."
+          label={t(locale, "step.publish.terms.adult")}
         />
         <CheckLine
           checked={values.acceptsTerms}
           onChange={(v) => update("acceptsTerms", v)}
-          label={
-            <>
-              Acepto los Términos de Publicación y la Política de Privacidad.
-              Mi número privado no aparece en mi perfil público.
-            </>
-          }
+          label={t(locale, "step.publish.terms.terms")}
         />
       </fieldset>
     </SectionShell>
   );
 }
 
-/**
- * Visible banner when `PLANS_ENABLED === false`. Communicates the free
- * launch + sets expectations for when paid plans land.
- */
-function FreeLaunchBanner() {
+function FreeLaunchBanner({ locale }: { locale: SupportedLocale }) {
   return (
     <div
       role="status"
@@ -144,12 +144,10 @@ function FreeLaunchBanner() {
       </span>
       <div className="flex flex-col gap-1">
         <span className="text-sm font-semibold text-[var(--color-foreground)]">
-          Publicación gratuita durante el lanzamiento
+          {t(locale, "step.publish.freeBanner.title")}
         </span>
         <span className="text-[12px] leading-relaxed text-[var(--color-text-muted)]">
-          Las modelos que se sumen ahora publican sin costo hasta que activemos
-          los planes pagos. Cuando esto pase tendrás aviso anticipado y opción
-          de elegir tu plan; entretanto, recibes todos los beneficios base.
+          {t(locale, "step.publish.freeBanner.body")}
         </span>
       </div>
     </div>
@@ -157,27 +155,20 @@ function FreeLaunchBanner() {
 }
 
 interface BillingToggleProps {
+  locale: SupportedLocale;
   billing: BillingCycle;
   onChange: (next: BillingCycle) => void;
 }
 
-function BillingToggle({ billing, onChange }: BillingToggleProps) {
-  const options: ReadonlyArray<{
-    id: BillingCycle;
-    label: string;
-    sublabel: string;
-  }> = [
-    { id: "monthly", label: "Mensual", sublabel: "Cancela cuando quieras" },
-    {
-      id: "quarterly",
-      label: "Trimestral",
-      sublabel: "Hasta 20% de ahorro",
-    },
+function BillingToggle({ locale, billing, onChange }: BillingToggleProps) {
+  const options: ReadonlyArray<{ id: BillingCycle }> = [
+    { id: "monthly" },
+    { id: "quarterly" },
   ];
   return (
     <div
       role="radiogroup"
-      aria-label="Frecuencia de pago"
+      aria-label={t(locale, "step.publish.billing.aria")}
       className="inline-flex w-full max-w-md self-start rounded-full border border-[var(--color-border)] bg-[var(--color-background-elevated)] p-1"
     >
       {options.map((opt) => {
@@ -195,7 +186,7 @@ function BillingToggle({ billing, onChange }: BillingToggleProps) {
                 : "text-[var(--color-text-muted)] hover:text-[var(--color-foreground)]"
             }`}
           >
-            <span>{opt.label}</span>
+            <span>{t(locale, `step.publish.billing.${opt.id}.label`)}</span>
             <span
               className={`text-[11px] font-medium ${
                 active
@@ -203,7 +194,7 @@ function BillingToggle({ billing, onChange }: BillingToggleProps) {
                   : "text-[var(--color-text-subtle)]"
               }`}
             >
-              {opt.sublabel}
+              {t(locale, `step.publish.billing.${opt.id}.sublabel`)}
             </span>
           </button>
         );
@@ -213,6 +204,7 @@ function BillingToggle({ billing, onChange }: BillingToggleProps) {
 }
 
 interface PackageCardProps {
+  locale: SupportedLocale;
   packageId: PackageId;
   selected: boolean;
   billing: BillingCycle;
@@ -221,6 +213,7 @@ interface PackageCardProps {
 }
 
 function PackageCard({
+  locale,
   packageId,
   selected,
   billing,
@@ -250,13 +243,13 @@ function PackageCard({
     >
       {disabled && (
         <span className="absolute -top-3 right-5 inline-flex items-center gap-1 rounded-full bg-[var(--color-foreground)]/85 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.22em] text-[var(--color-surface)] shadow-[var(--shadow-sm)]">
-          Próximamente
+          {t(locale, "step.publish.pkg.comingSoon")}
         </span>
       )}
       {pkg.recommended && !disabled && (
         <span className="absolute -top-3 left-5 inline-flex items-center gap-1 rounded-full bg-[var(--color-brand-primary)] px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.22em] text-[var(--color-surface)] shadow-[var(--shadow-sm)]">
           <Sparkles className="h-3 w-3" aria-hidden />
-          Recomendado
+          {t(locale, "step.publish.pkg.recommended")}
         </span>
       )}
       <span
@@ -285,12 +278,15 @@ function PackageCard({
             {formatCop(monthly)}
           </span>
           <span className="text-[12px] text-[var(--color-text-muted)]">
-            / mes
+            {t(locale, "step.publish.pkg.perMonth")}
           </span>
         </span>
         {billing === "quarterly" && (
           <span className="mt-1 text-[11px] text-[var(--color-brand-primary)]">
-            {formatCop(total)} cada 3 meses · {pkg.quarterlyDiscountPct}% de ahorro
+            {t(locale, "step.publish.pkg.quarterly", {
+              total: formatCop(total),
+              pct: pkg.quarterlyDiscountPct,
+            })}
           </span>
         )}
       </div>
@@ -317,6 +313,7 @@ function PackageCard({
 }
 
 interface AddOnCardProps {
+  locale: SupportedLocale;
   id: AddOnId;
   name: string;
   description: string;
@@ -328,6 +325,7 @@ interface AddOnCardProps {
 }
 
 function AddOnCard({
+  locale,
   id,
   name,
   description,
@@ -341,7 +339,12 @@ function AddOnCard({
     family === "boost"
       ? "bg-[var(--color-brand-accent)]/15 text-[var(--color-brand-accent-strong)]"
       : "bg-[var(--color-brand-primary)]/10 text-[var(--color-brand-primary)]";
-  const familyLabel = family === "boost" ? "Visibilidad" : "Contenido / SEO";
+  const familyLabel = t(
+    locale,
+    family === "boost"
+      ? "step.publish.addons.family.boost"
+      : "step.publish.addons.family.content",
+  );
 
   let stateTone: string;
   if (disabled) {

@@ -3,6 +3,11 @@
 import { useMemo } from "react";
 import { ArrowRight, GitCompareArrows, Heart } from "lucide-react";
 
+import { t } from "@/core/i18n/messages";
+import {
+  useActiveLocale,
+  useLocalizedHref,
+} from "@/core/i18n/use-active-locale";
 import type { BiringaListing } from "@/server/biringas";
 import { CatalogCard } from "@/features/catalog/components/CatalogCard";
 import { Button } from "@/shared/design-system/components/Button";
@@ -16,6 +21,8 @@ interface FavoritesViewProps {
 }
 
 export function FavoritesView({ listings }: Readonly<FavoritesViewProps>) {
+  const locale = useActiveLocale();
+  const exploreHref = useLocalizedHref("/explorar");
   const {
     favorites,
     compareIds,
@@ -49,14 +56,14 @@ export function FavoritesView({ listings }: Readonly<FavoritesViewProps>) {
     return (
       <div className="flex min-h-[40vh] items-center justify-center">
         <span className="text-sm text-[var(--color-text-subtle)]">
-          Cargando tu lista…
+          {t(locale, "favoritas.loading")}
         </span>
       </div>
     );
   }
 
   if (favoriteListings.length === 0) {
-    return <EmptyState />;
+    return <EmptyState exploreHref={exploreHref} />;
   }
 
   const canQuickVersus =
@@ -78,17 +85,16 @@ export function FavoritesView({ listings }: Readonly<FavoritesViewProps>) {
               className="h-3 w-3 fill-[var(--color-brand-highlight)] text-[var(--color-brand-highlight)]"
               aria-hidden
             />
-            Tu shortlist
+            {t(locale, "favoritas.kicker")}
           </span>
           <h1 className="mt-4 text-3xl font-bold leading-[1.05] tracking-tight text-[var(--color-foreground)] sm:text-4xl lg:text-5xl">
-            <span>Tus favoritas</span>
+            <span>{t(locale, "favoritas.title")}</span>
             <span className="ml-3 align-middle text-2xl font-normal text-[var(--color-text-muted)] sm:text-3xl">
               · {favoriteListings.length}
             </span>
           </h1>
           <p className="mt-3 max-w-xl text-sm leading-relaxed text-[var(--color-text-muted)] sm:text-base">
-            Las guardas con el corazón en cada perfil. Acá podés
-            compararlas lado a lado y decidir sin volver al catálogo.
+            {t(locale, "favoritas.subtitle")}
           </p>
         </div>
 
@@ -100,7 +106,7 @@ export function FavoritesView({ listings }: Readonly<FavoritesViewProps>) {
               className="inline-flex h-10 items-center gap-1.5 rounded-full bg-[var(--color-brand-primary)] px-4 text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-surface)] shadow-[var(--shadow-glow-primary)] transition-[background,box-shadow] duration-200 ease-[var(--ease-standard)] hover:bg-[var(--color-brand-primary-strong)]"
             >
               <GitCompareArrows className="h-3.5 w-3.5" aria-hidden />
-              Versus rápido
+              {t(locale, "favoritas.quickVersus")}
             </button>
           )}
           {compareIds.length > 0 && (
@@ -109,11 +115,11 @@ export function FavoritesView({ listings }: Readonly<FavoritesViewProps>) {
               onClick={clearCompare}
               className="inline-flex h-10 items-center gap-1.5 rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] px-3.5 text-xs font-medium text-[var(--color-text-muted)] transition-colors hover:text-[var(--color-foreground)]"
             >
-              Limpiar versus
+              {t(locale, "favoritas.clearVersus")}
             </button>
           )}
-          <Button href="/explorar" variant="secondary" size="sm">
-            Seguir explorando
+          <Button href={exploreHref} variant="secondary" size="sm">
+            {t(locale, "favoritas.keepExploring")}
             <ArrowRight className="h-4 w-4" aria-hidden />
           </Button>
         </div>
@@ -127,12 +133,15 @@ export function FavoritesView({ listings }: Readonly<FavoritesViewProps>) {
           />
           <p className="text-[var(--color-text-muted)]">
             <span className="font-semibold text-[var(--color-foreground)]">
-              Modo Versus.
+              {t(locale, "favoritas.compareHint.title")}
             </span>{" "}
-            Tocá <em>Versus rápido</em> para comparar las primeras 3 al
-            instante, o marcá{" "}
-            <em className="text-[var(--color-foreground)]">Comparar</em> en
-            las cards para armar tu propio combo.
+            {t(locale, "favoritas.compareHint.bodyA")}{" "}
+            <em>{t(locale, "favoritas.compareHint.versus")}</em>{" "}
+            {t(locale, "favoritas.compareHint.bodyB")}{" "}
+            <em className="text-[var(--color-foreground)]">
+              {t(locale, "favoritas.compareHint.compare")}
+            </em>{" "}
+            {t(locale, "favoritas.compareHint.bodyC")}
           </p>
         </div>
       )}
@@ -146,7 +155,6 @@ export function FavoritesView({ listings }: Readonly<FavoritesViewProps>) {
         ))}
       </ul>
 
-      {/* Bottom spacer so the drawer never covers the last row of cards. */}
       {compareIds.length > 0 && <div aria-hidden className="h-[60vh]" />}
 
       <CompareDrawer
@@ -157,7 +165,8 @@ export function FavoritesView({ listings }: Readonly<FavoritesViewProps>) {
   );
 }
 
-function EmptyState() {
+function EmptyState({ exploreHref }: { exploreHref: string }) {
+  const locale = useActiveLocale();
   return (
     <div className="mx-auto flex max-w-xl flex-col items-center gap-5 py-20 text-center">
       <span
@@ -167,14 +176,13 @@ function EmptyState() {
         <Heart className="h-7 w-7" aria-hidden />
       </span>
       <h1 className="text-3xl font-bold leading-[1.1] tracking-tight text-[var(--color-foreground)] sm:text-4xl">
-        Tu shortlist está vacía
+        {t(locale, "favoritas.empty.title")}
       </h1>
       <p className="max-w-md text-sm leading-relaxed text-[var(--color-text-muted)] sm:text-base">
-        Tocá el corazón en cualquier perfil para guardarlo aquí. Después
-        podés compararlos lado a lado antes de decidir.
+        {t(locale, "favoritas.empty.body")}
       </p>
-      <Button href="/explorar" variant="primary" size="lg">
-        Explorar perfiles
+      <Button href={exploreHref} variant="primary" size="lg">
+        {t(locale, "favoritas.empty.cta")}
         <ArrowRight className="h-4 w-4" aria-hidden />
       </Button>
     </div>

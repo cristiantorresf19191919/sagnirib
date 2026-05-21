@@ -5,21 +5,22 @@ import { Flag, X } from "lucide-react";
 import { createPortal } from "react-dom";
 import { useEffect, useState, useTransition } from "react";
 
+import type { SupportedLocale } from "@/core/branding/brand-config";
+import { t } from "@/core/i18n/messages";
+import { useActiveLocale } from "@/core/i18n/use-active-locale";
+import { useClientMounted } from "@/shared/lib/use-client-mounted";
 import { toast } from "@/shared/ui/toast";
 
 import { reportListing } from "../actions/report-listing";
 
-/** Mirror of the server-side REPORT_REASONS list. Kept here so this
- *  client component avoids any server-only import; server is the source
- *  of truth and rejects unknown reasons. */
 const REPORT_REASONS = [
-  { value: "fake_photos", label: "Fotos no coinciden" },
-  { value: "scam", label: "Sospecha de estafa" },
-  { value: "harassment", label: "Acoso o falta de respeto" },
-  { value: "minor_concern", label: "Preocupación por seguridad" },
-  { value: "underage", label: "Sospecha de menor de edad" },
-  { value: "spam", label: "Spam o duplicado" },
-  { value: "other", label: "Otro" },
+  "fake_photos",
+  "scam",
+  "harassment",
+  "minor_concern",
+  "underage",
+  "spam",
+  "other",
 ] as const;
 
 const DETAIL_MAX = 1000;
@@ -29,22 +30,13 @@ interface ReportListingMenuProps {
   listingName: string;
 }
 
-/**
- * Discreet report affordance on the profile page. Renders a small
- * outline icon button that opens a typed-reason modal. The reason set
- * mirrors the server schema; on submit fires a toast and closes the
- * modal regardless of whether the reporter is authenticated (anonymous
- * reports are allowed for safety-critical categories — see the barrel's
- * `reportListing` docstring).
- */
 export function ReportListingMenu({
   listingSlug,
   listingName,
 }: Readonly<ReportListingMenuProps>) {
+  const locale = useActiveLocale();
   const [open, setOpen] = useState(false);
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => setMounted(true), []);
+  const mounted = useClientMounted();
 
   useEffect(() => {
     if (!open) return;
@@ -65,8 +57,8 @@ export function ReportListingMenu({
       <button
         type="button"
         onClick={() => setOpen(true)}
-        aria-label={`Reportar perfil de ${listingName}`}
-        title="Reportar perfil"
+        aria-label={t(locale, "report.trigger.aria", { name: listingName })}
+        title={t(locale, "report.trigger.title")}
         data-testid="report-listing-trigger"
         className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text-muted)] transition-colors duration-200 ease-[var(--ease-standard)] hover:border-[var(--color-brand-highlight)]/40 hover:bg-[var(--color-brand-highlight)]/8 hover:text-[var(--color-brand-highlight)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-highlight)]"
       >
@@ -78,6 +70,7 @@ export function ReportListingMenu({
           <AnimatePresence>
             {open && (
               <ReportOverlay
+                locale={locale}
                 listingSlug={listingSlug}
                 listingName={listingName}
                 onClose={() => setOpen(false)}
@@ -91,12 +84,14 @@ export function ReportListingMenu({
 }
 
 interface OverlayProps {
+  locale: SupportedLocale;
   listingSlug: string;
   listingName: string;
   onClose: () => void;
 }
 
 function ReportOverlay({
+  locale,
   listingSlug,
   listingName,
   onClose,
@@ -111,7 +106,7 @@ function ReportOverlay({
   const onSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!reason) {
-      setError("Elige un motivo.");
+      setError(t(locale, "report.error.noReason"));
       return;
     }
     setError(null);
@@ -123,14 +118,12 @@ function ReportOverlay({
       });
       if (result.ok) {
         toast.success(
-          "Reporte recibido",
-          "Nuestro equipo de seguridad lo revisará. Gracias por ayudarnos a mantener la comunidad confiable.",
+          t(locale, "report.toast.title"),
+          t(locale, "report.toast.body"),
         );
         onClose();
       } else {
-        setError(
-          result.error?.message ?? "No pudimos enviar el reporte. Intenta de nuevo.",
-        );
+        setError(result.error?.message ?? t(locale, "report.error.default"));
       }
     });
   };
@@ -149,7 +142,7 @@ function ReportOverlay({
     >
       <button
         type="button"
-        aria-label="Cerrar"
+        aria-label={t(locale, "report.modal.close")}
         onClick={onClose}
         className="absolute inset-0 cursor-default bg-[rgba(20,28,24,0.55)] backdrop-blur-sm"
       />
@@ -166,16 +159,16 @@ function ReportOverlay({
               id="report-title"
               className="text-base font-semibold tracking-tight text-[var(--color-foreground)]"
             >
-              Reportar a {listingName}
+              {t(locale, "report.modal.title", { name: listingName })}
             </h2>
             <p className="text-xs text-[var(--color-text-muted)]">
-              Tu reporte es confidencial. Revisamos cada caso.
+              {t(locale, "report.modal.subtitle")}
             </p>
           </div>
           <button
             type="button"
             onClick={onClose}
-            aria-label="Cerrar"
+            aria-label={t(locale, "report.modal.close")}
             className="inline-flex h-9 w-9 items-center justify-center rounded-full text-[var(--color-text-muted)] transition-colors hover:bg-[var(--color-surface-muted)] hover:text-[var(--color-foreground)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)]"
           >
             <X className="h-4 w-4" aria-hidden />
@@ -189,13 +182,13 @@ function ReportOverlay({
         >
           <fieldset className="flex flex-col gap-2">
             <legend className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--color-text-subtle)]">
-              Motivo
+              {t(locale, "report.field.reason")}
             </legend>
-            {REPORT_REASONS.map((r) => {
-              const checked = reason === r.value;
+            {REPORT_REASONS.map((value) => {
+              const checked = reason === value;
               return (
                 <label
-                  key={r.value}
+                  key={value}
                   className={`flex cursor-pointer items-start gap-3 rounded-[var(--radius-lg)] border p-3 transition-[border-color,background] duration-150 ease-[var(--ease-standard)] ${
                     checked
                       ? "border-[var(--color-brand-highlight)]/60 bg-[var(--color-brand-highlight)]/8"
@@ -205,13 +198,13 @@ function ReportOverlay({
                   <input
                     type="radio"
                     name="reason"
-                    value={r.value}
+                    value={value}
                     checked={checked}
-                    onChange={() => setReason(r.value)}
+                    onChange={() => setReason(value)}
                     className="mt-0.5 h-4 w-4 accent-[var(--color-brand-highlight)]"
                   />
                   <span className="text-sm text-[var(--color-foreground)]">
-                    {r.label}
+                    {t(locale, `report.reason.${value}`)}
                   </span>
                 </label>
               );
@@ -220,14 +213,16 @@ function ReportOverlay({
 
           <label className="flex flex-col gap-1.5">
             <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--color-text-subtle)]">
-              Detalle {requiresDetail ? "(requerido)" : "(opcional)"}
+              {requiresDetail
+                ? t(locale, "report.field.detail.required")
+                : t(locale, "report.field.detail.optional")}
             </span>
             <textarea
               required={requiresDetail}
               maxLength={DETAIL_MAX}
               value={detail}
               onChange={(e) => setDetail(e.target.value)}
-              placeholder="Describe lo que pasó. Cualquier detalle ayuda al equipo de revisión."
+              placeholder={t(locale, "report.field.detail.placeholder")}
               rows={3}
               className="rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-background)] px-3.5 py-2.5 text-sm leading-relaxed text-[var(--color-foreground)] placeholder:text-[var(--color-text-subtle)] focus:border-[var(--color-brand-highlight)] focus:outline-none focus:ring-2 focus:ring-[var(--color-brand-highlight)]/30"
             />
@@ -251,14 +246,16 @@ function ReportOverlay({
               onClick={onClose}
               className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--color-text-muted)] transition-colors hover:text-[var(--color-foreground)]"
             >
-              Cancelar
+              {t(locale, "report.cancel")}
             </button>
             <button
               type="submit"
               disabled={isPending}
               className="inline-flex h-11 items-center gap-2 rounded-full bg-[var(--color-brand-highlight)] px-5 text-sm font-semibold text-[var(--color-surface)] shadow-[0_8px_22px_-10px_rgba(196,81,75,0.45)] transition-[background,transform] duration-200 ease-[var(--ease-standard)] hover:-translate-y-[1px] hover:bg-[var(--color-brand-highlight)]/90 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-highlight)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-background)] disabled:cursor-not-allowed disabled:opacity-70"
             >
-              {isPending ? "Enviando…" : "Enviar reporte"}
+              {isPending
+                ? t(locale, "report.submitting")
+                : t(locale, "report.submit")}
             </button>
           </div>
         </form>

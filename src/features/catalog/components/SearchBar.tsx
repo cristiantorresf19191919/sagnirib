@@ -1,5 +1,8 @@
 import { Search, Sparkles } from "lucide-react";
 
+import { localizedHref } from "@/core/i18n/href";
+import { readLocale } from "@/core/i18n/locale";
+import { t } from "@/core/i18n/messages";
 import { SUPPORTED_CITIES, type ListingsFilters } from "@/server/biringas";
 import { Container } from "@/shared/design-system/components/Container";
 
@@ -15,17 +18,18 @@ interface SearchBarProps {
  * the new URL with the current filters preserved as hidden inputs (only the
  * fields *this* form does not own).
  */
-export function SearchBar({ filters, view }: SearchBarProps) {
+export async function SearchBar({ filters, view }: SearchBarProps) {
+  const locale = await readLocale();
   return (
     <section
       data-testid="search-bar"
-      aria-label="Buscador del catálogo"
+      aria-label={t(locale, "explorar.search.label")}
       className="bg-[var(--color-background)]"
     >
       <Container width="wide" className="py-4 sm:py-5">
         <form
           data-testid="search-bar-form"
-          action="/explorar"
+          action={localizedHref(locale, "/explorar")}
           method="get"
           className="flex flex-col gap-2 md:flex-row md:items-stretch md:gap-2"
         >
@@ -33,7 +37,7 @@ export function SearchBar({ filters, view }: SearchBarProps) {
           <PreservedFilters filters={filters} view={view} omit={["q", "city"]} />
 
           <label className="group relative md:w-[260px] md:shrink-0">
-            <span className="sr-only">¿Dónde estás?</span>
+            <span className="sr-only">{t(locale, "hero.field.city")}</span>
             <span
               aria-hidden
               className="pointer-events-none absolute inset-0 rounded-full ring-0 ring-[var(--color-brand-primary)]/0 transition-[box-shadow] duration-300 ease-[var(--ease-standard)] group-focus-within:ring-4 group-focus-within:ring-[var(--color-brand-primary)]/15"
@@ -44,7 +48,7 @@ export function SearchBar({ filters, view }: SearchBarProps) {
               defaultValue={filters.city ?? ""}
               className="relative h-12 w-full appearance-none rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] pl-5 pr-10 text-sm text-[var(--color-foreground)] transition-colors duration-200 hover:border-[var(--color-brand-primary-soft)] focus:border-[var(--color-brand-primary)] focus:outline-none"
             >
-              <option value="">Toda Colombia</option>
+              <option value="">{t(locale, "explorar.toolbar.cityAll")}</option>
               {SUPPORTED_CITIES.map((city) => (
                 <option key={city} value={city}>
                   {city}
@@ -55,7 +59,7 @@ export function SearchBar({ filters, view }: SearchBarProps) {
           </label>
 
           <label className="group relative flex-1">
-            <span className="sr-only">¿Qué buscas?</span>
+            <span className="sr-only">{t(locale, "explorar.search.label")}</span>
             <span
               aria-hidden
               className="pointer-events-none absolute inset-0 rounded-full ring-0 ring-[var(--color-brand-primary)]/0 transition-[box-shadow] duration-300 ease-[var(--ease-standard)] group-focus-within:ring-4 group-focus-within:ring-[var(--color-brand-primary)]/15"
@@ -70,7 +74,7 @@ export function SearchBar({ filters, view }: SearchBarProps) {
               defaultValue={filters.search ?? ""}
               type="search"
               inputMode="search"
-              placeholder="Buscar por nombre, plan o servicio…"
+              placeholder={t(locale, "explorar.search.placeholder")}
               className="relative h-12 w-full rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] pl-12 pr-5 text-sm text-[var(--color-foreground)] placeholder:text-[var(--color-text-subtle)] transition-colors duration-200 hover:border-[var(--color-brand-primary-soft)] focus:border-[var(--color-brand-primary)] focus:outline-none"
             />
           </label>
@@ -84,7 +88,7 @@ export function SearchBar({ filters, view }: SearchBarProps) {
               aria-hidden
               className="pointer-events-none absolute inset-y-0 -left-1/3 hidden w-1/3 bg-gradient-to-r from-transparent via-white/30 to-transparent motion-safe:group-hover:motion-shimmer-sweep sm:block"
             />
-            <span className="relative">Buscar</span>
+            <span className="relative">{t(locale, "hero.cta.search")}</span>
             {/* Gold sparkle ornament — sits inside the button on the right
                 edge, mirroring the reference's punctuation detail. */}
             <Sparkles

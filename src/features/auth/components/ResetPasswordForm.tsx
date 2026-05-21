@@ -3,6 +3,12 @@
 import Link from "next/link";
 import { useState, type FormEvent } from "react";
 
+import { t } from "@/core/i18n/messages";
+import {
+  useActiveLocale,
+  useLocalizedHref,
+} from "@/core/i18n/use-active-locale";
+
 import { useAuthSession } from "../lib/use-auth-session";
 
 /**
@@ -12,8 +18,6 @@ import { useAuthSession } from "../lib/use-auth-session";
  * The actual reset email and the recovery URL are hosted by Firebase Auth
  * (default sender). When we are ready to brand them, configure the Firebase
  * console email templates and / or a custom action handler URL.
- *
- * Copy is BRAND_HANDSHAKE_TODO across the form.
  */
 
 interface FieldErrors {
@@ -22,6 +26,8 @@ interface FieldErrors {
 }
 
 export function ResetPasswordForm() {
+  const locale = useActiveLocale();
+  const ingresarHref = useLocalizedHref("/ingresar");
   const { status, sendPasswordReset } = useAuthSession();
   const [email, setEmail] = useState("");
   const [errors, setErrors] = useState<FieldErrors>({});
@@ -34,8 +40,7 @@ export function ResetPasswordForm() {
         role="status"
         className="rounded-md border border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-3 text-sm text-[var(--color-text-muted)]"
       >
-        {/* BRAND_HANDSHAKE_TODO */}
-        Auth no está disponible — falta configurar Firebase.
+        {t(locale, "auth.disabled.reset.body")}
       </p>
     );
   }
@@ -44,21 +49,21 @@ export function ResetPasswordForm() {
     event.preventDefault();
     setErrors({});
     if (!email.trim()) {
-      setErrors({ email: "Ingresá tu email." });
+      setErrors({ email: t(locale, "auth.reset.validation.email") });
       return;
     }
     setSubmitting(true);
     try {
       await sendPasswordReset(email);
     } catch (err) {
-      // Swallow most errors to avoid enumeration. Only surface auth/invalid-email
-      // because it is a UX validation, not an existence probe.
       const code =
         typeof (err as { code?: unknown } | undefined)?.code === "string"
           ? (err as { code: string }).code
           : "";
       if (code === "auth/invalid-email") {
-        setErrors({ email: "El email no parece válido." });
+        setErrors({
+          email: t(locale, "auth.reset.validation.invalidEmail"),
+        });
         setSubmitting(false);
         return;
       }
@@ -76,16 +81,15 @@ export function ResetPasswordForm() {
           role="status"
           className="rounded-md border border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-3 text-sm text-[var(--color-foreground)]"
         >
-          {/* BRAND_HANDSHAKE_TODO */}
-          Si existe una cuenta para <strong>{email}</strong>, te enviamos un
-          correo con las instrucciones para reestablecer tu contraseña. Revisá
-          también tu carpeta de spam.
+          {/* Strong-tagged email needs split rendering so the strong remains an
+              HTML element rather than baked into the translated string. */}
+          <SuccessText email={email} locale={locale} />
         </p>
         <Link
-          href="/ingresar"
+          href={ingresarHref}
           className="text-center text-sm font-semibold text-[var(--color-brand-primary)] hover:text-[var(--color-brand-primary-strong)]"
         >
-          Volver a iniciar sesión
+          {t(locale, "auth.reset.backToSignin")}
         </Link>
       </div>
     );
@@ -102,8 +106,7 @@ export function ResetPasswordForm() {
           htmlFor="reset-email"
           className="text-xs font-medium uppercase tracking-wide text-[var(--color-text-muted)]"
         >
-          {/* BRAND_HANDSHAKE_TODO */}
-          Email
+          {t(locale, "auth.reset.field.email")}
         </label>
         <input
           id="reset-email"
@@ -136,20 +139,43 @@ export function ResetPasswordForm() {
         disabled={submitting}
         className="inline-flex h-11 items-center justify-center rounded-full bg-[var(--color-brand-primary)] px-5 text-sm font-semibold text-[var(--color-surface)] shadow-[var(--shadow-glow-primary)] transition-[background,opacity] duration-200 ease-[var(--ease-standard)] hover:bg-[var(--color-brand-primary-strong)] disabled:opacity-60 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-background)]"
       >
-        {/* BRAND_HANDSHAKE_TODO */}
-        {submitting ? "Enviando…" : "Enviarme el correo"}
+        {submitting
+          ? t(locale, "auth.reset.submitting")
+          : t(locale, "auth.reset.submit")}
       </button>
 
       <p className="text-center text-xs text-[var(--color-text-muted)]">
-        {/* BRAND_HANDSHAKE_TODO */}
-        ¿Recuperaste el acceso?{" "}
+        {t(locale, "auth.reset.recovered")}{" "}
         <Link
-          href="/ingresar"
+          href={ingresarHref}
           className="font-semibold text-[var(--color-brand-primary)] hover:text-[var(--color-brand-primary-strong)]"
         >
-          Ingresá
+          {t(locale, "auth.reset.signIn")}
         </Link>
       </p>
     </form>
+  );
+}
+
+/**
+ * The success blurb embeds the user's email inside a `<strong>` tag.
+ * Split rendering keeps the HTML semantic while still pulling copy from
+ * the translation file via `{email}` interpolation.
+ */
+function SuccessText({
+  email,
+  locale,
+}: {
+  email: string;
+  locale: import("@/core/branding/brand-config").SupportedLocale;
+}) {
+  const raw = t(locale, "auth.reset.success", { email: "__EMAIL__" });
+  const [before, after] = raw.split("__EMAIL__");
+  return (
+    <>
+      {before}
+      <strong>{email}</strong>
+      {after}
+    </>
   );
 }

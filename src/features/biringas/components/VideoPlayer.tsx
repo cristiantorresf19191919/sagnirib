@@ -1,5 +1,7 @@
 import { Play } from "lucide-react";
 
+import { readLocale } from "@/core/i18n/locale";
+import { t } from "@/core/i18n/messages";
 import type { BiringaVideo } from "@/server/biringas";
 
 import { resolveAssetUrl } from "../lib/asset-url";
@@ -30,12 +32,13 @@ interface VideoPlayerProps {
  * configured + path not in the mock store) the component renders a
  * muted placeholder rather than a broken `<video>` element.
  */
-export function VideoPlayer({
+export async function VideoPlayer({
   video,
   posterUrl,
   controls = true,
   className = "",
 }: Readonly<VideoPlayerProps>) {
+  const locale = await readLocale();
   const src = resolveAssetUrl(video.path);
 
   if (!src) {
@@ -45,11 +48,11 @@ export function VideoPlayer({
           "relative flex aspect-video items-center justify-center rounded-[var(--radius-lg)] border border-dashed border-[var(--color-border)] bg-[var(--color-surface-muted)] text-[var(--color-text-muted)] " +
           className
         }
-        aria-label="Video no disponible"
+        aria-label={t(locale, "videoPlayer.unavailable.aria")}
       >
         <span className="inline-flex items-center gap-1.5 text-[11px] uppercase tracking-[0.18em]">
           <Play className="h-3 w-3" aria-hidden />
-          Video no disponible
+          {t(locale, "videoPlayer.unavailable.label")}
         </span>
       </div>
     );

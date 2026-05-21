@@ -2,30 +2,49 @@
 
 import { useEffect, useMemo, useRef } from "react";
 
+import type { SupportedLocale } from "@/core/branding/brand-config";
+import { t } from "@/core/i18n/messages";
+import { useActiveLocale } from "@/core/i18n/use-active-locale";
+
 import {
   SLOTS,
-  SLOT_LABELS,
   firstAvailableSlot,
   getUpcomingAvailability,
   type Slot,
   type SlotState,
 } from "../lib/availability";
 
-const DAY_NAMES_SHORT = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
-const MONTH_NAMES_SHORT = [
-  "ene",
-  "feb",
-  "mar",
-  "abr",
-  "may",
-  "jun",
-  "jul",
-  "ago",
-  "sep",
-  "oct",
-  "nov",
-  "dic",
+const DAY_KEYS: ReadonlyArray<string> = [
+  "bookingDatePicker.day.sun",
+  "bookingDatePicker.day.mon",
+  "bookingDatePicker.day.tue",
+  "bookingDatePicker.day.wed",
+  "bookingDatePicker.day.thu",
+  "bookingDatePicker.day.fri",
+  "bookingDatePicker.day.sat",
 ];
+const MONTH_KEYS: ReadonlyArray<string> = [
+  "bookingDatePicker.month.jan",
+  "bookingDatePicker.month.feb",
+  "bookingDatePicker.month.mar",
+  "bookingDatePicker.month.apr",
+  "bookingDatePicker.month.may",
+  "bookingDatePicker.month.jun",
+  "bookingDatePicker.month.jul",
+  "bookingDatePicker.month.aug",
+  "bookingDatePicker.month.sep",
+  "bookingDatePicker.month.oct",
+  "bookingDatePicker.month.nov",
+  "bookingDatePicker.month.dec",
+];
+
+function buildSlotLabels(locale: SupportedLocale): Record<Slot, string> {
+  return {
+    morning: t(locale, "bookingDatePicker.slot.morning"),
+    afternoon: t(locale, "bookingDatePicker.slot.afternoon"),
+    evening: t(locale, "bookingDatePicker.slot.evening"),
+  };
+}
 
 interface BookingDatePickerProps {
   listingSlug: string;
@@ -53,6 +72,8 @@ export function BookingDatePicker({
   onChange,
   dayCount = 14,
 }: Readonly<BookingDatePickerProps>) {
+  const locale = useActiveLocale();
+  const slotLabels = useMemo(() => buildSlotLabels(locale), [locale]);
   const days = useMemo(
     () => getUpcomingAvailability(listingSlug, dayCount),
     [listingSlug, dayCount],
@@ -94,7 +115,7 @@ export function BookingDatePicker({
       <div
         ref={stripRef}
         role="radiogroup"
-        aria-label="Día propuesto"
+        aria-label={t(locale, "bookingDatePicker.day.aria.groupLabel")}
         className="-mx-1 flex snap-x snap-mandatory gap-2 overflow-x-auto px-1 pb-1 [scrollbar-width:thin]"
       >
         {days.map((d) => {
@@ -104,7 +125,19 @@ export function BookingDatePicker({
             d.slots.morning === 0 &&
             d.slots.afternoon === 0 &&
             d.slots.evening === 0;
-          const dow = DAY_NAMES_SHORT[d.dayOfWeek];
+          const dowKey = DAY_KEYS[d.dayOfWeek]!;
+          const monthKey = MONTH_KEYS[d.date.getMonth()]!;
+          const dow = t(locale, dowKey);
+          const month = t(locale, monthKey);
+          const ariaLabel =
+            t(locale, "bookingDatePicker.day.aria.label", {
+              day: dow,
+              date: d.date.getDate(),
+              month,
+            }) +
+            (allBlocked
+              ? t(locale, "bookingDatePicker.day.aria.unavailable")
+              : "");
           return (
             <button
               key={d.isoDate}
@@ -112,9 +145,7 @@ export function BookingDatePicker({
               role="radio"
               data-iso={d.isoDate}
               aria-checked={isSelected}
-              aria-label={`${dow} ${d.date.getDate()} de ${MONTH_NAMES_SHORT[d.date.getMonth()]}${
-                allBlocked ? " — sin disponibilidad" : ""
-              }`}
+              aria-label={ariaLabel}
               disabled={allBlocked}
               onClick={() => {
                 if (allBlocked) return;
@@ -137,13 +168,13 @@ export function BookingDatePicker({
                     : "text-[var(--color-text-subtle)]"
                 }`}
               >
-                {isToday ? "Hoy" : dow}
+                {isToday ? t(locale, "bookingDatePicker.day.today") : dow}
               </span>
               <span className="text-base font-semibold leading-none tabular-nums text-[var(--color-foreground)]">
                 {d.date.getDate()}
               </span>
               <span className="text-[9px] uppercase tracking-[0.14em] text-[var(--color-text-subtle)]">
-                {MONTH_NAMES_SHORT[d.date.getMonth()]}
+                {month}
               </span>
               <span className="mt-0.5 flex items-center gap-1" aria-hidden>
                 {SLOTS.map((s) => (
@@ -160,11 +191,11 @@ export function BookingDatePicker({
 
       <div
         role="radiogroup"
-        aria-label="Momento del día"
+        aria-label={t(locale, "bookingDatePicker.slot.aria.groupLabel")}
         className="flex flex-wrap items-center gap-2"
       >
         <span className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--color-text-subtle)]">
-          Momento
+          {t(locale, "bookingDatePicker.slot.eyebrow")}
         </span>
         {SLOTS.map((s) => {
           const state = selectedDay.slots[s];
@@ -179,10 +210,10 @@ export function BookingDatePicker({
               disabled={disabled}
               title={
                 disabled
-                  ? "Sin disponibilidad para este momento"
+                  ? t(locale, "bookingDatePicker.slot.title.unavailable")
                   : state === 1
-                    ? "Disponible por consulta"
-                    : "Disponible"
+                    ? t(locale, "bookingDatePicker.slot.title.byRequest")
+                    : t(locale, "bookingDatePicker.slot.title.available")
               }
               onClick={() =>
                 onChange({ date: selectedDay.isoDate, slot: s })
@@ -197,10 +228,10 @@ export function BookingDatePicker({
                 className={`h-2 w-2 rounded-full ${dotClass(state)}`}
                 aria-hidden
               />
-              {SLOT_LABELS[s]}
+              {slotLabels[s]}
               {state === 1 && !disabled && (
                 <span className="text-[9px] uppercase tracking-[0.14em] text-[var(--color-text-subtle)]">
-                  por consulta
+                  {t(locale, "bookingDatePicker.slot.byRequest")}
                 </span>
               )}
             </button>

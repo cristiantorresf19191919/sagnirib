@@ -14,6 +14,8 @@ import {
 import { createPortal } from "react-dom";
 import type { LucideIcon } from "lucide-react";
 
+import { useClientMounted } from "@/shared/lib/use-client-mounted";
+
 interface CityOption {
   readonly value: string;
   readonly label: string;
@@ -23,6 +25,10 @@ interface HeroCitySelectProps {
   readonly name: string;
   readonly cities: ReadonlyArray<CityOption>;
   readonly defaultValue?: string;
+  /** Localized "Ciudad" eyebrow label rendered above the selected city. */
+  readonly label?: string;
+  /** Localized "Elige ciudad" helper rendered as the dropdown header. */
+  readonly helper?: string;
 }
 
 interface PanelPos {
@@ -67,13 +73,15 @@ export function HeroCitySelect({
   name,
   cities,
   defaultValue = "",
+  label = "Ciudad",
+  helper = "Elige ciudad",
 }: HeroCitySelectProps) {
   const [open, setOpen] = useState(false);
   const [value, setValue] = useState(defaultValue);
   const [activeIndex, setActiveIndex] = useState(() =>
     Math.max(0, cities.findIndex((c) => c.value === defaultValue)),
   );
-  const [mounted, setMounted] = useState(false);
+  const mounted = useClientMounted();
   const [pos, setPos] = useState<PanelPos | null>(null);
 
   const wrapperRef = useRef<HTMLDivElement>(null);
@@ -96,9 +104,6 @@ export function HeroCitySelect({
     () => cities.find((c) => c.value === value) ?? cities[0],
     [cities, value],
   );
-
-  // Portal target is document.body — only present after client mount.
-  useEffect(() => setMounted(true), []);
 
   // Track the wrapper's bounding rect so the portaled panel stays anchored
   // under the trigger when the window resizes or any ancestor scrolls.
@@ -258,7 +263,7 @@ export function HeroCitySelect({
           />
           <div className="border-b border-[var(--color-line-soft)] px-4 pb-1.5 pt-2.5">
             <span className="text-[9.5px] uppercase tracking-[0.18em] text-[var(--color-ink-soft)]">
-              Elige ciudad
+              {helper}
             </span>
           </div>
           <ul
@@ -345,7 +350,7 @@ export function HeroCitySelect({
           id={labelId}
           className="block text-[9.5px] uppercase tracking-[0.16em] text-[var(--color-ink-soft)] opacity-80"
         >
-          Ciudad
+          {label}
         </span>
         <span className="mt-0.5 flex items-center gap-1.5 pr-5 relative">
           <span className="truncate text-sm font-medium text-[var(--color-ink)]">

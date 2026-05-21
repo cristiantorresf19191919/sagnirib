@@ -1,3 +1,5 @@
+import { readLocale } from "@/core/i18n/locale";
+import { t } from "@/core/i18n/messages";
 import { CATEGORIES, type ListingsFilters } from "@/server/biringas";
 import { Container } from "@/shared/design-system/components/Container";
 import { AnimatedTabs } from "@/shared/motion/AnimatedTabs";
@@ -15,14 +17,15 @@ interface CategoryBarProps {
  * `layoutId`. URLs remain the source of truth — page is server-rendered
  * against the resulting filter state.
  */
-export function CategoryBar({ filters, view }: CategoryBarProps) {
+export async function CategoryBar({ filters, view }: CategoryBarProps) {
+  const locale = await readLocale();
   const activeCategory = filters.category;
 
   const categoryItems = [
     {
       id: "all",
       href: withFilter(filters, "category", undefined as never, view),
-      label: "Todas",
+      label: t(locale, "explorar.categoryBar.all"),
       active: activeCategory === undefined,
     },
     ...CATEGORIES.map(({ id, label }) => ({
@@ -45,7 +48,7 @@ export function CategoryBar({ filters, view }: CategoryBarProps) {
   return (
     <section
       data-testid="category-bar"
-      aria-label="Categorías"
+      aria-label={t(locale, "explorar.categoryBar.aria")}
       className="border-b border-[var(--color-border)]/60 bg-[var(--color-background)]"
     >
       <Container width="wide" className="py-4">

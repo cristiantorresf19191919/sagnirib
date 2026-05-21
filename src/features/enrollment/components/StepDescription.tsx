@@ -11,6 +11,8 @@ import {
 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 
+import { t } from "@/core/i18n/messages";
+import { useActiveLocale } from "@/core/i18n/use-active-locale";
 import type { EnrollmentCatalogs } from "../lib/catalogs";
 import type {
   DescriptionValues,
@@ -79,6 +81,7 @@ export function StepDescription({
   sessionId,
   galleryMax,
 }: StepDescriptionProps) {
+  const locale = useActiveLocale();
   function update<K extends keyof DescriptionValues>(
     key: K,
     value: DescriptionValues[K],
@@ -112,10 +115,15 @@ export function StepDescription({
   // Avoid double-starting an upload when React StrictMode renders twice.
   const startedIds = useRef<Set<string>>(new Set());
 
-  // Stable reference to current gallery state so the effect that watches
-  // for queued items doesn't re-fire on every keystroke elsewhere.
+  // Stable reference to current gallery state so concurrent updateItem()
+  // calls fired in the same tick (e.g. multiple uploads finishing
+  // simultaneously) compose against the latest array instead of clobbering
+  // each other with stale props. Ref sync is moved to a layout effect so
+  // we never assign to a ref during render.
   const galleryRef = useRef(values.gallery);
-  galleryRef.current = values.gallery;
+  useEffect(() => {
+    galleryRef.current = values.gallery;
+  }, [values.gallery]);
 
   const updateItem = useCallback(
     (id: string, patch: Partial<GalleryItem>) => {
@@ -278,7 +286,9 @@ export function StepDescription({
   const videoInFlight = useRef<Map<string, AbortController>>(new Map());
   const videoStartedIds = useRef<Set<string>>(new Set());
   const videosRef = useRef(values.videos);
-  videosRef.current = values.videos;
+  useEffect(() => {
+    videosRef.current = values.videos;
+  }, [values.videos]);
 
   const updateVideo = useCallback(
     (id: string, patch: Partial<VideoItem>) => {
@@ -431,38 +441,41 @@ export function StepDescription({
 
   return (
     <SectionShell
-      eyebrow="Tu historia"
-      title="Lo que leerán y verán los visitantes"
-      description="Una descripción honesta y unas buenas fotos triplican la respuesta. Tómate el tiempo aquí."
+      eyebrow={t(locale, "step.description.eyebrow")}
+      title={t(locale, "step.description.title")}
+      description={t(locale, "step.description.description")}
     >
       <TextAreaField
-        label="Descripción corta"
+        label={t(locale, "step.description.shortBio.label")}
         name="shortBio"
         rows={2}
         maxLength={120}
-        placeholder="Una frase que te describa. Aparece debajo de tu foto principal."
+        placeholder={t(locale, "step.description.shortBio.placeholder")}
         value={values.shortBio}
         onChange={(e) => update("shortBio", e.target.value)}
-        hint={`${values.shortBio.length} / 120 caracteres`}
+        hint={t(locale, "step.description.shortBio.hint", {
+          count: values.shortBio.length,
+        })}
       />
       <TextAreaField
-        label="Sobre ti"
+        label={t(locale, "step.description.bio.label")}
         name="bio"
         rows={6}
         maxLength={1200}
-        placeholder="Cuenta quién eres, qué disfrutas, cómo es la experiencia contigo. Sin información de contacto — la añadimos en el siguiente paso."
+        placeholder={t(locale, "step.description.bio.placeholder")}
         value={values.bio}
         onChange={(e) => update("bio", e.target.value)}
-        hint={`${values.bio.length} / 1200 caracteres · evita números de teléfono y enlaces externos.`}
+        hint={t(locale, "step.description.bio.hint", {
+          count: values.bio.length,
+        })}
       />
 
       <fieldset className="flex flex-col gap-2">
         <legend className="text-[12px] font-semibold tracking-tight text-[var(--color-foreground)]">
-          Servicios incluidos
+          {t(locale, "step.description.services.legend")}
         </legend>
         <p className="text-[11px] text-[var(--color-text-subtle)]">
-          Selecciona los servicios que ofreces. Aparecen como chips en tu
-          perfil y se conectan con los filtros del catálogo.
+          {t(locale, "step.description.services.hint")}
         </p>
         <div className="mt-1 flex flex-wrap gap-2">
           {catalogs.services.map((service) => (
@@ -478,10 +491,10 @@ export function StepDescription({
 
       <fieldset className="flex flex-col gap-2">
         <legend className="text-[12px] font-semibold tracking-tight text-[var(--color-foreground)]">
-          Lugar de encuentro
+          {t(locale, "step.description.places.legend")}
         </legend>
         <p className="text-[11px] text-[var(--color-text-subtle)]">
-          Dónde aceptas reunirte. Mostrado como filtro de búsqueda.
+          {t(locale, "step.description.places.hint")}
         </p>
         <div className="mt-1 flex flex-wrap gap-2">
           {catalogs.meetingContexts.map((place) => (
@@ -497,20 +510,23 @@ export function StepDescription({
 
       <div className="grid gap-3 md:grid-cols-3">
         <ToggleSwitch
-          label="Cara visible"
-          description="Indica que muestras el rostro en al menos una foto."
+          label={t(locale, "step.description.toggle.faceVisible.label")}
+          description={t(locale, "step.description.toggle.faceVisible.body")}
           checked={values.faceVisible}
           onChange={(v) => update("faceVisible", v)}
         />
         <ToggleSwitch
-          label="Pago con tarjeta"
-          description="Tu perfil aparece en el filtro de tarjetas aceptadas."
+          label={t(locale, "step.description.toggle.paymentByCard.label")}
+          description={t(
+            locale,
+            "step.description.toggle.paymentByCard.body",
+          )}
           checked={values.paymentByCard}
           onChange={(v) => update("paymentByCard", v)}
         />
         <ToggleSwitch
-          label="Disponible ahora"
-          description="Activa esto cuando estés disponible — aparece como urgente."
+          label={t(locale, "step.description.toggle.availableNow.label")}
+          description={t(locale, "step.description.toggle.availableNow.body")}
           checked={values.availableNow}
           onChange={(v) => update("availableNow", v)}
         />
@@ -519,17 +535,23 @@ export function StepDescription({
       <div className="flex flex-col gap-3">
         <div className="flex flex-wrap items-end justify-between gap-2">
           <span className="text-[12px] font-semibold tracking-tight text-[var(--color-foreground)]">
-            Galería de fotos
+            {t(locale, "step.description.gallery.title")}
           </span>
           <span className="text-[11px] text-[var(--color-text-subtle)]">
-            {values.gallery.length} / {galleryMax}
-            {inFlightCount > 0 ? ` · ${inFlightCount} subiendo` : null}
+            {t(locale, "step.description.gallery.counter", {
+              count: values.gallery.length,
+              max: galleryMax,
+            })}
+            {inFlightCount > 0
+              ? " " +
+                t(locale, "step.description.gallery.uploading", {
+                  count: inFlightCount,
+                })
+              : null}
           </span>
         </div>
         <p className="text-[11px] text-[var(--color-text-subtle)]">
-          Comprimimos cada foto antes de subirla (calidad alta, sin EXIF —
-          tus metadatos quedan privados). JPG, PNG, WebP o HEIC. Hasta 40 MB
-          por foto antes de comprimir; quedan ~500 KB en el servidor.
+          {t(locale, "step.description.gallery.helper")}
         </p>
         <input
           ref={fileInputRef}
@@ -555,11 +577,11 @@ export function StepDescription({
               type="button"
               onClick={openPicker}
               className="flex aspect-[3/4] flex-col items-center justify-center gap-1.5 rounded-[var(--radius-md)] border border-dashed border-[var(--color-border)] bg-[var(--color-background-elevated)] text-[var(--color-text-muted)] transition-colors hover:border-[var(--color-brand-primary)] hover:text-[var(--color-brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-background)]"
-              aria-label="Agregar foto"
+              aria-label={t(locale, "step.description.gallery.add.aria")}
             >
               <ImagePlus className="h-5 w-5" aria-hidden />
               <span className="text-[11px] font-semibold uppercase tracking-[0.18em]">
-                Subir foto
+                {t(locale, "step.description.gallery.add.label")}
               </span>
             </button>
           )}
@@ -578,16 +600,22 @@ export function StepDescription({
       <div className="flex flex-col gap-3">
         <div className="flex flex-wrap items-end justify-between gap-2">
           <span className="text-[12px] font-semibold tracking-tight text-[var(--color-foreground)]">
-            Videos cortos (opcional)
+            {t(locale, "step.description.videos.title")}
           </span>
           <span className="text-[11px] text-[var(--color-text-subtle)]">
-            {values.videos.length} / 2
-            {videoInFlightCount > 0 ? ` · ${videoInFlightCount} subiendo` : null}
+            {t(locale, "step.description.videos.counter", {
+              count: values.videos.length,
+            })}
+            {videoInFlightCount > 0
+              ? " " +
+                t(locale, "step.description.videos.uploading", {
+                  count: videoInFlightCount,
+                })
+              : null}
           </span>
         </div>
         <p className="text-[11px] text-[var(--color-text-subtle)]">
-          Hasta 2 clips de 3 a 30 segundos. MP4 o WebM, máximo 35 MB cada
-          uno. Subilos como los grabaste — no comprimimos en el navegador.
+          {t(locale, "step.description.videos.helper")}
         </p>
         <input
           ref={videoInputRef}
@@ -613,11 +641,11 @@ export function StepDescription({
               type="button"
               onClick={openVideoPicker}
               className="flex aspect-video flex-col items-center justify-center gap-1.5 rounded-[var(--radius-md)] border border-dashed border-[var(--color-border)] bg-[var(--color-background-elevated)] text-[var(--color-text-muted)] transition-colors hover:border-[var(--color-brand-primary)] hover:text-[var(--color-brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-background)]"
-              aria-label="Agregar video"
+              aria-label={t(locale, "step.description.videos.add.aria")}
             >
               <Film className="h-5 w-5" aria-hidden />
               <span className="text-[11px] font-semibold uppercase tracking-[0.18em]">
-                Subir video
+                {t(locale, "step.description.videos.add.label")}
               </span>
             </button>
           )}

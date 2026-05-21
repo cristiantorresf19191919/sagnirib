@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useSyncExternalStore } from "react";
 
 const STORAGE_KEY = "biringas:safe-checkins:v1";
 
@@ -62,6 +62,7 @@ function write(items: SafeCheckin[]) {
   }
 }
 
+const EMPTY: ReadonlyArray<SafeCheckin> = [];
 const listeners = new Set<() => void>();
 
 function notify() {
@@ -79,6 +80,25 @@ function setAll(next: SafeCheckin[]) {
   cache = next;
   write(next);
   notify();
+}
+
+function subscribe(cb: () => void) {
+  listeners.add(cb);
+  return () => {
+    listeners.delete(cb);
+  };
+}
+
+function getServerItems(): ReadonlyArray<SafeCheckin> {
+  return EMPTY;
+}
+
+function getServerReady() {
+  return false;
+}
+
+function getClientReady() {
+  return cache !== null;
 }
 
 /* -------------------------------------------------------------------------- */
@@ -108,18 +128,8 @@ export interface SafeCheckinsApi {
  *  - `cancel()` is the explicit teardown; deletes the record.
  */
 export function useSafeCheckins(): SafeCheckinsApi {
-  const [items, setItems] = useState<ReadonlyArray<SafeCheckin>>([]);
-  const [ready, setReady] = useState(false);
-
-  useEffect(() => {
-    setItems(getAll());
-    setReady(true);
-    const onChange = () => setItems(getAll().slice());
-    listeners.add(onChange);
-    return () => {
-      listeners.delete(onChange);
-    };
-  }, []);
+  const items = useSyncExternalStore(subscribe, getAll, getServerItems);
+  const ready = useSyncExternalStore(subscribe, getClientReady, getServerReady);
 
   const arm = useCallback<SafeCheckinsApi["arm"]>((input) => {
     const id = `checkin-${Date.now()}-${Math.random()

@@ -9,16 +9,27 @@ import {
 import { Clock } from "lucide-react";
 import { useMemo, useRef } from "react";
 
+import { t } from "@/core/i18n/messages";
+import { useActiveLocale } from "@/core/i18n/use-active-locale";
+
 import {
   getWeeklyAvailability,
   type Slot,
 } from "../lib/availability";
 
-const DAY_NAMES = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
-const SLOT_ROWS: ReadonlyArray<{ key: Slot; label: string }> = [
-  { key: "morning", label: "Mañana" },
-  { key: "afternoon", label: "Tarde" },
-  { key: "evening", label: "Noche" },
+const DAY_KEYS = [
+  "availability.day.sun",
+  "availability.day.mon",
+  "availability.day.tue",
+  "availability.day.wed",
+  "availability.day.thu",
+  "availability.day.fri",
+  "availability.day.sat",
+] as const;
+const SLOT_ROWS: ReadonlyArray<{ key: Slot; labelKey: string }> = [
+  { key: "morning", labelKey: "availability.slot.morning" },
+  { key: "afternoon", labelKey: "availability.slot.afternoon" },
+  { key: "evening", labelKey: "availability.slot.evening" },
 ];
 
 /**
@@ -130,11 +141,15 @@ export function AvailabilityStrip({
   highlightToday = true,
   avgReplyMinutes,
 }: Readonly<AvailabilityStripProps>) {
-  // Pull the per-(slug, dayOfWeek, slot) pattern from the shared lib so
-  // this strip and the booking date picker agree cell-for-cell on what
-  // "Disponible" / "Consultar" / "Ocupada" means.
+  const locale = useActiveLocale();
   const week = useMemo(() => getWeeklyAvailability(listingSlug), [listingSlug]);
   const replyMin = avgReplyMinutes ?? null;
+  const stateLabel = (state: number): string =>
+    state === 2
+      ? t(locale, "availability.state.available")
+      : state === 1
+        ? t(locale, "availability.state.ask")
+        : t(locale, "availability.state.busy");
 
   // Highlight today (computed client-side so timezone doesn't drift
   // between SSR and CSR).
@@ -154,17 +169,17 @@ export function AvailabilityStrip({
   return (
     <section
       data-testid="availability-strip"
-      aria-label="Disponibilidad semanal"
+      aria-label={t(locale, "availability.aria")}
       className="rounded-[var(--radius-xl)] border border-[var(--color-border)] bg-[var(--color-surface)]/70 p-5 backdrop-blur-sm"
     >
       <header className="flex items-center justify-between gap-3">
         <h3 className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[var(--color-text-subtle)]">
-          Disponibilidad
+          {t(locale, "availability.title")}
         </h3>
         {replyMin !== null && (
           <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--color-brand-primary)]/10 px-2.5 py-1 text-[11px] font-semibold text-[var(--color-brand-primary)]">
             <Clock className="h-3 w-3" aria-hidden />
-            Responde en ~{replyMin} min
+            {t(locale, "availability.replies", { min: replyMin })}
           </span>
         )}
       </header>
@@ -179,26 +194,26 @@ export function AvailabilityStrip({
         <thead>
           <tr>
             <th className="w-12" />
-            {DAY_NAMES.map((day, i) => (
+            {DAY_KEYS.map((dayKey, i) => (
               <th
-                key={day}
+                key={dayKey}
                 scope="col"
                 data-today={i === todayDow ? "true" : "false"}
                 className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--color-text-subtle)] data-[today=true]:text-[var(--color-brand-primary)]"
               >
-                {day}
+                {t(locale, dayKey)}
               </th>
             ))}
           </tr>
         </thead>
         <tbody>
-          {SLOT_ROWS.map(({ key: slotKey, label: slot }) => (
+          {SLOT_ROWS.map(({ key: slotKey, labelKey }) => (
             <tr key={slotKey}>
               <th
                 scope="row"
                 className="text-left text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--color-text-subtle)]"
               >
-                {slot}
+                {t(locale, labelKey)}
               </th>
               {week.map((day, dayIdx) => {
                 const state = day[slotKey];
@@ -220,20 +235,8 @@ export function AvailabilityStrip({
                 return (
                   <td key={`${slotKey}-${dayIdx}`} className="p-0">
                     <motion.span
-                      aria-label={
-                        state === 2
-                          ? "Disponible"
-                          : state === 1
-                            ? "Consultar"
-                            : "Ocupada"
-                      }
-                      title={
-                        state === 2
-                          ? "Disponible"
-                          : state === 1
-                            ? "Consultar"
-                            : "Ocupada"
-                      }
+                      aria-label={stateLabel(state)}
+                      title={stateLabel(state)}
                       variants={reduced ? undefined : variants}
                       className={`${baseCls} ${stateCls} ${todayCls}`}
                     />
@@ -246,7 +249,7 @@ export function AvailabilityStrip({
       </motion.table>
 
       <ul
-        aria-label="Leyenda de disponibilidad"
+        aria-label={t(locale, "availability.legend.aria")}
         className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-[10px] text-[var(--color-text-muted)]"
       >
         <li className="inline-flex items-center gap-1.5">
@@ -254,27 +257,26 @@ export function AvailabilityStrip({
             aria-hidden
             className="inline-block h-2.5 w-2.5 rounded-[3px] bg-[var(--color-brand-primary)]"
           />
-          Disponible
+          {t(locale, "availability.state.available")}
         </li>
         <li className="inline-flex items-center gap-1.5">
           <span
             aria-hidden
             className="inline-block h-2.5 w-2.5 rounded-[3px] bg-[var(--color-brand-warn)]/30 ring-1 ring-[var(--color-brand-warn)]/50"
           />
-          Consultar
+          {t(locale, "availability.state.ask")}
         </li>
         <li className="inline-flex items-center gap-1.5">
           <span
             aria-hidden
             className="inline-block h-2.5 w-2.5 rounded-[3px] bg-[var(--color-surface-muted)]"
           />
-          Ocupada
+          {t(locale, "availability.state.busy")}
         </li>
       </ul>
 
       <p className="mt-2 text-[10.5px] italic text-[var(--color-text-subtle)]">
-        Confirma siempre la disponibilidad antes de viajar — los horarios
-        son orientativos.
+        {t(locale, "availability.disclaimer")}
       </p>
     </section>
   );

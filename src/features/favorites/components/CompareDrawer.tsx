@@ -14,6 +14,10 @@ import {
   X,
 } from "lucide-react";
 
+import type { SupportedLocale } from "@/core/branding/brand-config";
+import { localizedHref } from "@/core/i18n/href";
+import { t } from "@/core/i18n/messages";
+import { useActiveLocale } from "@/core/i18n/use-active-locale";
 import type { BiringaListing } from "@/server/biringas";
 import { formatPricePerHour } from "@/features/biringas/format";
 
@@ -49,6 +53,7 @@ export function CompareDrawer({
   listings,
   remaining,
 }: Readonly<CompareDrawerProps>) {
+  const locale = useActiveLocale();
   const { clearCompare, toggleCompare } = useFavorites();
   const open = listings.length > 0;
   const reduced = useReducedMotion();
@@ -62,7 +67,7 @@ export function CompareDrawer({
     return () => globalThis.removeEventListener("keydown", onKey);
   }, [open, clearCompare]);
 
-  const rows = useMemo(() => buildRows(listings), [listings]);
+  const rows = useMemo(() => buildRows(listings, locale), [listings, locale]);
 
   // Pad with placeholder slots so the layout always shows the path to fill
   // out the versus. We never render more than COMPARE_LIMIT total slots.
@@ -81,7 +86,7 @@ export function CompareDrawer({
           <motion.button
             key="compare-backdrop"
             type="button"
-            aria-label="Cerrar comparación"
+            aria-label={t(locale, "compareDrawer.backdrop.aria")}
             onClick={() => clearCompare()}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -92,7 +97,7 @@ export function CompareDrawer({
           <motion.aside
             key="compare-drawer"
             role="dialog"
-            aria-label="Comparación lado a lado"
+            aria-label={t(locale, "compareDrawer.dialog.aria")}
             initial={reduced ? { opacity: 0 } : { y: "110%" }}
             animate={reduced ? { opacity: 1 } : { y: 0 }}
             exit={reduced ? { opacity: 0 } : { y: "110%" }}
@@ -123,10 +128,13 @@ export function CompareDrawer({
                   </span>
                   <div className="leading-tight">
                     <p className="text-[9px] font-semibold uppercase tracking-[0.28em] text-[var(--color-text-subtle)]">
-                      Modo Versus
+                      {t(locale, "compareDrawer.eyebrow")}
                     </p>
                     <p className="text-xs font-semibold text-[var(--color-foreground)] sm:text-sm">
-                      {listings.length} de {COMPARE_LIMIT} en comparación
+                      {t(locale, "compareDrawer.count", {
+                        current: listings.length,
+                        total: COMPARE_LIMIT,
+                      })}
                     </p>
                   </div>
                 </div>
@@ -136,11 +144,11 @@ export function CompareDrawer({
                     onClick={clearCompare}
                     className="hidden h-8 items-center rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] px-3 text-[11px] font-medium text-[var(--color-text-muted)] transition-colors hover:text-[var(--color-foreground)] sm:inline-flex"
                   >
-                    Limpiar
+                    {t(locale, "compareDrawer.clear")}
                   </button>
                   <button
                     type="button"
-                    aria-label="Cerrar comparación"
+                    aria-label={t(locale, "compareDrawer.close.aria")}
                     onClick={clearCompare}
                     className="inline-flex h-8 w-8 items-center justify-center rounded-full text-[var(--color-text-muted)] transition-colors hover:bg-[var(--color-surface-muted)] hover:text-[var(--color-foreground)]"
                   >
@@ -154,6 +162,7 @@ export function CompareDrawer({
                 <QuickAddStrip
                   remaining={remaining}
                   onAdd={toggleCompare}
+                  locale={locale}
                 />
               )}
 
@@ -163,6 +172,7 @@ export function CompareDrawer({
                   listings={listings}
                   slotCount={slotCount}
                   onRemove={toggleCompare}
+                  locale={locale}
                 />
 
                 <div className="divide-y divide-[var(--color-border)]/60">
@@ -172,6 +182,7 @@ export function CompareDrawer({
                       row={row}
                       listings={listings}
                       slotCount={slotCount}
+                      locale={locale}
                     />
                   ))}
                 </div>
@@ -179,6 +190,7 @@ export function CompareDrawer({
                 <ColumnFooters
                   listings={listings}
                   slotCount={slotCount}
+                  locale={locale}
                 />
               </div>
             </div>
@@ -197,13 +209,18 @@ export function CompareDrawer({
 interface QuickAddStripProps {
   remaining: ReadonlyArray<BiringaListing>;
   onAdd: (id: string) => void;
+  locale: SupportedLocale;
 }
 
-function QuickAddStrip({ remaining, onAdd }: Readonly<QuickAddStripProps>) {
+function QuickAddStrip({
+  remaining,
+  onAdd,
+  locale,
+}: Readonly<QuickAddStripProps>) {
   return (
     <div className="flex items-center gap-2 border-t border-[var(--color-border)]/60 bg-[var(--color-background-elevated)] px-4 py-2 sm:px-5">
       <span className="shrink-0 text-[10px] font-semibold uppercase tracking-[0.22em] text-[var(--color-text-subtle)]">
-        Agregar
+        {t(locale, "compareDrawer.quickAdd.label")}
       </span>
       <ul className="flex min-w-0 flex-1 items-center gap-1.5 overflow-x-auto">
         {remaining.map((l) => (
@@ -212,7 +229,9 @@ function QuickAddStrip({ remaining, onAdd }: Readonly<QuickAddStripProps>) {
               type="button"
               onClick={() => onAdd(l.id)}
               className="group inline-flex items-center gap-2 rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] py-1 pl-1 pr-3 text-[11px] font-medium text-[var(--color-foreground)] transition-[border-color,background] duration-150 ease-[var(--ease-standard)] hover:border-[var(--color-brand-primary)]/60 hover:bg-[var(--color-background-elevated)]"
-              title={`Agregar ${l.name} a la comparación`}
+              title={t(locale, "compareDrawer.quickAdd.title", {
+                name: l.name,
+              })}
             >
               <span className="relative h-6 w-6 overflow-hidden rounded-full bg-[var(--color-surface-muted)]">
                 <Image
@@ -275,12 +294,14 @@ interface ColumnHeadersProps {
   listings: ReadonlyArray<BiringaListing>;
   slotCount: number;
   onRemove: (id: string) => void;
+  locale: SupportedLocale;
 }
 
 function ColumnHeaders({
   listings,
   slotCount,
   onRemove,
+  locale,
 }: Readonly<ColumnHeadersProps>) {
   const slots = buildSlots(listings, slotCount);
   return (
@@ -295,9 +316,14 @@ function ColumnHeaders({
             key={slot.key}
             listing={slot.listing}
             onRemove={onRemove}
+            locale={locale}
           />
         ) : (
-          <EmptySlotHeader key={slot.key} index={slot.position} />
+          <EmptySlotHeader
+            key={slot.key}
+            index={slot.position}
+            locale={locale}
+          />
         ),
       )}
     </div>
@@ -307,11 +333,13 @@ function ColumnHeaders({
 interface FilledSlotHeaderProps {
   listing: BiringaListing;
   onRemove: (id: string) => void;
+  locale: SupportedLocale;
 }
 
 function FilledSlotHeader({
   listing,
   onRemove,
+  locale,
 }: Readonly<FilledSlotHeaderProps>) {
   return (
     <div className="flex items-center gap-2 sm:gap-2.5">
@@ -338,7 +366,9 @@ function FilledSlotHeader({
       </div>
       <button
         type="button"
-        aria-label={`Quitar a ${listing.name}`}
+        aria-label={t(locale, "compareDrawer.remove.aria", {
+          name: listing.name,
+        })}
         onClick={() => onRemove(listing.id)}
         className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[var(--color-text-subtle)] transition-colors hover:bg-[var(--color-surface-muted)] hover:text-[var(--color-foreground)]"
       >
@@ -350,14 +380,15 @@ function FilledSlotHeader({
 
 interface EmptySlotHeaderProps {
   index: number;
+  locale: SupportedLocale;
 }
 
-function EmptySlotHeader({ index }: Readonly<EmptySlotHeaderProps>) {
+function EmptySlotHeader({ index, locale }: Readonly<EmptySlotHeaderProps>) {
   return (
     <div className="flex h-12 items-center justify-center rounded-[var(--radius-md)] border border-dashed border-[var(--color-border)] bg-[var(--color-background-elevated)] px-3 text-center text-[10px] font-medium uppercase tracking-[0.18em] text-[var(--color-text-subtle)] sm:h-14">
       <span className="inline-flex items-center gap-1.5">
         <Plus className="h-3 w-3" aria-hidden />
-        Slot {index}
+        {t(locale, "compareDrawer.empty.slot", { index })}
       </span>
     </div>
   );
@@ -366,11 +397,13 @@ function EmptySlotHeader({ index }: Readonly<EmptySlotHeaderProps>) {
 interface ColumnFootersProps {
   listings: ReadonlyArray<BiringaListing>;
   slotCount: number;
+  locale: SupportedLocale;
 }
 
 function ColumnFooters({
   listings,
   slotCount,
+  locale,
 }: Readonly<ColumnFootersProps>) {
   const slots = buildSlots(listings, slotCount);
   return (
@@ -379,16 +412,16 @@ function ColumnFooters({
       style={gridStyle(slotCount)}
     >
       <span className="text-[10px] uppercase tracking-[0.22em] text-[var(--color-text-subtle)]">
-        Decidir
+        {t(locale, "compareDrawer.footer.decide")}
       </span>
       {slots.map((slot) =>
         slot.listing ? (
           <Link
             key={slot.key}
-            href={`/p/${slot.listing.slug}`}
+            href={localizedHref(locale, `/p/${slot.listing.slug}`)}
             className="group inline-flex h-9 items-center justify-center gap-1.5 rounded-full bg-[var(--color-brand-primary)] px-3 text-[11px] font-semibold text-[var(--color-surface)] shadow-[var(--shadow-sm)] transition-[background,box-shadow] duration-200 ease-[var(--ease-standard)] hover:bg-[var(--color-brand-primary-strong)] hover:shadow-[var(--shadow-glow-primary)]"
           >
-            Ir al perfil
+            {t(locale, "compareDrawer.footer.gotoProfile")}
             <ArrowRight
               className="h-3.5 w-3.5 transition-transform duration-200 ease-[var(--ease-standard)] group-hover:translate-x-0.5"
               aria-hidden
@@ -399,7 +432,7 @@ function ColumnFooters({
             key={slot.key}
             className="inline-flex h-9 items-center justify-center rounded-full border border-dashed border-[var(--color-border)] text-[11px] text-[var(--color-text-subtle)]"
           >
-            —
+            {t(locale, "compareDrawer.value.dash")}
           </span>
         ),
       )}
@@ -411,9 +444,10 @@ interface RowLineProps {
   row: RowDef;
   listings: ReadonlyArray<BiringaListing>;
   slotCount: number;
+  locale: SupportedLocale;
 }
 
-function RowLine({ row, listings, slotCount }: Readonly<RowLineProps>) {
+function RowLine({ row, listings, slotCount, locale }: Readonly<RowLineProps>) {
   const slots = buildSlots(listings, slotCount);
   return (
     <div
@@ -431,13 +465,13 @@ function RowLine({ row, listings, slotCount }: Readonly<RowLineProps>) {
               key={`${row.key}-${slot.key}`}
               className="inline-flex min-h-[28px] items-center px-2 text-[var(--color-text-subtle)]"
             >
-              —
+              {t(locale, "compareDrawer.value.dash")}
             </span>
           );
         }
         const { content, verdict } = row.cell(slot.listing);
         return (
-          <Cell key={`${row.key}-${slot.key}`} verdict={verdict}>
+          <Cell key={`${row.key}-${slot.key}`} verdict={verdict} locale={locale}>
             {content}
           </Cell>
         );
@@ -448,10 +482,11 @@ function RowLine({ row, listings, slotCount }: Readonly<RowLineProps>) {
 
 interface CellProps {
   verdict: Verdict;
+  locale: SupportedLocale;
   children: React.ReactNode;
 }
 
-function Cell({ verdict, children }: Readonly<CellProps>) {
+function Cell({ verdict, locale, children }: Readonly<CellProps>) {
   const winner = verdict === "win";
   return (
     <div
@@ -467,7 +502,7 @@ function Cell({ verdict, children }: Readonly<CellProps>) {
       {winner && (
         <Crown
           className="ml-1.5 h-3 w-3 shrink-0 text-[var(--color-brand-primary-strong)]"
-          aria-label="Mejor en este aspecto"
+          aria-label={t(locale, "compareDrawer.crown.aria")}
         />
       )}
     </div>
@@ -478,9 +513,13 @@ function Cell({ verdict, children }: Readonly<CellProps>) {
 /* Row builders + verdict logic                                            */
 /* ----------------------------------------------------------------------- */
 
-const NUMBER_FORMAT = new Intl.NumberFormat("es-CO");
-
-function buildRows(listings: ReadonlyArray<BiringaListing>): RowDef[] {
+function buildRows(
+  listings: ReadonlyArray<BiringaListing>,
+  locale: SupportedLocale,
+): RowDef[] {
+  const numberFormat = new Intl.NumberFormat(
+    locale === "en" ? "en-US" : "es-CO",
+  );
   const single = listings.length < 2;
   const verdict = (predicate: boolean): Verdict => {
     if (single) return "neutral";
@@ -501,10 +540,15 @@ function buildRows(listings: ReadonlyArray<BiringaListing>): RowDef[] {
   const maxLangs = listings.length > 0 ? Math.max(...langCounts) : 0;
   const maxServices = listings.length > 0 ? Math.max(...serviceCounts) : 0;
 
+  const yes = t(locale, "compareDrawer.value.yes");
+  const no = t(locale, "compareDrawer.value.no");
+  const now = t(locale, "compareDrawer.value.now");
+  const dash = t(locale, "compareDrawer.value.dash");
+
   return [
     {
       key: "price",
-      label: "Tarifa / hora",
+      label: t(locale, "compareDrawer.row.price"),
       cell: (l) => ({
         content: (
           <span className="font-semibold tabular-nums">
@@ -516,7 +560,7 @@ function buildRows(listings: ReadonlyArray<BiringaListing>): RowDef[] {
     },
     {
       key: "score",
-      label: "Calificación",
+      label: t(locale, "compareDrawer.row.score"),
       icon: (
         <Star
           className="h-3 w-3 fill-[var(--color-brand-warn)] text-[var(--color-brand-warn)]"
@@ -528,7 +572,7 @@ function buildRows(listings: ReadonlyArray<BiringaListing>): RowDef[] {
           <span className="inline-flex items-center gap-0.5 font-semibold tabular-nums">
             {l.reputation.score.toFixed(1)}
             <span className="text-[10px] font-normal text-[var(--color-text-muted)]">
-              /5
+              {t(locale, "compareDrawer.score.outOf")}
             </span>
           </span>
         ),
@@ -537,11 +581,11 @@ function buildRows(listings: ReadonlyArray<BiringaListing>): RowDef[] {
     },
     {
       key: "reviews",
-      label: "Reseñas",
+      label: t(locale, "compareDrawer.row.reviews"),
       cell: (l) => ({
         content: (
           <span className="tabular-nums">
-            {NUMBER_FORMAT.format(l.reputation.reviewCount)}
+            {numberFormat.format(l.reputation.reviewCount)}
           </span>
         ),
         verdict: verdict(l.reputation.reviewCount === maxReviews),
@@ -549,47 +593,47 @@ function buildRows(listings: ReadonlyArray<BiringaListing>): RowDef[] {
     },
     {
       key: "verified",
-      label: "Verificada",
+      label: t(locale, "compareDrawer.row.verified"),
       cell: (l) => ({
-        content: <Pill on={l.verified}>{l.verified ? "Sí" : "No"}</Pill>,
+        content: <Pill on={l.verified}>{l.verified ? yes : no}</Pill>,
         verdict: verdict(l.verified),
       }),
     },
     {
       key: "available",
-      label: "Disponible",
+      label: t(locale, "compareDrawer.row.available"),
       cell: (l) => ({
         content: (
-          <Pill on={l.availableNow}>{l.availableNow ? "Ahora" : "—"}</Pill>
+          <Pill on={l.availableNow}>{l.availableNow ? now : dash}</Pill>
         ),
         verdict: verdict(l.availableNow),
       }),
     },
     {
       key: "video",
-      label: "Vídeo",
+      label: t(locale, "compareDrawer.row.video"),
       cell: (l) => ({
-        content: <Pill on={l.hasVideo}>{l.hasVideo ? "Sí" : "—"}</Pill>,
+        content: <Pill on={l.hasVideo}>{l.hasVideo ? yes : dash}</Pill>,
         verdict: verdict(l.hasVideo),
       }),
     },
     {
       key: "audio",
-      label: "Audio",
+      label: t(locale, "compareDrawer.row.audio"),
       cell: (l) => ({
-        content: <Pill on={l.hasAudio}>{l.hasAudio ? "Sí" : "—"}</Pill>,
+        content: <Pill on={l.hasAudio}>{l.hasAudio ? yes : dash}</Pill>,
         verdict: verdict(l.hasAudio),
       }),
     },
     {
       key: "languages",
-      label: "Idiomas",
+      label: t(locale, "compareDrawer.row.languages"),
       cell: (l) => {
         const langs = l.attributes.languages ?? [];
         return {
           content:
             langs.length === 0 ? (
-              <span className="text-[var(--color-text-subtle)]">—</span>
+              <span className="text-[var(--color-text-subtle)]">{dash}</span>
             ) : (
               <span className="flex flex-wrap gap-1">
                 {langs.map((lang) => (
@@ -608,7 +652,7 @@ function buildRows(listings: ReadonlyArray<BiringaListing>): RowDef[] {
     },
     {
       key: "services",
-      label: "Servicios",
+      label: t(locale, "compareDrawer.row.services"),
       icon: (
         <Sparkles
           className="h-3 w-3 text-[var(--color-brand-accent-strong)]"
@@ -622,7 +666,7 @@ function buildRows(listings: ReadonlyArray<BiringaListing>): RowDef[] {
               {l.services.length}
             </span>
             <span className="ml-1 text-[10px] text-[var(--color-text-muted)]">
-              en catálogo
+              {t(locale, "compareDrawer.services.suffix")}
             </span>
           </span>
         ),

@@ -1,6 +1,9 @@
 import Link from "next/link";
 import { Eraser, Sparkles } from "lucide-react";
 
+import { localizedHref } from "@/core/i18n/href";
+import { readLocale } from "@/core/i18n/locale";
+import { t } from "@/core/i18n/messages";
 import type { ListingsFilters } from "@/server/biringas";
 
 import type { CatalogView } from "../lib/parse-filters";
@@ -51,18 +54,26 @@ function activeFilterCount(filters: ListingsFilters): number {
  * Sticky on lg+ so it stays in reach during long scrolls. Server Component —
  * the only interactive child is the sort dropdown.
  */
-export function ResultsToolbar({
+export async function ResultsToolbar({
   filters,
   view,
   resultCount,
   totalCount,
 }: ResultsToolbarProps) {
+  const locale = await readLocale();
   const activeCount = activeFilterCount(filters);
-  const cityLabel = filters.city ?? "Toda Colombia";
+  const cityLabel = filters.city ?? t(locale, "explorar.toolbar.cityAll");
   const totalLabel =
     totalCount !== undefined && totalCount !== resultCount
-      ? ` de ${FORMAT_NUMBER.format(totalCount)}`
+      ? ` ${t(locale, "explorar.toolbar.totalSuffix", { total: FORMAT_NUMBER.format(totalCount) })}`
       : "";
+  const clearLabel = t(
+    locale,
+    activeCount === 1
+      ? "explorar.toolbar.clear.singular"
+      : "explorar.toolbar.clear.plural",
+    { count: activeCount },
+  );
 
   return (
     <div className="sticky top-16 z-20 -mx-4 mb-4 sm:-mx-6 lg:-mx-8">
@@ -85,7 +96,10 @@ export function ResultsToolbar({
                 </span>
                 <span className="font-[var(--font-display)] text-[17px] font-[480] tracking-tight text-[var(--color-foreground)]">
                   {FORMAT_NUMBER.format(resultCount)}
-                  {totalLabel} <span className="text-[var(--color-text-muted)]">biringas</span>
+                  {totalLabel}{" "}
+                  <span className="text-[var(--color-text-muted)]">
+                    {t(locale, "explorar.toolbar.entityLabel")}
+                  </span>
                 </span>
               </span>
             </span>
@@ -99,11 +113,11 @@ export function ResultsToolbar({
 
             {activeCount > 0 && (
               <Link
-                href="/explorar"
+                href={localizedHref(locale, "/explorar")}
                 className="inline-flex h-10 items-center gap-1.5 rounded-full border border-[var(--color-border)] bg-[var(--color-background)] px-3.5 text-[12px] font-semibold text-[var(--color-text-muted)] transition-[border-color,color,background] duration-150 hover:border-[var(--color-brand-highlight)]/45 hover:bg-[var(--color-brand-highlight)]/8 hover:text-[var(--color-brand-highlight)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-highlight)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-background)]"
               >
                 <Eraser className="h-3 w-3" aria-hidden />
-                Limpiar {activeCount} {activeCount === 1 ? "filtro" : "filtros"}
+                {clearLabel}
               </Link>
             )}
           </div>
@@ -121,7 +135,7 @@ export function ResultsToolbar({
                 aria-hidden
                 className="inline-block h-px w-6 bg-gradient-to-r from-[var(--color-gold)] to-transparent"
               />
-              Activos
+              {t(locale, "explorar.toolbar.activeLabel")}
             </span>
             <ActiveFilterChips filters={filters} />
           </div>

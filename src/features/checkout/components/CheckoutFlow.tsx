@@ -12,6 +12,8 @@ import {
 } from "lucide-react";
 import { useState, useTransition } from "react";
 
+import { useActiveLocale, useLocalizedHref } from "@/core/i18n/use-active-locale";
+import { t } from "@/core/i18n/messages";
 import { toast } from "@/shared/ui/toast";
 
 /**
@@ -23,16 +25,6 @@ import { toast } from "@/shared/ui/toast";
  */
 type PlanTier = "boost" | "elite";
 type BillingCadence = "monthly" | "quarterly";
-
-const PLAN_LABELS: Record<PlanTier, string> = {
-  boost: "Impulso",
-  elite: "Elite",
-};
-
-const BILLING_LABELS: Record<BillingCadence, string> = {
-  monthly: "Mensual",
-  quarterly: "Trimestral (15% off)",
-};
 
 import {
   completeMockCheckout,
@@ -78,6 +70,10 @@ type Step = "review" | "paying" | "done";
  */
 export function CheckoutFlow({ tier, pricing }: Readonly<CheckoutFlowProps>) {
   const router = useRouter();
+  const locale = useActiveLocale();
+  const accountHref = useLocalizedHref("/mi-cuenta");
+  const plansHref = useLocalizedHref("/publicar/planes");
+  const planLabel = t(locale, `checkout.tierLabel.${tier}`);
   const [billing, setBilling] = useState<BillingCadence>("monthly");
   const [step, setStep] = useState<Step>("review");
   const [error, setError] = useState<string | null>(null);
@@ -93,8 +89,8 @@ export function CheckoutFlow({ tier, pricing }: Readonly<CheckoutFlowProps>) {
       if (!created.ok || !created.data) {
         setError(
           created.error?.kind === "checkout-disabled"
-            ? "El pago real se activa cuando conectemos el provider. Por ahora la simulación queda registrada en tu cuenta."
-            : created.error?.message ?? "No pudimos crear la sesión.",
+            ? t(locale, "checkout.error.disabled")
+            : created.error?.message ?? t(locale, "checkout.error.create"),
         );
         setStep("review");
         return;
@@ -104,14 +100,14 @@ export function CheckoutFlow({ tier, pricing }: Readonly<CheckoutFlowProps>) {
       const completed = await completeMockCheckout({ id: created.data.id });
       if (!completed.ok) {
         setError(
-          completed.error?.message ?? "El pago no pudo completarse.",
+          completed.error?.message ?? t(locale, "checkout.error.complete"),
         );
         setStep("review");
         return;
       }
       toast.success(
-        "Pago confirmado",
-        `Plan ${PLAN_LABELS[tier]} activo. Te avisamos cuando se renueve.`,
+        t(locale, "checkout.toast.success.title"),
+        t(locale, "checkout.toast.success.body", { plan: planLabel }),
       );
       setStep("done");
     });
@@ -140,10 +136,10 @@ export function CheckoutFlow({ tier, pricing }: Readonly<CheckoutFlowProps>) {
                 </span>
                 <div>
                   <h2 className="text-base font-semibold text-[var(--color-foreground)]">
-                    Confirmá tu plan
+                    {t(locale, "checkout.review.title")}
                   </h2>
                   <p className="text-xs text-[var(--color-text-muted)]">
-                    Sin permanencia. Podés cancelar desde tu panel cuando quieras.
+                    {t(locale, "checkout.review.subtitle")}
                   </p>
                 </div>
               </div>
@@ -151,7 +147,7 @@ export function CheckoutFlow({ tier, pricing }: Readonly<CheckoutFlowProps>) {
               {/* Billing cadence */}
               <fieldset className="flex flex-col gap-2">
                 <legend className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--color-text-subtle)]">
-                  Ciclo de facturación
+                  {t(locale, "checkout.billing.legend")}
                 </legend>
                 {(["monthly", "quarterly"] as BillingCadence[]).map((value) => {
                   const active = billing === value;
@@ -176,12 +172,14 @@ export function CheckoutFlow({ tier, pricing }: Readonly<CheckoutFlowProps>) {
                       />
                       <div className="flex min-w-0 flex-col">
                         <span className="text-sm font-semibold text-[var(--color-foreground)]">
-                          {BILLING_LABELS[value]}
+                          {t(locale, `checkout.billing.${value}.label`)}
                         </span>
                         <span className="text-[11px] text-[var(--color-text-muted)]">
                           {value === "quarterly"
-                            ? `Equivale a ${COP.format(perMonth)} / mes`
-                            : "Cobro mes a mes"}
+                            ? t(locale, "checkout.billing.quarterly.subtitle", {
+                                perMonth: COP.format(perMonth),
+                              })
+                            : t(locale, "checkout.billing.monthly.subtitle")}
                         </span>
                       </div>
                       <span className="text-base font-bold tabular-nums text-[var(--color-foreground)]">
@@ -208,13 +206,14 @@ export function CheckoutFlow({ tier, pricing }: Readonly<CheckoutFlowProps>) {
                 className="btn-pulse inline-flex h-12 items-center justify-center gap-2 rounded-full bg-[var(--color-brand-primary)] px-5 text-sm font-semibold text-[var(--color-surface)] shadow-[var(--shadow-glow-primary)] transition-[background,transform] duration-200 ease-[var(--ease-standard)] hover:-translate-y-[1px] hover:bg-[var(--color-brand-primary-strong)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)] disabled:cursor-not-allowed disabled:opacity-70"
               >
                 <Lock className="h-4 w-4" aria-hidden />
-                Pagar {COP.format(totalCop)}
+                {t(locale, "checkout.payButton", {
+                  amount: COP.format(totalCop),
+                })}
               </button>
 
               <p className="text-center text-[11px] text-[var(--color-text-subtle)]">
-                <strong>Simulación:</strong> el pago real con tarjeta /
-                MercadoPago se activa cuando conectemos el provider. Por
-                ahora podés probar el flujo de extremo a extremo.
+                <strong>{t(locale, "checkout.simulationNote.lead")}</strong>{" "}
+                {t(locale, "checkout.simulationNote.body")}
               </p>
             </motion.section>
           )}
@@ -233,10 +232,10 @@ export function CheckoutFlow({ tier, pricing }: Readonly<CheckoutFlowProps>) {
                 aria-hidden
               />
               <h2 className="font-[var(--font-display)] text-xl font-[370] text-[var(--color-foreground)]">
-                Procesando pago seguro…
+                {t(locale, "checkout.paying.title")}
               </h2>
               <p className="text-xs text-[var(--color-text-muted)]">
-                No cierres esta ventana. Confirmamos en pocos segundos.
+                {t(locale, "checkout.paying.subtitle")}
               </p>
             </motion.section>
           )}
@@ -257,26 +256,24 @@ export function CheckoutFlow({ tier, pricing }: Readonly<CheckoutFlowProps>) {
                 <Check className="h-6 w-6" aria-hidden />
               </span>
               <h2 className="font-[var(--font-display)] text-2xl font-[370] leading-tight tracking-tight text-[var(--color-foreground)]">
-                Plan{" "}
+                {t(locale, "checkout.done.titleLead")}{" "}
                 <span className="italic text-[var(--color-brand-primary)]">
-                  {PLAN_LABELS[tier]}
+                  {planLabel}
                 </span>{" "}
-                activado.
+                {t(locale, "checkout.done.titleTrailing")}
               </h2>
               <p className="text-sm leading-relaxed text-[var(--color-text-muted)]">
-                Te enviamos un comprobante al email registrado. Las
-                ventajas del plan se ven reflejadas en tu perfil dentro
-                de los próximos 5 minutos.
+                {t(locale, "checkout.done.body")}
               </p>
               <div className="flex flex-wrap items-center gap-3">
                 <button
                   type="button"
                   onClick={() => {
-                    router.push("/mi-cuenta");
+                    router.push(accountHref);
                   }}
                   className="inline-flex h-11 items-center gap-2 rounded-full bg-[var(--color-brand-primary)] px-5 text-sm font-semibold text-[var(--color-surface)] shadow-[var(--shadow-glow-primary)] transition-[background,transform] duration-200 hover:-translate-y-[1px] hover:bg-[var(--color-brand-primary-strong)]"
                 >
-                  Ir al panel
+                  {t(locale, "checkout.done.goToPanel")}
                 </button>
                 <button
                   type="button"
@@ -285,7 +282,7 @@ export function CheckoutFlow({ tier, pricing }: Readonly<CheckoutFlowProps>) {
                   }}
                   className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--color-text-muted)] transition-colors hover:text-[var(--color-foreground)]"
                 >
-                  Activar otro plan
+                  {t(locale, "checkout.done.activateAnother")}
                 </button>
               </div>
             </motion.section>
@@ -294,11 +291,11 @@ export function CheckoutFlow({ tier, pricing }: Readonly<CheckoutFlowProps>) {
 
         <button
           type="button"
-          onClick={() => router.push("/publicar/planes")}
+          onClick={() => router.push(plansHref)}
           className="inline-flex items-center gap-1.5 self-start text-xs font-semibold uppercase tracking-[0.16em] text-[var(--color-text-muted)] transition-colors hover:text-[var(--color-foreground)]"
         >
           <ArrowLeft className="h-3 w-3" aria-hidden />
-          Volver a planes
+          {t(locale, "checkout.backToPlans")}
         </button>
       </div>
 
@@ -306,21 +303,22 @@ export function CheckoutFlow({ tier, pricing }: Readonly<CheckoutFlowProps>) {
       <aside className="rounded-[var(--radius-2xl)] border border-[var(--color-border)] bg-[var(--color-background-elevated)] p-6 shadow-[var(--shadow-sm)]">
         <span className="inline-flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.28em] text-[var(--color-gold-deep)]">
           <Sparkles className="h-3 w-3" aria-hidden />
-          Resumen
+          {t(locale, "checkout.summary.kicker")}
         </span>
         <h3 className="mt-1 font-[var(--font-display)] text-xl font-[420] tracking-tight text-[var(--color-foreground)]">
-          Plan {PLAN_LABELS[tier]}
+          {t(locale, "checkout.summary.plan", { name: planLabel })}
         </h3>
         <p className="mt-2 text-sm leading-relaxed text-[var(--color-text-muted)]">
-          {tier === "boost"
-            ? "Posicionamiento alto en búsquedas, insignia 'Top calificada' y stories ilimitadas."
-            : "Slot rotatorio en hero editorial, aparición en testimonios curados, analytics y soporte WhatsApp."}
+          {t(locale, `checkout.summary.description.${tier}`)}
         </p>
         <dl className="mt-6 flex flex-col gap-3 text-sm">
-          <Row label="Ciclo" value={BILLING_LABELS[billing]} />
-          <Row label="Plan" value={PLAN_LABELS[tier]} />
           <Row
-            label="Total a cobrar"
+            label={t(locale, "checkout.summary.row.cycle")}
+            value={t(locale, `checkout.billing.${billing}.label`)}
+          />
+          <Row label={t(locale, "checkout.summary.row.plan")} value={planLabel} />
+          <Row
+            label={t(locale, "checkout.summary.row.total")}
             value={COP.format(totalCop)}
             emphasised
           />
@@ -328,11 +326,12 @@ export function CheckoutFlow({ tier, pricing }: Readonly<CheckoutFlowProps>) {
         <div className="mt-6 rounded-[var(--radius-md)] border border-[var(--color-border)]/70 bg-[var(--color-surface)] p-3 text-[11px] text-[var(--color-text-muted)]">
           <span className="inline-flex items-center gap-1.5 font-semibold text-[var(--color-foreground)]">
             <Lock className="h-3 w-3" aria-hidden />
-            Pago discreto
+            {t(locale, "checkout.summary.discreet.title")}
           </span>
           <p className="mt-1 leading-relaxed">
-            El concepto que aparece en tu extracto es <em>Servicios
-            digitales</em> — nunca el nombre de la plataforma.
+            {t(locale, "checkout.summary.discreet.body.lead")}{" "}
+            <em>{t(locale, "checkout.summary.discreet.body.product")}</em>{" "}
+            {t(locale, "checkout.summary.discreet.body.trailing")}
           </p>
         </div>
       </aside>

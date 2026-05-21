@@ -4,6 +4,10 @@ import { useRouter } from "next/navigation";
 import { Sparkles } from "lucide-react";
 import { useState, useTransition } from "react";
 
+import { localizedHref } from "@/core/i18n/href";
+import { t } from "@/core/i18n/messages";
+import { useActiveLocale } from "@/core/i18n/use-active-locale";
+
 interface LuckyButtonProps {
   /** Pool of profile slugs to pick from on click. */
   slugs: ReadonlyArray<string>;
@@ -26,6 +30,7 @@ interface LuckyButtonProps {
  */
 export function LuckyButton({ slugs, className }: Readonly<LuckyButtonProps>) {
   const router = useRouter();
+  const locale = useActiveLocale();
   const [isPending, startTransition] = useTransition();
   // Track which slug was *last* served so two consecutive clicks never
   // route to the same profile. Lives in component state so a refresh
@@ -47,7 +52,7 @@ export function LuckyButton({ slugs, className }: Readonly<LuckyButtonProps>) {
     }
     setLastSlug(next);
     startTransition(() => {
-      router.push(`/p/${next}`);
+      router.push(localizedHref(locale, `/p/${next}`));
     });
   };
 
@@ -57,7 +62,7 @@ export function LuckyButton({ slugs, className }: Readonly<LuckyButtonProps>) {
       onClick={handleClick}
       disabled={disabled || isPending}
       data-testid="lucky-button"
-      aria-label="Me siento con suerte — abrir un perfil aleatorio"
+      aria-label={t(locale, "luckyButton.aria")}
       className={
         className ??
         "group/lucky relative inline-flex h-11 items-center gap-2 overflow-hidden rounded-full border border-[var(--color-gold)]/45 bg-[var(--color-cream-soft)] px-4 text-[13px] font-semibold text-[var(--color-ink)] shadow-[inset_0_1px_0_rgba(255,255,255,0.6),0_8px_22px_-12px_rgba(31,61,46,0.22)] transition-[transform,border-color,box-shadow,background-color] duration-200 ease-[var(--ease-standard)] hover:-translate-y-[1px] hover:border-[var(--color-gold)] hover:bg-[var(--color-cream)] hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.7),0_12px_28px_-12px_rgba(31,61,46,0.28)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-gold)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-background)] disabled:cursor-not-allowed disabled:opacity-60"
@@ -74,7 +79,7 @@ export function LuckyButton({ slugs, className }: Readonly<LuckyButtonProps>) {
         }`}
         aria-hidden
       />
-      <span className="relative">Me siento con suerte</span>
+      <span className="relative">{t(locale, "luckyButton.label")}</span>
     </button>
   );
 }

@@ -70,6 +70,10 @@ const CARD_GROW_VARIANTS: Variants = {
   hover: { y: -6 },
 };
 
+import type { SupportedLocale } from "@/core/branding/brand-config";
+import { localizedHref } from "@/core/i18n/href";
+import { t } from "@/core/i18n/messages";
+import { useActiveLocale } from "@/core/i18n/use-active-locale";
 import { Container } from "@/shared/design-system/components/Container";
 
 import { HowItWorksConnector } from "./HowItWorksConnector";
@@ -92,36 +96,38 @@ interface Step {
   cta?: { href: string; label: string };
 }
 
-const STEPS: ReadonlyArray<Step> = [
-  {
-    numeral: "01",
-    icon: BookOpen,
-    eyebrow: "Catálogo",
-    title: "Hojea el catálogo",
-    description:
-      "Filtra por ciudad, categoría o disponibilidad y revisa perfiles con fotos, idiomas y reseñas.",
-    illustration: ({ inView }) => <IllustrationStep01 inView={inView} />,
-  },
-  {
-    numeral: "02",
-    icon: ShieldCheck,
-    eyebrow: "Confianza",
-    title: "Verifica antes de elegir",
-    description:
-      "Cada acompañante destacada pasa por un check de identidad y consentimiento de imagen documentado.",
-    illustration: ({ inView }) => <IllustrationStep02 inView={inView} />,
-  },
-  {
-    numeral: "03",
-    icon: CalendarCheck,
-    eyebrow: "Reserva",
-    title: "Contrata sin fricción",
-    description:
-      "Reserva directo desde el perfil con discreción absoluta. Mensajería y pago integrados se suman muy pronto a tu experiencia.",
-    illustration: ({ inView }) => <IllustrationStep03 inView={inView} />,
-    cta: { href: "/explorar", label: "Explorar el catálogo" },
-  },
-];
+function buildSteps(locale: SupportedLocale): ReadonlyArray<Step> {
+  return [
+    {
+      numeral: "01",
+      icon: BookOpen,
+      eyebrow: t(locale, "home.how.step01.eyebrow"),
+      title: t(locale, "home.how.step01.title"),
+      description: t(locale, "home.how.step01.description"),
+      illustration: ({ inView }) => <IllustrationStep01 inView={inView} />,
+    },
+    {
+      numeral: "02",
+      icon: ShieldCheck,
+      eyebrow: t(locale, "home.how.step02.eyebrow"),
+      title: t(locale, "home.how.step02.title"),
+      description: t(locale, "home.how.step02.description"),
+      illustration: ({ inView }) => <IllustrationStep02 inView={inView} />,
+    },
+    {
+      numeral: "03",
+      icon: CalendarCheck,
+      eyebrow: t(locale, "home.how.step03.eyebrow"),
+      title: t(locale, "home.how.step03.title"),
+      description: t(locale, "home.how.step03.description"),
+      illustration: ({ inView }) => <IllustrationStep03 inView={inView} />,
+      cta: {
+        href: localizedHref(locale, "/explorar"),
+        label: t(locale, "home.how.step03.cta"),
+      },
+    },
+  ];
+}
 
 const INNER_PARENT: Variants = {
   hidden: {},
@@ -157,6 +163,8 @@ const ICON_HOVER: TargetAndTransition = {
 
 export function HowItWorks() {
   const reduced = useReducedMotion();
+  const locale = useActiveLocale();
+  const STEPS = buildSteps(locale);
 
   return (
     <section
@@ -189,7 +197,7 @@ export function HowItWorks() {
               aria-hidden
               className="inline-block h-1.5 w-1.5 rotate-45 bg-[var(--color-gold)] shadow-[0_0_0_3px_rgba(200,166,118,0.18)]"
             />
-            Cómo funciona
+            {t(locale, "home.how.eyebrow")}
             <span
               aria-hidden
               className="inline-block h-1.5 w-1.5 rotate-45 bg-[var(--color-brand-primary)]/70"
@@ -204,9 +212,9 @@ export function HowItWorks() {
             transition={{ duration: 0.7, delay: 0.05, ease: [0.22, 1, 0.36, 1] }}
             className="mt-5 font-[var(--font-display)] text-[clamp(30px,4.2vw,52px)] font-[370] leading-[1.02] tracking-[-0.028em] text-[var(--color-foreground)]"
           >
-            Tres pasos para encontrar la{" "}
+            {t(locale, "home.how.title.lead")}{" "}
             <span className="relative inline-block italic font-[340] text-[var(--color-brand-primary)]">
-              compañía adecuada
+              {t(locale, "home.how.title.highlight")}
               <span
                 aria-hidden
                 className="pointer-events-none absolute -bottom-1 left-0 h-[3px] w-full -skew-x-12 bg-[var(--color-gold)] opacity-45"
@@ -255,8 +263,8 @@ export function HowItWorks() {
             transition={{ duration: 0.6, delay: 0.45, ease: [0.22, 1, 0.36, 1] }}
             className="mx-auto mt-5 max-w-xl font-[var(--font-serif)] text-[16px] leading-[1.55] text-[var(--color-text-muted)]"
           >
-            Reservar es simple. Antes vamos por la confianza —{" "}
-            <em>verificación, consentimiento, transparencia.</em>
+            {t(locale, "home.how.subtitle.lead")}{" "}
+            <em>{t(locale, "home.how.subtitle.emphasis")}</em>
           </motion.p>
         </header>
 
@@ -283,7 +291,7 @@ export function HowItWorks() {
         {/* Privacy / trust ribbon — closes the section with a discrete
             promise. Layout: shield + headline on the left, three inline
             trust items on the right (stack vertically on mobile). */}
-        <PrivacyTrustBar reduced={!!reduced} />
+        <PrivacyTrustBar locale={locale} reduced={!!reduced} />
       </Container>
     </section>
   );
@@ -459,7 +467,10 @@ function StepCard({ step, index, reduced }: Readonly<StepCardProps>) {
  * verification + confidentiality. Three lucide icons in soft forest
  * circles; the row stacks vertically on mobile.
  */
-function PrivacyTrustBar({ reduced }: Readonly<{ reduced: boolean }>) {
+function PrivacyTrustBar({
+  locale,
+  reduced,
+}: Readonly<{ locale: SupportedLocale; reduced: boolean }>) {
   return (
     <motion.div
       data-testid="how-it-works-trust-bar"
@@ -478,21 +489,21 @@ function PrivacyTrustBar({ reduced }: Readonly<{ reduced: boolean }>) {
         </span>
         <div className="flex flex-col">
           <span className="font-[var(--font-display)] text-[18px] font-[480] leading-tight tracking-tight text-[var(--color-foreground)]">
-            Tu privacidad es primero
+            {t(locale, "home.how.privacy.title")}
           </span>
           <span className="mt-0.5 font-[var(--font-serif)] text-[14px] italic leading-snug text-[var(--color-text-muted)]">
-            Discreción, seguridad y respeto en cada paso.
+            {t(locale, "home.how.privacy.subtitle")}
           </span>
         </div>
       </div>
 
       <ul
-        aria-label="Garantías de privacidad"
+        aria-label={t(locale, "home.how.privacy.aria")}
         className="flex flex-col gap-3 text-[13px] text-[var(--color-text-muted)] sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-6 sm:gap-y-2 md:justify-end"
       >
-        <TrustItem icon={Lock} label="Perfiles verificados" />
-        <TrustItem icon={UserCheck} label="Consentimiento documentado" />
-        <TrustItem icon={EyeOff} label="100% confidencial" />
+        <TrustItem icon={Lock} label={t(locale, "home.how.privacy.item.verified")} />
+        <TrustItem icon={UserCheck} label={t(locale, "home.how.privacy.item.consent")} />
+        <TrustItem icon={EyeOff} label={t(locale, "home.how.privacy.item.confidential")} />
       </ul>
     </motion.div>
   );

@@ -14,6 +14,8 @@ import {
 import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 
+import { useClientMounted } from "@/shared/lib/use-client-mounted";
+
 const STORAGE_KEY = "biringas:onboarding-quiz:v1";
 
 const CITIES = [
@@ -72,16 +74,17 @@ const PLANS = [
 export function OnboardingQuiz() {
   const router = useRouter();
   const [open, setOpen] = useState(false);
-  const [mounted, setMounted] = useState(false);
+  const mounted = useClientMounted();
   const [step, setStep] = useState(0);
   const [city, setCity] = useState<string | null>(null);
   const [budget, setBudget] = useState<string | null>(null);
   // Plan choice routes directly; no separate "submit" step.
 
-  // Hydrate visibility after mount so SSR markup stays empty.
+  // Hydrate visibility after mount so SSR markup stays empty. The timer
+  // is deferred so setState happens from a timer callback (not the
+  // effect body) — keeps `react-hooks/set-state-in-effect` happy.
   useEffect(() => {
     if (globalThis.window === undefined) return;
-    setMounted(true);
     try {
       if (globalThis.localStorage.getItem(STORAGE_KEY) === "done") return;
     } catch {

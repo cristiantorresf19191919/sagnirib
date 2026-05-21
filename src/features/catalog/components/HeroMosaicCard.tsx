@@ -2,6 +2,9 @@ import Image from "next/image";
 import Link from "next/link";
 import { ShieldCheck, Star } from "lucide-react";
 
+import { localizedHref } from "@/core/i18n/href";
+import { readLocale } from "@/core/i18n/locale";
+import { t } from "@/core/i18n/messages";
 import type { BiringaListing } from "@/server/biringas";
 
 interface HeroMosaicCardProps {
@@ -38,12 +41,13 @@ interface HeroMosaicCardProps {
  * so the parent reel translation does not force a re-raster of every
  * tile's blurred backdrop pills every frame.
  */
-export function HeroMosaicCard({
+export async function HeroMosaicCard({
   listing,
   height,
   hideLive = false,
   priority = false,
 }: HeroMosaicCardProps) {
+  const locale = await readLocale();
   const showLive = !hideLive && listing.availableNow;
   const location = listing.neighborhood
     ? `${listing.neighborhood}, ${listing.city}`
@@ -55,8 +59,12 @@ export function HeroMosaicCard({
       style={{ height }}
     >
       <Link
-        href={`/p/${listing.slug}`}
-        aria-label={`${listing.name}, ${listing.age}, ${listing.city} — ver perfil`}
+        href={localizedHref(locale, `/p/${listing.slug}`)}
+        aria-label={t(locale, "heroMosaicCard.link.aria", {
+          name: listing.name,
+          age: listing.age,
+          city: listing.city,
+        })}
         className="group relative block h-full w-full overflow-hidden rounded-[var(--radius-xl)] bg-[var(--color-cream-deep)] shadow-[0_18px_36px_-22px_rgba(20,28,24,0.45)] [contain:layout_paint] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-forest)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-cream)]"
       >
         <div className="absolute inset-0 [transform:translateZ(0)] [backface-visibility:hidden]">
@@ -85,7 +93,9 @@ export function HeroMosaicCard({
 
         {/* Rating pill — TOP-LEFT */}
         <span
-          aria-label={`Calificación ${listing.reputation.score.toFixed(1)} estrellas`}
+          aria-label={t(locale, "heroMosaicCard.rating.aria", {
+            score: listing.reputation.score.toFixed(1),
+          })}
           className="absolute left-3.5 top-3.5 inline-flex items-center gap-1.5 rounded-[10px] border border-[rgba(248,242,228,0.18)] bg-[rgba(20,28,24,0.62)] px-2.5 py-1 text-[12px] font-semibold text-[#F2EBDC] backdrop-blur-md"
         >
           <Star
@@ -117,7 +127,7 @@ export function HeroMosaicCard({
                 <span className="absolute inset-0 rounded-full bg-[#7BCB9A] opacity-70 motion-safe:motion-pulse-ring" />
                 <span className="relative inline-block h-1.5 w-1.5 rounded-full bg-[#7BCB9A] motion-safe:motion-hero-pulse" />
               </span>
-              En línea
+              {t(locale, "heroMosaicCard.online")}
             </span>
           )}
         </div>
@@ -125,8 +135,8 @@ export function HeroMosaicCard({
         {/* Bottom-RIGHT: gold verified shield circle */}
         {listing.verified && (
           <span
-            aria-label="Verificada"
-            title="Verificada"
+            aria-label={t(locale, "heroMosaicCard.verified.aria")}
+            title={t(locale, "heroMosaicCard.verified.aria")}
             className="absolute bottom-3.5 right-3.5 inline-flex h-9 w-9 items-center justify-center rounded-full border border-[rgba(200,166,118,0.55)] bg-[rgba(20,28,24,0.55)] text-[var(--color-gold)] backdrop-blur-md transition-[transform,border-color] duration-200 ease-[var(--ease-standard)] group-hover:scale-110 group-hover:border-[var(--color-gold)]"
           >
             <ShieldCheck className="h-4 w-4" aria-hidden />

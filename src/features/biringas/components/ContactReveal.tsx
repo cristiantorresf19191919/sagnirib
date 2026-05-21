@@ -5,6 +5,10 @@ import { Loader2, Lock, MessageCircle, Phone, Send } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
+import type { SupportedLocale } from "@/core/branding/brand-config";
+import { localizedHref } from "@/core/i18n/href";
+import { t } from "@/core/i18n/messages";
+import { useActiveLocale } from "@/core/i18n/use-active-locale";
 import { useAuthSession } from "@/features/auth/lib/use-auth-session";
 import { revealContact } from "@/features/biringas/actions/reveal-contact";
 import type { ContactChannel } from "@/server/biringas";
@@ -27,33 +31,19 @@ type RevealState =
   | { kind: "revealed"; data: PrivateContact }
   | { kind: "error"; message: string };
 
-/**
- * Profile-page CTA that reveals the private contact channels of a listing.
- *
- * Flow:
- *   1. Anonymous click → push to `/ingresar?next=/p/<slug>` (same pattern
- *      `/publicar` uses for its auth gate).
- *   2. Authenticated click → calls `revealContact` Server Action. The action
- *      delegates to `getPrivateContact()` which runs `requireAuth()` +
- *      `auditLog("biringa.private_contact.viewed", …)` on every successful
- *      reveal — that audit row is the analytics seed for lister dashboards.
- *   3. On reveal, channel-aware deep links are rendered for whichever
- *      `contactChannels` the listing accepts AND whichever private fields
- *      came back populated.
- *
- * The component never receives the private values until after the action
- * resolves, so the bytes are not present in server-rendered HTML.
- */
 export function ContactReveal({
   slug,
   listingName,
   contactChannels,
 }: Readonly<ContactRevealProps>) {
+  const locale = useActiveLocale();
   const [state, setState] = useState<RevealState>({ kind: "idle" });
   const { status } = useAuthSession();
   const router = useRouter();
 
-  const nextHref = `/ingresar?next=${encodeURIComponent(`/p/${slug}`)}`;
+  const nextHref = `${localizedHref(locale, "/ingresar")}?next=${encodeURIComponent(
+    localizedHref(locale, `/p/${slug}`),
+  )}`;
 
   async function handleReveal() {
     if (status === "anonymous" || status === "disabled") {
@@ -71,7 +61,7 @@ export function ContactReveal({
       }
       setState({
         kind: "error",
-        message: "No pudimos revelar el contacto. Intenta de nuevo.",
+        message: t(locale, "contact.reveal.error"),
       });
       return;
     }
@@ -92,6 +82,7 @@ export function ContactReveal({
             transition={{ duration: 0.32, ease: [0.22, 1, 0.36, 1] }}
           >
             <RevealedChannels
+              locale={locale}
               listingName={listingName}
               contactChannels={contactChannels}
               contact={state.data}
@@ -106,32 +97,34 @@ export function ContactReveal({
             transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
             className="flex flex-col gap-3"
           >
-            <BlurredPreview />
+            <BlurredPreview locale={locale} />
             <Button
               onClick={handleReveal}
               variant="primary"
               size="lg"
               glow
               disabled={isLoading}
-              aria-label={`Revelar contacto de ${listingName}`}
+              aria-label={t(locale, "contact.reveal.ariaLabel", {
+                name: listingName,
+              })}
               className="w-full"
             >
               {isLoading ? (
                 <>
                   <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
-                  Revelando…
+                  {t(locale, "contact.reveal.revealing")}
                 </>
               ) : (
                 <>
                   <Lock className="h-4 w-4" aria-hidden />
-                  Revelar contacto
+                  {t(locale, "contact.reveal.cta")}
                 </>
               )}
             </Button>
             <p className="text-xs text-[var(--color-text-subtle)]">
               {status === "authenticated"
-                ? "Toca para mostrar los canales privados de este perfil."
-                : "Inicia sesión para ver los canales privados de este perfil."}
+                ? t(locale, "contact.reveal.hint.authenticated")
+                : t(locale, "contact.reveal.hint.anonymous")}
             </p>
             {state.kind === "error" && (
               <p
@@ -148,7 +141,7 @@ export function ContactReveal({
   );
 }
 
-function BlurredPreview() {
+function BlurredPreview({ locale }: { locale: SupportedLocale }) {
   return (
     <div
       aria-hidden
@@ -156,7 +149,7 @@ function BlurredPreview() {
     >
       <div className="flex items-center justify-between">
         <span className="text-[10px] uppercase tracking-[0.22em] text-[var(--color-text-subtle)]">
-          Canales privados
+          {t(locale, "contact.reveal.previewLabel")}
         </span>
         <Lock className="h-3.5 w-3.5 text-[var(--color-text-subtle)]" />
       </div>
@@ -168,12 +161,14 @@ function BlurredPreview() {
 }
 
 interface RevealedChannelsProps {
+  locale: SupportedLocale;
   listingName: string;
   contactChannels: ReadonlyArray<ContactChannel>;
   contact: PrivateContact;
 }
 
 function RevealedChannels({
+  locale,
   listingName,
   contactChannels,
   contact,
@@ -191,12 +186,12 @@ function RevealedChannels({
 
   if (accepts.has("whatsapp") && whatsappDigits) {
     const text = encodeURIComponent(
-      `Hola ${listingName}, vi tu perfil en Biringas.`,
+      t(locale, "contact.reveal.whatsappGreeting", { name: listingName }),
     );
     buttons.push({
       key: "whatsapp",
       href: `https://wa.me/${whatsappDigits}?text=${text}`,
-      label: "WhatsApp",
+      label: t(locale, "contact.reveal.channel.whatsapp"),
       Icon: MessageCircle,
     });
   }
@@ -204,7 +199,7 @@ function RevealedChannels({
     buttons.push({
       key: "llamada",
       href: `tel:+${phoneDigits}`,
-      label: "Llamar",
+      label: t(locale, "contact.reveal.channel.llamada"),
       Icon: Phone,
     });
   }
@@ -212,7 +207,7 @@ function RevealedChannels({
     buttons.push({
       key: "telegram",
       href: `https://t.me/+${phoneDigits}`,
-      label: "Telegram",
+      label: t(locale, "contact.reveal.channel.telegram"),
       Icon: Send,
     });
   }
@@ -224,19 +219,19 @@ function RevealedChannels({
         role="status"
         className="rounded-[var(--radius-lg)] bg-[var(--color-surface-muted)] px-4 py-3 text-sm text-[var(--color-text-muted)] ring-1 ring-[var(--color-border)]"
       >
-        Este perfil no tiene canales públicos disponibles ahora.
+        {t(locale, "contact.reveal.empty")}
       </div>
     );
   }
 
-  return (
-    <RevealedChannelsView buttons={buttons} />
-  );
+  return <RevealedChannelsView locale={locale} buttons={buttons} />;
 }
 
 function RevealedChannelsView({
+  locale,
   buttons,
 }: Readonly<{
+  locale: SupportedLocale;
   buttons: ReadonlyArray<{
     key: ContactChannel;
     href: string;
@@ -250,7 +245,7 @@ function RevealedChannelsView({
   return (
     <div id="contacto" className="flex flex-col gap-3">
       <span className="text-[10px] uppercase tracking-[0.22em] text-[var(--color-text-subtle)]">
-        Canales disponibles
+        {t(locale, "contact.reveal.title")}
       </span>
       <motion.div
         className="grid grid-cols-1 gap-2 sm:grid-cols-2"
@@ -285,7 +280,7 @@ function RevealedChannelsView({
         ))}
       </motion.div>
       <p className="text-xs text-[var(--color-text-subtle)]">
-        Saluda con respeto. Toda interacción queda registrada.
+        {t(locale, "contact.reveal.footer")}
       </p>
     </div>
   );

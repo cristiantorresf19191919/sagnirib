@@ -7,7 +7,12 @@ import { createPortal } from "react-dom";
 import { useCallback, useEffect, useMemo, useState, useTransition } from "react";
 
 import { usePathname } from "next/navigation";
+import type { SupportedLocale } from "@/core/branding/brand-config";
+import { localizedHref } from "@/core/i18n/href";
+import { t } from "@/core/i18n/messages";
+import { useActiveLocale } from "@/core/i18n/use-active-locale";
 import { useAuthSession } from "@/features/auth/lib/use-auth-session";
+import { useClientMounted } from "@/shared/lib/use-client-mounted";
 import { toast } from "@/shared/ui/toast";
 
 import { SafeCheckinSetup } from "@/features/safety/components/SafeCheckinSetup";
@@ -22,58 +27,29 @@ import {
 } from "../lib/availability";
 import { BookingDatePicker } from "./BookingDatePicker";
 
-/**
- * UI mirror of the server-side `BOOKING_LIMITS` constant. See the source
- * in `src/server/biringas/booking-types.ts` — server is the source of
- * truth and rejects mismatched values via the schema. Keeping a copy
- * here so this client component stays free of any server-only import.
- */
 const BOOKING_LIMITS = {
   messageMin: 12,
   messageMax: 1000,
 } as const;
 
 const DURATIONS = [1, 2, 3, 4, 8, 12, 24] as const;
-const MEETING_TYPES = [
-  { value: "outcall", label: "A domicilio", help: "Ella va al lugar acordado" },
-  { value: "incall", label: "En su lugar", help: "Tú vas al lugar de ella" },
-  { value: "videocall", label: "Videollamada", help: "100% remoto" },
-] as const;
-const CONTACT_PREFS = [
-  { value: "whatsapp", label: "WhatsApp" },
-  { value: "telegram", label: "Telegram" },
-  { value: "platform", label: "Mensajería de Biringas" },
-] as const;
+const MEETING_TYPES = ["outcall", "incall", "videocall"] as const;
+const CONTACT_PREFS = ["whatsapp", "telegram", "platform"] as const;
 
 interface BookingRequestModalProps {
   listingSlug: string;
   listingName: string;
-  /** Default city of the encounter — pre-filled from listing data. */
   defaultCity?: string;
 }
 
-/**
- * Booking-request modal — the primary conversion surface on the profile
- * page. Opens from a sticky CTA; collects the buyer's intent (date +
- * duration + meeting type + message + contact preference) and posts to
- * the `requestBooking` Server Action.
- *
- * Anonymous users see a sign-in nudge inside the modal — the auth gate
- * is also enforced server-side, so this is UX, not security.
- *
- * Date input uses native `<input type="date">` for accessibility +
- * keyboard input; default value is set to "tomorrow" so the most common
- * case is one tap.
- */
 export function BookingRequestModal({
   listingSlug,
   listingName,
   defaultCity,
 }: Readonly<BookingRequestModalProps>) {
+  const locale = useActiveLocale();
   const [open, setOpen] = useState(false);
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => setMounted(true), []);
+  const mounted = useClientMounted();
 
   useEffect(() => {
     if (!open) return;
@@ -98,7 +74,7 @@ export function BookingRequestModal({
         className="btn-pulse inline-flex h-12 w-full items-center justify-center gap-2 rounded-full bg-[var(--color-brand-primary)] px-6 text-sm font-semibold text-[var(--color-surface)] shadow-[var(--shadow-glow-primary)] transition-[background,transform] duration-200 ease-[var(--ease-standard)] hover:-translate-y-[1px] hover:bg-[var(--color-brand-primary-strong)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-background)]"
       >
         <Calendar className="h-4 w-4" aria-hidden />
-        Reservar encuentro
+        {t(locale, "booking.cta")}
       </button>
 
       {mounted &&
@@ -106,6 +82,7 @@ export function BookingRequestModal({
           <AnimatePresence>
             {open && (
               <BookingRequestOverlay
+                locale={locale}
                 listingSlug={listingSlug}
                 listingName={listingName}
                 defaultCity={defaultCity}
@@ -120,6 +97,7 @@ export function BookingRequestModal({
 }
 
 interface OverlayProps {
+  locale: SupportedLocale;
   listingSlug: string;
   listingName: string;
   defaultCity?: string;
@@ -127,6 +105,7 @@ interface OverlayProps {
 }
 
 function BookingRequestOverlay({
+  locale,
   listingSlug,
   listingName,
   defaultCity,
@@ -134,10 +113,6 @@ function BookingRequestOverlay({
 }: Readonly<OverlayProps>) {
   const { status } = useAuthSession();
 
-  // Seed the picker on the first day that actually has at least one open
-  // slot — keeps the modal from opening on "Hoy" when she's fully booked.
-  // useMemo so the upcoming window is computed once per modal open, not
-  // on every keystroke in the message field.
   const upcomingDays = useMemo(
     () => getUpcomingAvailability(listingSlug, 14),
     [listingSlug],
@@ -161,16 +136,10 @@ function BookingRequestOverlay({
   );
   const [durationHours, setDurationHours] = useState<number>(2);
   const [meetingType, setMeetingType] = useState<string>("outcall");
-  const [contactPreference, setContactPreference] = useState<string>(
-    "whatsapp",
-  );
+  const [contactPreference, setContactPreference] = useState<string>("whatsapp");
   const [message, setMessage] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
-  // After a booking is filed we surface the SafeCheckinSetup inside
-  // the same modal — far higher activation than asking on a separate
-  // surface because the user is already in the "I'm planning a
-  // meeting" headspace.
   const [showSafeCheckin, setShowSafeCheckin] = useState(false);
 
   const onSubmit = (event: React.FormEvent) => {
@@ -187,15 +156,15 @@ function BookingRequestOverlay({
       });
       if (result.ok) {
         toast.success(
-          "Solicitud enviada",
-          `${listingName} recibirá tu propuesta y confirmará pronto.`,
+          t(locale, "booking.toast.title"),
+          t(locale, "booking.toast.body", { name: listingName }),
         );
         setShowSafeCheckin(true);
       } else {
         const friendly =
           result.error?.kind === "booking-disabled"
-            ? "El sistema de reservas estará disponible muy pronto."
-            : result.error?.message ?? "No pudimos enviar la solicitud.";
+            ? t(locale, "booking.error.disabled")
+            : result.error?.message ?? t(locale, "booking.error.default");
         setError(friendly);
       }
     });
@@ -215,7 +184,7 @@ function BookingRequestOverlay({
     >
       <button
         type="button"
-        aria-label="Cerrar"
+        aria-label={t(locale, "booking.modal.close")}
         onClick={onClose}
         className="absolute inset-0 cursor-default bg-[rgba(20,28,24,0.55)] backdrop-blur-sm"
       />
@@ -233,17 +202,16 @@ function BookingRequestOverlay({
               id="booking-title"
               className="text-base font-semibold tracking-tight text-[var(--color-foreground)] sm:text-lg"
             >
-              Reservar con {listingName}
+              {t(locale, "booking.modal.title", { name: listingName })}
             </h2>
             <p className="text-xs text-[var(--color-text-muted)]">
-              Tu propuesta llega como solicitud; ella confirma fecha y
-              detalles antes de cualquier pago.
+              {t(locale, "booking.modal.subtitle")}
             </p>
           </div>
           <button
             type="button"
             onClick={onClose}
-            aria-label="Cerrar"
+            aria-label={t(locale, "booking.modal.close")}
             className="inline-flex h-9 w-9 items-center justify-center rounded-full text-[var(--color-text-muted)] transition-colors hover:bg-[var(--color-surface-muted)] hover:text-[var(--color-foreground)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)]"
           >
             <X className="h-4 w-4" aria-hidden />
@@ -252,16 +220,16 @@ function BookingRequestOverlay({
 
         <div className="flex-1 overflow-y-auto bg-[var(--color-background-elevated)] px-5 py-5 sm:px-7 sm:py-6">
           {status === "anonymous" ? (
-            <AnonymousNudge onClose={onClose} />
+            <AnonymousNudge locale={locale} onClose={onClose} />
           ) : status === "loading" ? (
-            <p className="text-sm text-[var(--color-text-muted)]">Cargando…</p>
+            <p className="text-sm text-[var(--color-text-muted)]">
+              {t(locale, "booking.modal.loading")}
+            </p>
           ) : showSafeCheckin ? (
             <SafeCheckinSetup
               listingName={listingName}
               listingSlug={listingSlug}
               city={defaultCity}
-              // Deadline buffer = duration of the encounter; the
-              // SafeCheckinSetup adds its own grace period on top.
               defaultMinutes={durationHours * 60}
               onClose={onClose}
             />
@@ -271,13 +239,10 @@ function BookingRequestOverlay({
               data-testid="booking-request-form"
               className="flex flex-col gap-5"
             >
-              {/* Date strip (full row) + duration below — the strip needs
-                  the horizontal real estate to keep day cards readable on
-                  mobile. */}
               <Field
                 icon={Calendar}
-                label="Fecha y momento"
-                help="Solo se muestran los días con espacio en su agenda."
+                label={t(locale, "booking.field.date")}
+                help={t(locale, "booking.field.date.help")}
               >
                 <BookingDatePicker
                   listingSlug={listingSlug}
@@ -286,7 +251,7 @@ function BookingRequestOverlay({
                   onChange={handleDateChange}
                 />
               </Field>
-              <Field icon={Clock} label="Duración">
+              <Field icon={Clock} label={t(locale, "booking.field.duration")}>
                 <select
                   value={durationHours}
                   onChange={(e) => setDurationHours(Number(e.target.value))}
@@ -294,20 +259,31 @@ function BookingRequestOverlay({
                 >
                   {DURATIONS.map((h) => (
                     <option key={h} value={h}>
-                      {h === 24 ? "24 horas (overnight)" : `${h} hora${h === 1 ? "" : "s"}`}
+                      {h === 24
+                        ? t(locale, "booking.field.duration.overnight")
+                        : t(
+                            locale,
+                            h === 1
+                              ? "booking.field.duration.hour.singular"
+                              : "booking.field.duration.hour.plural",
+                            { n: h },
+                          )}
                     </option>
                   ))}
                 </select>
               </Field>
 
               {/* Meeting type */}
-              <Field icon={MapPinned} label="Tipo de encuentro">
+              <Field
+                icon={MapPinned}
+                label={t(locale, "booking.field.meetingType")}
+              >
                 <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
-                  {MEETING_TYPES.map((opt) => {
-                    const checked = meetingType === opt.value;
+                  {MEETING_TYPES.map((value) => {
+                    const checked = meetingType === value;
                     return (
                       <label
-                        key={opt.value}
+                        key={value}
                         className={`group cursor-pointer rounded-[var(--radius-lg)] border p-3 text-left transition-[border-color,background] duration-150 ease-[var(--ease-standard)] ${
                           checked
                             ? "border-[var(--color-brand-primary)] bg-[var(--color-brand-primary)]/8"
@@ -317,16 +293,16 @@ function BookingRequestOverlay({
                         <input
                           type="radio"
                           name="meetingType"
-                          value={opt.value}
+                          value={value}
                           checked={checked}
-                          onChange={() => setMeetingType(opt.value)}
+                          onChange={() => setMeetingType(value)}
                           className="sr-only"
                         />
                         <span className="block text-sm font-semibold text-[var(--color-foreground)]">
-                          {opt.label}
+                          {t(locale, `booking.meetingType.${value}.label`)}
                         </span>
                         <span className="mt-0.5 block text-[11px] text-[var(--color-text-muted)]">
-                          {opt.help}
+                          {t(locale, `booking.meetingType.${value}.help`)}
                         </span>
                       </label>
                     );
@@ -335,13 +311,16 @@ function BookingRequestOverlay({
               </Field>
 
               {/* Contact preference */}
-              <Field icon={MessageSquare} label="¿Cómo prefieres que te contacte?">
+              <Field
+                icon={MessageSquare}
+                label={t(locale, "booking.field.contact")}
+              >
                 <div className="flex flex-wrap gap-2">
-                  {CONTACT_PREFS.map((opt) => {
-                    const checked = contactPreference === opt.value;
+                  {CONTACT_PREFS.map((value) => {
+                    const checked = contactPreference === value;
                     return (
                       <label
-                        key={opt.value}
+                        key={value}
                         className={`inline-flex cursor-pointer items-center gap-2 rounded-full border px-3.5 py-1.5 text-xs font-medium transition-[border-color,background,color] duration-150 ease-[var(--ease-standard)] ${
                           checked
                             ? "border-[var(--color-brand-primary)] bg-[var(--color-brand-primary)]/10 text-[var(--color-brand-primary)]"
@@ -351,12 +330,12 @@ function BookingRequestOverlay({
                         <input
                           type="radio"
                           name="contactPreference"
-                          value={opt.value}
+                          value={value}
                           checked={checked}
-                          onChange={() => setContactPreference(opt.value)}
+                          onChange={() => setContactPreference(value)}
                           className="sr-only"
                         />
-                        {opt.label}
+                        {t(locale, `booking.contact.${value}`)}
                       </label>
                     );
                   })}
@@ -364,16 +343,26 @@ function BookingRequestOverlay({
               </Field>
 
               {/* Message */}
-              <Field icon={MessageSquare} label="Mensaje para ella">
+              <Field
+                icon={MessageSquare}
+                label={t(locale, "booking.field.message")}
+              >
                 <textarea
                   required
                   minLength={BOOKING_LIMITS.messageMin}
                   maxLength={BOOKING_LIMITS.messageMax}
                   value={message}
                   onChange={(e) => setMessage(e.target.value)}
-                  placeholder={`Contexto del encuentro${
-                    defaultCity ? ` (ej: ${defaultCity}, hotel céntrico)` : ""
-                  }. Mínimo ${BOOKING_LIMITS.messageMin} caracteres.`}
+                  placeholder={
+                    defaultCity
+                      ? t(locale, "booking.field.message.placeholderWithCity", {
+                          city: defaultCity,
+                          min: BOOKING_LIMITS.messageMin,
+                        })
+                      : t(locale, "booking.field.message.placeholder", {
+                          min: BOOKING_LIMITS.messageMin,
+                        })
+                  }
                   rows={4}
                   className="w-full rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-background)] px-3.5 py-2.5 text-sm leading-relaxed text-[var(--color-foreground)] placeholder:text-[var(--color-text-subtle)] focus:border-[var(--color-brand-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-brand-primary)]/30"
                 />
@@ -393,14 +382,16 @@ function BookingRequestOverlay({
 
               <div className="flex items-center justify-between gap-3">
                 <p className="text-[11px] text-[var(--color-text-subtle)]">
-                  Tu identidad y contacto se comparten solo con {listingName}.
+                  {t(locale, "booking.privacy", { name: listingName })}
                 </p>
                 <button
                   type="submit"
                   disabled={isPending}
                   className="btn-pulse inline-flex h-11 items-center gap-2 rounded-full bg-[var(--color-brand-primary)] px-5 text-sm font-semibold text-[var(--color-surface)] shadow-[var(--shadow-glow-primary)] transition-[background,transform] duration-200 ease-[var(--ease-standard)] hover:-translate-y-[1px] hover:bg-[var(--color-brand-primary-strong)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-background)] disabled:cursor-not-allowed disabled:opacity-70"
                 >
-                  {isPending ? "Enviando…" : "Enviar solicitud"}
+                  {isPending
+                    ? t(locale, "booking.submitting")
+                    : t(locale, "booking.submit")}
                 </button>
               </div>
             </form>
@@ -415,7 +406,6 @@ interface FieldProps {
   icon: React.ComponentType<{ className?: string; "aria-hidden"?: boolean }>;
   label: string;
   children: React.ReactNode;
-  /** Optional inline helper text rendered under the label. */
   help?: string;
 }
 
@@ -436,17 +426,19 @@ function Field({ icon: Icon, label, children, help }: Readonly<FieldProps>) {
   );
 }
 
-function AnonymousNudge({ onClose }: Readonly<{ onClose: () => void }>) {
+function AnonymousNudge({
+  locale,
+  onClose,
+}: Readonly<{ locale: SupportedLocale; onClose: () => void }>) {
   const pathname = usePathname();
+  const ingresarBase = localizedHref(locale, "/ingresar");
   const ingresarHref = pathname
-    ? `/ingresar?next=${encodeURIComponent(pathname)}`
-    : "/ingresar";
+    ? `${ingresarBase}?next=${encodeURIComponent(pathname)}`
+    : ingresarBase;
   return (
     <div className="flex flex-col gap-4 py-2">
       <p className="text-sm text-[var(--color-text-muted)]">
-        Para enviar una solicitud de reserva, ingresa con tu cuenta — tu
-        identidad nunca se publica y solo se comparte con ella tras la
-        confirmación.
+        {t(locale, "booking.anonymous.body")}
       </p>
       <div className="flex items-center gap-3">
         <Link
@@ -454,14 +446,14 @@ function AnonymousNudge({ onClose }: Readonly<{ onClose: () => void }>) {
           onClick={onClose}
           className="inline-flex h-11 items-center gap-2 rounded-full bg-[var(--color-brand-primary)] px-5 text-sm font-semibold text-[var(--color-surface)] shadow-[var(--shadow-glow-primary)] transition-[background,transform] duration-200 ease-[var(--ease-standard)] hover:-translate-y-[1px] hover:bg-[var(--color-brand-primary-strong)]"
         >
-          Ingresar para reservar
+          {t(locale, "booking.anonymous.cta")}
         </Link>
         <button
           type="button"
           onClick={onClose}
           className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--color-text-muted)] transition-colors hover:text-[var(--color-foreground)]"
         >
-          Más tarde
+          {t(locale, "booking.anonymous.later")}
         </button>
       </div>
     </div>

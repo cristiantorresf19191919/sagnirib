@@ -1,6 +1,9 @@
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 
+import { localizedHref } from "@/core/i18n/href";
+import { readLocale } from "@/core/i18n/locale";
+import { t } from "@/core/i18n/messages";
 import { CatalogCard } from "@/features/catalog/components/CatalogCard";
 import { listFeatured } from "@/server/biringas";
 import { Container } from "@/shared/design-system/components/Container";
@@ -17,6 +20,7 @@ import { Container } from "@/shared/design-system/components/Container";
  * with snap-points, lift this into a client component.
  */
 export async function FeaturedStrip() {
+  const locale = await readLocale();
   // Auxiliary content — degrade to null on failure so the home page still
   // renders. See note in EditorialHero re: missing Firestore indexes on
   // first production read.
@@ -56,7 +60,7 @@ export async function FeaturedStrip() {
                 aria-hidden
                 className="inline-block h-1.5 w-1.5 rotate-45 bg-[var(--color-gold)] shadow-[0_0_0_3px_rgba(200,166,118,0.18)]"
               />
-              Destacadas
+              {t(locale, "home.featured.eyebrow")}
               <span
                 aria-hidden
                 className="inline-block h-px w-10 bg-gradient-to-l from-transparent via-[var(--color-gold)] to-[var(--color-brand-primary)]/40"
@@ -66,23 +70,23 @@ export async function FeaturedStrip() {
               id="featured-title"
               className="font-[var(--font-display)] text-[clamp(28px,3.8vw,44px)] leading-[1.02] tracking-[-0.025em] text-[var(--color-foreground)]"
             >
-              Perfiles verificados que están{" "}
+              {t(locale, "home.featured.title.lead")}{" "}
               <span className="italic font-[360] text-[var(--color-brand-primary)]">
-                convirtiendo
+                {t(locale, "home.featured.title.highlight")}
               </span>{" "}
-              esta semana
+              {t(locale, "home.featured.title.trailing")}
             </h2>
             <p className="max-w-xl font-[var(--font-serif)] text-[15px] leading-[1.55] text-[var(--color-text-muted)]">
-              Curadas por reputación y volumen de reseñas —{" "}
-              <em>sólo entran si lo han ganado.</em>
+              {t(locale, "home.featured.subtitle.lead")}{" "}
+              <em>{t(locale, "home.featured.subtitle.emphasis")}</em>
             </p>
           </div>
           <Link
-            href="/explorar"
+            href={localizedHref(locale, "/explorar")}
             className="group/seeall inline-flex items-center gap-1.5 self-start rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-2 text-sm font-semibold text-[var(--color-brand-primary)] transition-[border-color,background,transform] duration-200 ease-[var(--ease-standard)] hover:-translate-y-[1px] hover:border-[var(--color-brand-primary)]/40 hover:bg-[var(--color-background-elevated)] sm:self-auto"
           >
             <span className="relative">
-              Ver todo el catálogo
+              {t(locale, "home.featured.cta")}
               <span
                 aria-hidden
                 className="absolute -bottom-0.5 left-0 h-px w-full origin-left scale-x-0 bg-[var(--color-brand-primary-strong)] transition-transform duration-300 ease-[var(--ease-standard)] group-hover/seeall:scale-x-100"

@@ -109,7 +109,7 @@ export function InstallAppPill() {
         </p>
         <p className="text-xs text-[var(--color-text-muted)]">
           Abrí el panel con un toque, sin pasar por el navegador. Discreto:
-          ningún icono que diga "Biringas" más allá del que vos elijas
+          ningún icono que diga &ldquo;Biringas&rdquo; más allá del que vos elijas
           renombrar.
         </p>
       </div>

@@ -5,6 +5,9 @@ import { AnimatePresence, motion, type Variants } from "framer-motion";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
+import { t } from "@/core/i18n/messages";
+import { useActiveLocale } from "@/core/i18n/use-active-locale";
+
 interface CardStackGalleryProps {
   images: ReadonlyArray<string>;
   altBase: string;
@@ -80,10 +83,10 @@ const SLIDE_TRANSITION = {
  * page-turn instead of a hard swap.
  */
 export function CardStackGallery({ images, altBase }: Readonly<CardStackGalleryProps>) {
+  const locale = useActiveLocale();
   const [activeIndex, setActiveIndex] = useState(0);
   const [direction, setDirection] = useState(1);
   const [paused, setPaused] = useState(false);
-  const [autoTick, setAutoTick] = useState(0);
   const total = images.length;
 
   const goNext = useCallback(() => {
@@ -140,15 +143,9 @@ export function CardStackGallery({ images, altBase }: Readonly<CardStackGalleryP
       if (document.visibilityState === "hidden") return;
       setDirection(1);
       setActiveIndex((i) => (i + 1) % total);
-      setAutoTick((t) => t + 1);
     }, AUTO_ADVANCE_MS);
     return () => window.clearInterval(id);
   }, [paused, total]);
-
-  // Re-key the progress hairline on every nav so the fill restarts.
-  useEffect(() => {
-    setAutoTick((t) => t + 1);
-  }, [activeIndex]);
 
   if (total === 0) return null;
   const activeSrc = images[activeIndex]!;
@@ -157,7 +154,7 @@ export function CardStackGallery({ images, altBase }: Readonly<CardStackGalleryP
     <div className="flex flex-col gap-6">
       <div
         className="group/gallery relative mx-auto w-full max-w-[440px] aspect-[3/4] [perspective:1400px]"
-        aria-roledescription="galería"
+        aria-roledescription={t(locale, "cardStackGallery.role")}
         onMouseEnter={() => setPaused(true)}
         onMouseLeave={() => setPaused(false)}
         onFocus={() => setPaused(true)}
@@ -186,7 +183,9 @@ export function CardStackGallery({ images, altBase }: Readonly<CardStackGalleryP
             <button
               key={`back-${i}`}
               type="button"
-              aria-label={`Traer imagen ${i + 1} al frente`}
+              aria-label={t(locale, "cardStackGallery.bringToFront.aria", {
+                index: i + 1,
+              })}
               onClick={() => goTo(i)}
               className="absolute inset-0 origin-center cursor-pointer rounded-[var(--radius-2xl)] border border-[var(--color-border)] bg-[var(--color-surface)] shadow-[var(--shadow-lg)] transition-[transform,opacity,box-shadow,border-color] duration-700 ease-[var(--ease-standard)] focus:outline-none focus-visible:border-[var(--color-brand-primary)] focus-visible:shadow-[var(--shadow-glow-primary)]"
               style={{
@@ -259,7 +258,10 @@ export function CardStackGallery({ images, altBase }: Readonly<CardStackGalleryP
             >
               <Image
                 src={activeSrc}
-                alt={`${altBase} — imagen ${activeIndex + 1}`}
+                alt={t(locale, "cardStackGallery.image.alt", {
+                  base: altBase,
+                  index: activeIndex + 1,
+                })}
                 fill
                 sizes="(max-width: 768px) 90vw, 440px"
                 priority
@@ -271,7 +273,10 @@ export function CardStackGallery({ images, altBase }: Readonly<CardStackGalleryP
                 className="select-none object-cover motion-safe:motion-gallery-pan-right"
               />
               <span
-                aria-hidden
+                aria-label={t(locale, "cardStackGallery.indicator", {
+                  index: activeIndex + 1,
+                  total,
+                })}
                 className="pointer-events-none absolute left-3 top-3 inline-flex h-7 min-w-7 items-center justify-center rounded-full bg-[var(--color-surface)]/95 px-2 text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--color-brand-primary)] shadow-[var(--shadow-sm)] backdrop-blur-sm"
               >
                 {activeIndex + 1}/{total}
@@ -295,11 +300,11 @@ export function CardStackGallery({ images, altBase }: Readonly<CardStackGalleryP
         </div>
 
         {/* Ambient auto-advance progress hairline. Re-keys on every
-            cycle (including manual nav) so the fill never "skips"
-            mid-stride. Hidden under prefers-reduced-motion. */}
+            nav (manual or auto) so the fill restarts cleanly with the
+            new slide. Hidden under prefers-reduced-motion. */}
         {total > 1 && (
           <span
-            key={`auto-${autoTick}`}
+            key={`auto-${activeIndex}`}
             aria-hidden
             data-paused={paused ? "true" : "false"}
             className="pointer-events-none absolute inset-x-6 bottom-3 z-[30] block h-px overflow-hidden rounded-full bg-[var(--color-surface)]/40 motion-reduce:hidden"
@@ -319,7 +324,7 @@ export function CardStackGallery({ images, altBase }: Readonly<CardStackGalleryP
         <button
           type="button"
           onClick={goPrev}
-          aria-label="Imagen anterior"
+          aria-label={t(locale, "cardStackGallery.prev.aria")}
           className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-foreground)] shadow-[var(--shadow-sm)] transition-[border-color,background] duration-200 ease-[var(--ease-standard)] hover:border-[var(--color-brand-primary-soft)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-background)]"
         >
           <ChevronLeft className="h-5 w-5" aria-hidden />
@@ -328,7 +333,7 @@ export function CardStackGallery({ images, altBase }: Readonly<CardStackGalleryP
         <div
           className="flex items-center gap-1.5"
           role="tablist"
-          aria-label="Seleccionar imagen"
+          aria-label={t(locale, "cardStackGallery.tablist.aria")}
         >
           {images.map((src, i) => {
             const active = i === activeIndex;
@@ -337,7 +342,9 @@ export function CardStackGallery({ images, altBase }: Readonly<CardStackGalleryP
                 key={`${src}-dot-${i}`}
                 role="tab"
                 aria-selected={active}
-                aria-label={`Imagen ${i + 1}`}
+                aria-label={t(locale, "cardStackGallery.tab.aria", {
+                  index: i + 1,
+                })}
                 onClick={() => goTo(i)}
                 className={`h-1.5 rounded-full transition-all duration-300 ease-[var(--ease-standard)] ${
                   active
@@ -352,7 +359,7 @@ export function CardStackGallery({ images, altBase }: Readonly<CardStackGalleryP
         <button
           type="button"
           onClick={goNext}
-          aria-label="Imagen siguiente"
+          aria-label={t(locale, "cardStackGallery.next.aria")}
           className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-foreground)] shadow-[var(--shadow-sm)] transition-[border-color,background] duration-200 ease-[var(--ease-standard)] hover:border-[var(--color-brand-primary-soft)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-background)]"
         >
           <ChevronRight className="h-5 w-5" aria-hidden />

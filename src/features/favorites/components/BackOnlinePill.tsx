@@ -67,10 +67,7 @@ export function BackOnlinePill() {
 
   useEffect(() => {
     if (!ready) return;
-    if (favorites.length === 0) {
-      setOnline([]);
-      return;
-    }
+    if (favorites.length === 0) return;
 
     let cancelled = false;
     let timeoutId: number | null = null;
@@ -107,9 +104,18 @@ export function BackOnlinePill() {
     };
   }, [ready, favorites]);
 
+  // Filter against the current favorites list so stale online entries
+  // (left over from a previous favorites set) never render after the
+  // user un-favorites a listing. Cheaper than resetting state from
+  // within the effect body, and side-steps `react-hooks/set-state-in-effect`.
+  const favoritesSet = useMemo(() => new Set(favorites), [favorites]);
   const visible = useMemo(
-    () => online.filter((o) => !dismissed.has(o.id)).slice(0, 2),
-    [online, dismissed],
+    () =>
+      online
+        .filter((o) => favoritesSet.has(o.id))
+        .filter((o) => !dismissed.has(o.id))
+        .slice(0, 2),
+    [online, dismissed, favoritesSet],
   );
 
   const dismissOne = (id: string) => {

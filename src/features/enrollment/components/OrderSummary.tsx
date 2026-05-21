@@ -2,6 +2,9 @@
 
 import { Check, Gift } from "lucide-react";
 
+import { useActiveLocale } from "@/core/i18n/use-active-locale";
+import { t } from "@/core/i18n/messages";
+
 import {
   ADD_ONS,
   type BillingCycle,
@@ -20,6 +23,7 @@ interface OrderSummaryProps {
 }
 
 export function OrderSummary({ packageId, addOnIds, billing }: OrderSummaryProps) {
+  const locale = useActiveLocale();
   if (!PLANS_ENABLED) {
     return <FreeLaunchSummary />;
   }
@@ -27,24 +31,38 @@ export function OrderSummary({ packageId, addOnIds, billing }: OrderSummaryProps
   const pkg = PACKAGES.find((p) => p.id === packageId)!;
   const totals = calculateTotal(packageId, addOnIds, billing);
   const months = billing === "quarterly" ? 3 : 1;
-  const cycleLabel = billing === "quarterly" ? "trimestre" : "mes";
+  const cycleLabel =
+    billing === "quarterly"
+      ? t(locale, "publicar.order.cycle.quarterly")
+      : t(locale, "publicar.order.cycle.monthly");
+  const monthLabel =
+    months === 1
+      ? t(locale, "publicar.order.cycle.month.singular")
+      : t(locale, "publicar.order.cycle.month.plural");
 
   return (
     <aside className="sticky top-24 flex flex-col gap-4 rounded-[var(--radius-xl)] border border-[var(--color-border)] bg-[var(--color-surface)] p-5 shadow-[var(--shadow-sm)]">
       <div className="flex flex-col gap-1">
         <span className="text-[10px] font-semibold uppercase tracking-[0.28em] text-[var(--color-text-muted)]">
-          Resumen
+          {t(locale, "publicar.order.kicker")}
         </span>
         <span className="text-base font-semibold text-[var(--color-foreground)]">
-          Plan {pkg.name}
+          {t(locale, "publicar.order.plan", { name: pkg.name })}
         </span>
         <span className="text-[12px] text-[var(--color-text-muted)]">
-          {months} {months === 1 ? "mes" : "meses"} · facturado por {cycleLabel}
+          {t(locale, "publicar.order.cycleNote", {
+            months,
+            monthLabel,
+            cycle: cycleLabel,
+          })}
         </span>
       </div>
 
       <ul className="flex flex-col gap-2 text-[12px] text-[var(--color-text-muted)]">
-        <SummaryLine label={`Plan ${pkg.name}`} amount={totals.packageCop} />
+        <SummaryLine
+          label={t(locale, "publicar.order.plan", { name: pkg.name })}
+          amount={totals.packageCop}
+        />
         {addOnIds.length > 0 ? (
           addOnIds.map((id) => {
             const addOn = ADD_ONS.find((a) => a.id === id)!;
@@ -53,13 +71,13 @@ export function OrderSummary({ packageId, addOnIds, billing }: OrderSummaryProps
                 key={id}
                 label={addOn.name}
                 amount={addOn.priceCop}
-                hint="pago único"
+                hint={t(locale, "publicar.order.addOnHint")}
               />
             );
           })
         ) : (
           <li className="text-[12px] italic text-[var(--color-text-subtle)]">
-            Sin refuerzos seleccionados.
+            {t(locale, "publicar.order.noAddOns")}
           </li>
         )}
       </ul>
@@ -67,21 +85,23 @@ export function OrderSummary({ packageId, addOnIds, billing }: OrderSummaryProps
       <div className="flex flex-col gap-1 border-t border-[var(--color-border)] pt-3">
         <div className="flex items-baseline justify-between">
           <span className="text-sm font-semibold text-[var(--color-foreground)]">
-            Total ahora
+            {t(locale, "publicar.order.totalNow")}
           </span>
           <span className="text-xl font-bold tracking-tight text-[var(--color-foreground)]">
             {formatCop(totals.totalCop)}
           </span>
         </div>
         <span className="text-[11px] text-[var(--color-text-subtle)]">
-          {formatCop(totals.effectiveMonthlyCop)} efectivos / mes durante el plan
+          {t(locale, "publicar.order.effectivePerMonth", {
+            amount: formatCop(totals.effectiveMonthlyCop),
+          })}
         </span>
       </div>
 
       <ul className="flex flex-col gap-1.5 text-[11px] text-[var(--color-text-muted)]">
-        <Reassurance>Cancela cuando quieras antes del próximo ciclo.</Reassurance>
-        <Reassurance>Soporte humano · respuesta en menos de 24 h.</Reassurance>
-        <Reassurance>Datos privados nunca se publican.</Reassurance>
+        <Reassurance>{t(locale, "publicar.order.reassure.cancel")}</Reassurance>
+        <Reassurance>{t(locale, "publicar.order.reassure.support")}</Reassurance>
+        <Reassurance>{t(locale, "publicar.order.reassure.privacy")}</Reassurance>
       </ul>
     </aside>
   );
@@ -119,40 +139,44 @@ function SummaryLine({
  * looking at strikethrough prices or zero totals.
  */
 function FreeLaunchSummary() {
+  const locale = useActiveLocale();
   return (
     <aside className="sticky top-24 flex flex-col gap-4 rounded-[var(--radius-xl)] border border-[var(--color-brand-primary)]/30 bg-[var(--color-surface)] p-5 shadow-[var(--shadow-sm)]">
       <div className="flex flex-col gap-2">
         <span className="inline-flex w-fit items-center gap-1.5 rounded-full bg-[var(--color-brand-primary)]/12 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.22em] text-[var(--color-brand-primary)]">
           <Gift className="h-3 w-3" aria-hidden />
-          Lanzamiento
+          {t(locale, "publicar.order.free.launchPill")}
         </span>
         <span className="text-base font-semibold text-[var(--color-foreground)]">
-          Publicación sin costo
+          {t(locale, "publicar.order.free.title")}
         </span>
         <span className="text-[12px] leading-relaxed text-[var(--color-text-muted)]">
-          Estás aprovechando el periodo de lanzamiento. Tu perfil va a revisión
-          humana y se publica si pasa, sin cobro de ningún plan.
+          {t(locale, "publicar.order.free.body")}
         </span>
       </div>
 
       <div className="flex flex-col gap-1 border-t border-[var(--color-border)] pt-3">
         <div className="flex items-baseline justify-between">
           <span className="text-sm font-semibold text-[var(--color-foreground)]">
-            Total ahora
+            {t(locale, "publicar.order.totalNow")}
           </span>
           <span className="text-xl font-bold tracking-tight text-[var(--color-brand-primary)]">
-            Gratis
+            {t(locale, "publicar.submitted.totalFree")}
           </span>
         </div>
         <span className="text-[11px] text-[var(--color-text-subtle)]">
-          Te avisaremos con tiempo antes de activar planes pagos.
+          {t(locale, "publicar.order.free.note")}
         </span>
       </div>
 
       <ul className="flex flex-col gap-1.5 text-[11px] text-[var(--color-text-muted)]">
-        <Reassurance>Revisión humana entre 4 y 24 horas.</Reassurance>
-        <Reassurance>Edita tu perfil cuando quieras.</Reassurance>
-        <Reassurance>Datos privados nunca se publican.</Reassurance>
+        <Reassurance>
+          {t(locale, "publicar.order.free.reassure.review")}
+        </Reassurance>
+        <Reassurance>
+          {t(locale, "publicar.order.free.reassure.edit")}
+        </Reassurance>
+        <Reassurance>{t(locale, "publicar.order.reassure.privacy")}</Reassurance>
       </ul>
     </aside>
   );

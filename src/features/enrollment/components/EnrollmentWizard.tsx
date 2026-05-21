@@ -5,6 +5,9 @@ import { ArrowLeft, ArrowRight, Loader2, PartyPopper } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 
+import { useLocalizedHref, useActiveLocale } from "@/core/i18n/use-active-locale";
+import { t } from "@/core/i18n/messages";
+
 import { createListingDraft } from "../actions/create-draft";
 import type { EnrollmentCatalogs } from "../lib/catalogs";
 import {
@@ -37,51 +40,46 @@ import { StepPublish } from "./StepPublish";
 import { Stepper, type StepDescriptor } from "./Stepper";
 import { UsefulTip } from "./UsefulTip";
 
-const STEPS: ReadonlyArray<StepDescriptor> = [
-  {
-    id: "details",
-    number: 1,
-    title: "Detalles",
-    description: "Datos públicos y privados de tu perfil.",
-  },
-  {
-    id: "description",
-    number: 2,
-    title: "Descripción",
-    description: "Lo que las personas verán y leerán.",
-  },
-  {
-    id: "attributes",
-    number: 3,
-    title: "Características",
-    description: "Etnia, cabello, estatura, cuerpo, país e idiomas.",
-  },
-  {
-    id: "publish",
-    number: 4,
-    title: "Publicar",
-    description: "Plan, refuerzos y publicación.",
-  },
-];
+import type { SupportedLocale } from "@/core/branding/brand-config";
 
-const TIPS_BY_STEP: Record<StepId, { title: string; body: string }> = {
-  details: {
-    title: "Tip — Detalles",
-    body: "Las modelos que usan su nombre artístico real, edad correcta y una sola ciudad reciben un 38% más de clics. La URL preferida también funciona como SEO: usa nombre + ciudad.",
-  },
-  description: {
-    title: "Tip — Descripción",
-    body: "Las descripciones honestas en primera persona convierten 2.5× más. Evita números de teléfono o enlaces externos en el texto — los marcamos como spam y bloquean tu publicación.",
-  },
-  attributes: {
-    title: "Tip — Características",
-    body: "Estas etiquetas se muestran en el bloque \"Características\" de tu perfil y son los filtros más usados del catálogo. Sé honesta — coincidencia entre lo que cuentas y lo que ven en las fotos sube tu conversión.",
-  },
-  publish: {
-    title: "Tip — Plan",
-    body: "El plan Destacada es el que más eligen las modelos verificadas: incluye boost de catálogo, badge y stories diarias. Si tienes alta competencia en tu ciudad, suma un Boost de ciudad de 24h.",
-  },
-};
+function buildSteps(locale: SupportedLocale): ReadonlyArray<StepDescriptor> {
+  return [
+    {
+      id: "details",
+      number: 1,
+      title: t(locale, "publicar.steps.details.title"),
+      description: t(locale, "publicar.steps.details.description"),
+    },
+    {
+      id: "description",
+      number: 2,
+      title: t(locale, "publicar.steps.description.title"),
+      description: t(locale, "publicar.steps.description.description"),
+    },
+    {
+      id: "attributes",
+      number: 3,
+      title: t(locale, "publicar.steps.attributes.title"),
+      description: t(locale, "publicar.steps.attributes.description"),
+    },
+    {
+      id: "publish",
+      number: 4,
+      title: t(locale, "publicar.steps.publish.title"),
+      description: t(locale, "publicar.steps.publish.description"),
+    },
+  ];
+}
+
+function tipFor(
+  locale: SupportedLocale,
+  step: StepId,
+): { title: string; body: string } {
+  return {
+    title: t(locale, `publicar.tip.${step}.title`),
+    body: t(locale, `publicar.tip.${step}.body`),
+  };
+}
 
 const STEP_ORDER: ReadonlyArray<StepId> = [
   "details",
@@ -95,6 +93,8 @@ interface EnrollmentWizardProps {
 }
 
 export function EnrollmentWizard({ catalogs }: EnrollmentWizardProps) {
+  const locale = useActiveLocale();
+  const STEPS = buildSteps(locale);
   const [draft, setDraft] = useState<EnrollmentDraft>(INITIAL_DRAFT);
   const [current, setCurrent] = useState<StepId>("details");
   const [completed, setCompleted] = useState<ReadonlyArray<StepId>>([]);
@@ -141,7 +141,7 @@ export function EnrollmentWizard({ catalogs }: EnrollmentWizardProps) {
   // copy. Regenerated when the wizard remounts (e.g. after a successful submit).
   const [sessionId] = useState(() => globalThis.crypto.randomUUID());
 
-  const tip = TIPS_BY_STEP[current];
+  const tip = tipFor(locale, current);
 
   function handleChangeDetails(next: DetailsValues) {
     setDraft((prev) => ({ ...prev, details: next }));
@@ -157,58 +157,50 @@ export function EnrollmentWizard({ catalogs }: EnrollmentWizardProps) {
   }
 
   function validateCurrent(): string | null {
+    const v = (key: string) => t(locale, key);
     if (current === "details") {
       const d = draft.details;
-      if (!d.displayName.trim()) return "Cuéntanos tu nombre artístico.";
-      if (!d.age || Number(d.age) < 18)
-        return "La edad mínima permitida es 18.";
-      if (!d.city) return "Selecciona la ciudad principal.";
-      if (!d.category) return "Selecciona una categoría.";
+      if (!d.displayName.trim()) return v("publicar.validation.displayName");
+      if (!d.age || Number(d.age) < 18) return v("publicar.validation.age");
+      if (!d.city) return v("publicar.validation.city");
+      if (!d.category) return v("publicar.validation.category");
       if (!d.pricePerHour || Number(d.pricePerHour) <= 0)
-        return "Pon una tarifa por hora válida.";
-      if (!d.preferredSlug) return "Define una URL preferida.";
-      if (!d.phone) return "Necesitamos un teléfono privado para verificar.";
+        return v("publicar.validation.pricePerHour");
+      if (!d.preferredSlug) return v("publicar.validation.preferredSlug");
+      if (!d.phone) return v("publicar.validation.phone");
       if (d.contactChannels.length === 0)
-        return "Selecciona al menos un canal de contacto.";
+        return v("publicar.validation.contactChannels");
       return null;
     }
     if (current === "description") {
       const d = draft.description;
-      if (!d.shortBio.trim()) return "Escribe una descripción corta.";
-      if (d.bio.trim().length < 60)
-        return "La descripción larga debe tener al menos 60 caracteres.";
-      if (d.services.length === 0)
-        return "Selecciona al menos un servicio incluido.";
+      if (!d.shortBio.trim()) return v("publicar.validation.shortBio");
+      if (d.bio.trim().length < 60) return v("publicar.validation.bioLength");
+      if (d.services.length === 0) return v("publicar.validation.services");
       if (hasInFlightUploads(d.gallery))
-        return "Espera a que terminen de subir las fotos antes de continuar.";
+        return v("publicar.validation.galleryInFlight");
       if (hasErroredUploads(d.gallery))
-        return "Reintenta las fotos con error o quítalas para continuar.";
+        return v("publicar.validation.galleryErrored");
       if (hasInFlightVideoUploads(d.videos))
-        return "Espera a que terminen de subir los videos antes de continuar.";
+        return v("publicar.validation.videosInFlight");
       if (hasErroredVideoUploads(d.videos))
-        return "Reintenta los videos con error o quítalos para continuar.";
-      // Gallery + videos are both optional — the modelo can submit a draft
-      // without photos or videos and admin reviews + attaches at approval
-      // time (ADR-011 / ADR-015).
+        return v("publicar.validation.videosErrored");
       return null;
     }
     if (current === "attributes") {
       const a = draft.attributes;
-      // `pubis` and `languages` are optional; the other six are required so
-      // the public profile's Characteristics block never renders "—".
-      if (!a.country) return "Selecciona tu país.";
-      if (!a.ethnicity) return "Selecciona la etnia que mejor te describa.";
-      if (!a.hair) return "Selecciona tu tipo de cabello.";
-      if (!a.height) return "Selecciona tu estatura.";
-      if (!a.body) return "Selecciona tu tipo de cuerpo.";
-      if (!a.breast) return "Selecciona la opción de senos.";
+      if (!a.country) return v("publicar.validation.country");
+      if (!a.ethnicity) return v("publicar.validation.ethnicity");
+      if (!a.hair) return v("publicar.validation.hair");
+      if (!a.height) return v("publicar.validation.height");
+      if (!a.body) return v("publicar.validation.body");
+      if (!a.breast) return v("publicar.validation.breast");
       return null;
     }
     if (current === "publish") {
       const p = draft.publish;
-      if (!p.acceptsAdult)
-        return "Confirma que eres mayor de 18 y tienes autorización sobre tus fotos.";
-      if (!p.acceptsTerms) return "Acepta los términos para publicar.";
+      if (!p.acceptsAdult) return v("publicar.validation.adultConsent");
+      if (!p.acceptsTerms) return v("publicar.validation.acceptTerms");
       return null;
     }
     return null;
@@ -431,6 +423,15 @@ function NavBar({
   onNext,
   onSubmit,
 }: NavBarProps) {
+  const locale = useActiveLocale();
+  const publishLabel = submitting
+    ? t(locale, "publicar.nav.publishing")
+    : freeMode
+      ? t(locale, "publicar.nav.publishFree")
+      : totalLabel
+        ? t(locale, "publicar.nav.publishPaid", { total: totalLabel })
+        : t(locale, "publicar.nav.publish");
+
   return (
     <div className="flex flex-col gap-3 rounded-[var(--radius-xl)] border border-[var(--color-border)] bg-[var(--color-background-elevated)] p-4 sm:flex-row sm:items-center sm:justify-between">
       <button
@@ -440,7 +441,7 @@ function NavBar({
         className="inline-flex h-12 items-center justify-center gap-2 rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] px-5 text-sm font-semibold text-[var(--color-text-muted)] transition-[color,border-color,background] duration-150 hover:border-[var(--color-brand-primary-soft)] hover:text-[var(--color-foreground)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-background)] disabled:cursor-not-allowed disabled:opacity-40"
       >
         <ArrowLeft className="h-4 w-4" aria-hidden />
-        Volver
+        {t(locale, "publicar.nav.back")}
       </button>
 
       {isLast ? (
@@ -453,13 +454,7 @@ function NavBar({
           {submitting ? (
             <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
           ) : null}
-          {submitting
-            ? "Publicando..."
-            : freeMode
-              ? "Publicar gratis"
-              : totalLabel
-                ? `Publicar y pagar ${totalLabel}`
-                : "Publicar"}
+          {publishLabel}
         </button>
       ) : (
         <button
@@ -467,7 +462,7 @@ function NavBar({
           onClick={onNext}
           className="inline-flex h-12 items-center justify-center gap-2 rounded-full bg-[var(--color-brand-primary)] px-6 text-sm font-semibold text-[var(--color-surface)] shadow-[var(--shadow-glow-primary)] transition-[background,box-shadow] duration-150 hover:bg-[var(--color-brand-primary-strong)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-background)]"
         >
-          Guardar y continuar
+          {t(locale, "publicar.nav.continue")}
           <ArrowRight className="h-4 w-4" aria-hidden />
         </button>
       )}
@@ -481,42 +476,51 @@ interface ProgressRailProps {
 }
 
 function ProgressRail({ current, draft }: ProgressRailProps) {
+  const locale = useActiveLocale();
+  const empty = t(locale, "publicar.rail.row.empty");
   const summary: ReadonlyArray<{ label: string; value: string }> = [
-    { label: "Nombre", value: draft.details.displayName || "—" },
     {
-      label: "Ciudad",
-      value: draft.details.city || "—",
+      label: t(locale, "publicar.rail.row.name"),
+      value: draft.details.displayName || empty,
     },
     {
-      label: "Categoría",
-      value: draft.details.category || "—",
+      label: t(locale, "publicar.rail.row.city"),
+      value: draft.details.city || empty,
     },
     {
-      label: "Tarifa / hora",
+      label: t(locale, "publicar.rail.row.category"),
+      value: draft.details.category || empty,
+    },
+    {
+      label: t(locale, "publicar.rail.row.rate"),
       value: draft.details.pricePerHour
         ? formatCop(Number(draft.details.pricePerHour))
-        : "—",
+        : empty,
     },
     {
-      label: "Servicios",
+      label: t(locale, "publicar.rail.row.services"),
       value:
         draft.description.services.length > 0
-          ? `${draft.description.services.length} elegidos`
-          : "—",
+          ? t(locale, "publicar.rail.row.servicesCount", {
+              count: draft.description.services.length,
+            })
+          : empty,
     },
     {
-      label: "Galería",
+      label: t(locale, "publicar.rail.row.gallery"),
       value:
         draft.description.gallery.length > 0
-          ? `${draft.description.gallery.length} fotos`
-          : "—",
+          ? t(locale, "publicar.rail.row.galleryCount", {
+              count: draft.description.gallery.length,
+            })
+          : empty,
     },
   ];
 
   return (
     <aside className="sticky top-24 flex flex-col gap-4 rounded-[var(--radius-xl)] border border-[var(--color-border)] bg-[var(--color-surface)] p-5 shadow-[var(--shadow-sm)]">
       <span className="text-[10px] font-semibold uppercase tracking-[0.28em] text-[var(--color-text-muted)]">
-        Tu publicación · borrador
+        {t(locale, "publicar.rail.kicker")}
       </span>
       <ul className="flex flex-col gap-2.5">
         {summary.map((row) => (
@@ -532,17 +536,20 @@ function ProgressRail({ current, draft }: ProgressRailProps) {
         ))}
       </ul>
       <p className="rounded-[var(--radius-md)] bg-[var(--color-background-elevated)] p-3 text-[11px] leading-relaxed text-[var(--color-text-muted)]">
-        Llegando al paso final eliges tu plan de visibilidad. Cada perfil pasa
-        revisión humana antes de aparecer en el catálogo.
+        {t(locale, "publicar.rail.note")}
       </p>
       <span className="text-[10px] uppercase tracking-[0.2em] text-[var(--color-text-subtle)]">
-        Paso actual: {current}
+        {t(locale, "publicar.rail.currentStep", { step: current })}
       </span>
     </aside>
   );
 }
 
 function SubmittedScreen({ draft }: { draft: EnrollmentDraft }) {
+  const locale = useActiveLocale();
+  const verifyHref = useLocalizedHref("/verificacion/enviar");
+  const exploreHref = useLocalizedHref("/explorar");
+  const empty = t(locale, "publicar.rail.row.empty");
   const totals = calculateTotal(
     draft.publish.packageId,
     draft.publish.addOnIds,
@@ -554,58 +561,67 @@ function SubmittedScreen({ draft }: { draft: EnrollmentDraft }) {
         <PartyPopper className="h-6 w-6" aria-hidden />
       </span>
       <h2 className="text-2xl font-semibold leading-tight tracking-tight text-[var(--color-foreground)]">
-        Recibimos tu publicación
+        {t(locale, "publicar.submitted.title")}
       </h2>
       <p className="text-sm leading-relaxed text-[var(--color-text-muted)]">
-        Estamos verificando tu identidad y consentimiento de imagen. Esto suele
-        tardar entre 4 y 24 horas. Cuando esté listo te avisamos por WhatsApp y
-        tu perfil se activa automáticamente.
+        {t(locale, "publicar.submitted.description")}
       </p>
       <dl className="grid w-full grid-cols-2 gap-3 rounded-[var(--radius-md)] bg-[var(--color-background-elevated)] p-4 text-left text-[12px]">
         <div className="flex flex-col">
           <dt className="text-[var(--color-text-subtle)]">
-            {PLANS_ENABLED ? "Plan" : "Modo"}
+            {PLANS_ENABLED
+              ? t(locale, "publicar.submitted.plan")
+              : t(locale, "publicar.submitted.mode")}
           </dt>
           <dd className="font-semibold capitalize text-[var(--color-foreground)]">
-            {PLANS_ENABLED ? draft.publish.packageId : "Lanzamiento gratuito"}
+            {PLANS_ENABLED
+              ? draft.publish.packageId
+              : t(locale, "publicar.submitted.freeLaunch")}
           </dd>
         </div>
         <div className="flex flex-col">
-          <dt className="text-[var(--color-text-subtle)]">Fotos enviadas</dt>
+          <dt className="text-[var(--color-text-subtle)]">
+            {t(locale, "publicar.submitted.photosSent")}
+          </dt>
           <dd className="font-semibold text-[var(--color-foreground)]">
             {draft.description.gallery.filter((g) => g.uploadedPath).length}
           </dd>
         </div>
         <div className="flex flex-col">
-          <dt className="text-[var(--color-text-subtle)]">Total</dt>
+          <dt className="text-[var(--color-text-subtle)]">
+            {t(locale, "publicar.submitted.total")}
+          </dt>
           <dd className="font-semibold text-[var(--color-foreground)]">
-            {PLANS_ENABLED ? formatCop(totals.totalCop) : "Gratis"}
+            {PLANS_ENABLED
+              ? formatCop(totals.totalCop)
+              : t(locale, "publicar.submitted.totalFree")}
           </dd>
         </div>
         <div className="flex flex-col">
-          <dt className="text-[var(--color-text-subtle)]">URL futura</dt>
+          <dt className="text-[var(--color-text-subtle)]">
+            {t(locale, "publicar.submitted.urlSoon")}
+          </dt>
           <dd className="truncate font-mono text-[12px] text-[var(--color-foreground)]">
-            /p/{draft.details.preferredSlug || "—"}
+            /p/{draft.details.preferredSlug || empty}
           </dd>
         </div>
       </dl>
       <p className="rounded-[var(--radius-md)] border border-[var(--color-brand-primary)]/30 bg-[var(--color-brand-primary)]/8 p-3 text-[12px] leading-relaxed text-[var(--color-foreground)]">
-        <strong>Antes de que tu perfil quede activo</strong> necesitamos
-        verificar tu identidad. Toma 5 minutos: documento (anverso + reverso)
-        + selfie sosteniéndolo. Sin esto tu publicación no se aprueba.
+        <strong>{t(locale, "publicar.submitted.verifyBanner.lead")}</strong>{" "}
+        {t(locale, "publicar.submitted.verifyBanner.body")}
       </p>
       <div className="flex flex-col gap-2 sm:flex-row">
         <Link
-          href="/verificacion/enviar"
+          href={verifyHref}
           className="inline-flex h-12 items-center justify-center rounded-full bg-[var(--color-brand-primary)] px-6 text-sm font-semibold text-[var(--color-surface)] shadow-[var(--shadow-glow-primary)] transition-colors hover:bg-[var(--color-brand-primary-strong)]"
         >
-          Verificar identidad ahora
+          {t(locale, "publicar.submitted.cta.verify")}
         </Link>
         <Link
-          href="/explorar"
+          href={exploreHref}
           className="inline-flex h-12 items-center justify-center rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] px-6 text-sm font-semibold text-[var(--color-text-muted)] transition-colors hover:border-[var(--color-brand-primary-soft)] hover:text-[var(--color-foreground)]"
         >
-          Más tarde
+          {t(locale, "publicar.submitted.cta.later")}
         </Link>
       </div>
     </div>

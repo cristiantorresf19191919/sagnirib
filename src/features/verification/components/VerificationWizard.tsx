@@ -13,6 +13,13 @@ import {
 import Link from "next/link";
 import { useRef, useState } from "react";
 
+import type { SupportedLocale } from "@/core/branding/brand-config";
+import { t } from "@/core/i18n/messages";
+import {
+  useActiveLocale,
+  useLocalizedHref,
+} from "@/core/i18n/use-active-locale";
+
 import { submitVerification } from "../actions/verify";
 import {
   KycUploadError,
@@ -32,44 +39,41 @@ import type {
  *   - status='approved'    → ya quedó verificada; pantalla de éxito
  *   - status='pending_review' → en revisión; pantalla de espera
  *   - status='rejected' o 'not_submitted' → renderizamos el wizard
- *
- * Per-file FSM (queued → compressing → uploading → ready / error) mirrors
- * the photo upload UX in /publicar.
  */
 
-const STEP_ORDER: ReadonlyArray<{
+interface StepDescriptor {
   kind: KycUploadKind;
   title: string;
   description: string;
   icon: typeof IdCard;
   helper: string;
-}> = [
-  {
-    kind: "document_front",
-    title: "Documento — anverso",
-    description: "Sube una foto clara del frente de tu cédula o pasaporte.",
-    icon: IdCard,
-    helper:
-      "Asegúrate que todos los datos sean legibles. JPG, PNG, WebP o HEIC. Comprimimos en el navegador para protegerte; ningún metadato sale de tu dispositivo.",
-  },
-  {
-    kind: "document_back",
-    title: "Documento — reverso",
-    description: "Ahora el dorso del mismo documento.",
-    icon: IdCard,
-    helper:
-      "El número de identificación y los hologramas deben verse. Si tu documento es de una sola cara, repite la foto del anverso aquí.",
-  },
-  {
-    kind: "selfie",
-    title: "Selfie con documento",
-    description:
-      "Una foto de ti sosteniendo el documento al lado de tu rostro.",
-    icon: ScanFace,
-    helper:
-      "Tu cara y el documento deben aparecer en la misma toma sin cubrir datos. Esta es la capa más importante: confirma que eres la persona del documento.",
-  },
-];
+}
+
+function buildSteps(locale: SupportedLocale): ReadonlyArray<StepDescriptor> {
+  return [
+    {
+      kind: "document_front",
+      title: t(locale, "verificacion.wizard.step.front.title"),
+      description: t(locale, "verificacion.wizard.step.front.description"),
+      icon: IdCard,
+      helper: t(locale, "verificacion.wizard.step.front.helper"),
+    },
+    {
+      kind: "document_back",
+      title: t(locale, "verificacion.wizard.step.back.title"),
+      description: t(locale, "verificacion.wizard.step.back.description"),
+      icon: IdCard,
+      helper: t(locale, "verificacion.wizard.step.back.helper"),
+    },
+    {
+      kind: "selfie",
+      title: t(locale, "verificacion.wizard.step.selfie.title"),
+      description: t(locale, "verificacion.wizard.step.selfie.description"),
+      icon: ScanFace,
+      helper: t(locale, "verificacion.wizard.step.selfie.helper"),
+    },
+  ];
+}
 
 const ACCEPT = "image/jpeg,image/png,image/webp,image/heic,image/heif";
 const ACCEPTED_TYPES: ReadonlySet<string> = new Set([
@@ -97,18 +101,17 @@ export function VerificationWizard({
   initialStatus,
   initialRecord,
 }: VerificationWizardProps) {
-  // Status screens short-circuit the wizard render.
+  const locale = useActiveLocale();
   if (initialStatus === "approved") {
-    return <ApprovedScreen record={initialRecord} />;
+    return <ApprovedScreen record={initialRecord} locale={locale} />;
   }
   if (initialStatus === "pending_review") {
-    return <PendingScreen record={initialRecord} />;
+    return <PendingScreen record={initialRecord} locale={locale} />;
   }
 
-  // 'rejected' and 'not_submitted' both render the wizard; rejected adds
-  // an explanatory banner above.
   return (
     <Form
+      locale={locale}
       previousRejection={
         initialStatus === "rejected" ? initialRecord?.rejectionReason : undefined
       }
@@ -116,7 +119,14 @@ export function VerificationWizard({
   );
 }
 
-function Form({ previousRejection }: { previousRejection?: string }) {
+function Form({
+  locale,
+  previousRejection,
+}: {
+  locale: SupportedLocale;
+  previousRejection?: string;
+}) {
+  const STEP_ORDER = buildSteps(locale);
   const [states, setStates] = useState<Record<KycUploadKind, StepState>>({
     document_front: { kind: "idle" },
     document_back: { kind: "idle" },
@@ -136,7 +146,7 @@ function Form({ previousRejection }: { previousRejection?: string }) {
       setStep(kind, {
         kind: "error",
         previewUrl: URL.createObjectURL(file),
-        message: "Formato no permitido. Usa JPG, PNG, WebP o HEIC.",
+        message: t(locale, "verificacion.wizard.error.format"),
       });
       return;
     }
@@ -144,12 +154,11 @@ function Form({ previousRejection }: { previousRejection?: string }) {
       setStep(kind, {
         kind: "error",
         previewUrl: URL.createObjectURL(file),
-        message: "El archivo pesa más de 40 MB sin comprimir.",
+        message: t(locale, "verificacion.wizard.error.tooBig"),
       });
       return;
     }
 
-    // Revoke previous preview URL if any.
     const prev = states[kind];
     if (prev.kind !== "idle" && "previewUrl" in prev) {
       URL.revokeObjectURL(prev.previewUrl);
@@ -180,7 +189,7 @@ function Form({ previousRejection }: { previousRejection?: string }) {
       const message =
         err instanceof Error
           ? err.message
-          : "No pudimos subir este archivo.";
+          : t(locale, "verificacion.wizard.error.upload");
       setStep(kind, { kind: "error", previewUrl, message });
     }
   }
@@ -197,7 +206,7 @@ function Form({ previousRejection }: { previousRejection?: string }) {
     const back = states.document_back;
     const selfie = states.selfie;
     if (front.kind !== "ready" || back.kind !== "ready" || selfie.kind !== "ready") {
-      setBanner("Completa los tres archivos antes de enviar.");
+      setBanner(t(locale, "verificacion.wizard.error.completeAll"));
       return;
     }
 
@@ -212,7 +221,7 @@ function Form({ previousRejection }: { previousRejection?: string }) {
 
     if (!res.ok) {
       setBanner(
-        humanizeSubmitError(res.error?.kind, res.error?.message ?? null),
+        humanizeSubmitError(locale, res.error?.kind, res.error?.message ?? null),
       );
       return;
     }
@@ -220,7 +229,7 @@ function Form({ previousRejection }: { previousRejection?: string }) {
   }
 
   if (submitted) {
-    return <SubmittedScreen />;
+    return <SubmittedScreen locale={locale} />;
   }
 
   const allReady =
@@ -235,7 +244,9 @@ function Form({ previousRejection }: { previousRejection?: string }) {
           role="alert"
           className="rounded-[var(--radius-md)] border border-[var(--color-brand-highlight)]/40 bg-[var(--color-brand-highlight)]/8 p-4 text-sm text-[var(--color-foreground)]"
         >
-          <span className="font-semibold">Verificación anterior rechazada:</span>{" "}
+          <span className="font-semibold">
+            {t(locale, "verificacion.wizard.previousRejection")}
+          </span>{" "}
           {previousRejection}
         </div>
       )}
@@ -253,6 +264,7 @@ function Form({ previousRejection }: { previousRejection?: string }) {
         {STEP_ORDER.map((step) => (
           <StepCard
             key={step.kind}
+            locale={locale}
             step={step}
             state={states[step.kind]}
             onPick={(f) => pickFile(step.kind, f)}
@@ -263,9 +275,8 @@ function Form({ previousRejection }: { previousRejection?: string }) {
 
       <div className="flex flex-col gap-3 rounded-[var(--radius-xl)] border border-[var(--color-border)] bg-[var(--color-background-elevated)] p-4 sm:flex-row sm:items-center sm:justify-between">
         <p className="text-[12px] text-[var(--color-text-muted)]">
-          <Shield className="mr-1 inline h-3 w-3" aria-hidden /> Tus archivos
-          quedan privados. Solo el equipo de Biringas puede verlos, por tiempo
-          limitado, durante la revisión.
+          <Shield className="mr-1 inline h-3 w-3" aria-hidden />{" "}
+          {t(locale, "verificacion.wizard.privacyHint")}
         </p>
         <button
           type="button"
@@ -274,7 +285,9 @@ function Form({ previousRejection }: { previousRejection?: string }) {
           className="inline-flex h-12 items-center justify-center gap-2 rounded-full bg-[var(--color-brand-primary)] px-6 text-sm font-semibold text-[var(--color-surface)] shadow-[var(--shadow-glow-primary)] transition-[background,box-shadow] duration-150 hover:bg-[var(--color-brand-primary-strong)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-background)] disabled:cursor-not-allowed disabled:opacity-60"
         >
           {submitting && <Loader2 className="h-4 w-4 animate-spin" aria-hidden />}
-          {submitting ? "Enviando…" : "Enviar verificación"}
+          {submitting
+            ? t(locale, "verificacion.wizard.submitting")
+            : t(locale, "verificacion.wizard.submit")}
         </button>
       </div>
     </div>
@@ -282,13 +295,14 @@ function Form({ previousRejection }: { previousRejection?: string }) {
 }
 
 interface StepCardProps {
-  step: (typeof STEP_ORDER)[number];
+  locale: SupportedLocale;
+  step: StepDescriptor;
   state: StepState;
   onPick: (file: File) => void;
   onRetry: () => void;
 }
 
-function StepCard({ step, state, onPick, onRetry }: StepCardProps) {
+function StepCard({ locale, step, state, onPick, onRetry }: StepCardProps) {
   const inputRef = useRef<HTMLInputElement | null>(null);
   const isBusy = state.kind === "compressing" || state.kind === "uploading";
   const isReady = state.kind === "ready";
@@ -339,7 +353,7 @@ function StepCard({ step, state, onPick, onRetry }: StepCardProps) {
         >
           <Upload className="h-5 w-5" aria-hidden />
           <span className="text-[11px] font-semibold uppercase tracking-[0.18em]">
-            Subir archivo
+            {t(locale, "verificacion.wizard.upload")}
           </span>
         </button>
       ) : (
@@ -359,14 +373,16 @@ function StepCard({ step, state, onPick, onRetry }: StepCardProps) {
             >
               <Loader2 className="h-5 w-5 animate-spin" aria-hidden />
               <span className="text-[10px] font-semibold uppercase tracking-[0.18em]">
-                {state.kind === "compressing" ? "Comprimiendo" : "Subiendo"}
+                {state.kind === "compressing"
+                  ? t(locale, "verificacion.wizard.compressing")
+                  : t(locale, "verificacion.wizard.uploading")}
               </span>
             </span>
           )}
           {isReady && (
             <span className="absolute right-2 top-2 inline-flex items-center gap-1 rounded-full bg-emerald-600 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-white">
               <CheckCircle2 className="h-3 w-3" aria-hidden />
-              Listo
+              {t(locale, "verificacion.wizard.ready")}
             </span>
           )}
           {isError && (
@@ -379,7 +395,7 @@ function StepCard({ step, state, onPick, onRetry }: StepCardProps) {
               <AlertCircle className="h-5 w-5" aria-hidden />
               <span className="inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-[0.18em]">
                 <RotateCw className="h-3 w-3" aria-hidden />
-                Reintentar
+                {t(locale, "verificacion.wizard.retry")}
               </span>
             </button>
           )}
@@ -393,46 +409,56 @@ function StepCard({ step, state, onPick, onRetry }: StepCardProps) {
   );
 }
 
-function humanizeSubmitError(kind: string | undefined, message: string | null): string {
+function humanizeSubmitError(
+  locale: SupportedLocale,
+  kind: string | undefined,
+  message: string | null,
+): string {
   if (kind === "no-session") {
-    return "Tu sesión expiró. Vuelve a ingresar.";
+    return t(locale, "verificacion.wizard.error.noSession");
   }
   if (kind === "permission-denied") {
-    return "Uno o más archivos no son tuyos. Vuelve a subirlos.";
+    return t(locale, "verificacion.wizard.error.permissionDenied");
   }
   if (message?.includes("already pending review")) {
-    return "Ya tienes una verificación en revisión. Espera la respuesta antes de reenviar.";
+    return t(locale, "verificacion.wizard.error.pendingReview");
   }
-  return message ?? "No pudimos enviar la verificación. Intenta de nuevo.";
+  return message ?? t(locale, "verificacion.wizard.error.submitDefault");
 }
 
-function SubmittedScreen() {
+function SubmittedScreen({ locale }: { locale: SupportedLocale }) {
+  const exploreHref = useLocalizedHref("/explorar");
   return (
     <div className="mx-auto flex max-w-xl flex-col items-center gap-5 rounded-[var(--radius-2xl)] border border-[var(--color-border)] bg-[var(--color-surface)] p-10 text-center shadow-[var(--shadow-md)]">
       <span className="inline-flex h-14 w-14 items-center justify-center rounded-full bg-[var(--color-brand-primary)]/12 text-[var(--color-brand-primary)]">
         <Shield className="h-6 w-6" aria-hidden />
       </span>
       <h2 className="text-2xl font-semibold leading-tight tracking-tight text-[var(--color-foreground)]">
-        Verificación enviada
+        {t(locale, "verificacion.wizard.submitted.title")}
       </h2>
       <p className="text-sm leading-relaxed text-[var(--color-text-muted)]">
-        Tus archivos están en revisión. Confirmamos identidad y consentimiento
-        usualmente en menos de 24 horas. Cuando esté lista te avisamos por
-        WhatsApp y tu perfil queda activo en el catálogo.
+        {t(locale, "verificacion.wizard.submitted.body")}
       </p>
       <Link
-        href="/explorar"
+        href={exploreHref}
         className="inline-flex h-12 items-center justify-center rounded-full bg-[var(--color-brand-primary)] px-6 text-sm font-semibold text-[var(--color-surface)] shadow-[var(--shadow-glow-primary)] transition-colors hover:bg-[var(--color-brand-primary-strong)]"
       >
-        Volver al catálogo
+        {t(locale, "verificacion.wizard.backToCatalog")}
       </Link>
     </div>
   );
 }
 
-function PendingScreen({ record }: { record: VerificationRecord | null }) {
+function PendingScreen({
+  record,
+  locale,
+}: {
+  record: VerificationRecord | null;
+  locale: SupportedLocale;
+}) {
+  const dateLocale = locale === "en" ? "en-US" : "es-CO";
   const submittedAt = record?.submittedAt
-    ? new Date(record.submittedAt).toLocaleString("es-CO", {
+    ? new Date(record.submittedAt).toLocaleString(dateLocale, {
         dateStyle: "medium",
         timeStyle: "short",
       })
@@ -443,19 +469,26 @@ function PendingScreen({ record }: { record: VerificationRecord | null }) {
         <Loader2 className="h-6 w-6 animate-spin" aria-hidden />
       </span>
       <h2 className="text-2xl font-semibold leading-tight tracking-tight text-[var(--color-foreground)]">
-        Verificación en revisión
+        {t(locale, "verificacion.wizard.pending.title")}
       </h2>
       <p className="text-sm leading-relaxed text-[var(--color-text-muted)]">
-        Recibimos tu documentación el {submittedAt}. Te avisamos en cuanto
-        esté lista.
+        {t(locale, "verificacion.wizard.pending.body", { when: submittedAt })}
       </p>
     </div>
   );
 }
 
-function ApprovedScreen({ record }: { record: VerificationRecord | null }) {
+function ApprovedScreen({
+  record,
+  locale,
+}: {
+  record: VerificationRecord | null;
+  locale: SupportedLocale;
+}) {
+  const exploreHref = useLocalizedHref("/explorar");
+  const dateLocale = locale === "en" ? "en-US" : "es-CO";
   const approvedAt = record?.approvedAt
-    ? new Date(record.approvedAt).toLocaleString("es-CO", {
+    ? new Date(record.approvedAt).toLocaleString(dateLocale, {
         dateStyle: "medium",
         timeStyle: "short",
       })
@@ -466,17 +499,16 @@ function ApprovedScreen({ record }: { record: VerificationRecord | null }) {
         <CheckCircle2 className="h-6 w-6" aria-hidden />
       </span>
       <h2 className="text-2xl font-semibold leading-tight tracking-tight text-emerald-950">
-        Identidad verificada
+        {t(locale, "verificacion.wizard.approved.title")}
       </h2>
       <p className="text-sm leading-relaxed text-emerald-900">
-        Tu verificación quedó aprobada el {approvedAt}. Las modelos con
-        identidad verificada aparecen con la insignia dorada en el catálogo.
+        {t(locale, "verificacion.wizard.approved.body", { when: approvedAt })}
       </p>
       <Link
-        href="/explorar"
+        href={exploreHref}
         className="inline-flex h-12 items-center justify-center rounded-full bg-[var(--color-brand-primary)] px-6 text-sm font-semibold text-[var(--color-surface)] shadow-[var(--shadow-glow-primary)] transition-colors hover:bg-[var(--color-brand-primary-strong)]"
       >
-        Volver al catálogo
+        {t(locale, "verificacion.wizard.backToCatalog")}
       </Link>
     </div>
   );

@@ -3,6 +3,9 @@
 import { Quote, ShieldCheck, Star, ThumbsDown, ThumbsUp } from "lucide-react";
 import { useMemo, useState } from "react";
 
+import type { SupportedLocale } from "@/core/branding/brand-config";
+import { t } from "@/core/i18n/messages";
+import { useActiveLocale } from "@/core/i18n/use-active-locale";
 import type { ReviewItem, ReviewsAggregate } from "@/server/biringas";
 import { Container } from "@/shared/design-system/components/Container";
 
@@ -13,43 +16,47 @@ interface ReviewsSectionProps {
 
 type ReviewFilter = "all" | "recent" | "five" | "critical" | "verified";
 
-const FILTER_DEFS: ReadonlyArray<[ReviewFilter, string]> = [
-  ["all", "Todas"],
-  ["recent", "Recientes"],
-  ["five", "5 estrellas"],
-  ["critical", "Críticas"],
-  ["verified", "Verificadas"],
+const FILTER_DEFS: ReadonlyArray<{ id: ReviewFilter; key: string }> = [
+  { id: "all", key: "reviews.filter.all" },
+  { id: "recent", key: "reviews.filter.recent" },
+  { id: "five", key: "reviews.filter.five" },
+  { id: "critical", key: "reviews.filter.critical" },
+  { id: "verified", key: "reviews.filter.verified" },
 ];
 
 const INITIAL_VISIBLE = 4;
 
-const COMPACT_FORMAT = new Intl.NumberFormat("es-CO", {
-  notation: "compact",
-  maximumFractionDigits: 1,
-});
-const NUMBER_FORMAT = new Intl.NumberFormat("es-CO");
-const DATE_FORMAT = new Intl.DateTimeFormat("es-CO", {
-  month: "short",
-  year: "numeric",
-});
-
-function formatCount(value: number): string {
-  if (value < 1000) return NUMBER_FORMAT.format(value);
-  return COMPACT_FORMAT.format(value).replace(/\s/g, "");
+function makeFormatters(locale: SupportedLocale) {
+  const intlLocale = locale === "en" ? "en-US" : "es-CO";
+  return {
+    number: new Intl.NumberFormat(intlLocale),
+    compact: new Intl.NumberFormat(intlLocale, {
+      notation: "compact",
+      maximumFractionDigits: 1,
+    }),
+    date: new Intl.DateTimeFormat(intlLocale, {
+      month: "short",
+      year: "numeric",
+    }),
+  };
 }
 
-const CRITERIA_DEFS: ReadonlyArray<[keyof ReviewsAggregate["breakdown"], string]> = [
-  ["trato", "Trato"],
-  ["puntualidad", "Puntualidad"],
-  ["conversacion", "Conversación"],
-  ["presentacion", "Presentación"],
-  ["discrecion", "Discreción"],
+const CRITERIA_KEYS: ReadonlyArray<{
+  key: keyof ReviewsAggregate["breakdown"];
+  label: string;
+}> = [
+  { key: "trato", label: "reviews.criteria.trato" },
+  { key: "puntualidad", label: "reviews.criteria.puntualidad" },
+  { key: "conversacion", label: "reviews.criteria.conversacion" },
+  { key: "presentacion", label: "reviews.criteria.presentacion" },
+  { key: "discrecion", label: "reviews.criteria.discrecion" },
 ];
 
 export function ReviewsSection({
   listingName,
   reviews,
 }: Readonly<ReviewsSectionProps>) {
+  const locale = useActiveLocale();
   if (reviews.total === 0) {
     return (
       <section
@@ -63,14 +70,13 @@ export function ReviewsSection({
                 aria-hidden
                 className="inline-block h-px w-8 bg-gradient-to-r from-[var(--color-gold)] to-transparent"
               />
-              Opiniones
+              {t(locale, "reviews.empty.kicker")}
             </span>
             <h2 className="text-2xl font-semibold tracking-tight text-[var(--color-foreground)]">
-              Aún sin opiniones publicadas
+              {t(locale, "reviews.empty.title")}
             </h2>
             <p className="max-w-xl text-sm text-[var(--color-text-muted)]">
-              Cuando los clientes verificados dejen su experiencia con{" "}
-              {listingName}, aparecerá aquí.
+              {t(locale, "reviews.empty.body", { name: listingName })}
             </p>
           </div>
         </Container>
@@ -79,14 +85,21 @@ export function ReviewsSection({
   }
 
   return (
-    <ReviewsBody listingName={listingName} reviews={reviews} />
+    <ReviewsBody locale={locale} listingName={listingName} reviews={reviews} />
   );
 }
 
 function ReviewsBody({
+  locale,
   listingName,
   reviews,
-}: Readonly<ReviewsSectionProps>) {
+}: Readonly<ReviewsSectionProps & { locale: SupportedLocale }>) {
+  const formatters = useMemo(() => makeFormatters(locale), [locale]);
+  const formatCount = (value: number) =>
+    value < 1000
+      ? formatters.number.format(value)
+      : formatters.compact.format(value).replace(/\s/g, "");
+
   const [filter, setFilter] = useState<ReviewFilter>("all");
   const [expanded, setExpanded] = useState(false);
 
@@ -129,41 +142,48 @@ function ReviewsBody({
               aria-hidden
               className="h-1.5 w-1.5 rounded-full bg-[var(--color-brand-warn)] shadow-[0_0_10px_rgba(255,228,94,0.65)]"
             />
-            Opiniones · {formatCount(reviews.total)} reseñas
+            {t(locale, "reviews.kicker", { count: formatCount(reviews.total) })}
           </span>
           <h2
             id="reviews-title"
             className="mt-5 text-3xl font-semibold leading-[1.05] tracking-tight text-[var(--color-foreground)] sm:text-4xl"
           >
-            Esto dicen quienes ya estuvieron con{" "}
+            {t(locale, "reviews.title.lead")}{" "}
             <span className="bg-gradient-to-br from-[var(--color-brand-primary-strong)] via-[var(--color-brand-primary)] to-[var(--color-brand-secondary-strong)] bg-clip-text text-transparent">
               {listingName}
             </span>
-            .
+            {t(locale, "reviews.title.trailing")}
           </h2>
           <p className="mt-4 max-w-2xl text-sm leading-relaxed text-[var(--color-text-muted)] sm:text-base">
-            Calificaciones agregadas por aspecto, reseñas verificadas y
-            reacciones anónimas. Sin nombres, sin contactos — sólo señal real
-            de quienes ya pasaron por aquí.
+            {t(locale, "reviews.subtitle")}
           </p>
         </header>
 
         <div className="mt-12 grid grid-cols-1 gap-6 lg:grid-cols-12 lg:gap-8">
           <div className="flex flex-col gap-5 lg:col-span-5">
-            <ScoreCard reviews={reviews} />
+            <ScoreCard
+              locale={locale}
+              reviews={reviews}
+              formatCount={formatCount}
+            />
             <DistributionCard
+              locale={locale}
               distribution={reviews.distribution}
               total={reviews.total}
+              numberFormatter={formatters.number}
             />
-            <BreakdownCard breakdown={reviews.breakdown} />
+            <BreakdownCard locale={locale} breakdown={reviews.breakdown} />
             <AnonymousReactionsCard
+              locale={locale}
               likes={reviews.anonymousLikes}
               dislikes={reviews.anonymousDislikes}
+              formatCount={formatCount}
             />
           </div>
 
           <div className="flex flex-col gap-4 lg:col-span-7">
             <FilterChips
+              locale={locale}
               value={filter}
               onChange={(next) => {
                 setFilter(next);
@@ -172,16 +192,21 @@ function ReviewsBody({
             />
             {visible.length === 0 ? (
               <p className="rounded-[var(--radius-xl)] border border-dashed border-[var(--color-border)] bg-[var(--color-surface)]/40 p-6 text-center text-sm text-[var(--color-text-muted)]">
-                Sin opiniones bajo este filtro todavía. Probá con{" "}
+                {t(locale, "reviews.empty.filter.lead")}{" "}
                 <em className="font-medium not-italic text-[var(--color-foreground)]">
-                  Todas
+                  {t(locale, "reviews.empty.filter.allLabel")}
                 </em>
                 .
               </p>
             ) : (
               <ul className="grid grid-cols-1 gap-4">
                 {visible.map((review) => (
-                  <ReviewCard key={review.id} review={review} />
+                  <ReviewCard
+                    key={review.id}
+                    locale={locale}
+                    review={review}
+                    dateFormatter={formatters.date}
+                  />
                 ))}
               </ul>
             )}
@@ -194,8 +219,10 @@ function ReviewsBody({
                   className="inline-flex h-11 items-center gap-2 rounded-full border border-[var(--color-border)] bg-[var(--color-surface)]/60 px-5 text-sm font-medium text-[var(--color-foreground)] transition-[border-color,background] duration-200 ease-[var(--ease-standard)] hover:border-[var(--color-brand-primary)]/60 hover:bg-[var(--color-surface)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-background)]"
                 >
                   {expanded
-                    ? "Ver menos opiniones"
-                    : `Ver ${formatCount(filtered.length)} opiniones`}
+                    ? t(locale, "reviews.toggle.less")
+                    : t(locale, "reviews.toggle.more", {
+                        count: formatCount(filtered.length),
+                      })}
                 </button>
               </div>
             ) : null}
@@ -207,10 +234,12 @@ function ReviewsBody({
 }
 
 interface ScoreCardProps {
+  locale: SupportedLocale;
   reviews: ReviewsAggregate;
+  formatCount: (n: number) => string;
 }
 
-function ScoreCard({ reviews }: Readonly<ScoreCardProps>) {
+function ScoreCard({ locale, reviews, formatCount }: Readonly<ScoreCardProps>) {
   return (
     <div className="relative overflow-hidden rounded-[var(--radius-xl)] border border-[var(--color-border)] bg-[var(--color-surface)]/70 p-6 backdrop-blur-sm">
       <div
@@ -222,36 +251,40 @@ function ScoreCard({ reviews }: Readonly<ScoreCardProps>) {
           {reviews.averageRating.toFixed(1)}
         </span>
         <div className="pb-1">
-          <Stars value={reviews.averageRating} size="lg" />
+          <Stars locale={locale} value={reviews.averageRating} size="lg" />
           <p className="mt-1 text-xs text-[var(--color-text-subtle)]">
-            sobre {formatCount(reviews.total)} opiniones
+            {t(locale, "reviews.score.over", { count: formatCount(reviews.total) })}
           </p>
         </div>
       </div>
       <p className="relative mt-5 text-sm text-[var(--color-text-muted)]">
-        El{" "}
+        {t(locale, "reviews.score.recommend.lead")}{" "}
         <span className="font-semibold text-[var(--color-brand-accent-strong)]">
           {reviews.recommendRate}%
         </span>{" "}
-        recomienda este perfil.
+        {t(locale, "reviews.score.recommend.trailing")}
       </p>
     </div>
   );
 }
 
 interface DistributionCardProps {
+  locale: SupportedLocale;
   distribution: ReviewsAggregate["distribution"];
   total: number;
+  numberFormatter: Intl.NumberFormat;
 }
 
 function DistributionCard({
+  locale,
   distribution,
   total,
+  numberFormatter,
 }: Readonly<DistributionCardProps>) {
   return (
     <div className="rounded-[var(--radius-xl)] border border-[var(--color-border)] bg-[var(--color-surface)]/70 p-5 backdrop-blur-sm">
       <h3 className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[var(--color-text-subtle)]">
-        Distribución
+        {t(locale, "reviews.distribution.title")}
       </h3>
       <ul className="mt-3 flex flex-col gap-2.5">
         {distribution.map((d) => (
@@ -276,37 +309,42 @@ function DistributionCard({
               />
             </span>
             <span className="text-right tabular-nums text-[var(--color-text-subtle)]">
-              {NUMBER_FORMAT.format(d.count)} · {d.percent}%
+              {numberFormatter.format(d.count)} · {d.percent}%
             </span>
           </li>
         ))}
       </ul>
       <p className="mt-3 text-[11px] text-[var(--color-text-subtle)]">
-        Calculado sobre {NUMBER_FORMAT.format(total)} reseñas verificadas.
+        {t(locale, "reviews.distribution.basis", {
+          count: numberFormatter.format(total),
+        })}
       </p>
     </div>
   );
 }
 
 interface BreakdownCardProps {
+  locale: SupportedLocale;
   breakdown: ReviewsAggregate["breakdown"];
 }
 
-function BreakdownCard({ breakdown }: Readonly<BreakdownCardProps>) {
+function BreakdownCard({ locale, breakdown }: Readonly<BreakdownCardProps>) {
   return (
     <div className="rounded-[var(--radius-xl)] border border-[var(--color-border)] bg-[var(--color-surface)]/70 p-5 backdrop-blur-sm">
       <h3 className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[var(--color-text-subtle)]">
-        Calificación por aspecto
+        {t(locale, "reviews.breakdown.title")}
       </h3>
       <ul className="mt-3 flex flex-col gap-3">
-        {CRITERIA_DEFS.map(([key, label]) => {
+        {CRITERIA_KEYS.map(({ key, label }) => {
           const value = breakdown[key];
           return (
             <li
               key={key}
               className="grid grid-cols-[120px_1fr_40px] items-center gap-3 text-xs"
             >
-              <span className="text-[var(--color-text-muted)]">{label}</span>
+              <span className="text-[var(--color-text-muted)]">
+                {t(locale, label)}
+              </span>
               <span
                 aria-hidden
                 className="block h-1.5 overflow-hidden rounded-full bg-[var(--color-surface-muted)]"
@@ -328,13 +366,17 @@ function BreakdownCard({ breakdown }: Readonly<BreakdownCardProps>) {
 }
 
 interface AnonymousReactionsCardProps {
+  locale: SupportedLocale;
   likes: number;
   dislikes: number;
+  formatCount: (n: number) => string;
 }
 
 function AnonymousReactionsCard({
+  locale,
   likes,
   dislikes,
+  formatCount,
 }: Readonly<AnonymousReactionsCardProps>) {
   const total = likes + dislikes;
   const positiveRate = total === 0 ? 0 : Math.round((likes / total) * 100);
@@ -343,10 +385,10 @@ function AnonymousReactionsCard({
       <div className="flex items-start justify-between gap-3">
         <div>
           <h3 className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[var(--color-text-subtle)]">
-            Reacciones anónimas
+            {t(locale, "reviews.reactions.title")}
           </h3>
           <p className="mt-1 text-xs text-[var(--color-text-muted)]">
-            Sin nombre, sin contacto. Sólo señal de la comunidad.
+            {t(locale, "reviews.reactions.hint")}
           </p>
         </div>
         <span
@@ -361,7 +403,7 @@ function AnonymousReactionsCard({
         <div className="flex flex-col items-start gap-1 rounded-[var(--radius-lg)] border border-[var(--color-brand-accent)]/30 bg-[var(--color-brand-accent)]/8 p-3">
           <span className="inline-flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.2em] text-[var(--color-brand-accent-strong)]">
             <ThumbsUp className="h-3 w-3" aria-hidden />
-            Me gusta
+            {t(locale, "reviews.reactions.like")}
           </span>
           <span className="text-2xl font-bold tabular-nums text-[var(--color-foreground)]">
             {formatCount(likes)}
@@ -370,7 +412,7 @@ function AnonymousReactionsCard({
         <div className="flex flex-col items-start gap-1 rounded-[var(--radius-lg)] border border-[var(--color-brand-highlight)]/30 bg-[var(--color-brand-highlight)]/8 p-3">
           <span className="inline-flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.2em] text-[var(--color-brand-highlight)]">
             <ThumbsDown className="h-3 w-3" aria-hidden />
-            No me gusta
+            {t(locale, "reviews.reactions.dislike")}
           </span>
           <span className="text-2xl font-bold tabular-nums text-[var(--color-foreground)]">
             {formatCount(dislikes)}
@@ -389,7 +431,7 @@ function AnonymousReactionsCard({
           />
         </span>
         <p className="mt-2 text-[11px] text-[var(--color-text-subtle)]">
-          {positiveRate}% de reacciones positivas
+          {t(locale, "reviews.reactions.positiveRate", { pct: positiveRate })}
         </p>
       </div>
     </div>
@@ -397,18 +439,19 @@ function AnonymousReactionsCard({
 }
 
 interface FilterChipsProps {
+  locale: SupportedLocale;
   value: ReviewFilter;
   onChange: (next: ReviewFilter) => void;
 }
 
-function FilterChips({ value, onChange }: Readonly<FilterChipsProps>) {
+function FilterChips({ locale, value, onChange }: Readonly<FilterChipsProps>) {
   return (
     <div
       role="tablist"
-      aria-label="Filtrar opiniones"
+      aria-label={t(locale, "reviews.filter.aria")}
       className="flex flex-wrap items-center gap-2"
     >
-      {FILTER_DEFS.map(([id, label]) => {
+      {FILTER_DEFS.map(({ id, key }) => {
         const active = id === value;
         return (
           <button
@@ -423,7 +466,7 @@ function FilterChips({ value, onChange }: Readonly<FilterChipsProps>) {
                 : "border-[var(--color-border)] bg-[var(--color-surface)]/40 text-[var(--color-text-muted)] hover:border-[var(--color-brand-primary)]/40 hover:text-[var(--color-foreground)]"
             }`}
           >
-            {label}
+            {t(locale, key)}
           </button>
         );
       })}
@@ -432,11 +475,17 @@ function FilterChips({ value, onChange }: Readonly<FilterChipsProps>) {
 }
 
 interface ReviewCardProps {
+  locale: SupportedLocale;
   review: ReviewItem;
+  dateFormatter: Intl.DateTimeFormat;
 }
 
-function ReviewCard({ review }: Readonly<ReviewCardProps>) {
-  const dateLabel = DATE_FORMAT.format(new Date(review.date));
+function ReviewCard({
+  locale,
+  review,
+  dateFormatter,
+}: Readonly<ReviewCardProps>) {
+  const dateLabel = dateFormatter.format(new Date(review.date));
   return (
     <li className="relative overflow-hidden rounded-[var(--radius-xl)] border border-[var(--color-border)]/70 bg-[var(--color-surface)]/60 p-5 backdrop-blur-sm transition-colors duration-200 ease-[var(--ease-standard)] hover:border-[var(--color-brand-primary)]/40">
       <div className="flex items-start gap-3">
@@ -461,13 +510,13 @@ function ReviewCard({ review }: Readonly<ReviewCardProps>) {
                     <span aria-hidden>·</span>
                     <span className="inline-flex items-center gap-1 text-[var(--color-brand-accent-strong)]">
                       <ShieldCheck className="h-3 w-3" aria-hidden />
-                      verificado
+                      {t(locale, "reviews.card.verified")}
                     </span>
                   </>
                 )}
               </p>
             </div>
-            <Stars value={review.rating} />
+            <Stars locale={locale} value={review.rating} />
           </div>
 
           <p className="relative mt-3 pl-5 text-sm leading-relaxed text-[var(--color-text-muted)]">
@@ -481,11 +530,11 @@ function ReviewCard({ review }: Readonly<ReviewCardProps>) {
           <div className="mt-4 flex items-center gap-3 text-[11px] uppercase tracking-[0.16em] text-[var(--color-text-subtle)]">
             <span className="inline-flex items-center gap-1.5">
               <ThumbsUp className="h-3 w-3" aria-hidden />
-              Útil · {review.helpful}
+              {t(locale, "reviews.card.helpful")} · {review.helpful}
             </span>
             <span className="inline-flex items-center gap-1.5">
               <ThumbsDown className="h-3 w-3" aria-hidden />
-              No útil · {review.notHelpful}
+              {t(locale, "reviews.card.notHelpful")} · {review.notHelpful}
             </span>
           </div>
         </div>
@@ -495,17 +544,18 @@ function ReviewCard({ review }: Readonly<ReviewCardProps>) {
 }
 
 interface StarsProps {
+  locale: SupportedLocale;
   value: number;
   size?: "sm" | "lg";
 }
 
-function Stars({ value, size = "sm" }: Readonly<StarsProps>) {
+function Stars({ locale, value, size = "sm" }: Readonly<StarsProps>) {
   const filled = Math.round(value);
   const cls = size === "lg" ? "h-5 w-5" : "h-3.5 w-3.5";
   return (
     <span
       className="inline-flex items-center gap-0.5"
-      aria-label={`Calificación ${value.toFixed(1)} de 5`}
+      aria-label={t(locale, "reviews.stars.aria", { value: value.toFixed(1) })}
     >
       {[1, 2, 3, 4, 5].map((i) => (
         <Star

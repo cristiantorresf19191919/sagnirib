@@ -10,6 +10,9 @@ import {
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
+import type { SupportedLocale } from "@/core/branding/brand-config";
+import { readLocale } from "@/core/i18n/locale";
+import { t } from "@/core/i18n/messages";
 import type { BiringaListing } from "@/server/biringas";
 import { Container } from "@/shared/design-system/components/Container";
 
@@ -35,11 +38,13 @@ interface PremiumContentGridProps {
   listing: BiringaListing;
 }
 
-const KIND_LABEL: Record<PostKind, string> = {
-  photo: "Set fotográfico",
-  video: "Video privado",
-  audio: "Audio íntimo",
-};
+function buildKindLabels(locale: SupportedLocale): Record<PostKind, string> {
+  return {
+    photo: t(locale, "premium.kind.photo"),
+    video: t(locale, "premium.kind.video"),
+    audio: t(locale, "premium.kind.audio"),
+  };
+}
 
 const KIND_ICON: Record<PostKind, LucideIcon> = {
   photo: ImageIcon,
@@ -69,7 +74,10 @@ function hash(slug: string): number {
  * authored. If the gallery is short the cover loops; if empty we fall
  * back to the listing's main image.
  */
-function buildPosts(listing: BiringaListing): ReadonlyArray<PremiumPost> {
+function buildPosts(
+  listing: BiringaListing,
+  locale: SupportedLocale,
+): ReadonlyArray<PremiumPost> {
   const gallery =
     listing.gallery.length > 0 ? listing.gallery : [listing.mainImage];
   const seed = hash(listing.slug);
@@ -79,56 +87,56 @@ function buildPosts(listing: BiringaListing): ReadonlyArray<PremiumPost> {
   > = [
     {
       kind: "photo",
-      title: "Sesión cabaret · 18 fotos",
-      teaser: "Editorial nocturna en hotel boutique. Inéditas para suscriptores.",
-      meta: "18 fotos",
+      title: t(locale, "premium.post.photoTitle1"),
+      teaser: t(locale, "premium.post.photoTeaser1"),
+      meta: t(locale, "premium.post.photoMeta1"),
       likesBase: 412,
     },
     {
       kind: "video",
-      title: "Detrás de cámaras",
-      teaser: "Cuatro minutos del set anterior. Sin filtros, sin doblaje.",
-      meta: "4:12",
+      title: t(locale, "premium.post.videoTitle1"),
+      teaser: t(locale, "premium.post.videoTeaser1"),
+      meta: t(locale, "premium.post.videoMeta1"),
       likesBase: 1184,
     },
     {
       kind: "audio",
-      title: "Te susurro al oído",
-      teaser: "Audio binaural. Úsalo con audífonos, despacio, con tiempo.",
-      meta: "6 audios",
+      title: t(locale, "premium.post.audioTitle1"),
+      teaser: t(locale, "premium.post.audioTeaser1"),
+      meta: t(locale, "premium.post.audioMeta1"),
       likesBase: 287,
     },
     {
       kind: "photo",
-      title: "Lencería boutique",
-      teaser: "Marca colombiana. Tres conjuntos elegidos por mí.",
-      meta: "24 fotos",
+      title: t(locale, "premium.post.photoTitle2"),
+      teaser: t(locale, "premium.post.photoTeaser2"),
+      meta: t(locale, "premium.post.photoMeta2"),
       likesBase: 612,
     },
     {
       kind: "video",
-      title: "Cita de ensueño · POV",
-      teaser: "La cita perfecta narrada en primera persona. Solo Premium.",
-      meta: "7:08",
+      title: t(locale, "premium.post.videoTitle2"),
+      teaser: t(locale, "premium.post.videoTeaser2"),
+      meta: t(locale, "premium.post.videoMeta2"),
       likesBase: 982,
     },
     {
       kind: "photo",
-      title: "Lo que no ves en mi perfil",
-      teaser: "Lo que el catálogo no muestra. Curado por mí, para ti.",
-      meta: "12 fotos",
+      title: t(locale, "premium.post.photoTitle3"),
+      teaser: t(locale, "premium.post.photoTeaser3"),
+      meta: t(locale, "premium.post.photoMeta3"),
       likesBase: 318,
     },
   ];
 
-  return templates.map((t, i) => ({
+  return templates.map((tpl, i) => ({
     id: `${listing.slug}-pp-${i}`,
-    kind: t.kind,
-    title: t.title,
-    teaser: t.teaser,
+    kind: tpl.kind,
+    title: tpl.title,
+    teaser: tpl.teaser,
     cover: gallery[i % gallery.length]!,
-    meta: t.meta,
-    likes: t.likesBase + (seed % 91) + i * 7,
+    meta: tpl.meta,
+    likes: tpl.likesBase + (seed % 91) + i * 7,
   }));
 }
 
@@ -145,11 +153,13 @@ function buildPosts(listing: BiringaListing): ReadonlyArray<PremiumPost> {
  * `#suscripciones` anchor that the future paywall flow will own. For
  * now it scrolls to the section header so users can read the tiers.
  */
-export function PremiumContentGrid({
+export async function PremiumContentGrid({
   listing,
 }: Readonly<PremiumContentGridProps>) {
-  const posts = buildPosts(listing);
-  const numberFmt = new Intl.NumberFormat("es-CO");
+  const locale = await readLocale();
+  const posts = buildPosts(listing, locale);
+  const kindLabels = buildKindLabels(locale);
+  const numberFmt = new Intl.NumberFormat(locale === "en" ? "en-US" : "es-CO");
 
   return (
     <section
@@ -192,37 +202,37 @@ export function PremiumContentGrid({
                 aria-hidden
                 className="inline-block h-1.5 w-1.5 rotate-45 bg-[var(--color-gold)] shadow-[0_0_0_3px_rgba(200,166,118,0.18)]"
               />
-              Contenido premium
+              {t(locale, "premium.eyebrow")}
             </span>
             <h2
               id="premium-title"
               className="font-[var(--font-display)] text-[clamp(26px,3.6vw,40px)] font-[360] leading-[1.04] tracking-[-0.025em] text-[var(--color-foreground)]"
             >
-              Lo que{" "}
+              {t(locale, "premium.title.lead")}{" "}
               <span className="italic text-[var(--color-brand-primary)]">
                 {listing.name}
               </span>{" "}
-              guarda para sus suscriptores.
+              {t(locale, "premium.title.trailing")}
             </h2>
             <p className="max-w-xl font-[var(--font-serif)] text-[15px] leading-[1.55] text-[var(--color-text-muted)]">
-              Fotos sin filtro, video privado y audios pensados para ti.{" "}
-              <em>Sin pago en el chat, sin sorpresas.</em>
+              {t(locale, "premium.subtitle.lead")}{" "}
+              <em>{t(locale, "premium.subtitle.emphasis")}</em>
             </p>
           </div>
           <div className="flex shrink-0 flex-col items-start gap-2 sm:items-end">
             <span className="inline-flex items-center gap-2 rounded-full border border-[var(--color-gold)]/45 bg-[var(--color-gold)]/10 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.22em] text-[var(--color-gold-deep)]">
               <Crown className="h-3.5 w-3.5" aria-hidden />
-              Premium
+              {t(locale, "premium.tier.label")}
             </span>
             <span className="inline-flex items-baseline gap-1 text-[var(--color-foreground)]">
               <span className="text-[10px] uppercase tracking-[0.18em] text-[var(--color-text-subtle)]">
-                Desde
+                {t(locale, "premium.tier.from")}
               </span>
               <span className="font-[var(--font-display)] text-[26px] font-[480] tabular-nums">
                 $39.000
               </span>
               <span className="text-[12px] text-[var(--color-text-muted)]">
-                / mes
+                {t(locale, "premium.tier.perMonth")}
               </span>
             </span>
           </div>
@@ -237,15 +247,20 @@ export function PremiumContentGrid({
             <PremiumTile
               key={post.id}
               post={post}
-              listingName={listing.name}
               numberFmt={numberFmt}
+              kindLabel={kindLabels[post.kind]}
+              subscribeLabel={t(locale, "premium.tile.subscribe")}
+              ariaLabel={t(locale, "premium.tile.aria", {
+                name: listing.name,
+                title: post.title,
+              })}
             />
           ))}
         </ul>
 
         {/* Footer perks strip — three reasons to subscribe, anchors trust */}
         <ul
-          aria-label="Beneficios de la suscripción"
+          aria-label={t(locale, "premium.perks.aria")}
           className="grid grid-cols-1 gap-3 rounded-[var(--radius-2xl)] border border-[var(--color-border)] bg-[var(--color-surface)] p-4 text-[13px] text-[var(--color-text-muted)] sm:grid-cols-3 sm:items-center sm:gap-4 sm:p-5"
         >
           <li className="inline-flex items-center gap-2">
@@ -253,21 +268,21 @@ export function PremiumContentGrid({
               className="h-4 w-4 text-[var(--color-brand-primary)]"
               aria-hidden
             />
-            Contenido nuevo cada semana
+            {t(locale, "premium.perks.fresh")}
           </li>
           <li className="inline-flex items-center gap-2">
             <Sparkles
               className="h-4 w-4 text-[var(--color-brand-accent-strong)]"
               aria-hidden
             />
-            Chat prioritario sin esperas
+            {t(locale, "premium.perks.chat")}
           </li>
           <li className="inline-flex items-center gap-2">
             <Lock
               className="h-4 w-4 text-[var(--color-brand-primary)]"
               aria-hidden
             />
-            Cancela cuando quieras
+            {t(locale, "premium.perks.cancel")}
           </li>
         </ul>
       </Container>
@@ -277,8 +292,10 @@ export function PremiumContentGrid({
 
 interface PremiumTileProps {
   post: PremiumPost;
-  listingName: string;
   numberFmt: Intl.NumberFormat;
+  kindLabel: string;
+  subscribeLabel: string;
+  ariaLabel: string;
 }
 
 /**
@@ -288,15 +305,17 @@ interface PremiumTileProps {
  */
 function PremiumTile({
   post,
-  listingName,
   numberFmt,
+  kindLabel,
+  subscribeLabel,
+  ariaLabel,
 }: Readonly<PremiumTileProps>) {
   const KindIcon = KIND_ICON[post.kind];
   return (
     <li className="group/tile relative">
       <a
         href="#suscripciones"
-        aria-label={`Suscríbete a ${listingName} para ver ${post.title}`}
+        aria-label={ariaLabel}
         data-testid={`premium-tile-${post.id}`}
         className="relative block aspect-[4/5] overflow-hidden rounded-[var(--radius-xl)] bg-[var(--color-cream-deep)] shadow-[var(--shadow-sm)] ring-1 ring-[var(--color-border)] transition-[box-shadow,transform,ring-color] duration-300 ease-[var(--ease-standard)] hover:-translate-y-1 hover:shadow-[0_22px_50px_-22px_rgba(20,28,24,0.45)] hover:ring-[var(--color-gold)]/55 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-background-elevated)]"
       >
@@ -336,7 +355,7 @@ function PremiumTile({
             what's behind the curtain before they pay. */}
         <span className="absolute left-3 top-3 inline-flex items-center gap-1.5 rounded-full border border-[rgba(248,242,228,0.18)] bg-[rgba(20,28,24,0.55)] px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-[#F2EBDC] backdrop-blur-md">
           <KindIcon className="h-3 w-3" aria-hidden />
-          {KIND_LABEL[post.kind]}
+          {kindLabel}
         </span>
 
         {/* Top-RIGHT lock disc — gold ring picks up the Premium theme.
@@ -379,7 +398,7 @@ function PremiumTile({
               scrim. */}
           <span className="inline-flex translate-y-3 items-center justify-center gap-1.5 rounded-full bg-[var(--color-gold)] px-3 py-1.5 text-[11.5px] font-semibold uppercase tracking-[0.16em] text-[#1A0822] opacity-0 shadow-[0_8px_22px_-8px_rgba(200,166,118,0.55)] transition-[opacity,transform] duration-300 ease-[var(--ease-standard)] group-hover/tile:translate-y-0 group-hover/tile:opacity-100">
             <Crown className="h-3.5 w-3.5" aria-hidden />
-            Suscríbete para ver
+            {subscribeLabel}
           </span>
         </div>
       </a>

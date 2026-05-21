@@ -3,9 +3,13 @@
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { ArrowDown, ArrowDownAZ, ArrowUpAZ, ArrowUpDown, Check, Clock, Star } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useId, useRef, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 import type { LucideIcon } from "lucide-react";
 
+import type { SupportedLocale } from "@/core/branding/brand-config";
+import { localizedHref } from "@/core/i18n/href";
+import { t } from "@/core/i18n/messages";
+import { useActiveLocale } from "@/core/i18n/use-active-locale";
 import type { ListingsFilters } from "@/server/biringas";
 
 import { encodeFilters, type CatalogView } from "../lib/encode-filters";
@@ -24,43 +28,47 @@ interface Option {
   icon: LucideIcon;
 }
 
-const OPTIONS: ReadonlyArray<Option> = [
-  {
-    id: "default",
-    label: "Recientes",
-    hint: "Lo más nuevo primero",
-    icon: Clock,
-  },
-  {
-    id: "rating",
-    label: "Mejor calificadas",
-    hint: "Top reseñas",
-    icon: Star,
-  },
-  {
-    id: "price_asc",
-    label: "Precio · menor a mayor",
-    hint: "Más asequibles arriba",
-    icon: ArrowUpAZ,
-  },
-  {
-    id: "price_desc",
-    label: "Precio · mayor a menor",
-    hint: "Lujo arriba",
-    icon: ArrowDownAZ,
-  },
-];
+function buildOptions(locale: SupportedLocale): ReadonlyArray<Option> {
+  return [
+    {
+      id: "default",
+      label: t(locale, "explorar.sort.option.default.label"),
+      hint: t(locale, "explorar.sort.option.default.hint"),
+      icon: Clock,
+    },
+    {
+      id: "rating",
+      label: t(locale, "explorar.sort.option.rating.label"),
+      hint: t(locale, "explorar.sort.option.rating.hint"),
+      icon: Star,
+    },
+    {
+      id: "price_asc",
+      label: t(locale, "explorar.sort.option.priceAsc.label"),
+      hint: t(locale, "explorar.sort.option.priceAsc.hint"),
+      icon: ArrowUpAZ,
+    },
+    {
+      id: "price_desc",
+      label: t(locale, "explorar.sort.option.priceDesc.label"),
+      hint: t(locale, "explorar.sort.option.priceDesc.hint"),
+      icon: ArrowDownAZ,
+    },
+  ];
+}
 
 function buildHref(
   filters: ListingsFilters,
   next: SortKey | undefined,
   view: CatalogView | undefined,
+  locale: SupportedLocale,
 ): string {
   const copy: ListingsFilters = { ...filters, page: undefined, sortBy: next };
   const params = encodeFilters(copy);
   if (view && view !== "grid3") params.set("view", view);
   const qs = params.toString();
-  return qs ? `/explorar?${qs}` : "/explorar";
+  const base = localizedHref(locale, "/explorar");
+  return qs ? `${base}?${qs}` : base;
 }
 
 const SPRING = { type: "spring", stiffness: 300, damping: 26, mass: 0.5 } as const;
@@ -77,6 +85,8 @@ export function SortMenu({ filters, view }: SortMenuProps) {
   const popoverRef = useRef<HTMLDivElement>(null);
   const labelId = useId();
   const reduceMotion = useReducedMotion();
+  const locale = useActiveLocale();
+  const OPTIONS = useMemo(() => buildOptions(locale), [locale]);
 
   const current = filters.sortBy ?? "default";
   const active = OPTIONS.find((o) => o.id === current) ?? OPTIONS[0];
@@ -129,7 +139,7 @@ export function SortMenu({ filters, view }: SortMenuProps) {
             id={labelId}
             className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--color-text-muted)]"
           >
-            Ordenar por
+            {t(locale, "explorar.sort.kicker")}
           </span>
           <span className="text-[13px] text-[var(--color-foreground)]">
             {active.label}
@@ -169,7 +179,7 @@ export function SortMenu({ filters, view }: SortMenuProps) {
                     <Link
                       role="menuitemradio"
                       aria-checked={isActive}
-                      href={buildHref(filters, next, view)}
+                      href={buildHref(filters, next, view, locale)}
                       onClick={() => setOpen(false)}
                       className={`group flex items-center gap-3 rounded-[var(--radius-md)] px-3 py-2.5 text-sm transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)] focus-visible:ring-offset-1 ${
                         isActive

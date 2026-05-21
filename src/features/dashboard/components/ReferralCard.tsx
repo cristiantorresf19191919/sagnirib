@@ -8,8 +8,10 @@ import {
   Share2,
   Sparkles,
 } from "lucide-react";
-import { useState, useTransition } from "react";
+import { useMemo, useState, useTransition } from "react";
 
+import { t } from "@/core/i18n/messages";
+import { useActiveLocale } from "@/core/i18n/use-active-locale";
 import { toast } from "@/shared/ui/toast";
 
 import { redeemReferral } from "../actions/redeem-referral";
@@ -21,13 +23,7 @@ interface ReferralCardProps {
   hasRedeemed: boolean;
 }
 
-const COP = new Intl.NumberFormat("es-CO", {
-  style: "currency",
-  currency: "COP",
-  maximumFractionDigits: 0,
-});
-
-const REWARD_LABEL = COP.format(20_000);
+const REWARD_AMOUNT = 20_000;
 
 /**
  * Referral surface for the seller dashboard. Three blocks:
@@ -45,6 +41,17 @@ export function ReferralCard({
   creditCop,
   hasRedeemed,
 }: Readonly<ReferralCardProps>) {
+  const locale = useActiveLocale();
+  const cop = useMemo(
+    () =>
+      new Intl.NumberFormat(locale === "en" ? "en-US" : "es-CO", {
+        style: "currency",
+        currency: "COP",
+        maximumFractionDigits: 0,
+      }),
+    [locale],
+  );
+  const rewardLabel = cop.format(REWARD_AMOUNT);
   const [copied, setCopied] = useState(false);
   const [redeemCode, setRedeemCode] = useState("");
   const [redeemed, setRedeemed] = useState(hasRedeemed);
@@ -60,10 +67,10 @@ export function ReferralCard({
     try {
       await navigator.clipboard.writeText(shareUrl);
       setCopied(true);
-      toast.success("Link copiado");
+      toast.success(t(locale, "dashboard.referral.toast.copied"));
       window.setTimeout(() => setCopied(false), 1800);
     } catch {
-      toast.error("No pudimos copiar el link");
+      toast.error(t(locale, "dashboard.referral.toast.copyError"));
     }
   };
 
@@ -71,8 +78,10 @@ export function ReferralCard({
     if (typeof navigator !== "undefined" && "share" in navigator) {
       try {
         await navigator.share({
-          title: "Biringas",
-          text: `Te invito a Biringas — ${REWARD_LABEL} de crédito al registrarte con mi código.`,
+          title: t(locale, "dashboard.referral.share.title"),
+          text: t(locale, "dashboard.referral.share.text", {
+            reward: rewardLabel,
+          }),
           url: shareUrl,
         });
         return;
@@ -88,7 +97,7 @@ export function ReferralCard({
     setError(null);
     const normalized = redeemCode.trim().toUpperCase();
     if (normalized.length < 4) {
-      setError("Ingresá un código válido.");
+      setError(t(locale, "dashboard.referral.redeem.validation"));
       return;
     }
     startTransition(async () => {
@@ -96,12 +105,15 @@ export function ReferralCard({
       if (result.ok) {
         setRedeemed(true);
         toast.success(
-          "Código redimido",
-          `Acreditamos ${COP.format(result.data?.creditCop ?? 20_000)} a tu cuenta.`,
+          t(locale, "dashboard.referral.redeem.toastTitle"),
+          t(locale, "dashboard.referral.redeem.toastBody", {
+            amount: cop.format(result.data?.creditCop ?? REWARD_AMOUNT),
+          }),
         );
       } else {
         setError(
-          result.error?.message ?? "No pudimos redimir el código.",
+          result.error?.message ??
+            t(locale, "dashboard.referral.redeem.errorFallback"),
         );
       }
     });
@@ -123,26 +135,24 @@ export function ReferralCard({
         <div className="relative flex flex-col gap-4">
           <span className="inline-flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.28em] text-[var(--color-gold-deep)]">
             <Sparkles className="h-3 w-3" aria-hidden />
-            Programa de referidos
+            {t(locale, "dashboard.referral.eyebrow")}
           </span>
           <h3 className="font-[var(--font-display)] text-[clamp(20px,2.6vw,28px)] font-[370] leading-[1.1] tracking-[-0.022em] text-[var(--color-foreground)]">
-            Cada amigo que invitás vale{" "}
+            {t(locale, "dashboard.referral.title.lead")}{" "}
             <span className="italic text-[var(--color-brand-primary)]">
-              {REWARD_LABEL}
+              {rewardLabel}
             </span>{" "}
-            para ambos.
+            {t(locale, "dashboard.referral.title.suffix")}
           </h3>
           <p className="text-sm leading-relaxed text-[var(--color-text-muted)]">
-            Compartí tu link. Cuando tu amigo cree una cuenta y use tu código,
-            le acreditamos {REWARD_LABEL} y vos sumás el mismo monto en
-            crédito para impulsar tu perfil.
+            {t(locale, "dashboard.referral.body", { reward: rewardLabel })}
           </p>
 
           {/* Code + copy + share */}
           <div className="mt-2 flex flex-col gap-3 sm:flex-row sm:items-center">
             <div className="flex min-w-0 flex-1 items-center gap-3 rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-2">
               <span className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[var(--color-text-subtle)]">
-                Tu código
+                {t(locale, "dashboard.referral.codeLabel")}
               </span>
               <span className="font-mono text-lg font-bold tabular-nums tracking-[0.16em] text-[var(--color-foreground)]">
                 {code}
@@ -159,7 +169,9 @@ export function ReferralCard({
                 ) : (
                   <Copy className="h-3.5 w-3.5" aria-hidden />
                 )}
-                {copied ? "Copiado" : "Copiar link"}
+                {copied
+                  ? t(locale, "dashboard.referral.copied")
+                  : t(locale, "dashboard.referral.copy")}
               </button>
               <button
                 type="button"
@@ -167,7 +179,7 @@ export function ReferralCard({
                 className="inline-flex h-11 items-center gap-1.5 rounded-full bg-[var(--color-brand-primary)] px-4 text-xs font-semibold text-[var(--color-surface)] shadow-[var(--shadow-glow-primary)] transition-[background,transform] duration-200 hover:-translate-y-[1px] hover:bg-[var(--color-brand-primary-strong)]"
               >
                 <Share2 className="h-3.5 w-3.5" aria-hidden />
-                Compartir
+                {t(locale, "dashboard.referral.share")}
               </button>
             </div>
           </div>
@@ -177,13 +189,13 @@ export function ReferralCard({
       {/* Stats */}
       <section className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <StatCard
-          label="Personas invitadas"
+          label={t(locale, "dashboard.referral.stats.invited")}
           value={String(redemptions)}
           accent="primary"
         />
         <StatCard
-          label="Crédito acreditado"
-          value={COP.format(creditCop)}
+          label={t(locale, "dashboard.referral.stats.credit")}
+          value={cop.format(creditCop)}
           accent="gold"
         />
       </section>
@@ -201,11 +213,12 @@ export function ReferralCard({
             <div className="flex min-w-0 flex-1 flex-col gap-3">
               <div>
                 <h3 className="text-base font-semibold text-[var(--color-foreground)]">
-                  ¿Tenés un código de invitación?
+                  {t(locale, "dashboard.referral.redeem.title")}
                 </h3>
                 <p className="text-xs leading-relaxed text-[var(--color-text-muted)]">
-                  Redimilo una vez para sumar {REWARD_LABEL} de crédito y
-                  acreditarle el mismo monto a quien te invitó.
+                  {t(locale, "dashboard.referral.redeem.body", {
+                    reward: rewardLabel,
+                  })}
                 </p>
               </div>
               <form
@@ -216,7 +229,10 @@ export function ReferralCard({
                   type="text"
                   value={redeemCode}
                   onChange={(e) => setRedeemCode(e.target.value)}
-                  placeholder="Ej: A4F9XK"
+                  placeholder={t(
+                    locale,
+                    "dashboard.referral.redeem.placeholder",
+                  )}
                   maxLength={16}
                   className="h-11 flex-1 rounded-full border border-[var(--color-border)] bg-[var(--color-background)] px-4 font-mono text-sm uppercase tracking-[0.16em] text-[var(--color-foreground)] placeholder:font-sans placeholder:tracking-normal placeholder:text-[var(--color-text-subtle)] focus:border-[var(--color-brand-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-brand-primary)]/30"
                 />
@@ -225,7 +241,9 @@ export function ReferralCard({
                   disabled={isPending}
                   className="inline-flex h-11 items-center justify-center gap-1.5 rounded-full bg-[var(--color-brand-primary)] px-5 text-xs font-semibold text-[var(--color-surface)] shadow-[var(--shadow-glow-primary)] transition-[background,transform] duration-200 hover:-translate-y-[1px] hover:bg-[var(--color-brand-primary-strong)] disabled:cursor-not-allowed disabled:opacity-70"
                 >
-                  {isPending ? "Redimiendo…" : "Redimir"}
+                  {isPending
+                    ? t(locale, "dashboard.referral.redeem.submitting")
+                    : t(locale, "dashboard.referral.redeem.submit")}
                 </button>
               </form>
               {error && (
@@ -248,8 +266,7 @@ export function ReferralCard({
               className="h-4 w-4 text-[var(--color-brand-primary)]"
               aria-hidden
             />
-            Ya redimiste un código. Si querés sumar más crédito, invitá a
-            tus amigos con tu propio link de arriba.
+            {t(locale, "dashboard.referral.alreadyRedeemed")}
           </span>
         </section>
       )}

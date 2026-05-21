@@ -5,17 +5,13 @@ import { usePathname } from "next/navigation";
 import { useTransition, useState } from "react";
 import { CheckCircle2, LogIn, Star } from "lucide-react";
 
+import { localizedHref } from "@/core/i18n/href";
+import { t } from "@/core/i18n/messages";
+import { useActiveLocale } from "@/core/i18n/use-active-locale";
 import { useAuthSession } from "@/features/auth/lib/use-auth-session";
 
 import { submitReview } from "../actions/submit-review";
 
-/**
- * UI mirror of the server-side `REVIEW_LIMITS` constant. Server is the
- * source of truth and will reject mismatched values via the schema —
- * keeping a duplicate here lets this client component stay free of any
- * server-only import. If `src/server/biringas/review-types.ts#REVIEW_LIMITS`
- * changes, update this object too.
- */
 const REVIEW_LIMITS = {
   bodyMin: 20,
   bodyMax: 2000,
@@ -24,40 +20,21 @@ const REVIEW_LIMITS = {
 } as const;
 
 interface RateBiringaFormProps {
-  /** Slug of the listing being rated — wired into the action payload. */
   listingSlug: string;
-  /** Listing name — used in the prompt and the success message. */
   listingName: string;
 }
 
-/**
- * Interactive 5-star rating form for the profile page.
- *
- * Logged-in customers see the full form: a star row with hover preview,
- * an optional alias field, a required city, and a body textarea (matches
- * the server schema's `REVIEW_LIMITS`). On submit the form calls the
- * existing `submitReview` Server Action which validates → authenticates
- * → routes to the configured adapter (mock today, Firestore later).
- *
- * Anonymous users see a lightweight prompt asking them to sign in. We
- * never render the form's interactive state for them — the auth gate is
- * also enforced server-side in `submitReview`, so this is a UX nicety,
- * not a security boundary.
- *
- * The form is intentionally compact: the star row is the primary
- * affordance, the rest of the fields only mount AFTER the user picks a
- * rating. That lets passive readers skim past the form without it
- * dominating the page; engaged users get the full form once committed.
- */
 export function RateBiringaForm({
   listingSlug,
   listingName,
 }: Readonly<RateBiringaFormProps>) {
+  const locale = useActiveLocale();
   const { status } = useAuthSession();
   const pathname = usePathname();
+  const ingresarBase = localizedHref(locale, "/ingresar");
   const ingresarHref = pathname
-    ? `/ingresar?next=${encodeURIComponent(pathname)}`
-    : "/ingresar";
+    ? `${ingresarBase}?next=${encodeURIComponent(pathname)}`
+    : ingresarBase;
   const [rating, setRating] = useState<number | null>(null);
   const [hoverRating, setHoverRating] = useState<number | null>(null);
   const [body, setBody] = useState("");
@@ -67,8 +44,6 @@ export function RateBiringaForm({
   const [successRating, setSuccessRating] = useState<number | null>(null);
   const [isPending, startTransition] = useTransition();
 
-  // Star displayed as "filled" — hover preview wins over committed rating
-  // so users see what they're about to pick.
   const displayedRating = hoverRating ?? rating ?? 0;
 
   const reset = () => {
@@ -83,7 +58,7 @@ export function RateBiringaForm({
   const onSubmit = (event: React.FormEvent) => {
     event.preventDefault();
     if (rating === null) {
-      setError("Elige una calificación de estrellas antes de enviar.");
+      setError(t(locale, "rate.error.noRating"));
       return;
     }
     setError(null);
@@ -99,10 +74,7 @@ export function RateBiringaForm({
         setSuccessRating(rating);
         reset();
       } else {
-        setError(
-          result.error?.message ??
-            "No pudimos publicar tu reseña. Intenta de nuevo.",
-        );
+        setError(result.error?.message ?? t(locale, "rate.error.submit"));
       }
     });
   };
@@ -123,10 +95,10 @@ export function RateBiringaForm({
           </span>
           <div className="flex min-w-0 flex-col gap-1">
             <h3 className="text-base font-semibold text-[var(--color-foreground)]">
-              Gracias por opinar
+              {t(locale, "rate.success.title")}
             </h3>
             <p className="text-sm leading-relaxed text-[var(--color-text-muted)]">
-              Calificaste a {listingName} con{" "}
+              {t(locale, "rate.success.body.lead", { name: listingName })}{" "}
               <span className="inline-flex items-center gap-0.5 align-[-2px]">
                 {Array.from({ length: successRating }).map((_, i) => (
                   <Star
@@ -136,14 +108,14 @@ export function RateBiringaForm({
                   />
                 ))}
               </span>
-              . Tu reseña ya forma parte de la comunidad verificada.
+              {t(locale, "rate.success.body.trailing")}
             </p>
             <button
               type="button"
               onClick={() => setSuccessRating(null)}
               className="mt-2 inline-flex w-fit items-center gap-1.5 rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] px-3.5 py-1.5 text-xs font-semibold text-[var(--color-foreground)] transition-colors hover:border-[var(--color-brand-primary-soft)] hover:bg-[var(--color-background-elevated)]"
             >
-              Enviar otra opinión
+              {t(locale, "rate.success.another")}
             </button>
           </div>
         </div>
@@ -168,11 +140,10 @@ export function RateBiringaForm({
           <div className="flex min-w-0 flex-col gap-2">
             <div>
               <h3 className="text-base font-semibold text-[var(--color-foreground)]">
-                ¿Ya estuviste con {listingName}?
+                {t(locale, "rate.anonymous.title", { name: listingName })}
               </h3>
               <p className="mt-1 text-sm leading-relaxed text-[var(--color-text-muted)]">
-                Ingresa con tu cuenta para dejar una calificación verificada.
-                Tu identidad nunca se publica.
+                {t(locale, "rate.anonymous.body")}
               </p>
             </div>
             <Link
@@ -180,7 +151,7 @@ export function RateBiringaForm({
               className="inline-flex w-fit items-center gap-2 rounded-full bg-[var(--color-brand-primary)] px-4 py-2 text-sm font-semibold text-[var(--color-surface)] shadow-[var(--shadow-glow-primary)] transition-[background,transform] duration-200 ease-[var(--ease-standard)] hover:-translate-y-[1px] hover:bg-[var(--color-brand-primary-strong)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-background)]"
             >
               <LogIn className="h-4 w-4" aria-hidden />
-              Ingresar para opinar
+              {t(locale, "rate.anonymous.cta")}
             </Link>
           </div>
         </div>
@@ -188,12 +159,10 @@ export function RateBiringaForm({
     );
   }
 
-  // --- Loading or disabled (Firebase env not set) → render nothing ---------
   if (status === "loading" || status === "disabled") {
     return null;
   }
 
-  // --- Logged-in interactive form -----------------------------------------
   return (
     <form
       data-testid="rate-biringa-form"
@@ -202,19 +171,17 @@ export function RateBiringaForm({
     >
       <div className="flex flex-col gap-1">
         <h3 className="text-base font-semibold text-[var(--color-foreground)]">
-          Califica a {listingName}
+          {t(locale, "rate.form.title", { name: listingName })}
         </h3>
         <p className="text-sm leading-relaxed text-[var(--color-text-muted)]">
-          Tu opinión ayuda a otros clientes a elegir con confianza.
+          {t(locale, "rate.form.subtitle")}
         </p>
       </div>
 
-      {/* Star row — the primary affordance. Keyboard users get focus
-          rings on each button + arrow-key navigation via native tab order. */}
       <div
         className="mt-4 flex items-center gap-1"
         role="radiogroup"
-        aria-label="Calificación de 1 a 5 estrellas"
+        aria-label={t(locale, "rate.stars.aria")}
       >
         {[1, 2, 3, 4, 5].map((value) => {
           const filled = value <= displayedRating;
@@ -224,7 +191,11 @@ export function RateBiringaForm({
               type="button"
               role="radio"
               aria-checked={rating === value}
-              aria-label={`${value} estrella${value === 1 ? "" : "s"}`}
+              aria-label={t(
+                locale,
+                value === 1 ? "rate.stars.singular" : "rate.stars.plural",
+                { n: value },
+              )}
               onClick={() => setRating(value)}
               onMouseEnter={() => setHoverRating(value)}
               onMouseLeave={() => setHoverRating(null)}
@@ -250,13 +221,11 @@ export function RateBiringaForm({
         )}
       </div>
 
-      {/* Expanded form — only mounts once the user has picked a rating so
-          the section stays compact for skimmers. */}
       {rating !== null && (
         <div className="mt-5 flex flex-col gap-4 motion-safe:motion-hero-reveal">
           <label className="flex flex-col gap-1.5">
             <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--color-text-subtle)]">
-              Tu experiencia
+              {t(locale, "rate.field.experience")}
             </span>
             <textarea
               name="body"
@@ -265,7 +234,10 @@ export function RateBiringaForm({
               maxLength={REVIEW_LIMITS.bodyMax}
               value={body}
               onChange={(e) => setBody(e.target.value)}
-              placeholder={`Cuéntanos cómo fue tu encuentro con ${listingName}. Mínimo ${REVIEW_LIMITS.bodyMin} caracteres.`}
+              placeholder={t(locale, "rate.field.experience.placeholder", {
+                name: listingName,
+                min: REVIEW_LIMITS.bodyMin,
+              })}
               rows={4}
               className="rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-background)] px-3.5 py-2.5 text-sm leading-relaxed text-[var(--color-foreground)] placeholder:text-[var(--color-text-subtle)] focus:border-[var(--color-brand-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-brand-primary)]/30"
             />
@@ -277,7 +249,7 @@ export function RateBiringaForm({
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <label className="flex flex-col gap-1.5">
               <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--color-text-subtle)]">
-                Ciudad del encuentro
+                {t(locale, "rate.field.city")}
               </span>
               <input
                 name="city"
@@ -285,20 +257,20 @@ export function RateBiringaForm({
                 maxLength={REVIEW_LIMITS.cityMax}
                 value={city}
                 onChange={(e) => setCity(e.target.value)}
-                placeholder="Bogotá"
+                placeholder={t(locale, "rate.field.city.placeholder")}
                 className="rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-background)] px-3.5 py-2 text-sm text-[var(--color-foreground)] placeholder:text-[var(--color-text-subtle)] focus:border-[var(--color-brand-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-brand-primary)]/30"
               />
             </label>
             <label className="flex flex-col gap-1.5">
               <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--color-text-subtle)]">
-                Alias (opcional)
+                {t(locale, "rate.field.alias")}
               </span>
               <input
                 name="alias"
                 maxLength={REVIEW_LIMITS.aliasMax}
                 value={alias}
                 onChange={(e) => setAlias(e.target.value)}
-                placeholder="Cliente verificado"
+                placeholder={t(locale, "rate.field.alias.placeholder")}
                 className="rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-background)] px-3.5 py-2 text-sm text-[var(--color-foreground)] placeholder:text-[var(--color-text-subtle)] focus:border-[var(--color-brand-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-brand-primary)]/30"
               />
             </label>
@@ -320,14 +292,14 @@ export function RateBiringaForm({
               disabled={isPending}
               className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--color-text-muted)] transition-colors hover:text-[var(--color-foreground)] disabled:opacity-60"
             >
-              Cancelar
+              {t(locale, "rate.cancel")}
             </button>
             <button
               type="submit"
               disabled={isPending}
               className="btn-pulse inline-flex h-11 items-center gap-2 rounded-full bg-[var(--color-brand-primary)] px-5 text-sm font-semibold text-[var(--color-surface)] shadow-[var(--shadow-glow-primary)] transition-[background,transform] duration-200 ease-[var(--ease-standard)] hover:-translate-y-[1px] hover:bg-[var(--color-brand-primary-strong)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-background)] disabled:cursor-not-allowed disabled:opacity-70"
             >
-              {isPending ? "Publicando…" : "Publicar opinión"}
+              {isPending ? t(locale, "rate.submitting") : t(locale, "rate.submit")}
             </button>
           </div>
         </div>

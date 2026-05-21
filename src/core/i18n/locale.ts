@@ -4,40 +4,45 @@ import { cookies, headers } from "next/headers";
 
 import { brandConfig, type SupportedLocale } from "@/core/branding/brand-config";
 
-import { LOCALE_COOKIE } from "./constants";
+import { LOCALE_COOKIE, isSupportedLocale } from "./constants";
 
 export { LOCALE_COOKIE };
 
-const SUPPORTED = new Set<SupportedLocale>(brandConfig.supportedLocales);
-
-function isSupported(value: string | undefined): value is SupportedLocale {
-  return !!value && SUPPORTED.has(value as SupportedLocale);
-}
-
 /**
- * Picks the active locale for the current request.
+ * Reads the active locale for the current request.
  *
  * Precedence (highest → lowest):
- *   1. `biringas:locale` cookie — set by the header switcher.
- *   2. `Accept-Language` header, first matching tag.
- *   3. `brandConfig.defaultLocale` (es) fallback.
+ *   1. `x-locale` request header — set by `proxy.ts` from the URL prefix.
+ *      This is the canonical source whenever the URL carries a locale.
+ *   2. `biringas:locale` cookie — sticky user preference set by the
+ *      header switcher (used outside the locale tree, e.g. inside
+ *      Server Actions that don't see the modified request headers).
+ *   3. `Accept-Language` header — first matching tag.
+ *   4. `brandConfig.defaultLocale` (`es`) fallback.
  *
  * Returns a `SupportedLocale` — never `null` — so server components
  * can call `t(locale, key)` without an extra guard.
+ *
+ * **Prefer `params.lang`** when inside an `app/[lang]/...` segment —
+ * the URL is the canonical source and reading `params` is cheaper
+ * than the headers/cookies dance.
  */
 export async function readLocale(): Promise<SupportedLocale> {
+  const headerStore = await headers();
+
+  const fromProxy = headerStore.get("x-locale");
+  if (isSupportedLocale(fromProxy ?? undefined)) {
+    return fromProxy as SupportedLocale;
+  }
+
   const cookieStore = await cookies();
   const fromCookie = cookieStore.get(LOCALE_COOKIE)?.value;
-  if (isSupported(fromCookie)) return fromCookie;
+  if (isSupportedLocale(fromCookie)) return fromCookie;
 
-  const headerStore = await headers();
   const accept = headerStore.get("accept-language") ?? "";
-  const tags = accept
-    .split(",")
-    .map((part) => part.split(";")[0]?.trim().toLowerCase().slice(0, 2))
-    .filter((v): v is string => !!v);
-  for (const tag of tags) {
-    if (isSupported(tag)) return tag;
+  for (const raw of accept.split(",")) {
+    const tag = raw.split(";")[0]?.trim().toLowerCase().slice(0, 2);
+    if (isSupportedLocale(tag)) return tag;
   }
 
   return brandConfig.defaultLocale;

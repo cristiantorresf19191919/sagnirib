@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useSyncExternalStore } from "react";
 
 const STORAGE_KEY = "biringas:saved-searches";
 const MAX_SAVED = 12;
@@ -52,6 +52,39 @@ function writeToStorage(items: SavedSearch[]) {
   }
 }
 
+/* --- Module-level store ---------------------------------------------------
+ * Hoisting the cache + listeners outside the hook gives us a `useSyncExternalStore`-
+ * compatible source. That keeps the hydration story clean (server snapshot
+ * = empty + not-ready; client snapshot = hydrated from localStorage) without
+ * the `react-hooks/set-state-in-effect` warning a manual `useState`/`useEffect`
+ * pair triggers.
+ */
+const EMPTY: ReadonlyArray<SavedSearch> = [];
+let cache: ReadonlyArray<SavedSearch> | null = null;
+const listeners = new Set<() => void>();
+
+function ensureCache(): ReadonlyArray<SavedSearch> {
+  if (cache === null) cache = readFromStorage();
+  return cache;
+}
+
+function setCache(next: ReadonlyArray<SavedSearch>) {
+  cache = next;
+  writeToStorage([...next]);
+  for (const cb of listeners) cb();
+}
+
+function subscribe(cb: () => void) {
+  listeners.add(cb);
+  return () => {
+    listeners.delete(cb);
+  };
+}
+
+const getServerSearches = () => EMPTY;
+const getServerReady = () => false;
+const getClientReady = () => cache !== null;
+
 /**
  * Tiny saved-searches store backed by localStorage.
  *
@@ -65,13 +98,12 @@ function writeToStorage(items: SavedSearch[]) {
  * `remove` / `clear`) stays identical; only the storage layer changes.
  */
 export function useSavedSearches(): SavedSearchesApi {
-  const [searches, setSearches] = useState<ReadonlyArray<SavedSearch>>([]);
-  const [ready, setReady] = useState(false);
-
-  useEffect(() => {
-    setSearches(readFromStorage());
-    setReady(true);
-  }, []);
+  const searches = useSyncExternalStore(
+    subscribe,
+    ensureCache,
+    getServerSearches,
+  );
+  const ready = useSyncExternalStore(subscribe, getClientReady, getServerReady);
 
   const save = useCallback<SavedSearchesApi["save"]>(({ label, href }) => {
     const id = `saved-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
@@ -81,26 +113,20 @@ export function useSavedSearches(): SavedSearchesApi {
       href,
       savedAt: new Date().toISOString(),
     };
-    setSearches((prev) => {
-      const deduped = prev.filter((s) => s.href !== href);
-      const updated = [next, ...deduped].slice(0, MAX_SAVED);
-      writeToStorage(updated);
-      return updated;
-    });
+    const current = ensureCache();
+    const deduped = current.filter((s) => s.href !== href);
+    const updated = [next, ...deduped].slice(0, MAX_SAVED);
+    setCache(updated);
     return next;
   }, []);
 
   const remove = useCallback<SavedSearchesApi["remove"]>((id) => {
-    setSearches((prev) => {
-      const updated = prev.filter((s) => s.id !== id);
-      writeToStorage(updated);
-      return updated;
-    });
+    const current = ensureCache();
+    setCache(current.filter((s) => s.id !== id));
   }, []);
 
   const clear = useCallback<SavedSearchesApi["clear"]>(() => {
-    setSearches([]);
-    writeToStorage([]);
+    setCache(EMPTY);
   }, []);
 
   return { ready, searches, save, remove, clear };

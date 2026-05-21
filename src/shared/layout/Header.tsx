@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ArrowUpRight, HelpCircle, Plus } from "lucide-react";
 
+import { localizedHref } from "@/core/i18n/href";
 import { LocaleSwitcher } from "@/core/i18n/LocaleSwitcher";
 import { readLocale } from "@/core/i18n/locale";
 import { t } from "@/core/i18n/messages";
@@ -68,14 +69,14 @@ export async function Header({ hideCatalogCta = false }: HeaderProps) {
 
         <nav
           data-testid="header-nav"
-          aria-label="Navegación principal"
+          aria-label={t(locale, "header.aria.mainNav")}
           className="flex items-center gap-0.5 sm:gap-1"
         >
           {/* 1. DISCOVERY — How (learn) + Favorites (engage with what
               already resonated). Both collapse labels on mobile. */}
           <Link
             data-testid="header-link-how-it-works"
-            href="/#como-funciona"
+            href={`${localizedHref(locale, "/")}#como-funciona`}
             aria-label={howLabel}
             className="group/nav inline-flex h-11 items-center gap-1.5 rounded-full px-2.5 sm:px-4 text-sm font-medium text-[var(--color-text-muted)] transition-colors duration-200 ease-[var(--ease-standard)] hover:text-[var(--color-foreground)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-background)]"
           >
@@ -116,7 +117,7 @@ export async function Header({ hideCatalogCta = false }: HeaderProps) {
               as the supporting action against the primary explore CTA. */}
           <Link
             data-testid="header-link-publish-profile"
-            href="/publicar"
+            href={localizedHref(locale, "/publicar")}
             aria-label={publishLabel}
             className="group/publish relative inline-flex h-11 items-center gap-1.5 overflow-hidden rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] px-3 sm:px-4 text-sm font-semibold text-[var(--color-foreground)] transition-[border-color,background,transform,box-shadow] duration-200 ease-[var(--ease-standard)] hover:-translate-y-[1px] hover:border-[var(--color-brand-primary-soft)] hover:bg-[var(--color-background-elevated)] hover:shadow-[var(--shadow-sm)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-background)]"
           >
@@ -135,7 +136,7 @@ export async function Header({ hideCatalogCta = false }: HeaderProps) {
           {!hideCatalogCta && (
             <Link
               data-testid="header-cta-explore"
-              href="/explorar"
+              href={localizedHref(locale, "/explorar")}
               className="group relative inline-flex h-11 items-center gap-1.5 overflow-hidden rounded-full bg-[var(--color-brand-primary)] px-4 sm:px-5 text-sm font-semibold text-[var(--color-surface)] shadow-[var(--shadow-glow-primary)] transition-[background,box-shadow,transform] duration-200 ease-[var(--ease-standard)] hover:-translate-y-[1px] hover:bg-[var(--color-brand-primary-strong)] hover:shadow-[0_18px_36px_-12px_rgba(47,93,67,0.5)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-background)]"
             >
               {/* Shimmer sweep on hover — same vocabulary as the hero search */}

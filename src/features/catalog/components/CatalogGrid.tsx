@@ -1,5 +1,8 @@
 import Link from "next/link";
 
+import { localizedHref } from "@/core/i18n/href";
+import { readLocale } from "@/core/i18n/locale";
+import { t } from "@/core/i18n/messages";
 import { isPlanActive, listAll, type ListingsFilters } from "@/server/biringas";
 import { Button } from "@/shared/design-system/components/Button";
 import { Container } from "@/shared/design-system/components/Container";
@@ -29,16 +32,21 @@ const GRID_CLASS: Record<CatalogView, string> = {
   list: "mt-8 grid grid-cols-1 gap-3",
 };
 
-function nowFilterHref(filters: ListingsFilters): string {
+function nowFilterHref(
+  filters: ListingsFilters,
+  locale: "es" | "en",
+): string {
   const next: ListingsFilters = { ...filters, availableNow: true, page: undefined };
   const qs = encodeFilters(next).toString();
-  return qs ? `/explorar?${qs}` : "/explorar?now=1";
+  const base = localizedHref(locale, "/explorar");
+  return qs ? `${base}?${qs}` : `${base}?now=1`;
 }
 
 export async function CatalogGrid({
   filters,
   view = "grid3",
 }: CatalogGridProps) {
+  const locale = await readLocale();
   // Primary list. Catch + log so a Firestore outage renders the empty
   // state instead of 500'ing the catalog, and the underlying error
   // surfaces in Netlify function logs for diagnosis.
@@ -89,7 +97,10 @@ export async function CatalogGrid({
                 id="catalog-title"
                 className="max-w-3xl text-2xl font-bold leading-tight tracking-tight text-[var(--color-foreground)] sm:text-3xl"
               >
-                Biringas verificadas en {filters.city ?? "Colombia"}
+                {t(locale, "explorar.grid.header.title", {
+                  city:
+                    filters.city ?? t(locale, "explorar.grid.header.cityAll"),
+                })}
               </h2>
             </div>
             <div className="self-start sm:self-end">
@@ -103,7 +114,7 @@ export async function CatalogGrid({
         ) : (
           <ul
             data-testid="catalog-grid-list"
-            aria-label="Biringas en el catálogo"
+            aria-label={t(locale, "explorar.grid.aria.list")}
             className={GRID_CLASS[view]}
           >
             {showSpecialTiles && (
@@ -111,7 +122,9 @@ export async function CatalogGrid({
                 index={0}
                 data-testid="catalog-tile-stories-top"
               >
-                <HistoriasTopTile href="/explorar?reviews=1" />
+                <HistoriasTopTile
+                  href={`${localizedHref(locale, "/explorar")}?reviews=1`}
+                />
               </CardReveal>
             )}
             {data.map((listing, index) => {
@@ -138,7 +151,7 @@ export async function CatalogGrid({
                 index={data.length + 1}
                 data-testid="catalog-tile-available-now"
               >
-                <DisponiblesAhoraTile href={nowFilterHref(filters)} />
+                <DisponiblesAhoraTile href={nowFilterHref(filters, locale)} />
               </CardReveal>
             )}
           </ul>
@@ -155,7 +168,8 @@ const EMPTY_STATE_SHORTCUTS = [
   { label: "Top calificadas", href: "/explorar?sort=rating&reviews=1" },
 ] as const;
 
-function EmptyState() {
+async function EmptyState() {
+  const locale = await readLocale();
   return (
     <div
       data-testid="catalog-grid-empty"
@@ -163,17 +177,16 @@ function EmptyState() {
     >
       <Sparkle tone="muted" size={32} />
       <span className="text-[11px] uppercase tracking-[0.28em] text-[var(--color-text-subtle)]">
-        Sin resultados
+        {t(locale, "explorar.grid.empty.kicker")}
       </span>
       <h3 className="text-xl font-semibold text-[var(--color-foreground)]">
-        Ningún perfil coincide con esta combinación
+        {t(locale, "explorar.grid.empty.headline")}
       </h3>
       <p className="max-w-sm text-sm leading-relaxed text-[var(--color-text-muted)]">
-        Prueba a ampliar la ciudad, soltar la edad o quitar algún chip de
-        servicio. También puedes empezar de cero.
+        {t(locale, "explorar.grid.empty.advice")}
       </p>
-      <Button href="/explorar" variant="primary" size="md" className="mt-2" glow>
-        Borrar todos los filtros
+      <Button href={localizedHref(locale, "/explorar")} variant="primary" size="md" className="mt-2" glow>
+        {t(locale, "explorar.grid.empty.cta.clearAll")}
       </Button>
 
       {/* Popular search shortcuts — turn the dead end into a discovery
@@ -183,7 +196,7 @@ function EmptyState() {
         className="mt-4 flex w-full flex-col gap-2 border-t border-[var(--color-border)]/70 pt-5"
       >
         <span className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[var(--color-text-subtle)]">
-          O prueba una búsqueda popular
+          {t(locale, "explorar.grid.empty.popularLabel")}
         </span>
         <div className="flex flex-wrap items-center justify-center gap-1.5">
           {EMPTY_STATE_SHORTCUTS.map((s) => (

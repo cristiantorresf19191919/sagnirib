@@ -16,6 +16,10 @@ import {
 } from "lucide-react";
 import { useState, type FormEvent } from "react";
 
+import type { SupportedLocale } from "@/core/branding/brand-config";
+import { localizedHref } from "@/core/i18n/href";
+import { t } from "@/core/i18n/messages";
+import { useActiveLocale } from "@/core/i18n/use-active-locale";
 import { toast } from "@/shared/ui/toast";
 
 import { useAuthSession } from "../lib/use-auth-session";
@@ -54,14 +58,10 @@ const STAGGER: Variants = {
  * via Firebase Auth Web SDK + Google popup. On success the form
  * redirects to `next` (sanitized) or `/` and refreshes so any RSC
  * surface that reads the session cookie re-renders.
- *
- * Visual: layered editorial card (gold hairline → eyebrow → primary
- * CTA → divider → secondary Google), staggered fade-up via Framer
- * Motion, password show/hide toggle, inline error block, and a small
- * trust strip at the bottom that anchors the verification promise.
  */
 export function SignInForm({ next }: Readonly<SignInFormProps> = {}) {
   const router = useRouter();
+  const locale = useActiveLocale();
   const { status, signInWithEmail, signInWithGoogle } = useAuthSession();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -70,21 +70,23 @@ export function SignInForm({ next }: Readonly<SignInFormProps> = {}) {
   const [submitting, setSubmitting] = useState(false);
 
   const safeNext =
-    next && next.startsWith("/") && !next.startsWith("//") ? next : "/";
+    next && next.startsWith("/") && !next.startsWith("//")
+      ? next
+      : localizedHref(locale, "/");
 
   if (status === "disabled") {
-    return <DisabledNotice />;
+    return <DisabledNotice locale={locale} />;
   }
   if (status === "authenticated") {
-    return <AlreadySignedIn next={safeNext} />;
+    return <AlreadySignedIn next={safeNext} locale={locale} />;
   }
 
   function finishSuccess(method: "email" | "google") {
     toast.success(
-      "Sesión iniciada",
+      t(locale, "auth.signin.toast.title"),
       method === "google"
-        ? "Continuamos desde donde estabas."
-        : "Bienvenida de vuelta.",
+        ? t(locale, "auth.signin.toast.google")
+        : t(locale, "auth.signin.toast.email"),
     );
     router.push(safeNext);
     router.refresh();
@@ -98,7 +100,7 @@ export function SignInForm({ next }: Readonly<SignInFormProps> = {}) {
       await signInWithEmail(email, password);
       finishSuccess("email");
     } catch (err) {
-      setErrors({ form: humanizeAuthError(err) });
+      setErrors({ form: humanizeAuthError(err, locale) });
     } finally {
       setSubmitting(false);
     }
@@ -111,11 +113,14 @@ export function SignInForm({ next }: Readonly<SignInFormProps> = {}) {
       await signInWithGoogle();
       finishSuccess("google");
     } catch (err) {
-      setErrors({ form: humanizeAuthError(err) });
+      setErrors({ form: humanizeAuthError(err, locale) });
     } finally {
       setSubmitting(false);
     }
   }
+
+  const registrarseHref = localizedHref(locale, "/registrarse");
+  const recuperarHref = localizedHref(locale, "/recuperar");
 
   return (
     <motion.form
@@ -136,10 +141,10 @@ export function SignInForm({ next }: Readonly<SignInFormProps> = {}) {
         <div className="flex flex-col">
           <span className="inline-flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.28em] text-[var(--color-gold-deep)]">
             <Sparkles className="h-3 w-3" aria-hidden />
-            Acceso
+            {t(locale, "auth.signin.kicker.card")}
           </span>
           <h2 className="mt-1 font-[var(--font-display)] text-2xl font-[370] tracking-tight text-[var(--color-foreground)]">
-            Continuá donde lo dejaste
+            {t(locale, "auth.signin.card.title")}
           </h2>
         </div>
       </motion.div>
@@ -149,7 +154,7 @@ export function SignInForm({ next }: Readonly<SignInFormProps> = {}) {
           htmlFor="auth-email"
           className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--color-text-subtle)]"
         >
-          Email
+          {t(locale, "auth.signin.field.email")}
         </label>
         <div className="relative">
           <Mail
@@ -163,7 +168,7 @@ export function SignInForm({ next }: Readonly<SignInFormProps> = {}) {
             required
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            placeholder="tu@email.com"
+            placeholder={t(locale, "auth.signin.field.email.placeholder")}
             className="h-12 w-full rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-background)] pl-10 pr-3 text-sm text-[var(--color-foreground)] placeholder:text-[var(--color-text-subtle)] focus:border-[var(--color-brand-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-brand-primary)]/30"
           />
         </div>
@@ -175,13 +180,13 @@ export function SignInForm({ next }: Readonly<SignInFormProps> = {}) {
             htmlFor="auth-password"
             className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--color-text-subtle)]"
           >
-            Contraseña
+            {t(locale, "auth.signin.field.password")}
           </label>
           <Link
-            href="/recuperar"
+            href={recuperarHref}
             className="text-[11px] font-semibold text-[var(--color-brand-primary)] underline-offset-2 hover:underline"
           >
-            ¿La olvidaste?
+            {t(locale, "auth.signin.forgot")}
           </Link>
         </div>
         <div className="relative">
@@ -193,13 +198,17 @@ export function SignInForm({ next }: Readonly<SignInFormProps> = {}) {
             minLength={6}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            placeholder="Mínimo 6 caracteres"
+            placeholder={t(locale, "auth.signin.field.password.placeholder")}
             className="h-12 w-full rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-background)] pl-3.5 pr-12 text-sm text-[var(--color-foreground)] placeholder:text-[var(--color-text-subtle)] focus:border-[var(--color-brand-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-brand-primary)]/30"
           />
           <button
             type="button"
             onClick={() => setShowPassword((v) => !v)}
-            aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
+            aria-label={
+              showPassword
+                ? t(locale, "auth.signin.field.password.hide")
+                : t(locale, "auth.signin.field.password.show")
+            }
             className="absolute right-2 top-1/2 inline-flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full text-[var(--color-text-subtle)] transition-colors hover:bg-[var(--color-surface-muted)] hover:text-[var(--color-foreground)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)]"
           >
             {showPassword ? (
@@ -228,7 +237,9 @@ export function SignInForm({ next }: Readonly<SignInFormProps> = {}) {
         className="btn-pulse inline-flex h-12 items-center justify-center gap-2 rounded-full bg-[var(--color-brand-primary)] px-5 text-sm font-semibold text-[var(--color-surface)] shadow-[var(--shadow-glow-primary)] transition-[background,transform] duration-200 ease-[var(--ease-standard)] hover:-translate-y-[1px] hover:bg-[var(--color-brand-primary-strong)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-background)] disabled:cursor-not-allowed disabled:opacity-70"
       >
         <LogIn className="h-4 w-4" aria-hidden />
-        {submitting ? "Entrando…" : "Iniciar sesión"}
+        {submitting
+          ? t(locale, "auth.signin.submitting")
+          : t(locale, "auth.signin.submit")}
       </motion.button>
 
       <motion.div
@@ -238,7 +249,7 @@ export function SignInForm({ next }: Readonly<SignInFormProps> = {}) {
         className="flex items-center gap-3 text-[10px] uppercase tracking-[0.22em] text-[var(--color-text-subtle)]"
       >
         <span className="h-px flex-1 bg-[var(--color-border)]" aria-hidden />
-        <span>o</span>
+        <span>{t(locale, "auth.signin.divider")}</span>
         <span className="h-px flex-1 bg-[var(--color-border)]" aria-hidden />
       </motion.div>
 
@@ -250,7 +261,7 @@ export function SignInForm({ next }: Readonly<SignInFormProps> = {}) {
         className="inline-flex h-12 items-center justify-center gap-2 rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] px-5 text-sm font-semibold text-[var(--color-foreground)] transition-[border-color,background,transform] duration-200 ease-[var(--ease-standard)] hover:-translate-y-[1px] hover:border-[var(--color-brand-primary-soft)] hover:bg-[var(--color-background-elevated)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-background)] disabled:cursor-not-allowed disabled:opacity-70"
       >
         <GoogleGlyph />
-        Continuar con Google
+        {t(locale, "auth.signin.google")}
       </motion.button>
 
       <motion.div
@@ -261,30 +272,30 @@ export function SignInForm({ next }: Readonly<SignInFormProps> = {}) {
           className="h-3.5 w-3.5 text-[var(--color-brand-primary)]"
           aria-hidden
         />
-        Tu identidad nunca aparece en perfiles públicos.
+        {t(locale, "auth.signin.trustLine")}
       </motion.div>
 
       <motion.p
         variants={REVEAL}
         className="text-center text-xs text-[var(--color-text-muted)]"
       >
-        ¿No tenés cuenta?{" "}
+        {t(locale, "auth.signin.noAccount")}{" "}
         <Link
           href={
-            safeNext === "/"
-              ? "/registrarse"
-              : `/registrarse?next=${encodeURIComponent(safeNext)}`
+            safeNext === localizedHref(locale, "/")
+              ? registrarseHref
+              : `${registrarseHref}?next=${encodeURIComponent(safeNext)}`
           }
           className="font-semibold text-[var(--color-brand-primary)] underline-offset-2 hover:underline"
         >
-          Crear cuenta
+          {t(locale, "auth.signin.createAccount")}
         </Link>
       </motion.p>
     </motion.form>
   );
 }
 
-function DisabledNotice() {
+function DisabledNotice({ locale }: { locale: SupportedLocale }) {
   return (
     <div
       role="status"
@@ -292,13 +303,9 @@ function DisabledNotice() {
     >
       <span className="inline-flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.22em] text-[var(--color-brand-highlight)]">
         <ShieldCheck className="h-3 w-3" aria-hidden />
-        Auth no disponible
+        {t(locale, "auth.disabled.kicker")}
       </span>
-      <p>
-        Falta configurar las variables <code className="font-mono text-xs">NEXT_PUBLIC_FIREBASE_*</code>{" "}
-        para activar el acceso. Mientras tanto el catálogo y los perfiles
-        funcionan en modo demo.
-      </p>
+      <p>{t(locale, "auth.disabled.signin.body")}</p>
     </div>
   );
 }
@@ -307,23 +314,14 @@ function DisabledNotice() {
  * Rendered when the JS-SDK already has a user but the visitor landed on
  * `/ingresar` anyway — typically because the gated route did
  * `redirect("/ingresar?next=…")` after `getSession()` came back null.
- *
- * The historical version of this component blindly trusted that the
- * server-side cookie was in sync and shipped a "Continuar" button that just
- * called `router.push(next)`. When the cookie was actually missing (e.g.
- * Firebase Admin env vars not set on the deploy → mock provider → no
- * cookie can be minted) the gated page redirected the user right back
- * here — a silent loop with no error surfaced.
- *
- * This version:
- *   1. Reads `serverSession` from the hook so we know whether the cookie
- *      is healthy without doing extra work.
- *   2. On "Continuar", does a force-refresh of the ID token + re-mint of
- *      the cookie and only navigates when the server confirms `ok`.
- *   3. If the server keeps rejecting, surfaces the error inline + offers
- *      a "Cerrar sesión" escape so the visitor can recover.
  */
-function AlreadySignedIn({ next }: { next: string }) {
+function AlreadySignedIn({
+  next,
+  locale,
+}: {
+  next: string;
+  locale: SupportedLocale;
+}) {
   const router = useRouter();
   const { serverSession, refreshServerSession, signOut } = useAuthSession();
   const [busy, setBusy] = useState<"continue" | "signout" | null>(null);
@@ -339,7 +337,9 @@ function AlreadySignedIn({ next }: { next: string }) {
     try {
       const result = await refreshServerSession();
       if (result.status !== "ok") {
-        setLocalError(result.error ?? "No pudimos confirmar tu sesión.");
+        setLocalError(
+          result.error ?? t(locale, "auth.alreadySignedIn.error.fallback"),
+        );
         return;
       }
       router.push(next);
@@ -363,7 +363,7 @@ function AlreadySignedIn({ next }: { next: string }) {
 
   return (
     <div className="flex w-full max-w-md flex-col gap-4 rounded-[var(--radius-2xl)] border border-[var(--color-border)] bg-[var(--color-surface)] p-6 text-sm text-[var(--color-text-muted)] shadow-[var(--shadow-sm)]">
-      <p>Ya tenés sesión iniciada.</p>
+      <p>{t(locale, "auth.alreadySignedIn.lead")}</p>
 
       {errorMessage && (
         <div
@@ -372,10 +372,11 @@ function AlreadySignedIn({ next }: { next: string }) {
         >
           <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden />
           <span className="flex flex-col gap-1">
-            <span className="font-semibold">No pudimos validar tu sesión en el servidor.</span>
+            <span className="font-semibold">
+              {t(locale, "auth.alreadySignedIn.error.title")}
+            </span>
             <span className="text-[var(--color-text-muted)]">
-              Probá reintentar. Si el problema persiste, cerrá sesión y
-              volvé a entrar.
+              {t(locale, "auth.alreadySignedIn.error.advice")}
             </span>
             <span className="font-mono text-[10px] text-[var(--color-text-subtle)]">
               {errorMessage}
@@ -395,10 +396,10 @@ function AlreadySignedIn({ next }: { next: string }) {
             <RefreshCcw className="h-4 w-4" aria-hidden />
           ) : null}
           {busy === "continue"
-            ? "Verificando…"
+            ? t(locale, "auth.alreadySignedIn.verifying")
             : errorMessage
-              ? "Reintentar"
-              : "Continuar"}
+              ? t(locale, "auth.alreadySignedIn.retry")
+              : t(locale, "auth.alreadySignedIn.continue")}
         </button>
 
         {errorMessage && (
@@ -409,7 +410,9 @@ function AlreadySignedIn({ next }: { next: string }) {
             className="inline-flex h-11 items-center gap-2 rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] px-4 text-sm font-semibold text-[var(--color-foreground)] transition-[border-color,background] duration-200 ease-[var(--ease-standard)] hover:border-[var(--color-brand-primary-soft)] hover:bg-[var(--color-background-elevated)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-background)] disabled:cursor-not-allowed disabled:opacity-70"
           >
             <LogOut className="h-4 w-4" aria-hidden />
-            {busy === "signout" ? "Cerrando…" : "Cerrar sesión"}
+            {busy === "signout"
+              ? t(locale, "auth.alreadySignedIn.signingOut")
+              : t(locale, "auth.alreadySignedIn.signOut")}
           </button>
         )}
       </div>
@@ -447,7 +450,7 @@ function GoogleGlyph() {
   );
 }
 
-function humanizeAuthError(err: unknown): string {
+function humanizeAuthError(err: unknown, locale: SupportedLocale): string {
   const code =
     typeof (err as { code?: unknown } | undefined)?.code === "string"
       ? (err as { code: string }).code
@@ -456,15 +459,15 @@ function humanizeAuthError(err: unknown): string {
     case "auth/invalid-credential":
     case "auth/wrong-password":
     case "auth/user-not-found":
-      return "Credenciales inválidas. Probá de nuevo.";
+      return t(locale, "auth.error.invalidCredentials");
     case "auth/too-many-requests":
-      return "Demasiados intentos. Esperá unos minutos.";
+      return t(locale, "auth.error.tooManyRequests");
     case "auth/popup-closed-by-user":
     case "auth/cancelled-popup-request":
-      return "Cancelaste el inicio de sesión.";
+      return t(locale, "auth.error.popupClosed");
     case "auth/network-request-failed":
-      return "Sin conexión. Revisá tu internet e intentá otra vez.";
+      return t(locale, "auth.error.network");
     default:
-      return (err as Error)?.message ?? "Error desconocido.";
+      return (err as Error)?.message ?? t(locale, "auth.error.unknown");
   }
 }

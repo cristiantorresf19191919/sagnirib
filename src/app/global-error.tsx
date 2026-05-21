@@ -1,6 +1,10 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useSyncExternalStore } from "react";
+
+import { brandConfig, type SupportedLocale } from "@/core/branding/brand-config";
+import { isSupportedLocale } from "@/core/i18n/constants";
+import { t } from "@/core/i18n/messages";
 
 interface GlobalErrorProps {
   error: Error & { digest?: string };
@@ -12,17 +16,39 @@ interface GlobalErrorProps {
  * Replaces `<html>` and `<body>`, so we cannot rely on theme tokens or
  * `globals.css` having loaded. Styles are inline and use literal brand
  * values to stay legible under the worst-case render path.
+ *
+ * Locale detection here is best-effort because the proxy's `x-locale`
+ * header isn't visible to client components — we parse it from the
+ * pathname after hydration and fall back to the default.
  */
+function readLocaleFromPath(): SupportedLocale {
+  if (typeof window === "undefined") return brandConfig.defaultLocale;
+  const first = window.location.pathname.split("/", 2)[1] ?? "";
+  return isSupportedLocale(first) ? first : brandConfig.defaultLocale;
+}
+
+const NOOP_SUBSCRIBE = () => () => {};
+const getServerLocale = (): SupportedLocale => brandConfig.defaultLocale;
+
 export default function GlobalError({
   error,
   reset,
 }: Readonly<GlobalErrorProps>) {
+  // useSyncExternalStore preserves SSR-safe hydration: server + first
+  // client render both return defaultLocale; the post-hydration snapshot
+  // then reads the actual locale from the path. No setState-in-effect.
+  const locale = useSyncExternalStore(
+    NOOP_SUBSCRIBE,
+    readLocaleFromPath,
+    getServerLocale,
+  );
+
   useEffect(() => {
     console.error("[app] global boundary caught:", error);
   }, [error]);
 
   return (
-    <html lang="es">
+    <html lang={locale}>
       <body
         style={{
           margin: 0,
@@ -58,7 +84,7 @@ export default function GlobalError({
               margin: 0,
             }}
           >
-            Error inesperado
+            {t(locale, "error.globalKicker")}
           </p>
           <h1
             style={{
@@ -69,7 +95,7 @@ export default function GlobalError({
               margin: 0,
             }}
           >
-            Algo se rompió del lado nuestro.
+            {t(locale, "error.globalTitle")}
           </h1>
           <p
             style={{
@@ -79,8 +105,7 @@ export default function GlobalError({
               margin: 0,
             }}
           >
-            Estamos al tanto. Probá recargar — si sigue sin funcionar, intentá
-            de nuevo en unos minutos.
+            {t(locale, "error.globalBody")}
           </p>
           {error.digest ? (
             <p
@@ -92,7 +117,7 @@ export default function GlobalError({
                 margin: 0,
               }}
             >
-              Ref: {error.digest}
+              {t(locale, "error.ref")} {error.digest}
             </p>
           ) : null}
           <button
@@ -111,7 +136,7 @@ export default function GlobalError({
               cursor: "pointer",
             }}
           >
-            Intentar de nuevo
+            {t(locale, "error.globalRetry")}
           </button>
         </main>
       </body>

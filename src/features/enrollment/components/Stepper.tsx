@@ -2,6 +2,9 @@
 
 import { Check } from "lucide-react";
 
+import { useActiveLocale } from "@/core/i18n/use-active-locale";
+import { t } from "@/core/i18n/messages";
+
 import type { StepId } from "../lib/types";
 
 export interface StepDescriptor {
@@ -29,10 +32,11 @@ interface StepperProps {
  * user always sees their position without overflowing the viewport.
  */
 export function Stepper({ steps, current, completed, onJump }: StepperProps) {
+  const locale = useActiveLocale();
   return (
     <ol
       role="list"
-      aria-label="Progreso de publicación"
+      aria-label={t(locale, "publicar.stepper.aria")}
       className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-4"
     >
       {steps.map((step) => {
@@ -65,7 +69,9 @@ export function Stepper({ steps, current, completed, onJump }: StepperProps) {
                     : "text-[var(--color-text-subtle)]"
                 }`}
               >
-                Paso {String(step.number).padStart(2, "0")}
+                {t(locale, "publicar.stepper.stepLabel", {
+                  number: String(step.number).padStart(2, "0"),
+                })}
               </span>
               <span
                 className={`text-lg font-semibold leading-tight tracking-tight ${

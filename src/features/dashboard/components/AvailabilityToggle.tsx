@@ -3,6 +3,8 @@
 import { Loader2 } from "lucide-react";
 import { useState, useTransition } from "react";
 
+import { t } from "@/core/i18n/messages";
+import { useActiveLocale } from "@/core/i18n/use-active-locale";
 import { toast } from "@/shared/ui/toast";
 
 import { setListingAvailability } from "../actions/set-listing-availability";
@@ -31,6 +33,7 @@ export function AvailabilityToggle({
   listingSlug,
   initialAvailable,
 }: Readonly<AvailabilityToggleProps>) {
+  const locale = useActiveLocale();
   const [available, setAvailable] = useState(initialAvailable);
   const [pending, startTransition] = useTransition();
 
@@ -46,15 +49,16 @@ export function AvailabilityToggle({
       if (res.ok) {
         toast.success(
           next
-            ? "Estás visible como disponible ahora."
-            : "Pausada — ya no aparecés como disponible ahora.",
+            ? t(locale, "dashboard.availability.toast.live")
+            : t(locale, "dashboard.availability.toast.paused"),
         );
         return;
       }
       setAvailable(previous);
       toast.error(
-        "No pudimos actualizar tu disponibilidad",
-        res.error?.message ?? "Probá de nuevo en un momento.",
+        t(locale, "dashboard.availability.toast.errorTitle"),
+        res.error?.message ??
+          t(locale, "dashboard.availability.toast.errorBody"),
       );
     });
   }
@@ -62,7 +66,7 @@ export function AvailabilityToggle({
   return (
     <div
       role="group"
-      aria-label="Disponibilidad ahora"
+      aria-label={t(locale, "dashboard.availability.aria")}
       className="inline-flex items-center gap-1 rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] p-1 shadow-[var(--shadow-sm)]"
     >
       <button
@@ -90,7 +94,7 @@ export function AvailabilityToggle({
             }
           />
         )}
-        Disponible ahora
+        {t(locale, "dashboard.availability.available")}
       </button>
       <button
         type="button"
@@ -107,7 +111,7 @@ export function AvailabilityToggle({
         {!available && pending ? (
           <Loader2 className="mr-1.5 h-3 w-3 animate-spin" aria-hidden />
         ) : null}
-        Pausada
+        {t(locale, "dashboard.availability.paused")}
       </button>
     </div>
   );

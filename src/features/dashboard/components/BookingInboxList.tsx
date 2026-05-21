@@ -16,6 +16,9 @@ import {
 } from "lucide-react";
 import { useMemo, useState, useTransition } from "react";
 
+import type { SupportedLocale } from "@/core/branding/brand-config";
+import { t } from "@/core/i18n/messages";
+import { useActiveLocale } from "@/core/i18n/use-active-locale";
 import type {
   BookingMeetingType,
   BookingRequestRecord,
@@ -26,13 +29,17 @@ import { toast } from "@/shared/ui/toast";
 import { respondToBooking } from "../actions/respond-booking";
 import { RateBuyerInline } from "./RateBuyerInline";
 
-const STATUS_LABEL: Record<BookingRequestRecord["status"], string> = {
-  pending: "Pendiente",
-  confirmed: "Confirmada",
-  declined: "Rechazada",
-  cancelled: "Cancelada",
-  completed: "Completada",
-};
+function buildStatusLabels(
+  locale: SupportedLocale,
+): Record<BookingRequestRecord["status"], string> {
+  return {
+    pending: t(locale, "dashboard.inbox.status.pending"),
+    confirmed: t(locale, "dashboard.inbox.status.confirmed"),
+    declined: t(locale, "dashboard.inbox.status.declined"),
+    cancelled: t(locale, "dashboard.inbox.status.cancelled"),
+    completed: t(locale, "dashboard.inbox.status.completed"),
+  };
+}
 
 const STATUS_CLS: Record<BookingRequestRecord["status"], string> = {
   pending:
@@ -47,17 +54,25 @@ const STATUS_CLS: Record<BookingRequestRecord["status"], string> = {
     "border-[var(--color-brand-secondary)]/40 bg-[var(--color-brand-secondary)]/12 text-[var(--color-brand-secondary-strong)]",
 };
 
-const MEETING_LABEL: Record<BookingMeetingType, string> = {
-  outcall: "A domicilio",
-  incall: "En su lugar",
-  videocall: "Videollamada",
-};
+function buildMeetingLabels(
+  locale: SupportedLocale,
+): Record<BookingMeetingType, string> {
+  return {
+    outcall: t(locale, "dashboard.inbox.meeting.outcall"),
+    incall: t(locale, "dashboard.inbox.meeting.incall"),
+    videocall: t(locale, "dashboard.inbox.meeting.videocall"),
+  };
+}
 
-const CONTACT_LABEL: Record<BookingContactPreference, string> = {
-  whatsapp: "WhatsApp",
-  telegram: "Telegram",
-  platform: "Mensajería Biringas",
-};
+function buildContactLabels(
+  locale: SupportedLocale,
+): Record<BookingContactPreference, string> {
+  return {
+    whatsapp: t(locale, "dashboard.inbox.contact.whatsapp"),
+    telegram: t(locale, "dashboard.inbox.contact.telegram"),
+    platform: t(locale, "dashboard.inbox.contact.platform"),
+  };
+}
 
 const CONTACT_ICON: Record<BookingContactPreference, LucideIcon> = {
   whatsapp: MessageCircle,
@@ -71,17 +86,22 @@ interface BookingInboxListProps {
   initialBookings: ReadonlyArray<BookingRequestRecord>;
 }
 
-const DATE_FORMAT = new Intl.DateTimeFormat("es-CO", {
-  weekday: "short",
-  day: "numeric",
-  month: "short",
-});
-const SUBMITTED_FORMAT = new Intl.DateTimeFormat("es-CO", {
-  day: "numeric",
-  month: "short",
-  hour: "2-digit",
-  minute: "2-digit",
-});
+function buildDateFormatters(locale: SupportedLocale) {
+  const intlLocale = locale === "en" ? "en-US" : "es-CO";
+  return {
+    date: new Intl.DateTimeFormat(intlLocale, {
+      weekday: "short",
+      day: "numeric",
+      month: "short",
+    }),
+    submitted: new Intl.DateTimeFormat(intlLocale, {
+      day: "numeric",
+      month: "short",
+      hour: "2-digit",
+      minute: "2-digit",
+    }),
+  };
+}
 
 /**
  * Inbox list — incoming booking requests with confirm / decline /
@@ -99,6 +119,11 @@ const SUBMITTED_FORMAT = new Intl.DateTimeFormat("es-CO", {
 export function BookingInboxList({
   initialBookings,
 }: Readonly<BookingInboxListProps>) {
+  const locale = useActiveLocale();
+  const statusLabels = useMemo(() => buildStatusLabels(locale), [locale]);
+  const meetingLabels = useMemo(() => buildMeetingLabels(locale), [locale]);
+  const contactLabels = useMemo(() => buildContactLabels(locale), [locale]);
+  const dateFormatters = useMemo(() => buildDateFormatters(locale), [locale]);
   const [bookings, setBookings] =
     useState<ReadonlyArray<BookingRequestRecord>>(initialBookings);
   const [filter, setFilter] = useState<Filter>("all");
@@ -138,16 +163,17 @@ export function BookingInboxList({
       if (result.ok) {
         toast.success(
           action === "confirmed"
-            ? "Reserva confirmada"
+            ? t(locale, "dashboard.inbox.toast.confirmed")
             : action === "declined"
-              ? "Reserva rechazada"
-              : "Reserva marcada como completada",
+              ? t(locale, "dashboard.inbox.toast.declined")
+              : t(locale, "dashboard.inbox.toast.completed"),
         );
       } else {
         setBookings(before);
         toast.error(
-          "No pudimos actualizar la reserva",
-          result.error?.message ?? "Intentá de nuevo en un momento.",
+          t(locale, "dashboard.inbox.toast.errorTitle"),
+          result.error?.message ??
+            t(locale, "dashboard.inbox.toast.errorBody"),
         );
       }
       setPendingId(null);
@@ -158,22 +184,27 @@ export function BookingInboxList({
     return (
       <div className="rounded-[var(--radius-2xl)] border border-dashed border-[var(--color-border)] bg-[var(--color-surface)]/60 p-10 text-center">
         <p className="font-[var(--font-display)] text-xl font-[370] text-[var(--color-foreground)]">
-          Aún sin solicitudes
+          {t(locale, "dashboard.inbox.empty.title")}
         </p>
         <p className="mx-auto mt-2 max-w-md text-sm leading-relaxed text-[var(--color-text-muted)]">
-          Cuando alguien envíe una propuesta a tu perfil, vas a verla aquí
-          con todos los detalles antes de aceptar o rechazar.
+          {t(locale, "dashboard.inbox.empty.body")}
         </p>
       </div>
     );
   }
 
   const filterChips: ReadonlyArray<{ key: Filter; label: string }> = [
-    { key: "all", label: "Todas" },
-    { key: "pending", label: "Pendientes" },
-    { key: "confirmed", label: "Confirmadas" },
-    { key: "completed", label: "Completadas" },
-    { key: "declined", label: "Rechazadas" },
+    { key: "all", label: t(locale, "dashboard.inbox.filter.all") },
+    { key: "pending", label: t(locale, "dashboard.inbox.filter.pending") },
+    {
+      key: "confirmed",
+      label: t(locale, "dashboard.inbox.filter.confirmed"),
+    },
+    {
+      key: "completed",
+      label: t(locale, "dashboard.inbox.filter.completed"),
+    },
+    { key: "declined", label: t(locale, "dashboard.inbox.filter.declined") },
   ];
 
   return (
@@ -181,7 +212,7 @@ export function BookingInboxList({
       {/* Filter chips */}
       <div
         role="tablist"
-        aria-label="Filtrar solicitudes"
+        aria-label={t(locale, "dashboard.inbox.filter.aria")}
         className="flex flex-wrap items-center gap-1.5"
       >
         {filterChips.map((c) => {
@@ -217,12 +248,17 @@ export function BookingInboxList({
               booking={booking}
               busy={pendingId === booking.id && isPending}
               onAction={handleAction}
+              locale={locale}
+              statusLabels={statusLabels}
+              meetingLabels={meetingLabels}
+              contactLabels={contactLabels}
+              dateFormatters={dateFormatters}
             />
           ))}
         </AnimatePresence>
         {filtered.length === 0 && (
           <li className="rounded-[var(--radius-lg)] border border-dashed border-[var(--color-border)] bg-[var(--color-surface)]/60 p-6 text-center text-sm text-[var(--color-text-muted)]">
-            Sin resultados para este filtro.
+            {t(locale, "dashboard.inbox.noResults")}
           </li>
         )}
       </ul>
@@ -237,9 +273,26 @@ interface BookingCardProps {
     id: string,
     action: "confirmed" | "declined" | "completed",
   ) => void;
+  locale: SupportedLocale;
+  statusLabels: Record<BookingRequestRecord["status"], string>;
+  meetingLabels: Record<BookingMeetingType, string>;
+  contactLabels: Record<BookingContactPreference, string>;
+  dateFormatters: {
+    date: Intl.DateTimeFormat;
+    submitted: Intl.DateTimeFormat;
+  };
 }
 
-function BookingCard({ booking, busy, onAction }: Readonly<BookingCardProps>) {
+function BookingCard({
+  booking,
+  busy,
+  onAction,
+  locale,
+  statusLabels,
+  meetingLabels,
+  contactLabels,
+  dateFormatters,
+}: Readonly<BookingCardProps>) {
   const ContactIcon = CONTACT_ICON[booking.contactPreference];
   const proposedDate = new Date(booking.proposedAt);
   const submittedDate = new Date(booking.submittedAt);
@@ -266,9 +319,12 @@ function BookingCard({ booking, busy, onAction }: Readonly<BookingCardProps>) {
               className="h-4 w-4 text-[var(--color-brand-primary)]"
               aria-hidden
             />
-            {DATE_FORMAT.format(proposedDate)} ·{" "}
+            {dateFormatters.date.format(proposedDate)} ·{" "}
             <span className="font-normal text-[var(--color-text-muted)]">
-              {booking.durationHours}h · {MEETING_LABEL[booking.meetingType]}
+              {t(locale, "dashboard.inbox.duration", {
+                hours: booking.durationHours,
+                type: meetingLabels[booking.meetingType],
+              })}
             </span>
           </span>
         </div>
@@ -276,7 +332,7 @@ function BookingCard({ booking, busy, onAction }: Readonly<BookingCardProps>) {
           className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] ${STATUS_CLS[booking.status]}`}
         >
           {isConfirmed && <CheckCircle2 className="h-3 w-3" aria-hidden />}
-          {STATUS_LABEL[booking.status]}
+          {statusLabels[booking.status]}
         </span>
       </header>
 
@@ -288,19 +344,21 @@ function BookingCard({ booking, busy, onAction }: Readonly<BookingCardProps>) {
         <ul className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] text-[var(--color-text-muted)]">
           <li className="inline-flex items-center gap-1.5">
             <ContactIcon className="h-3 w-3" aria-hidden />
-            {CONTACT_LABEL[booking.contactPreference]}
+            {contactLabels[booking.contactPreference]}
           </li>
           <li className="inline-flex items-center gap-1.5">
             <Clock className="h-3 w-3" aria-hidden />
-            Recibida {SUBMITTED_FORMAT.format(submittedDate)}
+            {t(locale, "dashboard.inbox.received", {
+              when: dateFormatters.submitted.format(submittedDate),
+            })}
           </li>
           <li className="inline-flex items-center gap-1.5">
             <MapPinned className="h-3 w-3" aria-hidden />
-            {MEETING_LABEL[booking.meetingType]}
+            {meetingLabels[booking.meetingType]}
           </li>
           <li className="inline-flex items-center gap-1.5 text-[var(--color-text-subtle)]">
             <ShieldCheck className="h-3 w-3" aria-hidden />
-            ID solicitante oculto hasta confirmar
+            {t(locale, "dashboard.inbox.idHidden")}
           </li>
         </ul>
 
@@ -313,7 +371,7 @@ function BookingCard({ booking, busy, onAction }: Readonly<BookingCardProps>) {
               className="inline-flex h-10 items-center gap-1.5 rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] px-4 text-xs font-semibold text-[var(--color-foreground)] transition-colors duration-150 hover:border-[var(--color-brand-highlight)]/50 hover:bg-[var(--color-brand-highlight)]/8 hover:text-[var(--color-brand-highlight)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-highlight)] disabled:cursor-not-allowed disabled:opacity-60"
             >
               <ThumbsDown className="h-3.5 w-3.5" aria-hidden />
-              Rechazar
+              {t(locale, "dashboard.inbox.action.decline")}
             </button>
             <button
               type="button"
@@ -322,7 +380,9 @@ function BookingCard({ booking, busy, onAction }: Readonly<BookingCardProps>) {
               className="inline-flex h-10 items-center gap-1.5 rounded-full bg-[var(--color-brand-primary)] px-4 text-xs font-semibold text-[var(--color-surface)] shadow-[var(--shadow-glow-primary)] transition-[background,transform] duration-200 hover:-translate-y-[1px] hover:bg-[var(--color-brand-primary-strong)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-background)] disabled:cursor-not-allowed disabled:opacity-70"
             >
               <ThumbsUp className="h-3.5 w-3.5" aria-hidden />
-              {busy ? "Confirmando…" : "Confirmar"}
+              {busy
+                ? t(locale, "dashboard.inbox.action.confirming")
+                : t(locale, "dashboard.inbox.action.confirm")}
             </button>
           </div>
         )}
@@ -336,7 +396,7 @@ function BookingCard({ booking, busy, onAction }: Readonly<BookingCardProps>) {
               className="inline-flex h-9 items-center gap-1.5 rounded-full border border-[var(--color-brand-primary)]/40 bg-[var(--color-brand-primary)]/10 px-3.5 text-xs font-semibold text-[var(--color-brand-primary)] transition-colors duration-150 hover:bg-[var(--color-brand-primary)]/15 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)] disabled:cursor-not-allowed disabled:opacity-70"
             >
               <CheckCircle2 className="h-3.5 w-3.5" aria-hidden />
-              Marcar como completada
+              {t(locale, "dashboard.inbox.action.markCompleted")}
             </button>
           </div>
         )}

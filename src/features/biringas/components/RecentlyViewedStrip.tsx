@@ -5,6 +5,9 @@ import Link from "next/link";
 import { Clock, X } from "lucide-react";
 import { useSyncExternalStore } from "react";
 
+import { localizedHref } from "@/core/i18n/href";
+import { t } from "@/core/i18n/messages";
+import { useActiveLocale } from "@/core/i18n/use-active-locale";
 import { Container } from "@/shared/design-system/components/Container";
 
 import {
@@ -28,6 +31,7 @@ const VISIBLE_LIMIT = 6;
  * cover content on small screens; users scroll to it as part of the page.
  */
 export function RecentlyViewedStrip() {
+  const locale = useActiveLocale();
   const snapshot = useSyncExternalStore(
     subscribe,
     getSnapshot,
@@ -40,7 +44,7 @@ export function RecentlyViewedStrip() {
   return (
     <section
       data-testid="recently-viewed-strip"
-      aria-label="Vistos recientemente"
+      aria-label={t(locale, "recentlyViewed.title")}
       className="border-t border-[var(--color-border)]/60 bg-[var(--color-background-elevated)]/60 py-5 sm:py-6"
     >
       <Container width="wide">
@@ -50,7 +54,7 @@ export function RecentlyViewedStrip() {
               className="h-3.5 w-3.5 text-[var(--color-brand-primary)]"
               aria-hidden
             />
-            Vistos recientemente
+            {t(locale, "recentlyViewed.title")}
           </h2>
           <button
             type="button"
@@ -59,7 +63,7 @@ export function RecentlyViewedStrip() {
             className="inline-flex items-center gap-1 rounded-full px-2 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-[var(--color-text-muted)] transition-colors hover:bg-[var(--color-surface-muted)] hover:text-[var(--color-brand-highlight)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)]"
           >
             <X className="h-3 w-3" aria-hidden />
-            Borrar historial
+            {t(locale, "recentlyViewed.clear")}
           </button>
         </header>
 
@@ -74,7 +78,7 @@ export function RecentlyViewedStrip() {
               className="snap-start shrink-0"
             >
               <Link
-                href={`/p/${entry.slug}`}
+                href={localizedHref(locale, `/p/${entry.slug}`)}
                 className="group flex w-[148px] flex-col gap-2 rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-surface)] p-2 shadow-[var(--shadow-sm)] transition-[border-color,box-shadow,transform] duration-200 ease-[var(--ease-standard)] hover:-translate-y-0.5 hover:border-[var(--color-brand-primary-soft)] hover:shadow-[var(--shadow-md)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)]"
               >
                 <div className="relative aspect-[4/5] w-full overflow-hidden rounded-[var(--radius-md)] bg-[var(--color-surface-muted)]">
