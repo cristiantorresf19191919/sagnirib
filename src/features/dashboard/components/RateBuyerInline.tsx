@@ -4,6 +4,8 @@ import { motion } from "framer-motion";
 import { CheckCircle2, Star } from "lucide-react";
 import { useState, useTransition } from "react";
 
+import { t } from "@/core/i18n/messages";
+import { useActiveLocale } from "@/core/i18n/use-active-locale";
 import { toast } from "@/shared/ui/toast";
 
 import { submitBuyerReview } from "../actions/submit-buyer-review";
@@ -34,6 +36,7 @@ export function RateBuyerInline({
   existingRating,
   onReviewed,
 }: Readonly<RateBuyerInlineProps>) {
+  const locale = useActiveLocale();
   const [rating, setRating] = useState<number | null>(null);
   const [hover, setHover] = useState<number | null>(null);
   const [comment, setComment] = useState("");
@@ -47,7 +50,7 @@ export function RateBuyerInline({
     return (
       <div className="inline-flex items-center gap-2 rounded-full border border-[var(--color-brand-primary)]/40 bg-[var(--color-brand-primary)]/10 px-3 py-1.5 text-[11px] font-semibold text-[var(--color-brand-primary)]">
         <CheckCircle2 className="h-3.5 w-3.5" aria-hidden />
-        Calificado · {submitted}/5
+        {t(locale, "dashboard.rateBuyer.rated", { value: submitted })}
       </div>
     );
   }
@@ -57,7 +60,7 @@ export function RateBuyerInline({
   const onSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (rating === null) {
-      setError("Elige una calificación.");
+      setError(t(locale, "dashboard.rateBuyer.error.required"));
       return;
     }
     setError(null);
@@ -68,15 +71,15 @@ export function RateBuyerInline({
         comment: comment.trim() || undefined,
       });
       if (result.ok) {
-        toast.success("Cliente calificado");
+        toast.success(t(locale, "dashboard.rateBuyer.toast.success"));
         setSubmitted(rating);
         onReviewed?.(rating);
       } else {
         setError(
           result.error?.kind === "booking-disabled"
-            ? "Las reseñas mutuas se activan cuando Firestore esté listo."
+            ? t(locale, "dashboard.rateBuyer.error.bookingDisabled")
             : result.error?.message ??
-                "No pudimos guardar la calificación. Intentá de nuevo.",
+                t(locale, "dashboard.rateBuyer.error.fallback"),
         );
       }
     });
@@ -92,11 +95,11 @@ export function RateBuyerInline({
     >
       <div className="flex flex-wrap items-center justify-between gap-3">
         <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--color-text-subtle)]">
-          Calificar al cliente
+          {t(locale, "dashboard.rateBuyer.label")}
         </span>
         <div
           role="radiogroup"
-          aria-label="Calificación de 1 a 5 estrellas"
+          aria-label={t(locale, "dashboard.rateBuyer.scoreAria")}
           className="inline-flex items-center gap-0.5"
         >
           {[1, 2, 3, 4, 5].map((value) => {
@@ -107,7 +110,13 @@ export function RateBuyerInline({
                 type="button"
                 role="radio"
                 aria-checked={rating === value}
-                aria-label={`${value} estrella${value === 1 ? "" : "s"}`}
+                aria-label={t(
+                  locale,
+                  value === 1
+                    ? "dashboard.rateBuyer.stars.singular"
+                    : "dashboard.rateBuyer.stars.plural",
+                  { value },
+                )}
                 onClick={() => setRating(value)}
                 onMouseEnter={() => setHover(value)}
                 onMouseLeave={() => setHover(null)}
@@ -145,7 +154,7 @@ export function RateBuyerInline({
             value={comment}
             onChange={(e) => setComment(e.target.value)}
             maxLength={COMMENT_MAX}
-            placeholder="Comentario privado (opcional). Lo lee sólo el equipo de moderación."
+            placeholder={t(locale, "dashboard.rateBuyer.commentPlaceholder")}
             rows={2}
             className="rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-background)] px-3 py-2 text-xs leading-relaxed text-[var(--color-foreground)] placeholder:text-[var(--color-text-subtle)] focus:border-[var(--color-brand-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-brand-primary)]/30"
           />
@@ -169,14 +178,16 @@ export function RateBuyerInline({
               disabled={isPending}
               className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--color-text-muted)] transition-colors hover:text-[var(--color-foreground)] disabled:opacity-60"
             >
-              Cancelar
+              {t(locale, "dashboard.rateBuyer.cancel")}
             </button>
             <button
               type="submit"
               disabled={isPending}
               className="inline-flex h-9 items-center gap-1.5 rounded-full bg-[var(--color-brand-primary)] px-4 text-xs font-semibold text-[var(--color-surface)] shadow-[var(--shadow-glow-primary)] transition-[background,transform] duration-200 hover:-translate-y-[1px] hover:bg-[var(--color-brand-primary-strong)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)] disabled:cursor-not-allowed disabled:opacity-70"
             >
-              {isPending ? "Guardando…" : "Guardar"}
+              {isPending
+                ? t(locale, "dashboard.rateBuyer.submitting")
+                : t(locale, "dashboard.rateBuyer.submit")}
             </button>
           </div>
         </motion.div>

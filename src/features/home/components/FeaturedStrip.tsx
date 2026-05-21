@@ -119,6 +119,7 @@ export async function FeaturedStrip() {
             >
               <CatalogCard
                 listing={listing}
+                locale={locale}
                 featured
                 priority={idx === 0}
                 view="grid3"

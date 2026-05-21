@@ -10,6 +10,8 @@ import {
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
+import { readLocale } from "@/core/i18n/locale";
+import { t } from "@/core/i18n/messages";
 import type { ListingsFilters } from "@/server/biringas";
 import { Container } from "@/shared/design-system/components/Container";
 
@@ -22,7 +24,8 @@ interface QuickPresetsProps {
 
 interface Preset {
   id: string;
-  label: string;
+  /** i18n key for the chip label — resolved with `t()` at render time. */
+  labelKey: string;
   icon: LucideIcon;
   /** Which `ListingsFilters` keys this preset toggles. */
   apply: (filters: ListingsFilters) => ListingsFilters;
@@ -37,7 +40,7 @@ interface Preset {
 const PRESETS: ReadonlyArray<Preset> = [
   {
     id: "now",
-    label: "Disponibles ahora",
+    labelKey: "catalog.preset.availableNow",
     icon: Flame,
     tone: "highlight",
     apply: (f) => ({ ...f, availableNow: true, page: undefined }),
@@ -46,7 +49,7 @@ const PRESETS: ReadonlyArray<Preset> = [
   },
   {
     id: "verified",
-    label: "Verificadas",
+    labelKey: "catalog.preset.verified",
     icon: BadgeCheck,
     tone: "primary",
     apply: (f) => ({ ...f, verifiedOnly: true, page: undefined }),
@@ -55,7 +58,7 @@ const PRESETS: ReadonlyArray<Preset> = [
   },
   {
     id: "low-budget",
-    label: "Bajo $150k",
+    labelKey: "catalog.preset.lowBudget",
     icon: Wallet,
     tone: "accent",
     apply: (f) => ({ ...f, priceMax: 150_000, page: undefined }),
@@ -64,7 +67,7 @@ const PRESETS: ReadonlyArray<Preset> = [
   },
   {
     id: "face-visible",
-    label: "Cara visible",
+    labelKey: "catalog.preset.faceVisible",
     icon: Eye,
     tone: "primary",
     apply: (f) => ({ ...f, faceVisible: true, page: undefined }),
@@ -73,7 +76,7 @@ const PRESETS: ReadonlyArray<Preset> = [
   },
   {
     id: "top-rated",
-    label: "Top calificadas",
+    labelKey: "catalog.preset.topRated",
     icon: Star,
     tone: "accent",
     apply: (f) => ({
@@ -92,7 +95,7 @@ const PRESETS: ReadonlyArray<Preset> = [
   },
   {
     id: "with-video",
-    label: "Con video",
+    labelKey: "catalog.preset.withVideo",
     icon: Video,
     tone: "primary",
     apply: (f) => ({ ...f, withVideo: true, page: undefined }),
@@ -135,11 +138,12 @@ const TONE_ACTIVE: Record<NonNullable<Preset["tone"]>, string> = {
  * Server Component — every chip is a stable `Link` so navigation reuses
  * the existing GET-form catalog flow with no client JS cost.
  */
-export function QuickPresets({ filters, view }: QuickPresetsProps) {
+export async function QuickPresets({ filters, view }: QuickPresetsProps) {
+  const locale = await readLocale();
   return (
     <section
       data-testid="quick-presets"
-      aria-label="Sugerencias rápidas"
+      aria-label={t(locale, "catalog.preset.section.aria")}
       className="bg-[var(--color-background)]"
     >
       <Container width="wide" className="py-3 sm:py-4">
@@ -153,7 +157,9 @@ export function QuickPresets({ filters, view }: QuickPresetsProps) {
             <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-br from-[var(--color-gold)]/20 via-[var(--color-gold)]/10 to-[var(--color-cream)] text-[var(--color-gold-deep)] ring-1 ring-[var(--color-gold)]/30">
               <Sparkles className="h-3.5 w-3.5" aria-hidden />
             </span>
-            <span className="hidden md:inline">Sugerencias</span>
+            <span className="hidden md:inline">
+              {t(locale, "catalog.preset.section.eyebrow")}
+            </span>
           </span>
           {/* Horizontal scroll on mobile — preserves Hick's-law style
               single-row scan instead of letting 6+ chips wrap into a
@@ -163,7 +169,7 @@ export function QuickPresets({ filters, view }: QuickPresetsProps) {
           <div className="relative min-w-0 flex-1">
             <ul
               data-testid="quick-presets-list"
-              aria-label="Filtros rápidos"
+              aria-label={t(locale, "catalog.preset.list.aria")}
               className="flex flex-nowrap items-center gap-2 overflow-x-auto pb-1 [scrollbar-width:none] md:flex-wrap md:overflow-visible md:pb-0 [&::-webkit-scrollbar]:hidden"
             >
             {PRESETS.map((preset) => {
@@ -175,16 +181,17 @@ export function QuickPresets({ filters, view }: QuickPresetsProps) {
               const chipCls = active
                 ? "border-[var(--color-brand-primary)] bg-[var(--color-brand-primary)]/8 text-[var(--color-brand-primary)] shadow-[var(--shadow-sm)]"
                 : "border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-foreground)] hover:border-[var(--color-brand-primary-soft)] hover:bg-[var(--color-background-elevated)]";
+              const label = t(locale, preset.labelKey);
               return (
                 <li key={preset.id} data-testid={`quick-preset-${preset.id}`}>
                   <Link
                     href={presetHref(next, view)}
                     aria-pressed={active}
-                    aria-label={
-                      active
-                        ? `Quitar preset: ${preset.label}`
-                        : `Aplicar preset: ${preset.label}`
-                    }
+                    aria-label={t(
+                      locale,
+                      active ? "catalog.preset.remove" : "catalog.preset.apply",
+                      { label },
+                    )}
                     className={`group inline-flex h-11 items-center gap-2 rounded-full border pl-1.5 pr-4 text-[13px] font-semibold tracking-tight transition-[border-color,background,color,box-shadow] duration-200 ease-[var(--ease-standard)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-background)] ${chipCls}`}
                   >
                     <span
@@ -192,7 +199,7 @@ export function QuickPresets({ filters, view }: QuickPresetsProps) {
                     >
                       <Icon className="h-3.5 w-3.5" aria-hidden />
                     </span>
-                    {preset.label}
+                    {label}
                   </Link>
                 </li>
               );

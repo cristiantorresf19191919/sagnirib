@@ -139,6 +139,7 @@ export async function CatalogGrid({
                 >
                   <CatalogCard
                     listing={listing}
+                    locale={locale}
                     priority={index === 0}
                     featured={isPlanActive(listing)}
                     view={view}

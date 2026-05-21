@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { cookies } from "next/headers";
 import { notFound } from "next/navigation";
 import { Fraunces, Geist, Geist_Mono, Newsreader } from "next/font/google";
 
@@ -13,6 +14,11 @@ import { AgeGate } from "@/features/age-gate/AgeGate";
 import { readAgeAck } from "@/features/age-gate/cookie";
 import { listMyFavorites } from "@/server/favorites";
 import { ThemeScript } from "@/shared/layout/ThemeScript";
+import {
+  DEFAULT_THEME,
+  isValidTheme,
+  THEME_COOKIE,
+} from "@/shared/layout/theme-cookie";
 import "@/styles/globals.css";
 
 import { Providers } from "./providers";
@@ -96,9 +102,19 @@ export default async function RootLayout({
   // layout stays a single trivial await for both states.
   const initialFavorites = await listMyFavorites();
 
+  // SSR the theme attribute from the cookie so navigations that re-render
+  // the layout (e.g. router.refresh() after the locale switcher) keep
+  // the user's chosen mood instead of momentarily resetting to default.
+  const cookieStore = await cookies();
+  const themeFromCookie = cookieStore.get(THEME_COOKIE)?.value;
+  const activeTheme = isValidTheme(themeFromCookie)
+    ? themeFromCookie
+    : DEFAULT_THEME;
+
   return (
     <html
       lang={lang}
+      data-theme={activeTheme}
       className={`h-full antialiased ${sans.variable} ${mono.variable} ${display.variable} ${serif.variable}`}
       suppressHydrationWarning
     >
@@ -117,7 +133,7 @@ export default async function RootLayout({
         {acknowledged ? (
           <Providers initialFavorites={initialFavorites}>{children}</Providers>
         ) : (
-          <AgeGate />
+          <AgeGate locale={lang} />
         )}
       </body>
     </html>

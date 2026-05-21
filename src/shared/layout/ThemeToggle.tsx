@@ -12,27 +12,16 @@ import {
 } from "lucide-react";
 import { useEffect, useState, useSyncExternalStore } from "react";
 
-const STORAGE_KEY = "biringas:theme";
+import {
+  DEFAULT_THEME,
+  THEME_COOKIE,
+  VALID_THEMES,
+  type Theme,
+} from "./theme-cookie";
+
+const STORAGE_KEY = THEME_COOKIE;
 const HINT_DISMISSED_KEY = "biringas:theme-hint-dismissed";
-
-type Theme =
-  | "light"
-  | "dark"
-  | "desire"
-  | "bloom"
-  | "ember"
-  | "amour"
-  | "noir";
-
-const VALID_THEMES: ReadonlySet<Theme> = new Set([
-  "light",
-  "dark",
-  "desire",
-  "bloom",
-  "ember",
-  "amour",
-  "noir",
-]);
+const COOKIE_MAX_AGE_SECONDS = 60 * 60 * 24 * 365;
 
 const listeners = new Set<() => void>();
 
@@ -40,7 +29,9 @@ const listeners = new Set<() => void>();
  * Apply the theme to <html> + persist it + notify subscribers. Centralised
  * so the toggle handler stays small. localStorage may throw in private
  * mode / over quota — caught and ignored so the toggle still works for
- * the session.
+ * the session. The cookie write is what lets the next Server Component
+ * render emit `data-theme` directly, so a `router.refresh()` after the
+ * locale switcher cannot strip the attribute mid-reconciliation.
  */
 function applyTheme(next: Theme) {
   document.documentElement.setAttribute("data-theme", next);
@@ -48,6 +39,11 @@ function applyTheme(next: Theme) {
     localStorage.setItem(STORAGE_KEY, next);
   } catch {
     // No-op: storage failures are non-fatal for theme.
+  }
+  try {
+    document.cookie = `${THEME_COOKIE}=${next}; path=/; max-age=${COOKIE_MAX_AGE_SECONDS}; samesite=lax`;
+  } catch {
+    // No-op: cookie write failures are non-fatal — server falls back to default.
   }
   for (const cb of listeners) cb();
 }
@@ -62,13 +58,13 @@ function subscribe(cb: () => void) {
 function getSnapshot(): Theme {
   const attr = document.documentElement.getAttribute("data-theme");
   if (attr && VALID_THEMES.has(attr as Theme)) return attr as Theme;
-  return "light";
+  return DEFAULT_THEME;
 }
 
 function getServerSnapshot(): Theme {
-  // SSR default — `ThemeScript` overrides via pre-paint inline script
-  // before this component renders on the client.
-  return "light";
+  // SSR default — the layout SSR-emits `data-theme` from the cookie, and
+  // `ThemeScript` covers the first-visit case before paint.
+  return DEFAULT_THEME;
 }
 
 /**

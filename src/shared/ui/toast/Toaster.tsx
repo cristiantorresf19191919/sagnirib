@@ -10,6 +10,9 @@ import {
 } from "lucide-react";
 import { useSyncExternalStore } from "react";
 
+import { t } from "@/core/i18n/messages";
+import { useActiveLocale } from "@/core/i18n/use-active-locale";
+
 import {
   dismissToast,
   getServerToasts,
@@ -60,12 +63,13 @@ const KIND_ACCENT: Record<
  * from the bottom with a spring; exit fades + slides down.
  */
 export function Toaster() {
+  const locale = useActiveLocale();
   const items = useSyncExternalStore(subscribe, getToasts, getServerToasts);
 
   return (
     <div
       aria-live="polite"
-      aria-label="Notificaciones"
+      aria-label={t(locale, "toast.region.aria")}
       className="pointer-events-none fixed inset-x-0 bottom-4 z-[200] flex flex-col items-center gap-2 px-4 sm:bottom-6 sm:left-auto sm:right-6 sm:items-end sm:px-0"
     >
       <AnimatePresence initial={false}>
@@ -82,6 +86,7 @@ interface ToastCardProps {
 }
 
 function ToastCard({ toast }: Readonly<ToastCardProps>) {
+  const locale = useActiveLocale();
   const Icon = KIND_ICON[toast.kind];
   const accent = KIND_ACCENT[toast.kind];
   return (
@@ -117,7 +122,7 @@ function ToastCard({ toast }: Readonly<ToastCardProps>) {
       <button
         type="button"
         onClick={() => dismissToast(toast.id)}
-        aria-label="Descartar notificación"
+        aria-label={t(locale, "toast.dismiss")}
         className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[var(--color-text-subtle)] transition-colors hover:bg-[var(--color-surface-muted)] hover:text-[var(--color-foreground)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)]"
       >
         <X className="h-3.5 w-3.5" aria-hidden />

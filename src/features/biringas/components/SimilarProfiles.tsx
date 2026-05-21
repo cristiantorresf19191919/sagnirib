@@ -62,7 +62,7 @@ export async function SimilarProfiles({
               key={listing.id}
               data-testid={`similar-profile-${listing.slug}`}
             >
-              <CatalogCard listing={listing} view="grid3" />
+              <CatalogCard listing={listing} locale={locale} view="grid3" />
             </li>
           ))}
         </ul>

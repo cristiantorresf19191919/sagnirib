@@ -2,6 +2,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { Mic, MapPin, Play } from "lucide-react";
 
+import type { SupportedLocale } from "@/core/branding/brand-config";
+import { t } from "@/core/i18n/messages";
 import type { BiringaListing } from "@/server/biringas";
 import { Card } from "@/shared/design-system/components/Card";
 import { VerifiedBadge } from "@/shared/design-system/components/VerifiedBadge";
@@ -14,6 +16,9 @@ import { formatPricePerHour } from "../format";
 
 interface BiringaCardProps {
   listing: BiringaListing;
+  /** Active locale — required so the card works under both Server and
+   *  Client callers without pulling `next/headers` into a client tree. */
+  locale: SupportedLocale;
   /**
    * Eager-load + LCP candidate for the first card in the grid. Per the
    * /explorar Responsive Contract only the first card may be `priority`.
@@ -33,6 +38,7 @@ const HREF = (slug: string) => `/p/${slug}`;
 
 export function BiringaCard({
   listing,
+  locale,
   priority = false,
   sizes = DEFAULT_SIZES,
 }: BiringaCardProps) {
@@ -43,15 +49,21 @@ export function BiringaCard({
       <Link
         href={HREF(listing.slug)}
         className="absolute inset-0 z-20 rounded-[var(--radius-xl)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-background)]"
-        aria-label={`${listing.name} en ${listing.city} — ver perfil`}
+        aria-label={t(locale, "catalog.card.linkAria", {
+          name: listing.name,
+          city: listing.city,
+        })}
       >
-        <span className="sr-only">Ver perfil</span>
+        <span className="sr-only">{t(locale, "catalog.card.viewProfile")}</span>
       </Link>
 
       <div className="relative aspect-[4/5] w-full overflow-hidden rounded-[var(--radius-lg)] bg-[var(--color-surface-muted)]">
         <Image
           src={listing.mainImage}
-          alt={`${listing.name} en ${listing.city}`}
+          alt={t(locale, "catalog.card.imageAlt", {
+            name: listing.name,
+            city: listing.city,
+          })}
           fill
           sizes={sizes}
           priority={priority}
@@ -71,8 +83,8 @@ export function BiringaCard({
           {listing.hasVideo && (
             <span
               className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-[var(--color-surface)]/95 text-[var(--color-foreground)] shadow-[var(--shadow-sm)] backdrop-blur-sm"
-              aria-label="Con vídeo"
-              title="Con vídeo"
+              aria-label={t(locale, "catalog.card.withVideo")}
+              title={t(locale, "catalog.card.withVideo")}
             >
               <Play className="h-3.5 w-3.5" aria-hidden />
             </span>
@@ -80,8 +92,8 @@ export function BiringaCard({
           {listing.hasAudio && (
             <span
               className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-[var(--color-surface)]/95 text-[var(--color-foreground)] shadow-[var(--shadow-sm)] backdrop-blur-sm"
-              aria-label="Con audio"
-              title="Con audio"
+              aria-label={t(locale, "catalog.card.withAudio")}
+              title={t(locale, "catalog.card.withAudio")}
             >
               <Mic className="h-3.5 w-3.5" aria-hidden />
             </span>
@@ -113,7 +125,7 @@ export function BiringaCard({
         <div className="mt-1 flex items-center justify-between gap-2">
           <PriceTag value={formatPricePerHour(listing.pricePerHour)} size="sm" />
           <span className="text-xs text-[var(--color-brand-primary)] group-hover:underline">
-            Ver perfil
+            {t(locale, "catalog.card.viewProfile")}
           </span>
         </div>
       </div>

@@ -8,6 +8,8 @@ import {
   Volume2,
 } from "lucide-react";
 
+import type { SupportedLocale } from "@/core/branding/brand-config";
+import { t } from "@/core/i18n/messages";
 import type { BiringaListing } from "@/server/biringas";
 import { Card } from "@/shared/design-system/components/Card";
 import { VerifiedBadge } from "@/shared/design-system/components/VerifiedBadge";
@@ -22,6 +24,10 @@ import type { CatalogView } from "../lib/parse-filters";
 
 interface CatalogCardProps {
   listing: BiringaListing;
+  /** Active locale — required so the card works under both Server callers
+   *  (CatalogGrid, FeaturedStrip…) and the Client `FavoritesView` without
+   *  reaching into `next/headers` from inside a client tree. */
+  locale: SupportedLocale;
   /** First card in the grid uses `priority` per /explorar Responsive Contract. */
   priority?: boolean;
   /** Featured cards get the warm honey accent strip + star prefix. */
@@ -40,6 +46,7 @@ const SIZES_SPOTLIGHT =
 
 export function CatalogCard({
   listing,
+  locale,
   priority = false,
   featured = false,
   view = "grid3",
@@ -55,6 +62,7 @@ export function CatalogCard({
     return (
       <ListCard
         listing={listing}
+        locale={locale}
         priority={priority}
         featuredCls={featuredCls}
       />
@@ -75,10 +83,13 @@ export function CatalogCard({
     >
       <Link
         href={HREF(listing.slug)}
-        aria-label={`${listing.name} en ${listing.city} — ver perfil`}
+        aria-label={t(locale, "catalog.card.linkAria", {
+          name: listing.name,
+          city: listing.city,
+        })}
         className="absolute inset-0 z-20 rounded-[var(--radius-xl)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-background)]"
       >
-        <span className="sr-only">Ver anuncio</span>
+        <span className="sr-only">{t(locale, "catalog.card.viewListing")}</span>
       </Link>
 
       <div
@@ -87,7 +98,10 @@ export function CatalogCard({
         <div className="absolute inset-0 motion-safe:motion-ken-burns">
           <Image
             src={listing.mainImage}
-            alt={`${listing.name} en ${listing.city}`}
+            alt={t(locale, "catalog.card.imageAlt", {
+              name: listing.name,
+              city: listing.city,
+            })}
             fill
             sizes={imageSizes}
             priority={priority}
@@ -115,7 +129,7 @@ export function CatalogCard({
           {featured && (
             <span className="inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-[var(--color-gold-deep)] via-[var(--color-gold)] to-[var(--color-gold-deep)] px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--color-cream)] shadow-[0_4px_14px_-4px_rgba(200,166,118,0.6)] ring-1 ring-[rgba(255,247,232,0.45)]">
               <Star className="h-2.5 w-2.5 fill-current" aria-hidden />
-              Destacada
+              {t(locale, "catalog.card.featured")}
             </span>
           )}
           {listing.availableNow ? (
@@ -124,7 +138,7 @@ export function CatalogCard({
                 aria-hidden
                 className="h-1.5 w-1.5 rounded-full bg-[var(--color-surface)] motion-safe:animate-pulse"
               />
-              Disponible ahora
+              {t(locale, "catalog.card.availableNow")}
             </span>
           ) : listing.storyAt ? (
             <StoryTimestamp storyAt={listing.storyAt} />
@@ -138,7 +152,7 @@ export function CatalogCard({
         <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center">
           <span className="inline-flex translate-y-2 items-center gap-1.5 rounded-full bg-[var(--color-surface)]/95 px-4 py-2 text-xs font-semibold text-[var(--color-foreground)] opacity-0 shadow-[0_12px_28px_-10px_rgba(20,28,24,0.35)] ring-1 ring-[var(--color-gold)]/40 backdrop-blur-sm transition-[opacity,transform] duration-300 ease-[var(--ease-standard)] group-hover:translate-y-0 group-hover:opacity-100">
             <Eye className="h-3.5 w-3.5 text-[var(--color-brand-primary)]" aria-hidden />
-            Ver anuncio
+            {t(locale, "catalog.card.viewListing")}
             <span
               aria-hidden
               className="ml-1 inline-block h-1 w-1 rotate-45 bg-[var(--color-gold)]"
@@ -155,8 +169,8 @@ export function CatalogCard({
           <div className="absolute right-3 bottom-3 z-10">
             <span
               className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-[var(--color-surface)]/95 text-[var(--color-foreground)] shadow-[var(--shadow-sm)] backdrop-blur-sm"
-              aria-label="Con vídeo"
-              title="Con vídeo"
+              aria-label={t(locale, "catalog.card.withVideo")}
+              title={t(locale, "catalog.card.withVideo")}
             >
               <Play className="h-3.5 w-3.5" aria-hidden />
             </span>
@@ -173,7 +187,7 @@ export function CatalogCard({
                 pill so the trust signal travels with the name itself. */}
             {listing.verified && (
               <BadgeCheck
-                aria-label="Perfil verificado"
+                aria-label={t(locale, "catalog.card.verifiedProfile")}
                 className="h-4 w-4 shrink-0 text-[var(--color-brand-primary)]"
               />
             )}
@@ -181,8 +195,8 @@ export function CatalogCard({
                 the signal travels with the name in long lists. */}
             {listing.availableNow && (
               <span
-                aria-label="En línea ahora"
-                title="En línea ahora"
+                aria-label={t(locale, "catalog.card.onlineNow")}
+                title={t(locale, "catalog.card.onlineNow")}
                 className="relative inline-flex h-1.5 w-1.5 shrink-0 items-center justify-center"
               >
                 <span
@@ -197,7 +211,7 @@ export function CatalogCard({
             )}
           </h3>
           <span className="shrink-0 text-xs text-[var(--color-text-muted)]">
-            {listing.age} a.
+            {listing.age} {t(locale, "catalog.card.ageSuffix")}
           </span>
         </header>
         <RatingBadge
@@ -230,7 +244,7 @@ export function CatalogCard({
           <div className="text-[10px]">
             <span className="inline-flex items-center gap-1 rounded-full bg-[var(--color-brand-secondary)]/12 px-2 py-0.5 font-medium text-[var(--color-brand-secondary-strong)]">
               <Volume2 className="h-3 w-3" aria-hidden />
-              Audio
+              {t(locale, "catalog.card.audio")}
             </span>
           </div>
         )}
@@ -238,7 +252,7 @@ export function CatalogCard({
         {/* Activity + response-time signals — deterministic from the
             slug so the value is stable across renders. Helps buyers
             pre-qualify before tapping into the profile. */}
-        <ActivitySignals listing={listing} />
+        <ActivitySignals listing={listing} locale={locale} />
       </div>
     </Card>
   );
@@ -246,17 +260,20 @@ export function CatalogCard({
 
 interface ActivitySignalsProps {
   listing: BiringaListing;
+  locale: SupportedLocale;
 }
 
-function ActivitySignals({ listing }: Readonly<ActivitySignalsProps>) {
+function ActivitySignals({ listing, locale }: Readonly<ActivitySignalsProps>) {
   // Reply median is owner-earned — set by `respondToBooking` once the
   // listing has at least a couple of responded bookings. Absent value
   // hides the chip entirely; we do NOT synthesise a number anymore.
   const replyMin = listing.reputation.replyMedianMinutes ?? null;
-  // "Activa ahora" only when the live flag is on. We don't surface a
-  // synthetic "Activa hace Xh" from storyAt — that conflates "subió
-  // story" with "estuvo en línea", which is misleading.
-  const lastActive = listing.availableNow ? "Activa ahora" : null;
+  // "Active now" only when the live flag is on. We don't surface a
+  // synthetic "Active hace Xh" from storyAt — that conflates "uploaded
+  // story" with "was online", which is misleading.
+  const lastActive = listing.availableNow
+    ? t(locale, "catalog.card.activeNow")
+    : null;
   if (replyMin === null && !lastActive) return null;
   return (
     <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[10px] text-[var(--color-text-muted)]">
@@ -266,7 +283,7 @@ function ActivitySignals({ listing }: Readonly<ActivitySignalsProps>) {
             aria-hidden
             className="inline-block h-1.5 w-1.5 rounded-full bg-[var(--color-brand-primary)]"
           />
-          Responde ~{replyMin}min
+          {t(locale, "catalog.card.respondsIn", { minutes: replyMin })}
         </span>
       )}
       {lastActive && (
@@ -280,12 +297,14 @@ function ActivitySignals({ listing }: Readonly<ActivitySignalsProps>) {
 
 interface ListCardProps {
   listing: BiringaListing;
+  locale: SupportedLocale;
   priority: boolean;
   featuredCls: string;
 }
 
 function ListCard({
   listing,
+  locale,
   priority,
   featuredCls,
 }: ListCardProps) {
@@ -299,17 +318,23 @@ function ListCard({
     >
       <Link
         href={HREF(listing.slug)}
-        aria-label={`${listing.name} en ${listing.city} — ver perfil`}
+        aria-label={t(locale, "catalog.card.linkAria", {
+          name: listing.name,
+          city: listing.city,
+        })}
         className="absolute inset-0 z-20 rounded-[var(--radius-xl)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-background)]"
       >
-        <span className="sr-only">Ver anuncio</span>
+        <span className="sr-only">{t(locale, "catalog.card.viewListing")}</span>
       </Link>
 
       <div className="relative aspect-square w-28 shrink-0 overflow-hidden rounded-[var(--radius-lg)] bg-[var(--color-surface-muted)] sm:w-32">
         <div className="absolute inset-0 motion-safe:motion-ken-burns">
           <Image
             src={listing.mainImage}
-            alt={`${listing.name} en ${listing.city}`}
+            alt={t(locale, "catalog.card.imageAlt", {
+              name: listing.name,
+              city: listing.city,
+            })}
             fill
             sizes={SIZES_LIST}
             priority={priority}
@@ -322,7 +347,7 @@ function ListCard({
               aria-hidden
               className="h-1 w-1 rounded-full bg-[var(--color-surface)] motion-safe:animate-pulse"
             />
-            Ahora
+            {t(locale, "catalog.card.availableNowShort")}
           </span>
         ) : null}
       </div>
@@ -334,8 +359,8 @@ function ListCard({
               <span className="truncate">{listing.name}</span>
               {listing.availableNow && (
                 <span
-                  aria-label="En línea ahora"
-                  title="En línea ahora"
+                  aria-label={t(locale, "catalog.card.onlineNow")}
+                  title={t(locale, "catalog.card.onlineNow")}
                   className="relative inline-flex h-1.5 w-1.5 shrink-0 items-center justify-center"
                 >
                   <span
@@ -349,7 +374,7 @@ function ListCard({
                 </span>
               )}
               <span className="ml-1 text-xs font-normal text-[var(--color-text-muted)]">
-                {listing.age} a.
+                {listing.age} {t(locale, "catalog.card.ageSuffix")}
               </span>
             </h3>
             <div className="z-30 shrink-0">
@@ -362,7 +387,9 @@ function ListCard({
               count={listing.reputation.reviewCount}
               size="sm"
             />
-            {listing.verified && <VerifiedBadge label="Verificada" />}
+            {listing.verified && (
+              <VerifiedBadge label={t(locale, "catalog.card.verified")} />
+            )}
           </div>
           <p className="line-clamp-2 text-xs leading-snug text-[var(--color-text-muted)]">
             {listing.shortBio}

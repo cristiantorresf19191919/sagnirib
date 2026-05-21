@@ -14,47 +14,50 @@ import {
 import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 
+import { t } from "@/core/i18n/messages";
+import { useActiveLocale } from "@/core/i18n/use-active-locale";
 import { useClientMounted } from "@/shared/lib/use-client-mounted";
 
 const STORAGE_KEY = "biringas:onboarding-quiz:v1";
 
-const CITIES = [
-  { value: "Bogotá", label: "Bogotá", icon: MapPin },
-  { value: "Medellín", label: "Medellín", icon: MapPin },
-  { value: "Cartagena", label: "Cartagena", icon: MapPin },
-  { value: "Cali", label: "Cali", icon: MapPin },
-  { value: "any", label: "Toda Colombia", icon: Compass },
+// City names are proper nouns — kept literal. The "any" option's label
+// is the only one we localise; everything else is a place.
+const CITY_VALUES = [
+  { value: "Bogotá", icon: MapPin },
+  { value: "Medellín", icon: MapPin },
+  { value: "Cartagena", icon: MapPin },
+  { value: "Cali", icon: MapPin },
 ] as const;
 
 const BUDGETS = [
-  { value: "any", label: "Sin presupuesto", icon: Wallet, max: undefined },
-  { value: "budget", label: "Hasta $200k", icon: Wallet, max: 200000 },
-  { value: "premium", label: "Hasta $400k", icon: Wallet, max: 400000 },
-  { value: "elite", label: "Sin tope", icon: Crown, max: undefined },
+  { value: "any", labelKey: "onboarding.budget.none", icon: Wallet, max: undefined },
+  { value: "budget", labelKey: "onboarding.budget.up200", icon: Wallet, max: 200000 },
+  { value: "premium", labelKey: "onboarding.budget.up400", icon: Wallet, max: 400000 },
+  { value: "elite", labelKey: "onboarding.budget.unlimited", icon: Crown, max: undefined },
 ] as const;
 
 const PLANS = [
   {
     value: "live",
-    label: "Algo para hoy",
+    labelKey: "onboarding.plan.live",
     icon: Sparkles,
     href: "/explorar?available=1",
   },
   {
     value: "social",
-    label: "Cena / evento",
+    labelKey: "onboarding.plan.social",
     icon: HeartHandshake,
     href: "/explorar?meetingContexts=cena",
   },
   {
     value: "trip",
-    label: "Fin de semana",
+    labelKey: "onboarding.plan.trip",
     icon: Compass,
     href: "/explorar?meetingContexts=viaje",
   },
   {
     value: "general",
-    label: "Solo estoy mirando",
+    labelKey: "onboarding.plan.general",
     icon: Sparkles,
     href: "/explorar",
   },
@@ -73,12 +76,34 @@ const PLANS = [
  */
 export function OnboardingQuiz() {
   const router = useRouter();
+  const locale = useActiveLocale();
   const [open, setOpen] = useState(false);
   const mounted = useClientMounted();
   const [step, setStep] = useState(0);
   const [city, setCity] = useState<string | null>(null);
   const [budget, setBudget] = useState<string | null>(null);
   // Plan choice routes directly; no separate "submit" step.
+
+  // Localised option lists — proper-noun city names stay verbatim,
+  // everything else routes through `t()`.
+  const cities = [
+    ...CITY_VALUES.map((c) => ({ value: c.value, label: c.value, icon: c.icon })),
+    {
+      value: "any",
+      label: t(locale, "onboarding.city.allColombia"),
+      icon: Compass,
+    },
+  ];
+  const budgets = BUDGETS.map((b) => ({
+    value: b.value,
+    label: t(locale, b.labelKey),
+    icon: b.icon,
+  }));
+  const plans = PLANS.map((p) => ({
+    value: p.value,
+    label: t(locale, p.labelKey),
+    icon: p.icon,
+  }));
 
   // Hydrate visibility after mount so SSR markup stays empty. The timer
   // is deferred so setState happens from a timer callback (not the
@@ -168,7 +193,7 @@ export function OnboardingQuiz() {
         >
           <button
             type="button"
-            aria-label="Cerrar"
+            aria-label={t(locale, "onboarding.close")}
             onClick={close}
             className="absolute inset-0 cursor-default bg-[rgba(20,28,24,0.55)] backdrop-blur-sm"
           />
@@ -187,22 +212,22 @@ export function OnboardingQuiz() {
             <header className="flex items-start justify-between gap-3 border-b border-[var(--color-border)] bg-[var(--color-surface)] px-5 py-4">
               <div className="flex min-w-0 flex-col">
                 <span className="text-[10px] font-semibold uppercase tracking-[0.24em] text-[var(--color-gold-deep)]">
-                  Bienvenida
+                  {t(locale, "onboarding.kicker")}
                 </span>
                 <h2
                   id="onboarding-title"
                   className="font-[var(--font-display)] text-lg font-[370] tracking-tight text-[var(--color-foreground)]"
                 >
-                  Encuentra tu Biringa en{" "}
+                  {t(locale, "onboarding.title.lead")}{" "}
                   <span className="italic text-[var(--color-brand-primary)]">
-                    3 toques
+                    {t(locale, "onboarding.title.highlight")}
                   </span>
                 </h2>
               </div>
               <button
                 type="button"
                 onClick={close}
-                aria-label="Saltar"
+                aria-label={t(locale, "onboarding.skip")}
                 className="inline-flex h-9 w-9 items-center justify-center rounded-full text-[var(--color-text-muted)] transition-colors hover:bg-[var(--color-surface-muted)] hover:text-[var(--color-foreground)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)]"
               >
                 <X className="h-4 w-4" aria-hidden />
@@ -229,9 +254,9 @@ export function OnboardingQuiz() {
 
               {step === 0 && (
                 <Step
-                  title="¿En qué ciudad estás?"
-                  subtitle="Filtramos el catálogo para mostrarte sólo lo cercano."
-                  options={CITIES}
+                  title={t(locale, "onboarding.step1.title")}
+                  subtitle={t(locale, "onboarding.step1.subtitle")}
+                  options={cities}
                   selected={city}
                   onSelect={(v) => {
                     setCity(v);
@@ -242,9 +267,9 @@ export function OnboardingQuiz() {
 
               {step === 1 && (
                 <Step
-                  title="¿Cuánto querés invertir por hora?"
-                  subtitle="Sólo nos ayuda a ordenar. Podés cambiarlo después."
-                  options={BUDGETS}
+                  title={t(locale, "onboarding.step2.title")}
+                  subtitle={t(locale, "onboarding.step2.subtitle")}
+                  options={budgets}
                   selected={budget}
                   onSelect={(v) => {
                     setBudget(v);
@@ -255,9 +280,9 @@ export function OnboardingQuiz() {
 
               {step === 2 && (
                 <Step
-                  title="¿Qué plan tenés en mente?"
-                  subtitle="Llevamos directo al catálogo con el filtro aplicado."
-                  options={PLANS}
+                  title={t(locale, "onboarding.step3.title")}
+                  subtitle={t(locale, "onboarding.step3.subtitle")}
+                  options={plans}
                   selected={null}
                   onSelect={(value) => {
                     const plan = PLANS.find((p) => p.value === value);
@@ -273,10 +298,13 @@ export function OnboardingQuiz() {
                 onClick={close}
                 className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--color-text-muted)] transition-colors hover:text-[var(--color-foreground)]"
               >
-                Saltar
+                {t(locale, "onboarding.skip")}
               </button>
               <span className="text-[10px] text-[var(--color-text-subtle)]">
-                Paso {step + 1} de 3
+                {t(locale, "onboarding.step.indicator", {
+                  current: step + 1,
+                  total: 3,
+                })}
               </span>
             </footer>
           </motion.div>

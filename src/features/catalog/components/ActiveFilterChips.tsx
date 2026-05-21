@@ -19,6 +19,9 @@ import {
   type LucideIcon,
 } from "lucide-react";
 
+import type { SupportedLocale } from "@/core/branding/brand-config";
+import { readLocale } from "@/core/i18n/locale";
+import { t } from "@/core/i18n/messages";
 import type { ListingsFilters } from "@/server/biringas";
 import { FadeIn } from "@/shared/motion/FadeIn";
 
@@ -77,7 +80,10 @@ const TONE_CLASS: Record<ChipTone, string> = {
  * the X on a chip navigates to a URL where that single filter has been
  * cleared, preserving every other active filter.
  */
-function buildChips(filters: ListingsFilters): Array<ActiveChip> {
+function buildChips(
+  filters: ListingsFilters,
+  locale: SupportedLocale,
+): Array<ActiveChip> {
   const chips: Array<ActiveChip> = [];
 
   const without = (mutator: (f: ListingsFilters) => void): ListingsFilters => {
@@ -102,7 +108,9 @@ function buildChips(filters: ListingsFilters): Array<ActiveChip> {
   if (filters.priceMin !== undefined) {
     chips.push({
       key: "priceMin",
-      label: `Mín. $${PRICE_FORMAT.format(filters.priceMin)}`,
+      label: t(locale, "catalog.filterChips.priceMin", {
+        amount: `$${PRICE_FORMAT.format(filters.priceMin)}`,
+      }),
       tone: "accent",
       icon: Coins,
       next: without((f) => {
@@ -113,7 +121,9 @@ function buildChips(filters: ListingsFilters): Array<ActiveChip> {
   if (filters.priceMax !== undefined) {
     chips.push({
       key: "priceMax",
-      label: `Máx. $${PRICE_FORMAT.format(filters.priceMax)}`,
+      label: t(locale, "catalog.filterChips.priceMax", {
+        amount: `$${PRICE_FORMAT.format(filters.priceMax)}`,
+      }),
       tone: "accent",
       icon: Coins,
       next: without((f) => {
@@ -124,7 +134,7 @@ function buildChips(filters: ListingsFilters): Array<ActiveChip> {
   if (filters.ageMin !== undefined) {
     chips.push({
       key: "ageMin",
-      label: `Edad ≥ ${filters.ageMin}`,
+      label: t(locale, "catalog.filterChips.ageMin", { age: filters.ageMin }),
       tone: "secondary",
       icon: CalendarDays,
       next: without((f) => {
@@ -135,7 +145,7 @@ function buildChips(filters: ListingsFilters): Array<ActiveChip> {
   if (filters.ageMax !== undefined) {
     chips.push({
       key: "ageMax",
-      label: `Edad ≤ ${filters.ageMax}`,
+      label: t(locale, "catalog.filterChips.ageMax", { age: filters.ageMax }),
       tone: "secondary",
       icon: CalendarDays,
       next: without((f) => {
@@ -146,23 +156,23 @@ function buildChips(filters: ListingsFilters): Array<ActiveChip> {
 
   const flags: Array<{
     key: keyof ListingsFilters;
-    label: string;
+    labelKey: string;
     tone: ChipTone;
     icon: LucideIcon;
   }> = [
-    { key: "verifiedOnly", label: "Verificadas", tone: "primary", icon: ShieldCheck },
-    { key: "faceVisible", label: "Cara visible", tone: "primary", icon: Eye },
-    { key: "withVideo", label: "Con vídeo", tone: "secondary", icon: Play },
-    { key: "withAudio", label: "Con audio", tone: "secondary", icon: Mic },
-    { key: "withReviews", label: "Con experiencias", tone: "highlight", icon: MessageSquare },
-    { key: "paymentByCard", label: "Pago con tarjeta", tone: "accent", icon: CreditCard },
-    { key: "availableNow", label: "Disponible ahora", tone: "highlight", icon: Zap },
+    { key: "verifiedOnly", labelKey: "catalog.filterChips.verified", tone: "primary", icon: ShieldCheck },
+    { key: "faceVisible", labelKey: "catalog.filterChips.faceVisible", tone: "primary", icon: Eye },
+    { key: "withVideo", labelKey: "catalog.filterChips.withVideo", tone: "secondary", icon: Play },
+    { key: "withAudio", labelKey: "catalog.filterChips.withAudio", tone: "secondary", icon: Mic },
+    { key: "withReviews", labelKey: "catalog.filterChips.withReviews", tone: "highlight", icon: MessageSquare },
+    { key: "paymentByCard", labelKey: "catalog.filterChips.paymentByCard", tone: "accent", icon: CreditCard },
+    { key: "availableNow", labelKey: "catalog.filterChips.availableNow", tone: "highlight", icon: Zap },
   ];
-  for (const { key, label, tone, icon } of flags) {
+  for (const { key, labelKey, tone, icon } of flags) {
     if (filters[key]) {
       chips.push({
         key: String(key),
-        label,
+        label: t(locale, labelKey),
         tone,
         icon,
         next: without((f) => {
@@ -175,7 +185,7 @@ function buildChips(filters: ListingsFilters): Array<ActiveChip> {
   filters.attention?.forEach((v) =>
     chips.push({
       key: `attention-${v}`,
-      label: `Atención: ${v}`,
+      label: t(locale, "catalog.filterChips.attention", { value: v }),
       tone: "highlight",
       icon: Heart,
       next: withoutMulti("attention", v),
@@ -184,7 +194,7 @@ function buildChips(filters: ListingsFilters): Array<ActiveChip> {
   filters.contactChannels?.forEach((v) =>
     chips.push({
       key: `contact-${v}`,
-      label: `Contacto: ${v}`,
+      label: t(locale, "catalog.filterChips.contact", { value: v }),
       tone: "secondary",
       icon: MessageSquare,
       next: withoutMulti("contactChannels", v),
@@ -261,14 +271,15 @@ const CHIP_BASE =
  * services=green, …) with a leading icon so users can scan the strip without
  * reading the labels. Renders nothing when no filters are applied.
  */
-export function ActiveFilterChips({ filters }: ActiveFilterChipsProps) {
-  const chips = buildChips(filters);
+export async function ActiveFilterChips({ filters }: ActiveFilterChipsProps) {
+  const locale = await readLocale();
+  const chips = buildChips(filters, locale);
   if (chips.length === 0) return null;
 
   return (
     <FadeIn>
       <ul
-        aria-label="Filtros aplicados"
+        aria-label={t(locale, "catalog.filterChips.aria")}
         className="flex flex-wrap items-center gap-1.5"
       >
         {chips.map((chip, index) => {
@@ -281,7 +292,9 @@ export function ActiveFilterChips({ filters }: ActiveFilterChipsProps) {
             >
               <Link
                 href={chipHref(chip.next)}
-                aria-label={`Quitar filtro: ${chip.label}`}
+                aria-label={t(locale, "catalog.filterChips.remove", {
+                  label: chip.label,
+                })}
                 className={`${CHIP_BASE} ${TONE_CLASS[chip.tone]}`}
               >
                 <Icon className="h-3.5 w-3.5 shrink-0" aria-hidden />
@@ -300,11 +313,11 @@ export function ActiveFilterChips({ filters }: ActiveFilterChipsProps) {
         >
           <Link
             href="/explorar"
-            aria-label="Borrar todos los filtros"
+            aria-label={t(locale, "catalog.filterChips.clearAll.aria")}
             className="group inline-flex items-center gap-1.5 rounded-full border border-dashed border-[var(--color-border)] bg-transparent px-3 py-1 text-xs font-medium text-[var(--color-text-subtle)] transition-[border-color,color,background,transform] duration-150 ease-[var(--ease-standard)] hover:-translate-y-0.5 hover:border-[var(--color-brand-highlight)]/55 hover:bg-[var(--color-brand-highlight)]/8 hover:text-[var(--color-brand-highlight)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-highlight)]"
           >
             <Eraser className="h-3.5 w-3.5 shrink-0 transition-transform duration-150 group-hover:-rotate-12" aria-hidden />
-            Borrar todo
+            {t(locale, "catalog.filterChips.clearAll")}
           </Link>
         </li>
       </ul>

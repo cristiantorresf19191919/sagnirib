@@ -1,4 +1,6 @@
 import { brandConfig } from "@/core/branding/brand-config";
+import { type SupportedLocale } from "@/core/branding/brand-config";
+import { t } from "@/core/i18n/messages";
 import { Button } from "@/shared/design-system/components/Button";
 import { Container } from "@/shared/design-system/components/Container";
 import { Logo } from "@/shared/design-system/components/Logo";
@@ -6,6 +8,13 @@ import { Sparkle } from "@/shared/design-system/components/Sparkle";
 import { FadeIn } from "@/shared/motion/FadeIn";
 
 import { acknowledgeAge } from "./action";
+
+interface AgeGateProps {
+  /** Locale chosen for the current request — supplied by the layout so the
+   *  age gate stays a Server Component and can render copy in either ES or EN
+   *  without a client roundtrip. */
+  locale: SupportedLocale;
+}
 
 /**
  * Full-page age acknowledgment interstitial.
@@ -15,7 +24,7 @@ import { acknowledgeAge } from "./action";
  * link is a plain anchor to a neutral destination so a misclick on a public
  * device cannot leave residual state.
  */
-export function AgeGate() {
+export function AgeGate({ locale }: Readonly<AgeGateProps>) {
   return (
     <main className="flex min-h-screen flex-col bg-[var(--color-background)]">
       <header className="border-b border-[var(--color-border)]">
@@ -30,22 +39,21 @@ export function AgeGate() {
           </FadeIn>
           <FadeIn delay={0.12}>
             <span className="mt-6 inline-block text-xs uppercase tracking-[0.4em] text-[var(--color-text-subtle)]">
-              Verificación de edad
+              {t(locale, "ageGate.kicker")}
             </span>
           </FadeIn>
           <FadeIn delay={0.18} y={12}>
             <h1 className="mt-4 text-3xl font-bold leading-tight text-[var(--color-foreground)] sm:text-4xl">
-              Sólo personas mayores de 18 años
+              {t(locale, "ageGate.title")}
             </h1>
           </FadeIn>
           <FadeIn delay={0.26}>
             <p className="mx-auto mt-5 max-w-md text-sm leading-relaxed text-[var(--color-text-muted)] sm:text-base">
-              {brandConfig.name} es un marketplace para mayores de edad. Al
-              continuar declaras que tienes{" "}
+              {t(locale, "ageGate.body.prefix", { brand: brandConfig.name })}{" "}
               <span className="text-[var(--color-foreground)]">
-                18 años o más
+                {t(locale, "ageGate.body.emphasis")}
               </span>{" "}
-              y aceptas ver contenido para adultos.
+              {t(locale, "ageGate.body.suffix")}
             </p>
           </FadeIn>
           <FadeIn delay={0.34}>
@@ -54,7 +62,7 @@ export function AgeGate() {
               className="mt-10 flex flex-col gap-3 sm:flex-row sm:justify-center"
             >
               <Button type="submit" variant="primary" size="lg" glow>
-                Tengo 18 años o más
+                {t(locale, "ageGate.cta.confirm")}
               </Button>
               <Button
                 href="https://www.google.com"
@@ -62,14 +70,13 @@ export function AgeGate() {
                 size="lg"
                 rel="noopener noreferrer"
               >
-                Salir del sitio
+                {t(locale, "ageGate.cta.exit")}
               </Button>
             </form>
           </FadeIn>
           <FadeIn delay={0.42}>
             <p className="mt-10 text-xs text-[var(--color-text-subtle)]">
-              Si eres menor de edad, abandona este sitio. La acción guardará
-              una cookie de un año en este dispositivo.
+              {t(locale, "ageGate.footer")}
             </p>
           </FadeIn>
         </Container>

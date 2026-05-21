@@ -3,20 +3,24 @@
 import Link from "next/link";
 import { ArrowRight, Bookmark, X } from "lucide-react";
 
+import { t } from "@/core/i18n/messages";
+import { useActiveLocale } from "@/core/i18n/use-active-locale";
 import { useSavedSearches } from "@/features/catalog/lib/use-saved-searches";
 
-const DATE_FORMAT = new Intl.DateTimeFormat("es-CO", {
-  day: "numeric",
-  month: "short",
-});
+const DATE_FORMAT_BY_LOCALE = {
+  es: new Intl.DateTimeFormat("es-CO", { day: "numeric", month: "short" }),
+  en: new Intl.DateTimeFormat("en-US", { day: "numeric", month: "short" }),
+} as const;
 
 /**
  * Saved-searches drawer rendered on `/favoritas`. Reads from the same
  * localStorage store as `SaveSearchButton`. Renders nothing while
- * hydrating (so SSR markup stays empty) and a compact "todavía no
- * guardaste búsquedas" prompt when the store is empty.
+ * hydrating (so SSR markup stays empty) and a compact empty-state
+ * prompt when the store is empty.
  */
 export function SavedSearchesList() {
+  const locale = useActiveLocale();
+  const dateFormat = DATE_FORMAT_BY_LOCALE[locale];
   const { ready, searches, remove } = useSavedSearches();
 
   if (!ready) return null;
@@ -40,10 +44,10 @@ export function SavedSearchesList() {
               id="saved-searches-title"
               className="text-base font-semibold text-[var(--color-foreground)]"
             >
-              Búsquedas guardadas
+              {t(locale, "savedSearches.title")}
             </h2>
             <p className="text-xs text-[var(--color-text-muted)]">
-              Vuelve a tu filtro perfecto con un clic.
+              {t(locale, "savedSearches.subtitle")}
             </p>
           </div>
         </div>
@@ -51,14 +55,18 @@ export function SavedSearchesList() {
 
       {searches.length === 0 ? (
         <p className="mt-4 rounded-[var(--radius-lg)] border border-dashed border-[var(--color-border)] bg-[var(--color-background-elevated)] px-4 py-5 text-center text-sm text-[var(--color-text-muted)]">
-          Aún no guardaste búsquedas. Cuando apliques filtros en{" "}
+          {t(locale, "savedSearches.empty.lead")}{" "}
           <Link
             href="/explorar"
             className="font-semibold text-[var(--color-brand-primary)] underline-offset-4 hover:underline"
           >
             /explorar
           </Link>
-          , verás un botón <em>&ldquo;Guardar búsqueda&rdquo;</em>.
+          {t(locale, "savedSearches.empty.buttonHint.lead")}
+          <em>
+            &ldquo;{t(locale, "savedSearches.empty.buttonName")}&rdquo;
+          </em>
+          {t(locale, "savedSearches.empty.buttonHint.trailing")}
         </p>
       ) : (
         <ul className="mt-4 flex flex-col gap-2">
@@ -77,7 +85,10 @@ export function SavedSearchesList() {
                     {s.label}
                   </span>
                   <span className="truncate text-[11px] text-[var(--color-text-subtle)]">
-                    Guardada {DATE_FORMAT.format(new Date(s.savedAt))} · {s.href}
+                    {t(locale, "savedSearches.savedOn", {
+                      date: dateFormat.format(new Date(s.savedAt)),
+                    })}{" "}
+                    · {s.href}
                   </span>
                 </span>
                 <ArrowRight
@@ -88,7 +99,9 @@ export function SavedSearchesList() {
               <button
                 type="button"
                 onClick={() => remove(s.id)}
-                aria-label={`Quitar búsqueda ${s.label}`}
+                aria-label={t(locale, "savedSearches.remove", {
+                  label: s.label,
+                })}
                 className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[var(--color-text-subtle)] transition-colors hover:bg-[var(--color-surface-muted)] hover:text-[var(--color-foreground)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)]"
               >
                 <X className="h-3.5 w-3.5" aria-hidden />

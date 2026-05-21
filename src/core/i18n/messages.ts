@@ -1733,6 +1733,138 @@ const es: MessageDict = {
   "dashboard.availability.toast.errorTitle":
     "No pudimos actualizar tu disponibilidad",
   "dashboard.availability.toast.errorBody": "Probá de nuevo en un momento.",
+
+  /* =================================================================
+   * Wave G · age gate + catalog primitives + dashboard inline rate
+   * ================================================================= */
+
+  /* ---------- Age gate ---------- */
+  "ageGate.kicker": "Verificación de edad",
+  "ageGate.title": "Sólo personas mayores de 18 años",
+  "ageGate.body.prefix":
+    "{brand} es un marketplace para mayores de edad. Al continuar declaras que tienes",
+  "ageGate.body.emphasis": "18 años o más",
+  "ageGate.body.suffix": "y aceptas ver contenido para adultos.",
+  "ageGate.cta.confirm": "Tengo 18 años o más",
+  "ageGate.cta.exit": "Salir del sitio",
+  "ageGate.footer":
+    "Si eres menor de edad, abandona este sitio. La acción guardará una cookie de un año en este dispositivo.",
+
+  /* ---------- Catalog cards (BiringaCard + CatalogCard) ---------- */
+  "catalog.card.viewListing": "Ver anuncio",
+  "catalog.card.viewProfile": "Ver perfil",
+  "catalog.card.featured": "Destacada",
+  "catalog.card.availableNow": "Disponible ahora",
+  "catalog.card.availableNowShort": "Ahora",
+  "catalog.card.withVideo": "Con vídeo",
+  "catalog.card.withAudio": "Con audio",
+  "catalog.card.onlineNow": "En línea ahora",
+  "catalog.card.activeNow": "Activa ahora",
+  "catalog.card.respondsIn": "Responde ~{minutes}min",
+  "catalog.card.verifiedProfile": "Perfil verificado",
+  "catalog.card.verified": "Verificada",
+  "catalog.card.audio": "Audio",
+  "catalog.card.ageSuffix": "a.",
+  "catalog.card.linkAria": "{name} en {city} — ver perfil",
+  "catalog.card.imageAlt": "{name} en {city}",
+
+  /* ---------- Quick presets row ---------- */
+  "catalog.preset.section.aria": "Sugerencias rápidas",
+  "catalog.preset.section.eyebrow": "Sugerencias",
+  "catalog.preset.list.aria": "Filtros rápidos",
+  "catalog.preset.availableNow": "Disponibles ahora",
+  "catalog.preset.verified": "Verificadas",
+  "catalog.preset.lowBudget": "Bajo $150k",
+  "catalog.preset.faceVisible": "Cara visible",
+  "catalog.preset.topRated": "Top calificadas",
+  "catalog.preset.withVideo": "Con video",
+  "catalog.preset.apply": "Aplicar preset: {label}",
+  "catalog.preset.remove": "Quitar preset: {label}",
+
+  /* ---------- Active filter chips strip ---------- */
+  "catalog.filterChips.aria": "Filtros aplicados",
+  "catalog.filterChips.remove": "Quitar filtro: {label}",
+  "catalog.filterChips.clearAll": "Borrar todo",
+  "catalog.filterChips.clearAll.aria": "Borrar todos los filtros",
+  "catalog.filterChips.priceMin": "Mín. {amount}",
+  "catalog.filterChips.priceMax": "Máx. {amount}",
+  "catalog.filterChips.ageMin": "Edad ≥ {age}",
+  "catalog.filterChips.ageMax": "Edad ≤ {age}",
+  "catalog.filterChips.verified": "Verificadas",
+  "catalog.filterChips.faceVisible": "Cara visible",
+  "catalog.filterChips.withVideo": "Con vídeo",
+  "catalog.filterChips.withAudio": "Con audio",
+  "catalog.filterChips.withReviews": "Con experiencias",
+  "catalog.filterChips.paymentByCard": "Pago con tarjeta",
+  "catalog.filterChips.availableNow": "Disponible ahora",
+  "catalog.filterChips.attention": "Atención: {value}",
+  "catalog.filterChips.contact": "Contacto: {value}",
+
+  /* ---------- Onboarding quiz ---------- */
+  "onboarding.kicker": "Bienvenida",
+  "onboarding.title.lead": "Encuentra tu Biringa en",
+  "onboarding.title.highlight": "3 toques",
+  "onboarding.skip": "Saltar",
+  "onboarding.close": "Cerrar",
+  "onboarding.step.indicator": "Paso {current} de {total}",
+  "onboarding.step1.title": "¿En qué ciudad estás?",
+  "onboarding.step1.subtitle":
+    "Filtramos el catálogo para mostrarte sólo lo cercano.",
+  "onboarding.step2.title": "¿Cuánto querés invertir por hora?",
+  "onboarding.step2.subtitle":
+    "Sólo nos ayuda a ordenar. Podés cambiarlo después.",
+  "onboarding.step3.title": "¿Qué plan tenés en mente?",
+  "onboarding.step3.subtitle":
+    "Llevamos directo al catálogo con el filtro aplicado.",
+  "onboarding.city.allColombia": "Toda Colombia",
+  "onboarding.budget.none": "Sin presupuesto",
+  "onboarding.budget.up200": "Hasta $200k",
+  "onboarding.budget.up400": "Hasta $400k",
+  "onboarding.budget.unlimited": "Sin tope",
+  "onboarding.plan.live": "Algo para hoy",
+  "onboarding.plan.social": "Cena / evento",
+  "onboarding.plan.trip": "Fin de semana",
+  "onboarding.plan.general": "Solo estoy mirando",
+
+  /* ---------- Saved searches (Favoritas) ---------- */
+  "savedSearches.title": "Búsquedas guardadas",
+  "savedSearches.subtitle": "Vuelve a tu filtro perfecto con un clic.",
+  "savedSearches.empty.lead":
+    "Aún no guardaste búsquedas. Cuando apliques filtros en",
+  "savedSearches.empty.buttonHint.lead": ", verás un botón ",
+  "savedSearches.empty.buttonName": "Guardar búsqueda",
+  "savedSearches.empty.buttonHint.trailing": ".",
+  "savedSearches.savedOn": "Guardada {date}",
+  "savedSearches.remove": "Quitar búsqueda {label}",
+
+  /* ---------- Featured strip (home + aria) ---------- */
+  "home.featured.aria": "Acompañantes destacadas",
+  "home.featured.title.default": "Acompañantes verificadas para hoy",
+  "home.featured.description.default":
+    "Una selección curada por reputación, presencia y disponibilidad reciente.",
+
+  /* ---------- Loading + toast primitives ---------- */
+  "loading.catalog": "Cargando catálogo…",
+  "toast.dismiss": "Descartar notificación",
+  "toast.region.aria": "Notificaciones",
+
+  /* ---------- Dashboard · inline rate buyer ---------- */
+  "dashboard.rateBuyer.label": "Calificar al cliente",
+  "dashboard.rateBuyer.scoreAria": "Calificación de 1 a 5 estrellas",
+  "dashboard.rateBuyer.stars.singular": "{value} estrella",
+  "dashboard.rateBuyer.stars.plural": "{value} estrellas",
+  "dashboard.rateBuyer.commentPlaceholder":
+    "Comentario privado (opcional). Lo lee sólo el equipo de moderación.",
+  "dashboard.rateBuyer.cancel": "Cancelar",
+  "dashboard.rateBuyer.submit": "Guardar",
+  "dashboard.rateBuyer.submitting": "Guardando…",
+  "dashboard.rateBuyer.toast.success": "Cliente calificado",
+  "dashboard.rateBuyer.rated": "Calificado · {value}/5",
+  "dashboard.rateBuyer.error.required": "Elige una calificación.",
+  "dashboard.rateBuyer.error.bookingDisabled":
+    "Las reseñas mutuas se activan cuando Firestore esté listo.",
+  "dashboard.rateBuyer.error.fallback":
+    "No pudimos guardar la calificación. Intentá de nuevo.",
 };
 
 const en: MessageDict = {
@@ -3447,6 +3579,138 @@ const en: MessageDict = {
   "dashboard.availability.toast.errorTitle":
     "We couldn't update your availability",
   "dashboard.availability.toast.errorBody": "Try again in a moment.",
+
+  /* =================================================================
+   * Wave G · age gate + catalog primitives + dashboard inline rate
+   * ================================================================= */
+
+  /* ---------- Age gate ---------- */
+  "ageGate.kicker": "Age verification",
+  "ageGate.title": "Adults only (18+)",
+  "ageGate.body.prefix":
+    "{brand} is a marketplace for adults. By continuing you confirm you are",
+  "ageGate.body.emphasis": "18 years or older",
+  "ageGate.body.suffix": "and agree to view adult content.",
+  "ageGate.cta.confirm": "I'm 18 or older",
+  "ageGate.cta.exit": "Leave the site",
+  "ageGate.footer":
+    "If you are a minor, please leave this site. This action will save a one-year cookie on this device.",
+
+  /* ---------- Catalog cards (BiringaCard + CatalogCard) ---------- */
+  "catalog.card.viewListing": "View listing",
+  "catalog.card.viewProfile": "View profile",
+  "catalog.card.featured": "Featured",
+  "catalog.card.availableNow": "Available now",
+  "catalog.card.availableNowShort": "Now",
+  "catalog.card.withVideo": "Video included",
+  "catalog.card.withAudio": "Audio included",
+  "catalog.card.onlineNow": "Online now",
+  "catalog.card.activeNow": "Active now",
+  "catalog.card.respondsIn": "Replies ~{minutes}min",
+  "catalog.card.verifiedProfile": "Verified profile",
+  "catalog.card.verified": "Verified",
+  "catalog.card.audio": "Audio",
+  "catalog.card.ageSuffix": "y/o",
+  "catalog.card.linkAria": "{name} in {city} — view profile",
+  "catalog.card.imageAlt": "{name} in {city}",
+
+  /* ---------- Quick presets row ---------- */
+  "catalog.preset.section.aria": "Quick suggestions",
+  "catalog.preset.section.eyebrow": "Suggestions",
+  "catalog.preset.list.aria": "Quick filters",
+  "catalog.preset.availableNow": "Available now",
+  "catalog.preset.verified": "Verified",
+  "catalog.preset.lowBudget": "Under $150k",
+  "catalog.preset.faceVisible": "Face visible",
+  "catalog.preset.topRated": "Top rated",
+  "catalog.preset.withVideo": "With video",
+  "catalog.preset.apply": "Apply preset: {label}",
+  "catalog.preset.remove": "Remove preset: {label}",
+
+  /* ---------- Active filter chips strip ---------- */
+  "catalog.filterChips.aria": "Applied filters",
+  "catalog.filterChips.remove": "Remove filter: {label}",
+  "catalog.filterChips.clearAll": "Clear all",
+  "catalog.filterChips.clearAll.aria": "Clear all filters",
+  "catalog.filterChips.priceMin": "Min. {amount}",
+  "catalog.filterChips.priceMax": "Max. {amount}",
+  "catalog.filterChips.ageMin": "Age ≥ {age}",
+  "catalog.filterChips.ageMax": "Age ≤ {age}",
+  "catalog.filterChips.verified": "Verified",
+  "catalog.filterChips.faceVisible": "Face visible",
+  "catalog.filterChips.withVideo": "With video",
+  "catalog.filterChips.withAudio": "With audio",
+  "catalog.filterChips.withReviews": "With experiences",
+  "catalog.filterChips.paymentByCard": "Card payment",
+  "catalog.filterChips.availableNow": "Available now",
+  "catalog.filterChips.attention": "Attends: {value}",
+  "catalog.filterChips.contact": "Contact: {value}",
+
+  /* ---------- Onboarding quiz ---------- */
+  "onboarding.kicker": "Welcome",
+  "onboarding.title.lead": "Find your Biringa in",
+  "onboarding.title.highlight": "3 taps",
+  "onboarding.skip": "Skip",
+  "onboarding.close": "Close",
+  "onboarding.step.indicator": "Step {current} of {total}",
+  "onboarding.step1.title": "Which city are you in?",
+  "onboarding.step1.subtitle":
+    "We'll filter the catalog to only show what's nearby.",
+  "onboarding.step2.title": "How much do you want to invest per hour?",
+  "onboarding.step2.subtitle":
+    "Just helps us sort. You can change it later.",
+  "onboarding.step3.title": "What kind of plan do you have in mind?",
+  "onboarding.step3.subtitle":
+    "We'll take you straight to the catalog with the filter applied.",
+  "onboarding.city.allColombia": "All of Colombia",
+  "onboarding.budget.none": "No budget",
+  "onboarding.budget.up200": "Up to $200k",
+  "onboarding.budget.up400": "Up to $400k",
+  "onboarding.budget.unlimited": "No cap",
+  "onboarding.plan.live": "Something for today",
+  "onboarding.plan.social": "Dinner / event",
+  "onboarding.plan.trip": "Weekend getaway",
+  "onboarding.plan.general": "Just browsing",
+
+  /* ---------- Saved searches (Favoritas) ---------- */
+  "savedSearches.title": "Saved searches",
+  "savedSearches.subtitle": "Get back to your perfect filter in one click.",
+  "savedSearches.empty.lead":
+    "You haven't saved any searches yet. When you apply filters in",
+  "savedSearches.empty.buttonHint.lead": ", you'll see a ",
+  "savedSearches.empty.buttonName": "Save search",
+  "savedSearches.empty.buttonHint.trailing": " button.",
+  "savedSearches.savedOn": "Saved {date}",
+  "savedSearches.remove": "Remove search {label}",
+
+  /* ---------- Featured strip (home + aria) ---------- */
+  "home.featured.aria": "Featured companions",
+  "home.featured.title.default": "Verified companions for today",
+  "home.featured.description.default":
+    "A selection curated by reputation, presence and recent availability.",
+
+  /* ---------- Loading + toast primitives ---------- */
+  "loading.catalog": "Loading catalog…",
+  "toast.dismiss": "Dismiss notification",
+  "toast.region.aria": "Notifications",
+
+  /* ---------- Dashboard · inline rate buyer ---------- */
+  "dashboard.rateBuyer.label": "Rate the client",
+  "dashboard.rateBuyer.scoreAria": "Rating from 1 to 5 stars",
+  "dashboard.rateBuyer.stars.singular": "{value} star",
+  "dashboard.rateBuyer.stars.plural": "{value} stars",
+  "dashboard.rateBuyer.commentPlaceholder":
+    "Private comment (optional). Read only by the moderation team.",
+  "dashboard.rateBuyer.cancel": "Cancel",
+  "dashboard.rateBuyer.submit": "Save",
+  "dashboard.rateBuyer.submitting": "Saving…",
+  "dashboard.rateBuyer.toast.success": "Client rated",
+  "dashboard.rateBuyer.rated": "Rated · {value}/5",
+  "dashboard.rateBuyer.error.required": "Pick a rating.",
+  "dashboard.rateBuyer.error.bookingDisabled":
+    "Mutual reviews go live once Firestore is ready.",
+  "dashboard.rateBuyer.error.fallback":
+    "We couldn't save the rating. Try again.",
 };
 
 const DICTIONARIES: Record<SupportedLocale, MessageDict> = {

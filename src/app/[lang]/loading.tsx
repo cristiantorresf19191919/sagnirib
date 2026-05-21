@@ -1,3 +1,5 @@
+import { readLocale } from "@/core/i18n/locale";
+import { t } from "@/core/i18n/messages";
 import { Container } from "@/shared/design-system/components/Container";
 import { LoadingTips } from "@/shared/layout/LoadingTips";
 
@@ -12,7 +14,8 @@ const SKELETON_CARDS = Array.from({ length: 8 });
  * needing JS to start. Reduced-motion browsers will see a static surface,
  * which is fine — the skeleton's purpose is shape, not motion.
  */
-export default function Loading() {
+export default async function Loading() {
+  const locale = await readLocale();
   return (
     <main className="flex flex-col" data-testid="catalog-loading">
       <section className="relative pb-12 pt-24 sm:pt-32">
@@ -53,7 +56,7 @@ export default function Loading() {
           </ul>
         </Container>
       </section>
-      <span className="sr-only">Cargando catálogo…</span>
+      <span className="sr-only">{t(locale, "loading.catalog")}</span>
     </main>
   );
 }
