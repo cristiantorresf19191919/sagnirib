@@ -244,6 +244,7 @@ export {
   listMeetingContextCatalog,
 } from "./catalogs";
 export { getListingReviews } from "./reviews";
+export { listTestimonials } from "./testimonials";
 export { getPrivateContactRaw } from "./private-contact";
 export { submitReviewRaw } from "./submit-review";
 export { createListingDraftRaw, findActiveDraftBySlug } from "./create-draft";

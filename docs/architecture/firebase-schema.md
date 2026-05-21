@@ -163,6 +163,15 @@ on the fly from the subcollection. When read volume justifies it, replace
 with a Cloud Function-maintained `listings/{id}/aggregates/reviews` doc and
 use `mapReviewsAggregate` from the mapper.
 
+The home-page testimonials section reads from this same subcollection via
+a **collection-group** query (`listTestimonials` in
+`src/server/adapters/firebase/biringas/testimonials.ts`). Selection rules:
+`verified == true`, `rating >= 4`, body length in `[40, 200]`, one quote
+per parent listing, newest-first. Cache-tagged `biringa:listings` so the
+home auto-refreshes whenever `submitReview` invalidates the tag. The
+collection-group index for the query is registered in
+`firestore.indexes.json` (`reviews`, `verified ASC, date DESC`).
+
 ## Collection — `listing_drafts/{draftId}`
 
 Write-only from the `/publicar` wizard. Public catalog reads never touch
@@ -286,6 +295,7 @@ Required to satisfy the queries in `src/server/adapters/firebase/biringas/index.
 | `listings` | `slug ASC`                                                          | `findBySlug` (single-field, automatic).|
 | `bookings` | `listingSlug ASC`, `submittedAt DESC`                               | `listBookingsForListingsRaw` (inbox).  |
 | `bookings` | `listingSlug ASC`, `respondedAt DESC`                               | `computeReplyMedianMinutesForSlug`.    |
+| `reviews` (group) | `verified ASC`, `date DESC`                                  | `listTestimonials` (home cross-listing feed). |
 
 Firestore prompts for any missing index at first run with a console URL — apply when they appear. Add new entries here as queries grow.
 
