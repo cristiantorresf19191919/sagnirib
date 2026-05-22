@@ -261,6 +261,7 @@ export function PublisherSignUpWizard() {
         className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[var(--color-gold)]/55 to-transparent"
       />
 
+      <ChapterMarker currentStep={step} locale={locale} />
       <WizardStepper currentStep={step} locale={locale} />
 
       <AnimatePresence mode="wait">
@@ -390,6 +391,72 @@ export function PublisherSignUpWizard() {
 /* -------------------------------------------------------------------------- */
 /* Stepper                                                                    */
 /* -------------------------------------------------------------------------- */
+
+/**
+ * Chapter marker — the editorial "01 / 04 — Step name" line that sits
+ * above the stepper. The current step number cross-fades when changing
+ * so the marker reads as a single typographic element morphing through
+ * its values rather than four discrete labels swapping in and out.
+ */
+function ChapterMarker({
+  currentStep,
+  locale,
+}: {
+  currentStep: WizardStep;
+  locale: SupportedLocale;
+}) {
+  const labels: Record<WizardStep, string> = {
+    phone: t(locale, "rbac.publisher.step.phone"),
+    otp: t(locale, "rbac.publisher.step.otp"),
+    password: t(locale, "rbac.publisher.step.password"),
+    profile: t(locale, "rbac.publisher.step.profile"),
+  };
+  const idx = STEP_ORDER.indexOf(currentStep);
+  const pad = (n: number) => String(n + 1).padStart(2, "0");
+
+  return (
+    <div className="flex items-center justify-between gap-3">
+      <span className="inline-flex items-baseline gap-2 text-[10px] font-semibold uppercase tracking-[0.32em] text-[var(--color-text-subtle)]">
+        <AnimatePresence mode="wait" initial={false}>
+          <motion.span
+            key={currentStep}
+            initial={{ opacity: 0, y: 4 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -4 }}
+            transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
+            className="text-[var(--color-brand-primary)]"
+          >
+            {pad(idx)}
+          </motion.span>
+        </AnimatePresence>
+        <span aria-hidden className="text-[var(--color-text-subtle)]/60">
+          /
+        </span>
+        <span>{pad(STEP_ORDER.length - 1)}</span>
+        <span
+          aria-hidden
+          className="mx-1 inline-block h-px w-6 bg-[var(--color-border)]"
+        />
+        <AnimatePresence mode="wait" initial={false}>
+          <motion.span
+            key={currentStep}
+            initial={{ opacity: 0, x: 4 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -4 }}
+            transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+            className="text-[var(--color-foreground)]"
+          >
+            {labels[currentStep]}
+          </motion.span>
+        </AnimatePresence>
+      </span>
+      <span
+        aria-hidden
+        className="inline-block h-1.5 w-1.5 rotate-45 bg-[var(--color-gold)] shadow-[0_0_0_3px_rgba(200,166,118,0.18)]"
+      />
+    </div>
+  );
+}
 
 function WizardStepper({
   currentStep,

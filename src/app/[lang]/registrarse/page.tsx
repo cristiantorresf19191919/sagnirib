@@ -6,6 +6,10 @@ import { t } from "@/core/i18n/messages";
 import { buildPageMetadata } from "@/core/seo/build-page-metadata";
 import { AccountTypeChooser } from "@/features/auth/components/AccountTypeChooser";
 import { Container } from "@/shared/design-system/components/Container";
+import {
+  EditorialAtmosphere,
+  EditorialKicker,
+} from "@/shared/design-system/components/EditorialAtmosphere";
 import { Footer } from "@/shared/layout/Footer";
 import { Header } from "@/shared/layout/Header";
 
@@ -25,17 +29,6 @@ export async function generateMetadata({
   });
 }
 
-/**
- * `/registrarse` — registration journey entry.
- *
- * Renders the two-card account-type chooser per the PDF. The fork
- * routes to `/registrarse/publicador` (Flow A) or `/registrarse/comentarios`
- * (Flow B). The legacy single-form sign-up still exists at the same route
- * via the chooser CTA — keeping both flows visually consistent is the
- * point of the RBAC PR.
- *
- * Never indexable — auth surfaces should not appear in search.
- */
 export default async function RegistrarsePage({
   params,
 }: Readonly<{ params: Promise<{ lang: string }> }>) {
@@ -45,33 +38,24 @@ export default async function RegistrarsePage({
   return (
     <>
       <Header hideCatalogCta />
-      <main className="relative isolate bg-[var(--color-background)] py-16 sm:py-24">
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-[520px] bg-[radial-gradient(circle_at_50%_0%,rgba(47,93,67,0.10),transparent_60%),radial-gradient(circle_at_85%_18%,rgba(200,166,118,0.10),transparent_55%)]"
-        />
+      <main className="relative isolate bg-[var(--color-background)] py-20 sm:py-28">
+        <EditorialAtmosphere intensity="rich" />
         <Container width="wide">
-          <div className="mx-auto flex max-w-3xl flex-col items-center gap-8">
-            <header className="flex flex-col items-center gap-3 text-center">
-              <span className="inline-flex items-center gap-3 text-[11px] font-semibold uppercase tracking-[0.28em] text-[var(--color-brand-primary)]">
-                <span
-                  aria-hidden
-                  className="inline-block h-px w-8 bg-gradient-to-r from-[var(--color-gold)] to-transparent"
-                />
-                <span
-                  aria-hidden
-                  className="inline-block h-1.5 w-1.5 rotate-45 bg-[var(--color-gold)] shadow-[0_0_0_3px_rgba(200,166,118,0.18)]"
-                />
-                {t(lang, "rbac.chooser.kicker")}
-              </span>
-              <h1 className="font-[var(--font-display)] text-[clamp(28px,4vw,42px)] font-[370] leading-[1.05] tracking-[-0.025em] text-[var(--color-foreground)]">
+          <div className="mx-auto flex max-w-3xl flex-col items-center gap-10">
+            <header className="flex flex-col items-center gap-5 text-center">
+              <EditorialKicker label={t(lang, "rbac.chooser.kicker")} />
+              <h1 className="font-[var(--font-display)] text-[clamp(36px,6vw,68px)] font-[340] leading-[1.02] tracking-[-0.03em] text-[var(--color-foreground)]">
                 {t(lang, "rbac.chooser.title.lead")}{" "}
-                <span className="italic font-[340] text-[var(--color-brand-primary)]">
+                <span className="italic font-[320] text-[var(--color-brand-primary)]">
                   {t(lang, "rbac.chooser.title.highlight")}
                 </span>
-                .
+                <span className="text-[var(--color-gold-deep)]">.</span>
               </h1>
-              <p className="max-w-md font-[var(--font-serif)] text-[15px] leading-[1.55] text-[var(--color-text-muted)]">
+              <span
+                aria-hidden
+                className="block h-px w-16 bg-gradient-to-r from-transparent via-[var(--color-gold)] to-transparent"
+              />
+              <p className="max-w-md font-[var(--font-serif)] text-[15px] leading-[1.65] tracking-[0.01em] text-[var(--color-text-muted)]">
                 {t(lang, "rbac.chooser.subtitle")}
               </p>
             </header>

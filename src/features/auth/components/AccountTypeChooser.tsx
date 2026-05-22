@@ -29,6 +29,7 @@ import {
   ACCOUNT_TYPE_PUBLISHER,
   type AccountType,
 } from "@/features/auth/lib/rbac";
+import { CornerOrnament } from "@/shared/design-system/components/EditorialAtmosphere";
 
 const REVEAL: Variants = {
   hidden: { opacity: 0, y: 16 },
@@ -251,6 +252,11 @@ function ChooserCard({
         aria-hidden
         className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[var(--color-gold)]/55 to-transparent"
       />
+      {/* Corner brackets — editorial frame */}
+      <CornerOrnament position="top-left" />
+      <CornerOrnament position="top-right" />
+      <CornerOrnament position="bottom-left" />
+      <CornerOrnament position="bottom-right" />
       {/* Cursor-tracked spotlight */}
       {!reducedMotion ? (
         <motion.span
