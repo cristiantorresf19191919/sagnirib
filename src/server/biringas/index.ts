@@ -87,6 +87,7 @@ export const listCities = adapter.listCities;
 export const listServiceCatalog = adapter.listServiceCatalog;
 export const listMeetingContextCatalog = adapter.listMeetingContextCatalog;
 export const getListingReviews = adapter.getListingReviews;
+export const listTestimonials = adapter.listTestimonials;
 export const listSimilar = adapter.listSimilar;
 export const requestBookingRaw = adapter.requestBookingRaw;
 export const reportListingRaw = adapter.reportListingRaw;
@@ -134,17 +135,6 @@ export type { DraftSummary } from "@/server/mocks/biringas/create-draft";
 /** Internal: probes whether a slug is already claimed by a non-rejected
  *  draft. Wrapped by `createListingDraft` — features should not call it. */
 const findActiveDraftBySlug = adapter.findActiveDraftBySlug;
-
-/**
- * Curated marketing testimonials for the home page.
- *
- * NOT adapter-routed: testimonials are curated marketing copy (same
- * category as `BIRINGA_LISTINGS` seed data and `CATEGORIES` constants),
- * not user-generated content. Always served from the mock today; when
- * a Firestore `testimonials` collection ships, swap this export to
- * route through the adapter the same way `getListingReviews` does.
- */
-export { listTestimonials } from "@/server/mocks/biringas/testimonials";
 
 export type { PrivateContact } from "./private-contact-types";
 export type { SubmitReviewInput } from "./review-types";

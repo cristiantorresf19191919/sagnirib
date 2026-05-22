@@ -307,41 +307,23 @@ function StepCard({ step, index, reduced }: Readonly<StepCardProps>) {
   const Icon = step.icon;
   const isCta = !!step.cta;
   const ref = useRef<HTMLLIElement>(null);
-  // Per-card in-view trigger drives only the *inner* per-element
-  // stagger (numeral / icon / copy / illustration). The CARD's own
-  // entrance is now choreographed by the parent <motion.ol>'s variants
-  // cascade so cards reveal one after another (2 grows out of 1, 3
-  // grows out of 2) instead of all popping in together.
   const inView = useInView(ref, { once: true, amount: 0.25 });
 
   const surfaceCls = isCta
     ? "border-[var(--color-forest)]/25 bg-gradient-to-br from-[var(--color-cream-soft)] via-[var(--color-cream)] to-[#E6DBC1]"
     : "border-[var(--color-border)] bg-[var(--color-surface)]";
 
-  const interactionCls = isCta
-    ? "cursor-pointer hover:border-[var(--color-forest)]/45"
-    : "cursor-default";
+  // Shared padding + flex layout — lives on the inner wrapper so the
+  // full padded surface is part of the Link's click area on CTA cards.
+  const innerCls =
+    "flex h-full flex-col p-7 sm:p-8 outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-background-elevated)]";
 
-  return (
-    <motion.li
-      ref={ref}
-      data-testid={`how-it-works-step-${step.numeral}`}
-      variants={reduced ? undefined : CARD_GROW_VARIANTS}
-      whileHover={reduced ? undefined : "hover"}
-      // Origin-left + GPU promotion so the scaleX inflation feels like
-      // the card is unfurling from the trailing edge of its left
-      // neighbour. `contain` keeps the layout cost local.
-      style={{
-        transformOrigin: "left center",
-        willChange: "transform, opacity, filter",
-      }}
-      className={`group relative flex h-full flex-col overflow-hidden rounded-[var(--radius-2xl)] border p-7 outline-none [contain:layout_paint] focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-background-elevated)] sm:p-8 ${surfaceCls} ${interactionCls}`.trim()}
-      tabIndex={isCta ? -1 : 0}
-    >
-      {/* "Grow-from-previous" connector spark — a small gold dot that
-          shoots in from the LEFT edge as this card unfurls. Card #1
-          skips it (nothing to grow from). Sits behind content; pure
-          decoration. */}
+  // Card content is identical for CTA and non-CTA cards.
+  // On CTA cards this tree lives inside a <Link>; the visual "button"
+  // is aria-hidden because the <Link> is the real interactive element.
+  const cardContent = (
+    <>
+      {/* "Grow-from-previous" connector spark — decorative, pointer-events off. */}
       {!reduced && index > 0 && (
         <motion.span
           aria-hidden
@@ -353,28 +335,11 @@ function StepCard({ step, index, reduced }: Readonly<StepCardProps>) {
             x: [-22, 18, 28],
           }}
           viewport={{ once: true, amount: 0.25, margin: "-80px" }}
-          transition={{
-            duration: 0.9,
-            ease: [0.22, 1, 0.36, 1],
-            delay: 0.05,
-          }}
+          transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1], delay: 0.05 }}
         />
       )}
-      {/* CTA card link overlay — full surface click target at z:10. */}
-      {step.cta && (
-        <Link
-          href={step.cta.href}
-          aria-label={`${step.title} — ${step.cta.label}`}
-          className="absolute inset-0 z-10 rounded-[var(--radius-2xl)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-background-elevated)]"
-          data-testid={`how-it-works-step-${step.numeral}-cta-overlay`}
-        >
-          <span className="sr-only">{step.cta.label}</span>
-        </Link>
-      )}
 
-      {/* Inner stagger container — coordinates the per-card "wake up"
-          cascade. Uses its own variant keys ("hidden"/"visible") so it
-          doesn't collide with the card-level "card-*" entrance variants. */}
+      {/* Inner stagger container */}
       <motion.div
         variants={reduced ? undefined : INNER_PARENT}
         initial={reduced ? false : "hidden"}
@@ -400,8 +365,7 @@ function StepCard({ step, index, reduced }: Readonly<StepCardProps>) {
           </motion.span>
         </div>
 
-        {/* Gold hairline divider — draws in below the icon row, matching
-            the reference's subtle eyebrow separator. */}
+        {/* Gold hairline divider */}
         <motion.span
           aria-hidden
           variants={reduced ? undefined : ITEM_RISE}
@@ -429,9 +393,6 @@ function StepCard({ step, index, reduced }: Readonly<StepCardProps>) {
           </motion.p>
         </div>
 
-        {/* Illustration — fills the lower half of the card. Reads the
-            same `inView` so the per-step SVG animates in lockstep with
-            the rest of the card. The CTA button sits on top of it. */}
         <motion.div
           variants={reduced ? undefined : ITEM_RISE}
           className="relative mt-2 h-[140px] sm:h-[160px]"
@@ -439,24 +400,51 @@ function StepCard({ step, index, reduced }: Readonly<StepCardProps>) {
           {step.illustration({ inView })}
         </motion.div>
 
-        {/* CTA button — only on the funnel-closing card. z:20 above the
-            full-card link overlay so clicks register. */}
+        {/* Visual CTA affordance — aria-hidden because the wrapping <Link>
+            is the real interactive element. Pure decoration. */}
         {step.cta && (
-          <div className="relative z-20 mt-auto pt-2">
-            <motion.span
-              data-testid={`how-it-works-step-${step.numeral}-cta`}
-              variants={reduced ? undefined : ITEM_RISE}
-              className="group/cta inline-flex items-center gap-2 rounded-full bg-[var(--color-forest)] px-5 py-2.5 text-sm font-semibold text-[var(--color-cream)] shadow-[0_8px_22px_-10px_rgba(31,61,46,0.55)] transition-[background,box-shadow,transform] duration-200 ease-[var(--ease-standard)] group-hover:-translate-y-[1px] group-hover:bg-[var(--color-forest-deep)] group-hover:shadow-[0_14px_30px_-10px_rgba(31,61,46,0.6)]"
-            >
+          <motion.div
+            aria-hidden
+            variants={reduced ? undefined : ITEM_RISE}
+            className="mt-auto pt-2"
+          >
+            <span className="group/cta inline-flex items-center gap-2 rounded-full bg-[var(--color-forest)] px-5 py-2.5 text-sm font-semibold text-[var(--color-cream)] shadow-[0_8px_22px_-10px_rgba(31,61,46,0.55)] transition-[background,box-shadow,transform] duration-200 ease-[var(--ease-standard)] group-hover:-translate-y-[1px] group-hover:bg-[var(--color-forest-deep)] group-hover:shadow-[0_14px_30px_-10px_rgba(31,61,46,0.6)]">
               {step.cta.label}
               <ArrowRight
                 className="h-4 w-4 transition-transform duration-200 ease-[var(--ease-standard)] group-hover:translate-x-0.5"
                 aria-hidden
               />
-            </motion.span>
-          </div>
+            </span>
+          </motion.div>
         )}
       </motion.div>
+    </>
+  );
+
+  return (
+    <motion.li
+      ref={ref}
+      data-testid={`how-it-works-step-${step.numeral}`}
+      variants={reduced ? undefined : CARD_GROW_VARIANTS}
+      whileHover={reduced ? undefined : "hover"}
+      style={{ transformOrigin: "left center", willChange: "transform, opacity, filter" }}
+      className={`group relative overflow-hidden rounded-[var(--radius-2xl)] border [contain:layout_paint] ${surfaceCls} ${isCta ? "cursor-pointer hover:border-[var(--color-forest)]/45" : "cursor-default"}`.trim()}
+    >
+      {isCta ? (
+        // <Link> IS the card surface for CTA cards — whole padded area is
+        // the click/tap/keyboard target. No overlay tricks needed.
+        <Link
+          href={step.cta!.href}
+          data-testid={`how-it-works-step-${step.numeral}-cta`}
+          className={innerCls}
+        >
+          {cardContent}
+        </Link>
+      ) : (
+        <div tabIndex={0} className={innerCls}>
+          {cardContent}
+        </div>
+      )}
     </motion.li>
   );
 }
