@@ -10,16 +10,14 @@ import {
   Eye,
   EyeOff,
   Globe,
-  ImagePlus,
   Info,
   KeyRound,
   Mail,
-  MessageSquare,
   Phone,
   ShieldCheck,
   UserCheck,
 } from "lucide-react";
-import { useMemo, useState, type FormEvent } from "react";
+import { useMemo, useRef, useState, type FormEvent } from "react";
 
 import type { SupportedLocale } from "@/core/branding/brand-config";
 import { localizedHref } from "@/core/i18n/href";
@@ -27,6 +25,14 @@ import { t } from "@/core/i18n/messages";
 import { useActiveLocale } from "@/core/i18n/use-active-locale";
 import { useAuthSession } from "@/features/auth/lib/use-auth-session";
 import { PHONE_AUTH_ENABLED } from "@/features/auth/lib/rbac";
+import { MarketingTipsLoader } from "@/features/auth/components/MarketingTipsLoader";
+import { PhotoUploadField } from "@/features/auth/components/PhotoUploadField";
+import {
+  CharacterCounter,
+  FormErrorSummary,
+  ValidatedField,
+  type ValidatedFieldHandle,
+} from "@/shared/ui/form";
 import { toast } from "@/shared/ui/toast";
 
 type WizardStep = "phone" | "otp" | "password" | "profile";
@@ -37,6 +43,11 @@ const STEP_ORDER: ReadonlyArray<WizardStep> = [
   "password",
   "profile",
 ];
+
+const DESCRIPTION_MIN = 80;
+const DESCRIPTION_MAX = 200;
+const PHOTO_MIN = 2;
+const PHOTO_MAX = 10;
 
 interface PhoneState {
   country: string;
@@ -66,6 +77,25 @@ interface ProfileState {
   noDeposit: boolean;
   acceptTerms: boolean;
 }
+
+type PhoneErrors = Partial<Record<"country" | "phone" | "email", string>>;
+type OtpErrors = Partial<Record<"otp", string>>;
+type PasswordErrors = Partial<
+  Record<"password" | "confirm" | "terms", string>
+>;
+type ProfileErrors = Partial<
+  Record<
+    | "state"
+    | "city"
+    | "category"
+    | "title"
+    | "description"
+    | "contact"
+    | "photos"
+    | "terms",
+    string
+  >
+>;
 
 const COUNTRIES: ReadonlyArray<{ code: string; label: string; dial: string }> = [
   { code: "CO", label: "Colombia", dial: "+57" },
@@ -101,18 +131,23 @@ const REVEAL: Variants = {
   },
 };
 
+const inputCls =
+  "h-12 w-full appearance-none rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-background)] px-3 text-sm text-[var(--color-foreground)] placeholder:text-[var(--color-text-subtle)] focus:border-[var(--color-brand-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-brand-primary)]/30 aria-[invalid=true]:border-[var(--color-brand-highlight)] aria-[invalid=true]:focus:ring-[var(--color-brand-highlight)]/35";
+const inputClsWithLeftIcon = `${inputCls} pl-10`;
+const textareaCls =
+  "w-full rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-background)] px-3 py-2.5 text-sm text-[var(--color-foreground)] placeholder:text-[var(--color-text-subtle)] focus:border-[var(--color-brand-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-brand-primary)]/30 aria-[invalid=true]:border-[var(--color-brand-highlight)] aria-[invalid=true]:focus:ring-[var(--color-brand-highlight)]/35";
+
 /**
  * Flow A — multi-step publisher registration wizard.
  *
- * Steps follow PDF page 3:
- *   1. Phone + email
- *   2. OTP verification (optimistic — feature-flagged off)
- *   3. Password
- *   4. Profile details (location, details, photos, contact, terms)
+ * Per-step validation maps to per-field errors so the UI can shake the
+ * specific offending control via `ValidatedField`. On final submit we
+ * mount `MarketingTipsLoader` to keep the wait productive with rotating
+ * conversion advice.
  *
- * Photo upload + phone OTP are stubbed visually. Profile submission
- * lands on the post-publish "perfil bajo moderación" screen at
- * `/mi-cuenta?just_published=1`.
+ * The OTP, photo-upload, and phone verification are gated by feature
+ * flags in `rbac.ts` — they render visually but accept inputs
+ * optimistically until the real wiring lands.
  */
 export function PublisherSignUpWizard() {
   const router = useRouter();
@@ -125,12 +160,15 @@ export function PublisherSignUpWizard() {
     phone: "",
     email: "",
   });
+  const [phoneErrors, setPhoneErrors] = useState<PhoneErrors>({});
   const [otp, setOtp] = useState("");
+  const [otpErrors, setOtpErrors] = useState<OtpErrors>({});
   const [pw, setPw] = useState<PasswordState>({
     password: "",
     confirm: "",
     acceptTerms: false,
   });
+  const [pwErrors, setPwErrors] = useState<PasswordErrors>({});
   const [profile, setProfile] = useState<ProfileState>({
     state: "",
     city: "",
@@ -147,35 +185,161 @@ export function PublisherSignUpWizard() {
     noDeposit: false,
     acceptTerms: false,
   });
-  const [stepError, setStepError] = useState<string | null>(null);
+  const [photos, setPhotos] = useState<ReadonlyArray<File>>([]);
+  const [profileErrors, setProfileErrors] = useState<ProfileErrors>({});
   const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+
+  const refs = useRef<Record<string, ValidatedFieldHandle>>({});
+  // Stable per-key callback ref factory. The cache lives in a ref so the
+  // memoized accessor function itself is identity-stable across renders
+  // and React 19's "no local mutation after render" rule is satisfied.
+  const callbackCache = useRef(
+    new Map<string, (h: ValidatedFieldHandle | null) => void>(),
+  );
+  const setRef = useMemo(
+    () =>
+      (key: string) => {
+        const existing = callbackCache.current.get(key);
+        if (existing) return existing;
+        const fn = (handle: ValidatedFieldHandle | null) => {
+          if (handle) refs.current[key] = handle;
+          else delete refs.current[key];
+        };
+        callbackCache.current.set(key, fn);
+        return fn;
+      },
+    [],
+  );
 
   const dial =
     COUNTRIES.find((c) => c.code === phone.country)?.dial ?? "+1";
   const e164 = `${dial}${phone.phone.replace(/\D+/g, "")}`;
 
-  function goNext() {
-    setStepError(null);
-    const error = validateStep(step, { phone, otp, pw, profile }, locale);
-    if (error) {
-      setStepError(error);
-      return;
-    }
-    const idx = STEP_ORDER.indexOf(step);
-    if (idx < STEP_ORDER.length - 1) {
-      setStep(STEP_ORDER[idx + 1] as WizardStep);
+  function validatePhone(): PhoneErrors {
+    const next: PhoneErrors = {};
+    if (!phone.country)
+      next.country = t(locale, "rbac.publisher.phone.validation.country");
+    if (phone.phone.replace(/\D+/g, "").length < 7)
+      next.phone = t(locale, "rbac.publisher.phone.validation.phone");
+    if (!phone.email.includes("@") || !phone.email.includes("."))
+      next.email = t(locale, "rbac.publisher.phone.validation.email");
+    return next;
+  }
+
+  function validateOtp(): OtpErrors {
+    return otp.length === 6
+      ? {}
+      : { otp: t(locale, "rbac.publisher.otp.validation") };
+  }
+
+  function validatePassword(): PasswordErrors {
+    const next: PasswordErrors = {};
+    if (pw.password.length < 8)
+      next.password = t(locale, "rbac.publisher.password.validation.password");
+    if (pw.confirm !== pw.password)
+      next.confirm = t(locale, "rbac.publisher.password.validation.confirm");
+    if (!pw.acceptTerms)
+      next.terms = t(locale, "rbac.publisher.password.validation.terms");
+    return next;
+  }
+
+  function validateProfile(): ProfileErrors {
+    const next: ProfileErrors = {};
+    if (!profile.state.trim())
+      next.state = t(locale, "rbac.publisher.profile.validation.required");
+    if (!profile.city.trim())
+      next.city = t(locale, "rbac.publisher.profile.validation.required");
+    if (!profile.category)
+      next.category = t(locale, "rbac.publisher.profile.validation.required");
+    if (profile.title.trim().length < 40)
+      next.title = t(locale, "rbac.publisher.profile.validation.titleMin");
+    const descLen = profile.description.trim().length;
+    if (descLen < DESCRIPTION_MIN)
+      next.description = t(
+        locale,
+        "rbac.publisher.profile.validation.descriptionMin",
+      );
+    else if (descLen > DESCRIPTION_MAX)
+      next.description = t(
+        locale,
+        "rbac.publisher.profile.validation.descriptionMax",
+        { max: DESCRIPTION_MAX },
+      );
+    if (
+      !profile.contactEmail &&
+      !profile.contactPhone &&
+      !profile.contactWhatsapp &&
+      !profile.contactTelegram
+    )
+      next.contact = t(locale, "rbac.publisher.profile.validation.contact");
+    if (!profile.acceptTerms)
+      next.terms = t(locale, "rbac.publisher.profile.validation.terms");
+    return next;
+  }
+
+  function shakeFirst(keys: ReadonlyArray<string>, errors: Record<string, string | undefined>) {
+    for (const k of keys) {
+      if (errors[k]) {
+        refs.current[k]?.shake();
+        return;
+      }
     }
   }
 
-  /**
-   * Google shortcut. Authenticates the user via Google popup then skips
-   * straight to the profile step — phone/OTP/password become irrelevant
-   * because the identity provider already gave us a verified email. The
-   * `biringas:account-type` cookie set by the chooser still tags the
-   * account as publisher.
-   */
+  function goNext() {
+    setSubmitError(null);
+    if (step === "phone") {
+      const errs = validatePhone();
+      setPhoneErrors(errs);
+      if (Object.keys(errs).length) {
+        shakeFirst(["country", "phone", "email"], errs);
+        toast.error(
+          t(locale, "rbac.form.toast.invalid.title"),
+          t(locale, "rbac.form.toast.invalid.body"),
+        );
+        return;
+      }
+      setStep("otp");
+      return;
+    }
+    if (step === "otp") {
+      const errs = validateOtp();
+      setOtpErrors(errs);
+      if (Object.keys(errs).length) {
+        shakeFirst(["otp"], errs);
+        toast.error(
+          t(locale, "rbac.form.toast.invalid.title"),
+          t(locale, "rbac.form.toast.invalid.body"),
+        );
+        return;
+      }
+      setStep("password");
+      return;
+    }
+    if (step === "password") {
+      const errs = validatePassword();
+      setPwErrors(errs);
+      if (Object.keys(errs).length) {
+        shakeFirst(["password", "confirm", "terms"], errs);
+        toast.error(
+          t(locale, "rbac.form.toast.invalid.title"),
+          t(locale, "rbac.form.toast.invalid.body"),
+        );
+        return;
+      }
+      setStep("profile");
+    }
+  }
+
+  function goBack() {
+    setSubmitError(null);
+    const idx = STEP_ORDER.indexOf(step);
+    if (idx > 0) setStep(STEP_ORDER[idx - 1] as WizardStep);
+  }
+
   async function onGoogleShortcut() {
-    setStepError(null);
+    setSubmitError(null);
     setSubmitting(true);
     try {
       await signInWithGoogle();
@@ -189,16 +353,11 @@ export function PublisherSignUpWizard() {
         code === "auth/popup-closed-by-user"
           ? t(locale, "auth.error.popupClosed")
           : ((err as Error)?.message ?? t(locale, "auth.error.unknown"));
-      setStepError(msg);
+      setSubmitError(msg);
+      toast.error(t(locale, "rbac.form.toast.error.title"), msg);
     } finally {
       setSubmitting(false);
     }
-  }
-
-  function goBack() {
-    setStepError(null);
-    const idx = STEP_ORDER.indexOf(step);
-    if (idx > 0) setStep(STEP_ORDER[idx - 1] as WizardStep);
   }
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
@@ -207,26 +366,34 @@ export function PublisherSignUpWizard() {
       goNext();
       return;
     }
-    const error = validateStep("profile", { phone, otp, pw, profile }, locale);
-    if (error) {
-      setStepError(error);
+    const errs = validateProfile();
+    setProfileErrors(errs);
+    if (Object.keys(errs).length) {
+      shakeFirst(
+        ["state", "city", "category", "title", "description", "contact", "photos", "terms"],
+        errs,
+      );
+      toast.error(
+        t(locale, "rbac.form.toast.invalid.title"),
+        t(locale, "rbac.form.toast.invalid.body"),
+      );
       return;
     }
-    setStepError(null);
+    setSubmitError(null);
     setSubmitting(true);
     try {
-      if (status !== "disabled") {
+      if (status !== "disabled" && !status?.includes("authenticated")) {
         await signUpWithEmail(phone.email, pw.password);
       }
+      // Brief artificial delay so the loader's first tip is readable —
+      // also useful UX padding while we wait for Firebase to mint the
+      // session cookie.
+      await new Promise<void>((resolve) => setTimeout(resolve, 1600));
       toast.success(
-        t(locale, "rbac.commentator.successToast.title"),
-        t(locale, "rbac.publisher.postPublish.banner"),
+        t(locale, "rbac.form.toast.success.title"),
+        t(locale, "rbac.form.toast.success.body"),
       );
-      // Post-publish flow lives on the dashboard with the "perfil bajo
-      // moderación" banner + verification prompt visible.
-      router.push(
-        `${localizedHref(locale, "/mi-cuenta")}?just_published=1`,
-      );
+      router.push(`${localizedHref(locale, "/mi-cuenta")}?just_published=1`);
       router.refresh();
     } catch (err) {
       const code =
@@ -239,8 +406,8 @@ export function PublisherSignUpWizard() {
           : code === "auth/invalid-email"
             ? t(locale, "auth.signup.error.invalidEmail")
             : ((err as Error)?.message ?? t(locale, "auth.error.unknown"));
-      setStepError(msg);
-    } finally {
+      setSubmitError(msg);
+      toast.error(t(locale, "rbac.form.toast.error.title"), msg);
       setSubmitting(false);
     }
   }
@@ -251,153 +418,210 @@ export function PublisherSignUpWizard() {
   );
 
   return (
-    <motion.form
-      onSubmit={onSubmit}
-      noValidate
-      className="relative flex w-full flex-col gap-6 overflow-hidden rounded-[var(--radius-2xl)] border border-[var(--color-border)] bg-[var(--color-surface)] p-6 shadow-[var(--shadow-lg)] sm:p-8"
-    >
-      <span
-        aria-hidden
-        className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[var(--color-gold)]/55 to-transparent"
-      />
+    <>
+      <motion.form
+        onSubmit={onSubmit}
+        noValidate
+        className="relative flex w-full flex-col gap-6 overflow-hidden rounded-[var(--radius-2xl)] border border-[var(--color-border)] bg-[var(--color-surface)] p-6 shadow-[var(--shadow-lg)] sm:p-8"
+      >
+        <span
+          aria-hidden
+          className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[var(--color-gold)]/55 to-transparent"
+        />
 
-      <ChapterMarker currentStep={step} locale={locale} />
-      <WizardStepper currentStep={step} locale={locale} />
+        <ChapterMarker currentStep={step} locale={locale} />
+        <WizardStepper currentStep={step} locale={locale} />
 
-      <AnimatePresence mode="wait">
-        <motion.div
-          key={step}
-          variants={REVEAL}
-          initial="hidden"
-          animate="visible"
-          exit="exit"
-          className="flex flex-col gap-5"
-        >
-          {step === "phone" ? (
-            <>
-              <PhoneStep
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={step}
+            variants={REVEAL}
+            initial="hidden"
+            animate="visible"
+            exit="exit"
+            className="flex flex-col gap-5"
+          >
+            {step === "phone" ? (
+              <>
+                <PhoneStep
+                  locale={locale}
+                  value={phone}
+                  onChange={(next) => {
+                    setPhone(next);
+                    if (Object.keys(phoneErrors).length) setPhoneErrors({});
+                  }}
+                  errors={phoneErrors}
+                  setRef={setRef}
+                  countries={COUNTRIES}
+                />
+                {status !== "disabled" ? (
+                  <>
+                    <div
+                      role="separator"
+                      aria-orientation="horizontal"
+                      className="flex items-center gap-3 text-[10px] uppercase tracking-[0.22em] text-[var(--color-text-subtle)]"
+                    >
+                      <span
+                        className="h-px flex-1 bg-[var(--color-border)]"
+                        aria-hidden
+                      />
+                      <span>{t(locale, "auth.signin.divider")}</span>
+                      <span
+                        className="h-px flex-1 bg-[var(--color-border)]"
+                        aria-hidden
+                      />
+                    </div>
+                    <button
+                      type="button"
+                      onClick={onGoogleShortcut}
+                      disabled={submitting}
+                      className="inline-flex h-12 items-center justify-center gap-2 rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] px-5 text-sm font-semibold text-[var(--color-foreground)] transition-[border-color,background,transform] duration-200 ease-[var(--ease-standard)] hover:-translate-y-[1px] hover:border-[var(--color-brand-primary-soft)] hover:bg-[var(--color-background-elevated)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-background)] disabled:cursor-not-allowed disabled:opacity-70"
+                    >
+                      <GoogleGlyph />
+                      {t(locale, "auth.signin.google")}
+                    </button>
+                  </>
+                ) : null}
+              </>
+            ) : null}
+            {step === "otp" ? (
+              <OtpStep
                 locale={locale}
-                value={phone}
-                onChange={setPhone}
-                countries={COUNTRIES}
+                value={otp}
+                onChange={(v) => {
+                  setOtp(v);
+                  if (otpErrors.otp) setOtpErrors({});
+                }}
+                error={otpErrors.otp}
+                setRef={setRef}
+                e164={e164}
               />
-              {status !== "disabled" ? (
+            ) : null}
+            {step === "password" ? (
+              <PasswordStep
+                locale={locale}
+                value={pw}
+                onChange={(next) => {
+                  setPw(next);
+                  if (Object.keys(pwErrors).length) setPwErrors({});
+                }}
+                errors={pwErrors}
+                setRef={setRef}
+              />
+            ) : null}
+            {step === "profile" ? (
+              <ProfileStep
+                locale={locale}
+                value={profile}
+                onChange={(next) => {
+                  setProfile(next);
+                  if (Object.keys(profileErrors).length) {
+                    setProfileErrors({});
+                  }
+                }}
+                photos={photos}
+                onPhotosChange={(next) => {
+                  setPhotos(next);
+                  if (profileErrors.photos)
+                    setProfileErrors({ ...profileErrors, photos: undefined });
+                }}
+                errors={profileErrors}
+                setRef={setRef}
+              />
+            ) : null}
+          </motion.div>
+        </AnimatePresence>
+
+        {step === "profile" ? (
+          <FormErrorSummary
+            items={summaryFromProfileErrors(profileErrors, locale)}
+            heading={t(locale, "rbac.form.errorSummary.heading")}
+            onJumpTo={(fieldId) => refs.current[fieldId]?.shake()}
+          />
+        ) : null}
+
+        {submitError && (
+          <p
+            role="alert"
+            className="rounded-[var(--radius-md)] border border-[var(--color-brand-highlight)]/40 bg-[var(--color-brand-highlight)]/10 px-3 py-2 text-xs text-[var(--color-brand-highlight)]"
+          >
+            {submitError}
+          </p>
+        )}
+
+        <div className="flex items-center justify-between gap-3 border-t border-[var(--color-border)] pt-5">
+          <button
+            type="button"
+            onClick={goBack}
+            disabled={step === "phone" || submitting}
+            className="inline-flex h-11 items-center gap-2 rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] px-4 text-xs font-semibold text-[var(--color-foreground)] transition-colors hover:border-[var(--color-brand-primary-soft)] hover:bg-[var(--color-background-elevated)] disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            <ArrowLeft className="h-3.5 w-3.5" aria-hidden />
+            {t(locale, "rbac.publisher.back")}
+          </button>
+
+          <button
+            type="submit"
+            disabled={submitting}
+            className="inline-flex h-11 items-center gap-2 rounded-full bg-[var(--color-brand-primary)] px-5 text-sm font-semibold text-[var(--color-surface)] shadow-[var(--shadow-glow-primary)] transition-[background,transform] duration-200 hover:-translate-y-[1px] hover:bg-[var(--color-brand-primary-strong)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-background)] disabled:cursor-not-allowed disabled:opacity-70"
+          >
+            {step === "profile" ? (
+              submitting ? (
+                t(locale, "rbac.publisher.profile.submitting")
+              ) : (
                 <>
-                  <div
-                    role="separator"
-                    aria-orientation="horizontal"
-                    className="flex items-center gap-3 text-[10px] uppercase tracking-[0.22em] text-[var(--color-text-subtle)]"
-                  >
-                    <span
-                      className="h-px flex-1 bg-[var(--color-border)]"
-                      aria-hidden
-                    />
-                    <span>{t(locale, "auth.signin.divider")}</span>
-                    <span
-                      className="h-px flex-1 bg-[var(--color-border)]"
-                      aria-hidden
-                    />
-                  </div>
-                  <button
-                    type="button"
-                    onClick={onGoogleShortcut}
-                    disabled={submitting}
-                    className="inline-flex h-12 items-center justify-center gap-2 rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] px-5 text-sm font-semibold text-[var(--color-foreground)] transition-[border-color,background,transform] duration-200 ease-[var(--ease-standard)] hover:-translate-y-[1px] hover:border-[var(--color-brand-primary-soft)] hover:bg-[var(--color-background-elevated)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-background)] disabled:cursor-not-allowed disabled:opacity-70"
-                  >
-                    <GoogleGlyph />
-                    {t(locale, "auth.signin.google")}
-                  </button>
+                  <UserCheck className="h-4 w-4" aria-hidden />
+                  {t(locale, "rbac.publisher.profile.submit")}
                 </>
-              ) : null}
-            </>
-          ) : null}
-          {step === "otp" ? (
-            <OtpStep
-              locale={locale}
-              value={otp}
-              onChange={setOtp}
-              e164={e164}
-            />
-          ) : null}
-          {step === "password" ? (
-            <PasswordStep locale={locale} value={pw} onChange={setPw} />
-          ) : null}
-          {step === "profile" ? (
-            <ProfileStep
-              locale={locale}
-              value={profile}
-              onChange={setProfile}
-            />
-          ) : null}
-        </motion.div>
-      </AnimatePresence>
-
-      {stepError && (
-        <p
-          role="alert"
-          className="rounded-[var(--radius-md)] border border-[var(--color-brand-highlight)]/40 bg-[var(--color-brand-highlight)]/10 px-3 py-2 text-xs text-[var(--color-brand-highlight)]"
-        >
-          {stepError}
-        </p>
-      )}
-
-      <div className="flex items-center justify-between gap-3 border-t border-[var(--color-border)] pt-5">
-        <button
-          type="button"
-          onClick={goBack}
-          disabled={step === "phone" || submitting}
-          className="inline-flex h-11 items-center gap-2 rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] px-4 text-xs font-semibold text-[var(--color-foreground)] transition-colors hover:border-[var(--color-brand-primary-soft)] hover:bg-[var(--color-background-elevated)] disabled:cursor-not-allowed disabled:opacity-50"
-        >
-          <ArrowLeft className="h-3.5 w-3.5" aria-hidden />
-          {t(locale, "rbac.publisher.back")}
-        </button>
-
-        <button
-          type="submit"
-          disabled={submitting}
-          className="inline-flex h-11 items-center gap-2 rounded-full bg-[var(--color-brand-primary)] px-5 text-sm font-semibold text-[var(--color-surface)] shadow-[var(--shadow-glow-primary)] transition-[background,transform] duration-200 hover:-translate-y-[1px] hover:bg-[var(--color-brand-primary-strong)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-background)] disabled:cursor-not-allowed disabled:opacity-70"
-        >
-          {step === "profile" ? (
-            submitting ? (
-              t(locale, "rbac.publisher.profile.submitting")
+              )
             ) : (
               <>
-                <UserCheck className="h-4 w-4" aria-hidden />
-                {t(locale, "rbac.publisher.profile.submit")}
+                {t(locale, "rbac.publisher.next")}
+                <ArrowRight className="h-4 w-4" aria-hidden />
               </>
-            )
-          ) : (
-            <>
-              {t(locale, "rbac.publisher.next")}
-              <ArrowRight className="h-4 w-4" aria-hidden />
-            </>
-          )}
-        </button>
-      </div>
+            )}
+          </button>
+        </div>
 
-      <p className="text-center text-[11px] text-[var(--color-text-muted)]">
-        {t(locale, "rbac.publisher.changeAccountType")}{" "}
-        <Link
-          href={switchToCommentatorHref}
-          className="font-semibold text-[var(--color-brand-primary)] underline-offset-2 hover:underline"
-        >
-          {t(locale, "rbac.publisher.changeAccountType.cta")}
-        </Link>
-      </p>
-    </motion.form>
+        <p className="text-center text-[11px] text-[var(--color-text-muted)]">
+          {t(locale, "rbac.publisher.changeAccountType")}{" "}
+          <Link
+            href={switchToCommentatorHref}
+            className="font-semibold text-[var(--color-brand-primary)] underline-offset-2 hover:underline"
+          >
+            {t(locale, "rbac.publisher.changeAccountType.cta")}
+          </Link>
+        </p>
+      </motion.form>
+
+      <MarketingTipsLoader open={submitting && step === "profile"} />
+    </>
   );
 }
 
+function summaryFromProfileErrors(
+  errs: ProfileErrors,
+  locale: SupportedLocale,
+): ReadonlyArray<{ fieldId: string; label: string; message: string }> {
+  const labels: Record<keyof ProfileErrors, string> = {
+    state: t(locale, "rbac.publisher.profile.field.state"),
+    city: t(locale, "rbac.publisher.profile.field.city"),
+    category: t(locale, "rbac.publisher.profile.field.category"),
+    title: t(locale, "rbac.publisher.profile.field.title"),
+    description: t(locale, "rbac.publisher.profile.field.description"),
+    contact: t(locale, "rbac.publisher.profile.section.contact"),
+    photos: t(locale, "rbac.publisher.profile.section.photos"),
+    terms: t(locale, "auth.signup.terms.terms"),
+  };
+  return (Object.keys(errs) as Array<keyof ProfileErrors>)
+    .filter((k) => Boolean(errs[k]))
+    .map((k) => ({ fieldId: k, label: labels[k], message: errs[k]! }));
+}
+
 /* -------------------------------------------------------------------------- */
-/* Stepper                                                                    */
+/* Chapter marker + stepper                                                   */
 /* -------------------------------------------------------------------------- */
 
-/**
- * Chapter marker — the editorial "01 / 04 — Step name" line that sits
- * above the stepper. The current step number cross-fades when changing
- * so the marker reads as a single typographic element morphing through
- * its values rather than four discrete labels swapping in and out.
- */
 function ChapterMarker({
   currentStep,
   locale,
@@ -498,18 +722,10 @@ function WizardStepper({
           >
             <motion.span
               layout
-              animate={
-                active
-                  ? { scale: [1, 1.08, 1] }
-                  : { scale: 1 }
-              }
-              transition={{
-                duration: 0.45,
-                ease: [0.22, 1, 0.36, 1],
-              }}
+              animate={active ? { scale: [1, 1.08, 1] } : { scale: 1 }}
+              transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
               className={`relative inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full border text-[11px] font-semibold transition-colors duration-300 ${tone}`}
             >
-              {/* Ring pulse when active */}
               {active ? (
                 <motion.span
                   aria-hidden
@@ -570,11 +786,15 @@ function PhoneStep({
   locale,
   value,
   onChange,
+  errors,
+  setRef,
   countries,
 }: {
   locale: SupportedLocale;
   value: PhoneState;
   onChange: (next: PhoneState) => void;
+  errors: PhoneErrors;
+  setRef: (key: string) => (handle: ValidatedFieldHandle | null) => void;
   countries: ReadonlyArray<{ code: string; label: string; dial: string }>;
 }) {
   return (
@@ -589,68 +809,86 @@ function PhoneStep({
       </header>
 
       {!PHONE_AUTH_ENABLED ? (
-        <DisabledNotice
-          icon={<Info className="h-3.5 w-3.5" aria-hidden />}
-          body={t(locale, "rbac.publisher.phone.disabledNotice")}
-        />
+        <DisabledNotice body={t(locale, "rbac.publisher.phone.disabledNotice")} />
       ) : null}
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-        <FormField
-          id="pub-country"
+        <ValidatedField
+          ref={setRef("country")}
+          id="country"
           label={t(locale, "rbac.publisher.phone.country")}
+          required
           icon={<Globe className="h-4 w-4" aria-hidden />}
+          error={errors.country}
         >
-          <select
-            id="pub-country"
-            value={value.country}
-            onChange={(e) => onChange({ ...value, country: e.target.value })}
-            className="h-12 w-full appearance-none rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-background)] pl-10 pr-3 text-sm text-[var(--color-foreground)] focus:border-[var(--color-brand-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-brand-primary)]/30"
-          >
-            {countries.map((c) => (
-              <option key={c.code} value={c.code}>
-                {c.label} ({c.dial})
-              </option>
-            ))}
-          </select>
-        </FormField>
+          {(api) => (
+            <select
+              {...api}
+              id={api.inputId}
+              value={value.country}
+              onChange={(e) => onChange({ ...value, country: e.target.value })}
+              className={inputClsWithLeftIcon}
+            >
+              {countries.map((c) => (
+                <option key={c.code} value={c.code}>
+                  {c.label} ({c.dial})
+                </option>
+              ))}
+            </select>
+          )}
+        </ValidatedField>
 
-        <FormField
-          id="pub-phone"
-          className="sm:col-span-2"
+        <ValidatedField
+          ref={setRef("phone")}
+          id="phone"
           label={t(locale, "rbac.publisher.phone.field")}
+          required
           icon={<Phone className="h-4 w-4" aria-hidden />}
+          error={errors.phone}
+          className="sm:col-span-2"
         >
-          <input
-            id="pub-phone"
-            type="tel"
-            inputMode="numeric"
-            autoComplete="tel-national"
-            value={value.phone}
-            onChange={(e) =>
-              onChange({ ...value, phone: e.target.value.replace(/[^\d ]/g, "") })
-            }
-            placeholder={t(locale, "rbac.publisher.phone.field.placeholder")}
-            className="h-12 w-full rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-background)] pl-10 pr-3 text-sm text-[var(--color-foreground)] placeholder:text-[var(--color-text-subtle)] focus:border-[var(--color-brand-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-brand-primary)]/30"
-          />
-        </FormField>
+          {(api) => (
+            <input
+              {...api}
+              id={api.inputId}
+              type="tel"
+              inputMode="numeric"
+              autoComplete="tel-national"
+              value={value.phone}
+              onChange={(e) =>
+                onChange({
+                  ...value,
+                  phone: e.target.value.replace(/[^\d ]/g, ""),
+                })
+              }
+              placeholder={t(locale, "rbac.publisher.phone.field.placeholder")}
+              className={inputClsWithLeftIcon}
+            />
+          )}
+        </ValidatedField>
       </div>
 
-      <FormField
-        id="pub-email"
+      <ValidatedField
+        ref={setRef("email")}
+        id="email"
         label={t(locale, "rbac.publisher.phone.email")}
+        required
         icon={<Mail className="h-4 w-4" aria-hidden />}
+        error={errors.email}
       >
-        <input
-          id="pub-email"
-          type="email"
-          autoComplete="email"
-          value={value.email}
-          onChange={(e) => onChange({ ...value, email: e.target.value })}
-          placeholder={t(locale, "rbac.publisher.phone.email.placeholder")}
-          className="h-12 w-full rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-background)] pl-10 pr-3 text-sm text-[var(--color-foreground)] placeholder:text-[var(--color-text-subtle)] focus:border-[var(--color-brand-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-brand-primary)]/30"
-        />
-      </FormField>
+        {(api) => (
+          <input
+            {...api}
+            id={api.inputId}
+            type="email"
+            autoComplete="email"
+            value={value.email}
+            onChange={(e) => onChange({ ...value, email: e.target.value })}
+            placeholder={t(locale, "rbac.publisher.phone.email.placeholder")}
+            className={inputClsWithLeftIcon}
+          />
+        )}
+      </ValidatedField>
     </div>
   );
 }
@@ -663,11 +901,15 @@ function OtpStep({
   locale,
   value,
   onChange,
+  error,
+  setRef,
   e164,
 }: {
   locale: SupportedLocale;
   value: string;
   onChange: (next: string) => void;
+  error: string | undefined;
+  setRef: (key: string) => (handle: ValidatedFieldHandle | null) => void;
   e164: string;
 }) {
   return (
@@ -682,29 +924,34 @@ function OtpStep({
       </header>
 
       {!PHONE_AUTH_ENABLED ? (
-        <DisabledNotice
-          icon={<Info className="h-3.5 w-3.5" aria-hidden />}
-          body={t(locale, "rbac.publisher.otp.optimistic")}
-        />
+        <DisabledNotice body={t(locale, "rbac.publisher.otp.optimistic")} />
       ) : null}
 
-      <FormField
-        id="pub-otp"
+      <ValidatedField
+        ref={setRef("otp")}
+        id="otp"
         label={t(locale, "rbac.publisher.otp.field")}
+        required
         icon={<KeyRound className="h-4 w-4" aria-hidden />}
+        error={error}
       >
-        <input
-          id="pub-otp"
-          type="text"
-          inputMode="numeric"
-          autoComplete="one-time-code"
-          maxLength={6}
-          value={value}
-          onChange={(e) => onChange(e.target.value.replace(/\D+/g, "").slice(0, 6))}
-          placeholder="000000"
-          className="h-12 w-full rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-background)] pl-10 pr-3 font-mono text-base tracking-[0.4em] text-[var(--color-foreground)] placeholder:text-[var(--color-text-subtle)] focus:border-[var(--color-brand-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-brand-primary)]/30"
-        />
-      </FormField>
+        {(api) => (
+          <input
+            {...api}
+            id={api.inputId}
+            type="text"
+            inputMode="numeric"
+            autoComplete="one-time-code"
+            maxLength={6}
+            value={value}
+            onChange={(e) =>
+              onChange(e.target.value.replace(/\D+/g, "").slice(0, 6))
+            }
+            placeholder="000000"
+            className={`${inputClsWithLeftIcon} font-mono text-base tracking-[0.4em]`}
+          />
+        )}
+      </ValidatedField>
 
       <button
         type="button"
@@ -726,10 +973,14 @@ function PasswordStep({
   locale,
   value,
   onChange,
+  errors,
+  setRef,
 }: {
   locale: SupportedLocale;
   value: PasswordState;
   onChange: (next: PasswordState) => void;
+  errors: PasswordErrors;
+  setRef: (key: string) => (handle: ValidatedFieldHandle | null) => void;
 }) {
   const [showPassword, setShowPassword] = useState(false);
   return (
@@ -743,66 +994,95 @@ function PasswordStep({
         </p>
       </header>
 
-      <FormField
-        id="pub-pass"
+      <ValidatedField
+        ref={setRef("password")}
+        id="password"
         label={t(locale, "rbac.publisher.password.field")}
+        required
+        error={errors.password}
       >
-        <div className="relative">
+        {(api) => (
+          <div className="relative">
+            <input
+              {...api}
+              id={api.inputId}
+              type={showPassword ? "text" : "password"}
+              autoComplete="new-password"
+              minLength={8}
+              value={value.password}
+              onChange={(e) => onChange({ ...value, password: e.target.value })}
+              placeholder={t(locale, "rbac.publisher.password.field.placeholder")}
+              className={`${inputCls} pr-12`}
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword((v) => !v)}
+              aria-label={
+                showPassword
+                  ? t(locale, "auth.signin.field.password.hide")
+                  : t(locale, "auth.signin.field.password.show")
+              }
+              className="absolute right-2 top-1/2 inline-flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full text-[var(--color-text-subtle)] transition-colors hover:bg-[var(--color-surface-muted)] hover:text-[var(--color-foreground)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)]"
+            >
+              {showPassword ? (
+                <EyeOff className="h-4 w-4" aria-hidden />
+              ) : (
+                <Eye className="h-4 w-4" aria-hidden />
+              )}
+            </button>
+          </div>
+        )}
+      </ValidatedField>
+
+      <ValidatedField
+        ref={setRef("confirm")}
+        id="confirm"
+        label={t(locale, "rbac.publisher.password.confirm")}
+        required
+        error={errors.confirm}
+      >
+        {(api) => (
           <input
-            id="pub-pass"
+            {...api}
+            id={api.inputId}
             type={showPassword ? "text" : "password"}
             autoComplete="new-password"
-            minLength={8}
-            value={value.password}
-            onChange={(e) => onChange({ ...value, password: e.target.value })}
-            placeholder={t(locale, "rbac.publisher.password.field.placeholder")}
-            className="h-12 w-full rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-background)] px-3 pr-12 text-sm text-[var(--color-foreground)] placeholder:text-[var(--color-text-subtle)] focus:border-[var(--color-brand-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-brand-primary)]/30"
+            value={value.confirm}
+            onChange={(e) => onChange({ ...value, confirm: e.target.value })}
+            placeholder={t(locale, "rbac.publisher.password.confirm.placeholder")}
+            className={inputCls}
           />
-          <button
-            type="button"
-            onClick={() => setShowPassword((v) => !v)}
-            aria-label={
-              showPassword
-                ? t(locale, "auth.signin.field.password.hide")
-                : t(locale, "auth.signin.field.password.show")
-            }
-            className="absolute right-2 top-1/2 inline-flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full text-[var(--color-text-subtle)] transition-colors hover:bg-[var(--color-surface-muted)] hover:text-[var(--color-foreground)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)]"
-          >
-            {showPassword ? (
-              <EyeOff className="h-4 w-4" aria-hidden />
-            ) : (
-              <Eye className="h-4 w-4" aria-hidden />
-            )}
-          </button>
-        </div>
-      </FormField>
+        )}
+      </ValidatedField>
 
-      <FormField
-        id="pub-confirm"
-        label={t(locale, "rbac.publisher.password.confirm")}
+      <label
+        className={`flex items-start gap-2.5 rounded-[var(--radius-md)] border px-3 py-2 text-xs text-[var(--color-text-muted)] transition-colors ${errors.terms ? "border-[var(--color-brand-highlight)]/45 bg-[var(--color-brand-highlight)]/6" : "border-transparent"}`}
       >
-        <input
-          id="pub-confirm"
-          type={showPassword ? "text" : "password"}
-          autoComplete="new-password"
-          value={value.confirm}
-          onChange={(e) => onChange({ ...value, confirm: e.target.value })}
-          placeholder={t(locale, "rbac.publisher.password.confirm.placeholder")}
-          className="h-12 w-full rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-background)] px-3 text-sm text-[var(--color-foreground)] placeholder:text-[var(--color-text-subtle)] focus:border-[var(--color-brand-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-brand-primary)]/30"
-        />
-      </FormField>
-
-      <label className="flex items-start gap-2.5 text-xs text-[var(--color-text-muted)]">
         <input
           type="checkbox"
           checked={value.acceptTerms}
           onChange={(e) =>
             onChange({ ...value, acceptTerms: e.target.checked })
           }
+          aria-invalid={errors.terms ? true : undefined}
           className="mt-0.5 h-4 w-4 cursor-pointer accent-[var(--color-brand-primary)]"
         />
         <span>{t(locale, "rbac.publisher.password.terms.lead")}</span>
       </label>
+      <AnimatePresence>
+        {errors.terms ? (
+          <motion.p
+            role="alert"
+            initial={{ opacity: 0, y: -4, height: 0 }}
+            animate={{ opacity: 1, y: 0, height: "auto" }}
+            exit={{ opacity: 0, y: -4, height: 0 }}
+            transition={{ duration: 0.2 }}
+            className="text-[11px] text-[var(--color-brand-highlight)]"
+          >
+            {errors.terms}
+          </motion.p>
+        ) : null}
+      </AnimatePresence>
     </div>
   );
 }
@@ -815,10 +1095,18 @@ function ProfileStep({
   locale,
   value,
   onChange,
+  photos,
+  onPhotosChange,
+  errors,
+  setRef,
 }: {
   locale: SupportedLocale;
   value: ProfileState;
   onChange: (next: ProfileState) => void;
+  photos: ReadonlyArray<File>;
+  onPhotosChange: (next: ReadonlyArray<File>) => void;
+  errors: ProfileErrors;
+  setRef: (key: string) => (handle: ValidatedFieldHandle | null) => void;
 }) {
   return (
     <div className="flex flex-col gap-6">
@@ -831,168 +1119,229 @@ function ProfileStep({
         </p>
       </header>
 
-      {/* Location */}
       <Fieldset legend={t(locale, "rbac.publisher.profile.section.location")}>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <FormField
-            id="prof-state"
+          <ValidatedField
+            ref={setRef("state")}
+            id="state"
             label={t(locale, "rbac.publisher.profile.field.state")}
+            required
+            error={errors.state}
           >
-            <input
-              id="prof-state"
-              type="text"
-              value={value.state}
-              onChange={(e) => onChange({ ...value, state: e.target.value })}
-              placeholder={t(
-                locale,
-                "rbac.publisher.profile.field.state.placeholder",
-              )}
-              className={inputCls()}
-            />
-          </FormField>
-          <FormField
-            id="prof-city"
+            {(api) => (
+              <input
+                {...api}
+                id={api.inputId}
+                type="text"
+                value={value.state}
+                onChange={(e) => onChange({ ...value, state: e.target.value })}
+                placeholder={t(
+                  locale,
+                  "rbac.publisher.profile.field.state.placeholder",
+                )}
+                className={inputCls}
+              />
+            )}
+          </ValidatedField>
+          <ValidatedField
+            ref={setRef("city")}
+            id="city"
             label={t(locale, "rbac.publisher.profile.field.city")}
+            required
+            error={errors.city}
           >
-            <input
-              id="prof-city"
-              type="text"
-              value={value.city}
-              onChange={(e) => onChange({ ...value, city: e.target.value })}
-              placeholder={t(
-                locale,
-                "rbac.publisher.profile.field.city.placeholder",
-              )}
-              className={inputCls()}
-            />
-          </FormField>
-          <FormField
-            id="prof-neighborhood"
+            {(api) => (
+              <input
+                {...api}
+                id={api.inputId}
+                type="text"
+                value={value.city}
+                onChange={(e) => onChange({ ...value, city: e.target.value })}
+                placeholder={t(
+                  locale,
+                  "rbac.publisher.profile.field.city.placeholder",
+                )}
+                className={inputCls}
+              />
+            )}
+          </ValidatedField>
+          <ValidatedField
+            id="neighborhood"
             label={t(locale, "rbac.publisher.profile.field.neighborhood")}
           >
-            <input
-              id="prof-neighborhood"
-              type="text"
-              value={value.neighborhood}
-              onChange={(e) =>
-                onChange({ ...value, neighborhood: e.target.value })
-              }
-              placeholder={t(
-                locale,
-                "rbac.publisher.profile.field.neighborhood.placeholder",
-              )}
-              className={inputCls()}
-            />
-          </FormField>
-          <FormField
-            id="prof-travels"
+            {(api) => (
+              <input
+                {...api}
+                id={api.inputId}
+                type="text"
+                value={value.neighborhood}
+                onChange={(e) =>
+                  onChange({ ...value, neighborhood: e.target.value })
+                }
+                placeholder={t(
+                  locale,
+                  "rbac.publisher.profile.field.neighborhood.placeholder",
+                )}
+                className={inputCls}
+              />
+            )}
+          </ValidatedField>
+          <ValidatedField
+            id="travels"
             label={t(locale, "rbac.publisher.profile.field.travels")}
           >
-            <input
-              id="prof-travels"
-              type="text"
-              value={value.travels}
-              onChange={(e) =>
-                onChange({ ...value, travels: e.target.value })
-              }
-              placeholder={t(
-                locale,
-                "rbac.publisher.profile.field.travels.placeholder",
-              )}
-              className={inputCls()}
-            />
-          </FormField>
+            {(api) => (
+              <input
+                {...api}
+                id={api.inputId}
+                type="text"
+                value={value.travels}
+                onChange={(e) =>
+                  onChange({ ...value, travels: e.target.value })
+                }
+                placeholder={t(
+                  locale,
+                  "rbac.publisher.profile.field.travels.placeholder",
+                )}
+                className={inputCls}
+              />
+            )}
+          </ValidatedField>
         </div>
       </Fieldset>
 
-      {/* Details */}
       <Fieldset legend={t(locale, "rbac.publisher.profile.section.details")}>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <FormField
-            id="prof-age"
+          <ValidatedField
+            id="age"
             label={t(locale, "rbac.publisher.profile.field.age")}
           >
+            {(api) => (
+              <input
+                {...api}
+                id={api.inputId}
+                type="number"
+                min={18}
+                max={99}
+                value={value.age}
+                onChange={(e) => onChange({ ...value, age: e.target.value })}
+                placeholder={t(
+                  locale,
+                  "rbac.publisher.profile.field.age.placeholder",
+                )}
+                className={inputCls}
+              />
+            )}
+          </ValidatedField>
+          <ValidatedField
+            ref={setRef("category")}
+            id="category"
+            label={t(locale, "rbac.publisher.profile.field.category")}
+            required
+            error={errors.category}
+          >
+            {(api) => (
+              <select
+                {...api}
+                id={api.inputId}
+                value={value.category}
+                onChange={(e) =>
+                  onChange({ ...value, category: e.target.value })
+                }
+                className={inputCls}
+              >
+                <option value="">
+                  {t(
+                    locale,
+                    "rbac.publisher.profile.field.category.placeholder",
+                  )}
+                </option>
+                {CATEGORIES.map((c) => (
+                  <option key={c} value={c}>
+                    {c}
+                  </option>
+                ))}
+              </select>
+            )}
+          </ValidatedField>
+        </div>
+        <ValidatedField
+          ref={setRef("title")}
+          id="title"
+          label={t(locale, "rbac.publisher.profile.field.title")}
+          required
+          error={errors.title}
+        >
+          {(api) => (
             <input
-              id="prof-age"
-              type="number"
-              min={18}
-              max={99}
-              value={value.age}
-              onChange={(e) => onChange({ ...value, age: e.target.value })}
+              {...api}
+              id={api.inputId}
+              type="text"
+              minLength={40}
+              value={value.title}
+              onChange={(e) => onChange({ ...value, title: e.target.value })}
               placeholder={t(
                 locale,
-                "rbac.publisher.profile.field.age.placeholder",
+                "rbac.publisher.profile.field.title.placeholder",
               )}
-              className={inputCls()}
+              className={inputCls}
             />
-          </FormField>
-          <FormField
-            id="prof-category"
-            label={t(locale, "rbac.publisher.profile.field.category")}
-          >
-            <select
-              id="prof-category"
-              value={value.category}
-              onChange={(e) =>
-                onChange({ ...value, category: e.target.value })
-              }
-              className={inputCls()}
-            >
-              <option value="">
-                {t(locale, "rbac.publisher.profile.field.category.placeholder")}
-              </option>
-              {CATEGORIES.map((c) => (
-                <option key={c} value={c}>
-                  {c}
-                </option>
-              ))}
-            </select>
-          </FormField>
-        </div>
-        <FormField
-          id="prof-title"
-          label={t(locale, "rbac.publisher.profile.field.title")}
-        >
-          <input
-            id="prof-title"
-            type="text"
-            minLength={40}
-            value={value.title}
-            onChange={(e) => onChange({ ...value, title: e.target.value })}
-            placeholder={t(
-              locale,
-              "rbac.publisher.profile.field.title.placeholder",
-            )}
-            className={inputCls()}
-          />
-        </FormField>
-        <FormField
-          id="prof-desc"
+          )}
+        </ValidatedField>
+        <ValidatedField
+          ref={setRef("description")}
+          id="description"
           label={t(locale, "rbac.publisher.profile.field.description")}
+          required
+          error={errors.description}
         >
-          <textarea
-            id="prof-desc"
-            rows={5}
-            minLength={80}
-            value={value.description}
-            onChange={(e) =>
-              onChange({ ...value, description: e.target.value })
-            }
-            placeholder={t(
-              locale,
-              "rbac.publisher.profile.field.description.placeholder",
-            )}
-            className="w-full rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-background)] px-3 py-2.5 text-sm text-[var(--color-foreground)] placeholder:text-[var(--color-text-subtle)] focus:border-[var(--color-brand-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-brand-primary)]/30"
-          />
-        </FormField>
+          {(api) => (
+            <div className="flex flex-col gap-1.5">
+              <textarea
+                {...api}
+                id={api.inputId}
+                rows={5}
+                minLength={DESCRIPTION_MIN}
+                maxLength={DESCRIPTION_MAX}
+                value={value.description}
+                onChange={(e) =>
+                  onChange({
+                    ...value,
+                    description: e.target.value.slice(0, DESCRIPTION_MAX),
+                  })
+                }
+                placeholder={t(
+                  locale,
+                  "rbac.publisher.profile.field.description.placeholder",
+                )}
+                className={textareaCls}
+              />
+              <div className="flex items-center justify-between gap-3">
+                <span className="text-[10px] text-[var(--color-text-subtle)]">
+                  {t(
+                    locale,
+                    "rbac.publisher.profile.field.description.hint",
+                    { max: DESCRIPTION_MAX },
+                  )}
+                </span>
+                <CharacterCounter
+                  current={value.description.length}
+                  min={DESCRIPTION_MIN}
+                  max={DESCRIPTION_MAX}
+                />
+              </div>
+            </div>
+          )}
+        </ValidatedField>
       </Fieldset>
 
-      {/* Contact options */}
       <Fieldset legend={t(locale, "rbac.publisher.profile.section.contact")}>
         <p className="text-[11px] text-[var(--color-text-subtle)]">
           {t(locale, "rbac.publisher.profile.contact.help")}
         </p>
-        <div className="flex flex-col gap-2">
+        <div
+          className={`flex flex-col gap-2 rounded-[var(--radius-md)] border px-3 py-2 transition-colors ${errors.contact ? "border-[var(--color-brand-highlight)]/45 bg-[var(--color-brand-highlight)]/6" : "border-transparent"}`}
+        >
           {[
             {
               key: "contactEmail" as const,
@@ -1031,147 +1380,73 @@ function ProfileStep({
             </label>
           ))}
         </div>
+        <AnimatePresence>
+          {errors.contact ? (
+            <motion.p
+              role="alert"
+              initial={{ opacity: 0, y: -4, height: 0 }}
+              animate={{ opacity: 1, y: 0, height: "auto" }}
+              exit={{ opacity: 0, y: -4, height: 0 }}
+              transition={{ duration: 0.2 }}
+              className="text-[11px] text-[var(--color-brand-highlight)]"
+            >
+              {errors.contact}
+            </motion.p>
+          ) : null}
+        </AnimatePresence>
       </Fieldset>
 
-      {/* Photos */}
       <Fieldset legend={t(locale, "rbac.publisher.profile.section.photos")}>
         <p className="text-[11px] text-[var(--color-text-muted)]">
           {t(locale, "rbac.publisher.profile.photos.help")}
         </p>
-        <button
-          type="button"
-          disabled
-          className="flex w-full flex-col items-center justify-center gap-1.5 rounded-[var(--radius-lg)] border-2 border-dashed border-[var(--color-border)] bg-[var(--color-background-elevated)]/60 px-4 py-10 text-xs text-[var(--color-text-muted)] transition-colors hover:border-[var(--color-brand-primary-soft)]"
-        >
-          <ImagePlus
-            className="h-5 w-5 text-[var(--color-brand-primary)]"
-            aria-hidden
-          />
-          <span>{t(locale, "rbac.publisher.profile.photos.cta")}</span>
-        </button>
+        <PhotoUploadField
+          files={photos}
+          onChange={onPhotosChange}
+          min={PHOTO_MIN}
+          max={PHOTO_MAX}
+          error={errors.photos}
+        />
         <DisabledNotice
-          icon={<Info className="h-3.5 w-3.5" aria-hidden />}
           body={t(locale, "rbac.publisher.profile.photos.disabled")}
         />
       </Fieldset>
 
-      <label className="flex items-start gap-2.5 text-xs text-[var(--color-text-muted)]">
+      <label
+        className={`flex items-start gap-2.5 rounded-[var(--radius-md)] border px-3 py-2 text-xs text-[var(--color-text-muted)] transition-colors ${errors.terms ? "border-[var(--color-brand-highlight)]/45 bg-[var(--color-brand-highlight)]/6" : "border-transparent"}`}
+      >
         <input
           type="checkbox"
           checked={value.acceptTerms}
           onChange={(e) =>
             onChange({ ...value, acceptTerms: e.target.checked })
           }
+          aria-invalid={errors.terms ? true : undefined}
           className="mt-0.5 h-4 w-4 cursor-pointer accent-[var(--color-brand-primary)]"
         />
         <span>{t(locale, "rbac.publisher.profile.terms.lead")}</span>
       </label>
-    </div>
-  );
-}
-
-/* -------------------------------------------------------------------------- */
-/* Validation                                                                 */
-/* -------------------------------------------------------------------------- */
-
-function validateStep(
-  step: WizardStep,
-  state: {
-    phone: PhoneState;
-    otp: string;
-    pw: PasswordState;
-    profile: ProfileState;
-  },
-  locale: SupportedLocale,
-): string | null {
-  if (step === "phone") {
-    if (!state.phone.country)
-      return t(locale, "rbac.publisher.phone.validation.country");
-    if (state.phone.phone.replace(/\D+/g, "").length < 7)
-      return t(locale, "rbac.publisher.phone.validation.phone");
-    if (!state.phone.email.includes("@"))
-      return t(locale, "rbac.publisher.phone.validation.email");
-    return null;
-  }
-  if (step === "otp") {
-    if (state.otp.length !== 6)
-      return t(locale, "rbac.publisher.otp.validation");
-    return null;
-  }
-  if (step === "password") {
-    if (state.pw.password.length < 8)
-      return t(locale, "rbac.publisher.password.validation.password");
-    if (state.pw.password !== state.pw.confirm)
-      return t(locale, "rbac.publisher.password.validation.confirm");
-    if (!state.pw.acceptTerms)
-      return t(locale, "rbac.publisher.password.validation.terms");
-    return null;
-  }
-  // profile
-  const p = state.profile;
-  if (!p.state || !p.city || !p.category)
-    return t(locale, "rbac.publisher.profile.validation.required");
-  if (p.title.trim().length < 40)
-    return t(locale, "rbac.publisher.profile.validation.titleMin");
-  if (p.description.trim().length < 80)
-    return t(locale, "rbac.publisher.profile.validation.descriptionMin");
-  if (
-    !p.contactEmail &&
-    !p.contactPhone &&
-    !p.contactWhatsapp &&
-    !p.contactTelegram
-  )
-    return t(locale, "rbac.publisher.profile.validation.contact");
-  if (!p.acceptTerms)
-    return t(locale, "rbac.publisher.profile.validation.terms");
-  return null;
-}
-
-/* -------------------------------------------------------------------------- */
-/* Tiny field helpers                                                         */
-/* -------------------------------------------------------------------------- */
-
-function inputCls() {
-  return "h-12 w-full appearance-none rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-background)] px-3 text-sm text-[var(--color-foreground)] placeholder:text-[var(--color-text-subtle)] focus:border-[var(--color-brand-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-brand-primary)]/30";
-}
-
-function FormField({
-  id,
-  label,
-  icon,
-  className,
-  children,
-}: Readonly<{
-  id: string;
-  label: string;
-  icon?: React.ReactNode;
-  className?: string;
-  children: React.ReactNode;
-}>) {
-  return (
-    <div className={`flex flex-col gap-1.5 ${className ?? ""}`.trim()}>
-      <label
-        htmlFor={id}
-        className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--color-text-subtle)]"
-      >
-        {label}
-      </label>
-      {icon ? (
-        <div className="relative">
-          <span
-            aria-hidden
-            className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--color-text-subtle)]"
+      <AnimatePresence>
+        {errors.terms ? (
+          <motion.p
+            role="alert"
+            initial={{ opacity: 0, y: -4, height: 0 }}
+            animate={{ opacity: 1, y: 0, height: "auto" }}
+            exit={{ opacity: 0, y: -4, height: 0 }}
+            transition={{ duration: 0.2 }}
+            className="text-[11px] text-[var(--color-brand-highlight)]"
           >
-            {icon}
-          </span>
-          {children}
-        </div>
-      ) : (
-        children
-      )}
+            {errors.terms}
+          </motion.p>
+        ) : null}
+      </AnimatePresence>
     </div>
   );
 }
+
+/* -------------------------------------------------------------------------- */
+/* Tiny helpers                                                               */
+/* -------------------------------------------------------------------------- */
 
 function Fieldset({
   legend,
@@ -1187,15 +1462,13 @@ function Fieldset({
   );
 }
 
-function DisabledNotice({
-  icon,
-  body,
-}: Readonly<{ icon: React.ReactNode; body: string }>) {
+function DisabledNotice({ body }: { body: string }) {
   return (
     <div className="flex items-start gap-2 rounded-[var(--radius-md)] border border-[var(--color-brand-accent)]/30 bg-[var(--color-brand-accent)]/10 px-3 py-2 text-xs text-[var(--color-foreground)]">
-      <span className="mt-0.5 text-[var(--color-brand-accent-strong)]">
-        {icon}
-      </span>
+      <Info
+        className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[var(--color-brand-accent-strong)]"
+        aria-hidden
+      />
       <span className="leading-relaxed">{body}</span>
     </div>
   );
@@ -1229,6 +1502,3 @@ function GoogleGlyph() {
     </svg>
   );
 }
-
-// Keep MessageSquare reachable for future inline help blocks.
-void MessageSquare;

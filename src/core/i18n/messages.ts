@@ -949,6 +949,67 @@ const es: MessageDict = {
   "rbac.commentator.panel.dialog.delete.disabled":
     "Borrado de cuenta no implementado en esta versión.",
 
+  /* Publisher loader — rotating marketing tips */
+  "rbac.publisher.loader.kicker": "Procesando",
+  "rbac.publisher.loader.title": "Enviando tu perfil a moderación",
+  "rbac.publisher.loader.subtitle":
+    "Estamos preparando todo. Esto puede tardar unos segundos.",
+  "rbac.publisher.loader.tipsHeading": "Mientras esperás · Tip pro",
+  "rbac.publisher.loader.dontClose": "No cierres esta ventana",
+  "rbac.publisher.loader.tip.photos":
+    "Los perfiles con 4 o más fotos reales obtienen hasta 3× más visitas. Subí variedad: planos completos, medios y de detalle.",
+  "rbac.publisher.loader.tip.title":
+    "Un título descriptivo de al menos 40 caracteres duplica el click-through. Probá incluir tu ciudad y una característica única.",
+  "rbac.publisher.loader.tip.verified":
+    "Los perfiles verificados aparecen primero en los resultados. Hacé la verificación en cuanto se active.",
+  "rbac.publisher.loader.tip.telegram":
+    "Agregar un Telegram o WhatsApp visible aumenta la tasa de respuesta hasta un 40%. Más canales, más reservas.",
+  "rbac.publisher.loader.tip.responsive":
+    "Responder dentro de la primera hora multiplica por 2,5 las reservas confirmadas. Activá las notificaciones del panel.",
+  "rbac.publisher.loader.tip.description":
+    "La descripción es tu carta de presentación. Escribí en primera persona, sin mayúsculas y mostrando lo que te hace única.",
+  "rbac.publisher.loader.tip.location":
+    "Indicar el barrio y las ciudades a las que viajás te coloca en más resultados de búsqueda y reduce conversaciones improductivas.",
+  "rbac.publisher.loader.tip.premium":
+    "Los planes premium destacan tu perfil en home y en las categorías, multiplicando la exposición sin tocar tu agenda.",
+  "rbac.publisher.loader.tip.video":
+    "Un video corto bien iluminado aporta confianza y agiliza la verificación. Mostralo cuando se active la subida.",
+
+  /* Photo upload — visual stub */
+  "rbac.publisher.photos.choose": "Elegir fotos",
+  "rbac.publisher.photos.dragHint":
+    "Hacé click o arrastrá imágenes JPG, PNG o WebP. Hasta 8 MB cada una.",
+  "rbac.publisher.photos.counter":
+    "{count} de {min}–{max} fotos seleccionadas",
+  "rbac.publisher.photos.remove": "Quitar foto",
+  "rbac.publisher.photos.coverBadge": "Portada",
+  "rbac.publisher.photos.ok":
+    "Llegaste al mínimo. Podés sumar más para mejorar tu perfil.",
+  "rbac.publisher.photos.minHint": "Subí al menos {min} fotos de frente.",
+  "rbac.publisher.photos.remaining": "{count} cupos libres",
+  "rbac.publisher.photos.error.format":
+    "Formato no admitido. Usá JPG, PNG o WebP.",
+  "rbac.publisher.photos.error.size":
+    "El archivo supera el límite de {mb} MB.",
+  "rbac.publisher.photos.error.max":
+    "Máximo {max} fotos por perfil.",
+
+  /* Form-level extras */
+  "rbac.form.errorSummary.heading":
+    "Revisá los siguientes campos para continuar:",
+  "rbac.form.toast.invalid.title": "Faltan datos",
+  "rbac.form.toast.invalid.body":
+    "Marcamos los campos que necesitan atención. Resolvelos para continuar.",
+  "rbac.form.toast.success.title": "¡Listo!",
+  "rbac.form.toast.success.body": "Recibimos tu perfil — ahora lo revisamos.",
+  "rbac.form.toast.error.title": "Algo salió mal",
+  "rbac.form.toast.error.body":
+    "No pudimos procesar tu solicitud. Probá de nuevo en un momento.",
+  "rbac.publisher.profile.field.description.hint":
+    "Mínimo 80 caracteres. Máximo {max} — sé breve y específica.",
+  "rbac.publisher.profile.validation.descriptionMax":
+    "La descripción supera el máximo de {max} caracteres.",
+
   /* =================================================================
    * Wave E.2 · /mi-cuenta dashboard
    * ================================================================= */
@@ -3048,6 +3109,67 @@ const en: MessageDict = {
   "rbac.commentator.panel.dialog.delete.cancel": "Cancel",
   "rbac.commentator.panel.dialog.delete.disabled":
     "Account deletion is not implemented in this build.",
+
+  /* Publisher loader — rotating marketing tips */
+  "rbac.publisher.loader.kicker": "Processing",
+  "rbac.publisher.loader.title": "Sending your profile to moderation",
+  "rbac.publisher.loader.subtitle":
+    "We're preparing everything. This may take a few seconds.",
+  "rbac.publisher.loader.tipsHeading": "While you wait · Pro tip",
+  "rbac.publisher.loader.dontClose": "Don't close this window",
+  "rbac.publisher.loader.tip.photos":
+    "Profiles with 4+ real photos get up to 3× more views. Mix wide, medium and detail shots.",
+  "rbac.publisher.loader.tip.title":
+    "A descriptive 40+ character title doubles click-through. Include your city and one unique trait.",
+  "rbac.publisher.loader.tip.verified":
+    "Verified profiles appear first in search. Complete verification as soon as it opens.",
+  "rbac.publisher.loader.tip.telegram":
+    "Showing a Telegram or WhatsApp handle lifts reply rate by up to 40%. More channels, more bookings.",
+  "rbac.publisher.loader.tip.responsive":
+    "Replying within the first hour multiplies confirmed bookings by 2.5×. Turn on panel notifications.",
+  "rbac.publisher.loader.tip.description":
+    "Your description is your pitch. Write in first person, avoid all-caps, and lead with what makes you unique.",
+  "rbac.publisher.loader.tip.location":
+    "Listing the neighborhood and cities you travel to puts you in more results and cuts unproductive chats.",
+  "rbac.publisher.loader.tip.premium":
+    "Premium tiers feature you on the home and category pages — exposure without burning your calendar.",
+  "rbac.publisher.loader.tip.video":
+    "A short, well-lit video adds trust and speeds up verification. Use it once uploads are live.",
+
+  /* Photo upload — visual stub */
+  "rbac.publisher.photos.choose": "Choose photos",
+  "rbac.publisher.photos.dragHint":
+    "Click or drop JPG / PNG / WebP files. Up to 8 MB each.",
+  "rbac.publisher.photos.counter":
+    "{count} of {min}–{max} photos selected",
+  "rbac.publisher.photos.remove": "Remove photo",
+  "rbac.publisher.photos.coverBadge": "Cover",
+  "rbac.publisher.photos.ok":
+    "Minimum reached. Add more to strengthen your profile.",
+  "rbac.publisher.photos.minHint": "Upload at least {min} front-facing photos.",
+  "rbac.publisher.photos.remaining": "{count} slots left",
+  "rbac.publisher.photos.error.format":
+    "Unsupported format. Use JPG, PNG, or WebP.",
+  "rbac.publisher.photos.error.size":
+    "File exceeds the {mb} MB limit.",
+  "rbac.publisher.photos.error.max":
+    "Max {max} photos per profile.",
+
+  /* Form-level extras */
+  "rbac.form.errorSummary.heading":
+    "Review these fields to continue:",
+  "rbac.form.toast.invalid.title": "Missing details",
+  "rbac.form.toast.invalid.body":
+    "We highlighted the fields that need attention. Resolve them to continue.",
+  "rbac.form.toast.success.title": "Done!",
+  "rbac.form.toast.success.body": "We received your profile — review starts now.",
+  "rbac.form.toast.error.title": "Something went wrong",
+  "rbac.form.toast.error.body":
+    "We couldn't process your request. Please try again in a moment.",
+  "rbac.publisher.profile.field.description.hint":
+    "At least 80 characters. Max {max} — be brief and specific.",
+  "rbac.publisher.profile.validation.descriptionMax":
+    "Description exceeds the {max}-character limit.",
 
   /* =================================================================
    * Wave E.2 · /mi-cuenta dashboard

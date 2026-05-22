@@ -12,7 +12,7 @@ import {
   MessageSquare,
   UserCircle2,
 } from "lucide-react";
-import { useState, type FormEvent } from "react";
+import { useMemo, useRef, useState, type FormEvent } from "react";
 
 import type { SupportedLocale } from "@/core/branding/brand-config";
 import { localizedHref } from "@/core/i18n/href";
@@ -20,6 +20,11 @@ import { t } from "@/core/i18n/messages";
 import { useActiveLocale } from "@/core/i18n/use-active-locale";
 import { useAuthSession } from "@/features/auth/lib/use-auth-session";
 import { toast } from "@/shared/ui/toast";
+import {
+  FormErrorSummary,
+  ValidatedField,
+  type ValidatedFieldHandle,
+} from "@/shared/ui/form";
 
 const REVEAL: Variants = {
   hidden: { opacity: 0, y: 12 },
@@ -48,29 +53,25 @@ const COUNTRIES: ReadonlyArray<{ code: string; label: string }> = [
 
 const MIN_PASSWORD_LENGTH = 8;
 
-interface FieldErrors {
-  country?: string;
-  email?: string;
-  nickname?: string;
-  password?: string;
-  confirm?: string;
-  terms?: string;
-  form?: string;
-}
+type FieldKey =
+  | "country"
+  | "email"
+  | "nickname"
+  | "password"
+  | "confirm"
+  | "terms";
 
-/**
- * Flow B — comments-only registration form.
- *
- * Per the PDF this flow has reduced scope: country, email, nickname,
- * password, terms. No phone, no photos, no moderation. After successful
- * signup the user lands on the limited commentator panel where
- * publishing affordances are completely absent.
- *
- * Auth still goes through the same Firebase Web SDK helper as the
- * publisher flow — the `biringas:account-type` cookie set by the chooser
- * marks the user as a commentator until Cloud Functions mint the custom
- * claim in a follow-up PR.
- */
+type FieldErrors = Partial<Record<FieldKey, string>> & { form?: string };
+
+const FIELD_ORDER: ReadonlyArray<FieldKey> = [
+  "country",
+  "email",
+  "nickname",
+  "password",
+  "confirm",
+  "terms",
+];
+
 export function CommentatorSignUpForm() {
   const router = useRouter();
   const locale = useActiveLocale();
@@ -85,33 +86,35 @@ export function CommentatorSignUpForm() {
   const [errors, setErrors] = useState<FieldErrors>({});
   const [submitting, setSubmitting] = useState(false);
 
-  async function onGoogle() {
-    setErrors({});
-    setSubmitting(true);
-    try {
-      await signInWithGoogle();
-      toast.success(
-        t(locale, "rbac.commentator.successToast.title"),
-        t(locale, "rbac.commentator.successToast.body"),
-      );
-      router.push(localizedHref(locale, "/mi-cuenta/comentarios"));
-      router.refresh();
-    } catch (err) {
-      const code =
-        typeof (err as { code?: unknown } | undefined)?.code === "string"
-          ? (err as { code: string }).code
-          : "";
-      const msg =
-        code === "auth/popup-closed-by-user"
-          ? t(locale, "auth.error.popupClosed")
-          : ((err as Error)?.message ?? t(locale, "auth.error.unknown"));
-      setErrors({ form: msg });
-    } finally {
-      setSubmitting(false);
-    }
-  }
+  const fieldRefs = useRef<Partial<Record<FieldKey, ValidatedFieldHandle>>>(
+    {},
+  );
+  const termsRef = useRef<HTMLLabelElement | null>(null);
 
-  function validate(): FieldErrors | null {
+  // Stable per-field callback refs. Built once at mount via `useMemo` so
+  // each `<ValidatedField ref={...} />` receives the same function across
+  // renders (avoids React's "detached/re-attached every render" warning).
+  const setFieldRef = useMemo(() => {
+    const map: Partial<Record<FieldKey, (h: ValidatedFieldHandle | null) => void>> =
+      {};
+    const KEYS: ReadonlyArray<FieldKey> = [
+      "country",
+      "email",
+      "nickname",
+      "password",
+      "confirm",
+      "terms",
+    ];
+    for (const k of KEYS) {
+      map[k] = (handle) => {
+        if (handle) fieldRefs.current[k] = handle;
+        else delete fieldRefs.current[k];
+      };
+    }
+    return (key: FieldKey) => map[key]!;
+  }, []);
+
+  function validate(): FieldErrors {
     const next: FieldErrors = {};
     if (!country) next.country = t(locale, "rbac.commentator.validation.country");
     if (!email.includes("@") || !email.includes("."))
@@ -123,17 +126,68 @@ export function CommentatorSignUpForm() {
     if (confirm !== password)
       next.confirm = t(locale, "rbac.commentator.validation.confirm");
     if (!acceptTerms) next.terms = t(locale, "rbac.commentator.validation.terms");
-    return Object.keys(next).length > 0 ? next : null;
+    return next;
+  }
+
+  function shakeFirstError(invalid: FieldErrors) {
+    for (const key of FIELD_ORDER) {
+      if (invalid[key]) {
+        if (key === "terms") {
+          termsRef.current?.scrollIntoView({
+            behavior: "smooth",
+            block: "center",
+          });
+        } else {
+          fieldRefs.current[key]?.shake();
+        }
+        return;
+      }
+    }
+  }
+
+  function fieldLabel(key: FieldKey): string {
+    switch (key) {
+      case "country":
+        return t(locale, "rbac.commentator.field.country");
+      case "email":
+        return t(locale, "rbac.commentator.field.email");
+      case "nickname":
+        return t(locale, "rbac.commentator.field.nickname");
+      case "password":
+        return t(locale, "rbac.commentator.field.password");
+      case "confirm":
+        return t(locale, "rbac.commentator.field.passwordConfirm");
+      case "terms":
+        return t(locale, "auth.signup.terms.terms");
+    }
+  }
+
+  function jumpTo(fieldId: string) {
+    const key = FIELD_ORDER.find((k) => k === fieldId) as FieldKey | undefined;
+    if (!key) return;
+    if (key === "terms") {
+      termsRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "center",
+      });
+    } else {
+      fieldRefs.current[key]?.shake();
+    }
   }
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setErrors({});
     const invalid = validate();
-    if (invalid) {
+    if (Object.keys(invalid).length > 0) {
       setErrors(invalid);
+      shakeFirstError(invalid);
+      toast.error(
+        t(locale, "rbac.form.toast.invalid.title"),
+        t(locale, "rbac.form.toast.invalid.body"),
+      );
       return;
     }
+    setErrors({});
     setSubmitting(true);
     try {
       if (status !== "disabled") {
@@ -157,6 +211,34 @@ export function CommentatorSignUpForm() {
             ? t(locale, "auth.signup.error.invalidEmail")
             : ((err as Error)?.message ?? t(locale, "auth.error.unknown"));
       setErrors({ form: msg });
+      toast.error(t(locale, "rbac.form.toast.error.title"), msg);
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  async function onGoogle() {
+    setErrors({});
+    setSubmitting(true);
+    try {
+      await signInWithGoogle();
+      toast.success(
+        t(locale, "rbac.commentator.successToast.title"),
+        t(locale, "rbac.commentator.successToast.body"),
+      );
+      router.push(localizedHref(locale, "/mi-cuenta/comentarios"));
+      router.refresh();
+    } catch (err) {
+      const code =
+        typeof (err as { code?: unknown } | undefined)?.code === "string"
+          ? (err as { code: string }).code
+          : "";
+      const msg =
+        code === "auth/popup-closed-by-user"
+          ? t(locale, "auth.error.popupClosed")
+          : ((err as Error)?.message ?? t(locale, "auth.error.unknown"));
+      setErrors({ form: msg });
+      toast.error(t(locale, "rbac.form.toast.error.title"), msg);
     } finally {
       setSubmitting(false);
     }
@@ -166,6 +248,16 @@ export function CommentatorSignUpForm() {
   const privacyHref = localizedHref(locale, "/legal/privacidad");
   const publisherHref = localizedHref(locale, "/registrarse/publicador");
   const signInHref = localizedHref(locale, "/ingresar");
+
+  const summaryItems = FIELD_ORDER.filter((k) => errors[k]).map((k) => ({
+    fieldId: k,
+    label: fieldLabel(k),
+    message: errors[k]!,
+  }));
+
+  const inputCls =
+    "h-12 w-full rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-background)] px-3.5 text-sm text-[var(--color-foreground)] placeholder:text-[var(--color-text-subtle)] focus:border-[var(--color-brand-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-brand-primary)]/30 aria-[invalid=true]:border-[var(--color-brand-highlight)] aria-[invalid=true]:focus:ring-[var(--color-brand-highlight)]/35";
+  const inputClsWithLeftIcon = `${inputCls} pl-10`;
 
   return (
     <motion.form
@@ -201,182 +293,193 @@ export function CommentatorSignUpForm() {
         </h2>
       </motion.div>
 
-      {/* Country */}
-      <motion.div variants={REVEAL} className="flex flex-col gap-1.5">
-        <label
-          htmlFor="commentator-country"
-          className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--color-text-subtle)]"
-        >
-          {t(locale, "rbac.commentator.field.country")}
-        </label>
-        <div className="relative">
-          <Globe
-            className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--color-text-subtle)]"
-            aria-hidden
-          />
-          <select
-            id="commentator-country"
-            value={country}
-            onChange={(e) => setCountry(e.target.value)}
-            className="h-12 w-full appearance-none rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-background)] pl-10 pr-3 text-sm text-[var(--color-foreground)] focus:border-[var(--color-brand-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-brand-primary)]/30"
-          >
-            {COUNTRIES.map((c) => (
-              <option key={c.code} value={c.code}>
-                {c.label}
-              </option>
-            ))}
-          </select>
-        </div>
-        {errors.country && (
-          <p className="text-[11px] text-[var(--color-brand-highlight)]">
-            {errors.country}
-          </p>
-        )}
-      </motion.div>
+      <FormErrorSummary
+        items={summaryItems}
+        heading={t(locale, "rbac.form.errorSummary.heading")}
+        onJumpTo={jumpTo}
+      />
 
-      {/* Email */}
-      <motion.div variants={REVEAL} className="flex flex-col gap-1.5">
-        <label
-          htmlFor="commentator-email"
-          className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--color-text-subtle)]"
-        >
-          {t(locale, "rbac.commentator.field.email")}
-        </label>
-        <div className="relative">
-          <Mail
-            className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--color-text-subtle)]"
-            aria-hidden
-          />
-          <input
-            id="commentator-email"
-            type="email"
-            autoComplete="email"
-            required
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder={t(locale, "rbac.commentator.field.email.placeholder")}
-            className="h-12 w-full rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-background)] pl-10 pr-3 text-sm text-[var(--color-foreground)] placeholder:text-[var(--color-text-subtle)] focus:border-[var(--color-brand-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-brand-primary)]/30"
-          />
-        </div>
-        <span className="text-[10px] text-[var(--color-text-subtle)]">
-          {t(locale, "rbac.commentator.field.emailHint")}
-        </span>
-        {errors.email && (
-          <p className="text-[11px] text-[var(--color-brand-highlight)]">
-            {errors.email}
-          </p>
-        )}
-      </motion.div>
-
-      {/* Nickname */}
-      <motion.div variants={REVEAL} className="flex flex-col gap-1.5">
-        <label
-          htmlFor="commentator-nickname"
-          className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--color-text-subtle)]"
-        >
-          {t(locale, "rbac.commentator.field.nickname")}
-        </label>
-        <div className="relative">
-          <UserCircle2
-            className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--color-text-subtle)]"
-            aria-hidden
-          />
-          <input
-            id="commentator-nickname"
-            type="text"
-            autoComplete="username"
-            required
-            minLength={3}
-            value={nickname}
-            onChange={(e) => setNickname(e.target.value)}
-            placeholder={t(locale, "rbac.commentator.field.nickname.placeholder")}
-            className="h-12 w-full rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-background)] pl-10 pr-3 text-sm text-[var(--color-foreground)] placeholder:text-[var(--color-text-subtle)] focus:border-[var(--color-brand-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-brand-primary)]/30"
-          />
-        </div>
-        {errors.nickname && (
-          <p className="text-[11px] text-[var(--color-brand-highlight)]">
-            {errors.nickname}
-          </p>
-        )}
-      </motion.div>
-
-      {/* Password */}
-      <motion.div variants={REVEAL} className="flex flex-col gap-1.5">
-        <label
-          htmlFor="commentator-password"
-          className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--color-text-subtle)]"
-        >
-          {t(locale, "rbac.commentator.field.password")}
-        </label>
-        <div className="relative">
-          <input
-            id="commentator-password"
-            type={showPassword ? "text" : "password"}
-            autoComplete="new-password"
-            required
-            minLength={MIN_PASSWORD_LENGTH}
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            placeholder={t(locale, "rbac.commentator.field.password.placeholder")}
-            className="h-12 w-full rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-background)] pl-3.5 pr-12 text-sm text-[var(--color-foreground)] placeholder:text-[var(--color-text-subtle)] focus:border-[var(--color-brand-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-brand-primary)]/30"
-          />
-          <button
-            type="button"
-            onClick={() => setShowPassword((v) => !v)}
-            aria-label={
-              showPassword
-                ? t(locale, "auth.signin.field.password.hide")
-                : t(locale, "auth.signin.field.password.show")
-            }
-            className="absolute right-2 top-1/2 inline-flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full text-[var(--color-text-subtle)] transition-colors hover:bg-[var(--color-surface-muted)] hover:text-[var(--color-foreground)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)]"
-          >
-            {showPassword ? (
-              <EyeOff className="h-4 w-4" aria-hidden />
-            ) : (
-              <Eye className="h-4 w-4" aria-hidden />
-            )}
-          </button>
-        </div>
-        {errors.password && (
-          <p className="text-[11px] text-[var(--color-brand-highlight)]">
-            {errors.password}
-          </p>
-        )}
-      </motion.div>
-
-      {/* Confirm */}
-      <motion.div variants={REVEAL} className="flex flex-col gap-1.5">
-        <label
-          htmlFor="commentator-confirm"
-          className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--color-text-subtle)]"
-        >
-          {t(locale, "rbac.commentator.field.passwordConfirm")}
-        </label>
-        <input
-          id="commentator-confirm"
-          type={showPassword ? "text" : "password"}
-          autoComplete="new-password"
+      <motion.div variants={REVEAL}>
+        <ValidatedField
+          ref={setFieldRef("country")}
+          id="country"
+          label={t(locale, "rbac.commentator.field.country")}
           required
-          value={confirm}
-          onChange={(e) => setConfirm(e.target.value)}
-          placeholder={t(locale, "rbac.commentator.field.passwordConfirm.placeholder")}
-          className="h-12 w-full rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-background)] px-3.5 text-sm text-[var(--color-foreground)] placeholder:text-[var(--color-text-subtle)] focus:border-[var(--color-brand-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-brand-primary)]/30"
-        />
-        {errors.confirm && (
-          <p className="text-[11px] text-[var(--color-brand-highlight)]">
-            {errors.confirm}
-          </p>
-        )}
+          icon={<Globe className="h-4 w-4" aria-hidden />}
+          error={errors.country}
+        >
+          {(api) => (
+            <select
+              {...api}
+              id={api.inputId}
+              value={country}
+              onChange={(e) => {
+                setCountry(e.target.value);
+                if (errors.country) setErrors({ ...errors, country: undefined });
+              }}
+              className={`${inputClsWithLeftIcon} appearance-none`}
+            >
+              {COUNTRIES.map((c) => (
+                <option key={c.code} value={c.code}>
+                  {c.label}
+                </option>
+              ))}
+            </select>
+          )}
+        </ValidatedField>
+      </motion.div>
+
+      <motion.div variants={REVEAL}>
+        <ValidatedField
+          ref={setFieldRef("email")}
+          id="email"
+          label={t(locale, "rbac.commentator.field.email")}
+          required
+          icon={<Mail className="h-4 w-4" aria-hidden />}
+          hint={t(locale, "rbac.commentator.field.emailHint")}
+          error={errors.email}
+        >
+          {(api) => (
+            <input
+              {...api}
+              id={api.inputId}
+              type="email"
+              autoComplete="email"
+              value={email}
+              onChange={(e) => {
+                setEmail(e.target.value);
+                if (errors.email) setErrors({ ...errors, email: undefined });
+              }}
+              placeholder={t(locale, "rbac.commentator.field.email.placeholder")}
+              className={inputClsWithLeftIcon}
+            />
+          )}
+        </ValidatedField>
+      </motion.div>
+
+      <motion.div variants={REVEAL}>
+        <ValidatedField
+          ref={setFieldRef("nickname")}
+          id="nickname"
+          label={t(locale, "rbac.commentator.field.nickname")}
+          required
+          icon={<UserCircle2 className="h-4 w-4" aria-hidden />}
+          error={errors.nickname}
+        >
+          {(api) => (
+            <input
+              {...api}
+              id={api.inputId}
+              type="text"
+              autoComplete="username"
+              minLength={3}
+              value={nickname}
+              onChange={(e) => {
+                setNickname(e.target.value);
+                if (errors.nickname)
+                  setErrors({ ...errors, nickname: undefined });
+              }}
+              placeholder={t(
+                locale,
+                "rbac.commentator.field.nickname.placeholder",
+              )}
+              className={inputClsWithLeftIcon}
+            />
+          )}
+        </ValidatedField>
+      </motion.div>
+
+      <motion.div variants={REVEAL}>
+        <ValidatedField
+          ref={setFieldRef("password")}
+          id="password"
+          label={t(locale, "rbac.commentator.field.password")}
+          required
+          error={errors.password}
+        >
+          {(api) => (
+            <div className="relative">
+              <input
+                {...api}
+                id={api.inputId}
+                type={showPassword ? "text" : "password"}
+                autoComplete="new-password"
+                minLength={MIN_PASSWORD_LENGTH}
+                value={password}
+                onChange={(e) => {
+                  setPassword(e.target.value);
+                  if (errors.password)
+                    setErrors({ ...errors, password: undefined });
+                }}
+                placeholder={t(
+                  locale,
+                  "rbac.commentator.field.password.placeholder",
+                )}
+                className={`${inputCls} pr-12`}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword((v) => !v)}
+                aria-label={
+                  showPassword
+                    ? t(locale, "auth.signin.field.password.hide")
+                    : t(locale, "auth.signin.field.password.show")
+                }
+                className="absolute right-2 top-1/2 inline-flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full text-[var(--color-text-subtle)] transition-colors hover:bg-[var(--color-surface-muted)] hover:text-[var(--color-foreground)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)]"
+              >
+                {showPassword ? (
+                  <EyeOff className="h-4 w-4" aria-hidden />
+                ) : (
+                  <Eye className="h-4 w-4" aria-hidden />
+                )}
+              </button>
+            </div>
+          )}
+        </ValidatedField>
+      </motion.div>
+
+      <motion.div variants={REVEAL}>
+        <ValidatedField
+          ref={setFieldRef("confirm")}
+          id="confirm"
+          label={t(locale, "rbac.commentator.field.passwordConfirm")}
+          required
+          error={errors.confirm}
+        >
+          {(api) => (
+            <input
+              {...api}
+              id={api.inputId}
+              type={showPassword ? "text" : "password"}
+              autoComplete="new-password"
+              value={confirm}
+              onChange={(e) => {
+                setConfirm(e.target.value);
+                if (errors.confirm) setErrors({ ...errors, confirm: undefined });
+              }}
+              placeholder={t(
+                locale,
+                "rbac.commentator.field.passwordConfirm.placeholder",
+              )}
+              className={inputCls}
+            />
+          )}
+        </ValidatedField>
       </motion.div>
 
       <motion.label
+        ref={termsRef}
         variants={REVEAL}
-        className="flex items-start gap-2.5 text-xs text-[var(--color-text-muted)]"
+        className={`flex items-start gap-2.5 rounded-[var(--radius-md)] border px-3 py-2 text-xs text-[var(--color-text-muted)] transition-colors ${errors.terms ? "border-[var(--color-brand-highlight)]/45 bg-[var(--color-brand-highlight)]/6" : "border-transparent"}`}
       >
         <input
           type="checkbox"
           checked={acceptTerms}
-          onChange={(e) => setAcceptTerms(e.target.checked)}
+          onChange={(e) => {
+            setAcceptTerms(e.target.checked);
+            if (errors.terms) setErrors({ ...errors, terms: undefined });
+          }}
+          aria-invalid={errors.terms ? true : undefined}
           className="mt-0.5 h-4 w-4 cursor-pointer accent-[var(--color-brand-primary)]"
         />
         <span>
@@ -396,11 +499,6 @@ export function CommentatorSignUpForm() {
           </Link>
         </span>
       </motion.label>
-      {errors.terms && (
-        <p className="text-[11px] text-[var(--color-brand-highlight)]">
-          {errors.terms}
-        </p>
-      )}
 
       {errors.form && (
         <motion.p
