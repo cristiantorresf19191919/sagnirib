@@ -23,11 +23,14 @@ import {
   getFirebaseConfig,
   isFirebaseConfigured,
 } from "@/core/config/firebase";
+import { readAccountTypeCookie } from "@/features/auth/lib/account-type-cookie";
+import { ACCOUNT_TYPE_COMMENTATOR } from "@/features/auth/lib/rbac";
 import { AvailabilityStrip } from "@/features/biringas/components/AvailabilityStrip";
 import { AvailabilityToggle } from "@/features/dashboard/components/AvailabilityToggle";
 import { BookingInboxList } from "@/features/dashboard/components/BookingInboxList";
 import { DashboardShell } from "@/features/dashboard/components/DashboardShell";
 import { ReferralCard } from "@/features/dashboard/components/ReferralCard";
+import { PostPublishPrompt } from "@/features/verification/components/PostPublishPrompt";
 import { getSession } from "@/server/auth";
 import {
   findBySlug,
@@ -82,6 +85,15 @@ export default async function MiCuentaPage({
   if (!session) {
     const next = localizedHref(lang, "/mi-cuenta");
     redirect(`${localizedHref(lang, "/ingresar")}?next=${encodeURIComponent(next)}`);
+  }
+
+  // Commentator-account users see the limited surface, never the publisher
+  // dashboard. The cookie is set by the chooser and persists across sessions;
+  // once custom claims are minted server-side, replace the cookie check with
+  // a `session.roles.includes(ROLE_COMMENT_PUBLISHER)` check.
+  const accountType = await readAccountTypeCookie();
+  if (accountType === ACCOUNT_TYPE_COMMENTATOR) {
+    redirect(localizedHref(lang, "/mi-cuenta/comentarios"));
   }
 
   const [draftsResult, bookings, referralStats, verification] =
@@ -173,6 +185,7 @@ export default async function MiCuentaPage({
           className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-[520px] bg-[radial-gradient(circle_at_15%_5%,rgba(47,93,67,0.10),transparent_55%),radial-gradient(circle_at_85%_15%,rgba(229,162,58,0.10),transparent_55%)]"
         />
         <Container width="wide">
+          <PostPublishPrompt />
           <DashboardShell
             greetingName={greetingName}
             pendingCount={pendingCount}

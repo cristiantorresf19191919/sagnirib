@@ -681,6 +681,275 @@ const es: MessageDict = {
   "auth.reset.validation.invalidEmail": "El email no parece válido.",
 
   /* =================================================================
+   * RBAC flows · account-type chooser + publisher / commentator journeys
+   * Per mileroticos_flujos_rbac_firebase_es.pdf
+   * ================================================================= */
+
+  /* Chooser */
+  "rbac.chooser.metadata.title": "Elegí tu tipo de cuenta — Biringas",
+  "rbac.chooser.kicker": "Registro",
+  "rbac.chooser.title.lead": "Elegí cómo querés",
+  "rbac.chooser.title.highlight": "participar",
+  "rbac.chooser.subtitle":
+    "Dos rutas distintas. Cada una con su panel y sus permisos. Vas a poder cambiar si necesitás más adelante.",
+  "rbac.chooser.publisher.eyebrow": "Publicador de perfiles",
+  "rbac.chooser.publisher.title": "Publicá tu perfil",
+  "rbac.chooser.publisher.body":
+    "Creá un anuncio público, gestioná tus fotos verificadas y recibí solicitudes de reserva.",
+  "rbac.chooser.publisher.bullet.1": "Verificación de teléfono y email",
+  "rbac.chooser.publisher.bullet.2": "Subida de fotos, documento y video",
+  "rbac.chooser.publisher.bullet.3": "Moderación previa a publicación",
+  "rbac.chooser.publisher.cta": "Continuar como publicador",
+  "rbac.chooser.commentator.eyebrow": "Cuenta solo para comentarios",
+  "rbac.chooser.commentator.title": "Solo comentarios",
+  "rbac.chooser.commentator.body":
+    "Dejá reseñas en perfiles existentes y guardá favoritos. Sin teléfono, sin fotos, sin moderación.",
+  "rbac.chooser.commentator.bullet.1": "Solo email + nickname",
+  "rbac.chooser.commentator.bullet.2": "Panel limitado y discreto",
+  "rbac.chooser.commentator.bullet.3": "No podés publicar anuncios",
+  "rbac.chooser.commentator.cta": "Continuar como comentarista",
+  "rbac.chooser.alreadyAccount": "¿Ya tenés cuenta?",
+  "rbac.chooser.signIn": "Ingresá",
+  "rbac.chooser.recommended": "Recomendado",
+
+  /* Publisher wizard — chrome */
+  "rbac.publisher.metadata.title": "Registrate como publicador — Biringas",
+  "rbac.publisher.kicker": "Publicador de perfiles",
+  "rbac.publisher.title.lead": "Publicá tu perfil en",
+  "rbac.publisher.title.highlight": "Biringas",
+  "rbac.publisher.subtitle":
+    "Cuatro pasos cortos. Después tu perfil queda en moderación hasta que aprobamos las fotos.",
+  "rbac.publisher.step.phone": "Teléfono y email",
+  "rbac.publisher.step.otp": "Verificación",
+  "rbac.publisher.step.password": "Contraseña",
+  "rbac.publisher.step.profile": "Perfil",
+  "rbac.publisher.stepper.aria": "Progreso del registro",
+  "rbac.publisher.back": "Atrás",
+  "rbac.publisher.next": "Continuar",
+  "rbac.publisher.submitting": "Procesando…",
+  "rbac.publisher.changeAccountType": "¿Querés solo comentar?",
+  "rbac.publisher.changeAccountType.cta": "Cambiá a cuenta de comentarios",
+
+  /* Publisher — phone step */
+  "rbac.publisher.phone.title": "Tu teléfono y email",
+  "rbac.publisher.phone.subtitle":
+    "Usamos el teléfono para verificar identidad y para el botón de contacto del perfil.",
+  "rbac.publisher.phone.country": "País",
+  "rbac.publisher.phone.field": "Teléfono",
+  "rbac.publisher.phone.field.placeholder": "Ej: 3237992985",
+  "rbac.publisher.phone.email": "Email",
+  "rbac.publisher.phone.email.placeholder": "tu@email.com",
+  "rbac.publisher.phone.disabledNotice":
+    "Verificación por SMS deshabilitada en esta versión — el código será aceptado optimísticamente.",
+  "rbac.publisher.phone.validation.country": "Elegí tu país.",
+  "rbac.publisher.phone.validation.phone": "Ingresá un teléfono de al menos 7 dígitos.",
+  "rbac.publisher.phone.validation.email": "Ingresá un email válido.",
+
+  /* Publisher — OTP step */
+  "rbac.publisher.otp.title": "Verificá tu teléfono",
+  "rbac.publisher.otp.subtitle":
+    "Te enviaríamos un código por SMS o WhatsApp al {phone}.",
+  "rbac.publisher.otp.field": "Código de 6 dígitos",
+  "rbac.publisher.otp.resend": "Reenviar código",
+  "rbac.publisher.otp.optimistic":
+    "Modo demo — cualquier código de 6 dígitos te deja continuar.",
+  "rbac.publisher.otp.validation": "Ingresá los 6 dígitos del código.",
+
+  /* Publisher — password step */
+  "rbac.publisher.password.title": "Creá tu contraseña",
+  "rbac.publisher.password.subtitle":
+    "Con esta contraseña vas a entrar a tu panel para editar tu perfil.",
+  "rbac.publisher.password.field": "Contraseña",
+  "rbac.publisher.password.field.placeholder": "Mínimo 8 caracteres",
+  "rbac.publisher.password.confirm": "Repetí la contraseña",
+  "rbac.publisher.password.confirm.placeholder": "Igual a la de arriba",
+  "rbac.publisher.password.validation.password": "Mínimo 8 caracteres.",
+  "rbac.publisher.password.validation.confirm": "Las contraseñas no coinciden.",
+  "rbac.publisher.password.validation.terms":
+    "Tenés que aceptar los términos para continuar.",
+  "rbac.publisher.password.terms.lead":
+    "Soy mayor de edad y acepto la política de privacidad y los términos de uso.",
+
+  /* Publisher — profile step */
+  "rbac.publisher.profile.title": "Detalles de tu perfil",
+  "rbac.publisher.profile.subtitle":
+    "Los datos públicos del anuncio. Vas a poder editarlos después.",
+  "rbac.publisher.profile.section.location": "Localización del perfil",
+  "rbac.publisher.profile.field.state": "Estado / departamento",
+  "rbac.publisher.profile.field.state.placeholder": "Elegí departamento",
+  "rbac.publisher.profile.field.city": "Ciudad",
+  "rbac.publisher.profile.field.city.placeholder": "Elegí ciudad",
+  "rbac.publisher.profile.field.neighborhood": "Barrio / distrito",
+  "rbac.publisher.profile.field.neighborhood.placeholder": "Opcional",
+  "rbac.publisher.profile.field.travels": "Hago salidas a (máx. 7 ciudades)",
+  "rbac.publisher.profile.field.travels.placeholder": "Opcional, hasta 7",
+  "rbac.publisher.profile.section.details": "Detalles del perfil",
+  "rbac.publisher.profile.field.age": "Edad",
+  "rbac.publisher.profile.field.age.placeholder": "Privado, solo control interno",
+  "rbac.publisher.profile.field.category": "Categoría",
+  "rbac.publisher.profile.field.category.placeholder": "Elegí categoría",
+  "rbac.publisher.profile.field.title": "Título del perfil",
+  "rbac.publisher.profile.field.title.placeholder":
+    "Mínimo 40 caracteres. Tu título debe ser informativo.",
+  "rbac.publisher.profile.field.description": "Descripción",
+  "rbac.publisher.profile.field.description.placeholder":
+    "Describite. No pongas ciudades en este campo: usá «Hago salidas a». No escribas todo en mayúsculas.",
+  "rbac.publisher.profile.section.contact": "Datos de contacto",
+  "rbac.publisher.profile.contact.help":
+    "Debés elegir al menos una opción de contacto.",
+  "rbac.publisher.profile.contact.email": "Quiero que me puedan contactar por email",
+  "rbac.publisher.profile.contact.phone": "Quiero que el teléfono se vea en mi perfil",
+  "rbac.publisher.profile.contact.whatsapp": "Quiero que WhatsApp se vea en mi perfil",
+  "rbac.publisher.profile.contact.telegram": "Quiero que Telegram se vea en mi perfil",
+  "rbac.publisher.profile.contact.noDeposit":
+    "No pido anticipo adelantado para agendar cita (opcional)",
+  "rbac.publisher.profile.section.photos": "Adjuntar fotos",
+  "rbac.publisher.profile.photos.help":
+    "Publicá solo fotos reales, no robadas de internet. Mínimo 2 fotos de frente, 2/3 del cuerpo visible.",
+  "rbac.publisher.profile.photos.cta":
+    "Hacé click o arrastrá las imágenes para subirlas",
+  "rbac.publisher.profile.photos.disabled":
+    "Carga de fotos deshabilitada en esta versión — el botón final crea un perfil en estado PENDING_MODERATION sin archivos.",
+  "rbac.publisher.profile.terms.lead":
+    "Soy mayor de edad. Acepto la política de privacidad y términos de uso. Declaro que soy completamente independiente, pongo este perfil por cuenta propia y ofrezco mis servicios libremente.",
+  "rbac.publisher.profile.submit": "Publicar perfil",
+  "rbac.publisher.profile.submitting": "Enviando a moderación…",
+  "rbac.publisher.profile.validation.required": "Este campo es obligatorio.",
+  "rbac.publisher.profile.validation.titleMin":
+    "El título debe tener al menos 40 caracteres.",
+  "rbac.publisher.profile.validation.descriptionMin":
+    "Describite con al menos 80 caracteres.",
+  "rbac.publisher.profile.validation.contact":
+    "Elegí al menos una opción de contacto.",
+  "rbac.publisher.profile.validation.terms":
+    "Tenés que aceptar las condiciones para publicar.",
+
+  /* Publisher — post-publish */
+  "rbac.publisher.postPublish.metadata.title": "Perfil bajo moderación — Biringas",
+  "rbac.publisher.postPublish.banner":
+    "Tu perfil está bajo moderación. Para poder activarlo, debés verificar tus fotos. ",
+  "rbac.publisher.postPublish.bannerLink": "Más información aquí.",
+  "rbac.publisher.postPublish.question": "¿Querés verificar las fotos de tu perfil?",
+  "rbac.publisher.postPublish.yes": "Sí",
+  "rbac.publisher.postPublish.no": "No",
+  "rbac.publisher.postPublish.skip": "Lo hago después",
+  "rbac.publisher.postPublish.rules.title":
+    "Nuevo sistema de verificación de perfiles y nuevas normas",
+  "rbac.publisher.postPublish.rules.1":
+    "La foto con el cartel se la tomamos nosotras.",
+  "rbac.publisher.postPublish.rules.2":
+    "Toda foto a verificar tiene que mostrar como mínimo 2/3 de tu cuerpo.",
+  "rbac.publisher.postPublish.rules.3":
+    "Cada perfil como mínimo debe tener dos fotos de frente.",
+  "rbac.publisher.postPublish.rules.4":
+    "Si tapás tu rostro, tiene que ser con un difuminado, no emojis, puede recortarlo.",
+  "rbac.publisher.postPublish.rules.delete":
+    "Las fotos que NO CUMPLAN, SERÁN borradas.",
+  "rbac.publisher.postPublish.rules.twoSteps":
+    "La verificación se hace en 2 pasos como siempre.",
+  "rbac.publisher.postPublish.understood": "Entiendo",
+  "rbac.publisher.postPublish.next": "Iniciar verificación",
+  "rbac.publisher.postPublish.disabled":
+    "La verificación de fotos no está activa todavía. Te avisamos cuando podamos abrirla.",
+  "rbac.publisher.verify.step1.title":
+    "Paso 1 — Video corto con cartel",
+  "rbac.publisher.verify.step1.body":
+    "Colocate frente a la cámara de forma que muestre 2/3 de tu cuerpo. Sostené un cartel donde escribas «Biringas». Mostrá el cartel y mostrate para que se vea el video en real.",
+  "rbac.publisher.verify.step1.warn":
+    "NO SE TOME EL VIDEO CON LUZ DE FONDO.",
+  "rbac.publisher.verify.step1.cta": "Iniciar grabación",
+  "rbac.publisher.verify.step2.title":
+    "Paso 2 — Documento de identidad",
+  "rbac.publisher.verify.step2.body":
+    "Elegí con qué tipo de documento vas a identificar tu cuenta.",
+  "rbac.publisher.verify.step2.id": "Documento de identidad",
+  "rbac.publisher.verify.step2.passport": "Pasaporte",
+  "rbac.publisher.verify.step2.front": "Sacar foto delantera",
+  "rbac.publisher.verify.step2.hint.1":
+    "Asegurate de que todo el documento entre en la foto.",
+  "rbac.publisher.verify.step2.hint.2":
+    "La foto no debe estar borrosa o mal iluminada.",
+  "rbac.publisher.verify.step2.hint.3":
+    "No puede haber nada cubriendo o censurando el documento.",
+  "rbac.publisher.verify.success.title": "Verificación enviada",
+  "rbac.publisher.verify.success.body":
+    "Vamos a revisar tu material en las próximas horas. Te avisamos cuando esté listo.",
+  "rbac.publisher.verify.success.cta": "Volver al panel",
+
+  /* Commentator flow */
+  "rbac.commentator.metadata.title": "Cuenta para comentarios — Biringas",
+  "rbac.commentator.kicker": "Cuenta solo para comentarios",
+  "rbac.commentator.title.lead": "Solo querés",
+  "rbac.commentator.title.highlight": "comentar",
+  "rbac.commentator.subtitle":
+    "Mileroticos sólo lleva a cabo la moderación de comentarios; no los perfiles ni las páginas personales de los usuarios y tampoco se relacionan con su contenido.",
+  "rbac.commentator.banner":
+    "Este formulario sirve para poder realizar comentarios; si te registrás aquí no podrás publicar.",
+  "rbac.commentator.card.title": "Cuenta para publicar comentarios",
+  "rbac.commentator.field.country": "País",
+  "rbac.commentator.field.country.placeholder": "Elegí tu país",
+  "rbac.commentator.field.email": "Correo electrónico",
+  "rbac.commentator.field.email.placeholder": "tu@email.com",
+  "rbac.commentator.field.emailHint":
+    "El correo electrónico será privado.",
+  "rbac.commentator.field.nickname": "Nickname",
+  "rbac.commentator.field.nickname.placeholder":
+    "El nombre con el que vas a comentar.",
+  "rbac.commentator.field.password": "Contraseña",
+  "rbac.commentator.field.password.placeholder": "Mínimo 8 caracteres",
+  "rbac.commentator.field.passwordConfirm": "Repetí la contraseña",
+  "rbac.commentator.field.passwordConfirm.placeholder": "Igual a la de arriba",
+  "rbac.commentator.terms":
+    "Acepto la política de privacidad y condiciones de uso de Biringas.com.",
+  "rbac.commentator.submit": "Registrarme",
+  "rbac.commentator.submitting": "Creando cuenta…",
+  "rbac.commentator.successToast.title": "¡Cuenta creada!",
+  "rbac.commentator.successToast.body":
+    "Listo. Ya podés dejar comentarios en cualquier perfil.",
+  "rbac.commentator.alreadyAccount": "¿Ya tenés cuenta?",
+  "rbac.commentator.signIn": "Ingresá",
+  "rbac.commentator.switchToPublisher": "¿Querés publicar un anuncio?",
+  "rbac.commentator.switchToPublisher.cta": "Registrate como publicador",
+  "rbac.commentator.validation.country": "Elegí tu país.",
+  "rbac.commentator.validation.email": "Ingresá un email válido.",
+  "rbac.commentator.validation.nickname": "Ingresá un nickname.",
+  "rbac.commentator.validation.password": "Mínimo 8 caracteres.",
+  "rbac.commentator.validation.confirm": "Las contraseñas no coinciden.",
+  "rbac.commentator.validation.terms": "Aceptá los términos para continuar.",
+
+  /* Commentator panel */
+  "rbac.commentator.panel.metadata.title": "Mis comentarios — Biringas",
+  "rbac.commentator.panel.metadata.description":
+    "Panel limitado de cuenta para comentarios.",
+  "rbac.commentator.panel.title": "Tu cuenta",
+  "rbac.commentator.panel.subtitle":
+    "Cuenta de comentarios — no podés publicar anuncios.",
+  "rbac.commentator.panel.section.options": "Opciones de usuario",
+  "rbac.commentator.panel.nav.favorites": "Favoritos",
+  "rbac.commentator.panel.nav.comments": "Mis comentarios",
+  "rbac.commentator.panel.nav.password": "Cambiar contraseña",
+  "rbac.commentator.panel.nav.delete": "Borrar mi cuenta",
+  "rbac.commentator.panel.nav.signOut": "Salir del panel",
+  "rbac.commentator.panel.favorites.empty":
+    "No tenés ningún favorito actualmente.",
+  "rbac.commentator.panel.comments.empty":
+    "Todavía no comentaste ningún perfil.",
+  "rbac.commentator.panel.cantPublish.title": "Tu cuenta no publica perfiles",
+  "rbac.commentator.panel.cantPublish.body":
+    "Esta cuenta sólo puede dejar comentarios y guardar favoritos. Si querés publicar un anuncio tenés que crear otra cuenta como publicador.",
+  "rbac.commentator.panel.cantPublish.cta":
+    "Crear cuenta de publicador",
+  "rbac.commentator.panel.success.updated":
+    "Tu cuenta se ha modificado correctamente.",
+  "rbac.commentator.panel.dialog.delete.title": "Borrar esta cuenta",
+  "rbac.commentator.panel.dialog.delete.body":
+    "Vas a borrar tu cuenta y todos tus comentarios. Esta acción no se puede deshacer.",
+  "rbac.commentator.panel.dialog.delete.confirm": "Sí, borrar",
+  "rbac.commentator.panel.dialog.delete.cancel": "Cancelar",
+  "rbac.commentator.panel.dialog.delete.disabled":
+    "Borrado de cuenta no implementado en esta versión.",
+
+  /* =================================================================
    * Wave E.2 · /mi-cuenta dashboard
    * ================================================================= */
 
@@ -2520,6 +2789,265 @@ const en: MessageDict = {
   "auth.reset.signIn": "Sign in",
   "auth.reset.validation.email": "Enter your email.",
   "auth.reset.validation.invalidEmail": "The email doesn't look valid.",
+
+  /* =================================================================
+   * RBAC flows · publisher / commentator journeys
+   * ================================================================= */
+
+  /* Chooser */
+  "rbac.chooser.metadata.title": "Pick your account type — Biringas",
+  "rbac.chooser.kicker": "Sign up",
+  "rbac.chooser.title.lead": "Choose how you want to",
+  "rbac.chooser.title.highlight": "join",
+  "rbac.chooser.subtitle":
+    "Two separate journeys with different panels and permissions. You can switch later if you need to.",
+  "rbac.chooser.publisher.eyebrow": "Profile publisher",
+  "rbac.chooser.publisher.title": "Publish your profile",
+  "rbac.chooser.publisher.body":
+    "Create a public listing, manage your verified photos and receive booking requests.",
+  "rbac.chooser.publisher.bullet.1": "Phone and email verification",
+  "rbac.chooser.publisher.bullet.2": "Photo, ID and short-video upload",
+  "rbac.chooser.publisher.bullet.3": "Moderation before publication",
+  "rbac.chooser.publisher.cta": "Continue as publisher",
+  "rbac.chooser.commentator.eyebrow": "Comments-only account",
+  "rbac.chooser.commentator.title": "Just comments",
+  "rbac.chooser.commentator.body":
+    "Leave reviews on existing profiles and save favorites. No phone, no photos, no moderation.",
+  "rbac.chooser.commentator.bullet.1": "Email + nickname only",
+  "rbac.chooser.commentator.bullet.2": "Limited, discreet panel",
+  "rbac.chooser.commentator.bullet.3": "Cannot publish listings",
+  "rbac.chooser.commentator.cta": "Continue as commentator",
+  "rbac.chooser.alreadyAccount": "Already have an account?",
+  "rbac.chooser.signIn": "Sign in",
+  "rbac.chooser.recommended": "Recommended",
+
+  /* Publisher wizard */
+  "rbac.publisher.metadata.title": "Sign up as publisher — Biringas",
+  "rbac.publisher.kicker": "Profile publisher",
+  "rbac.publisher.title.lead": "Publish your profile on",
+  "rbac.publisher.title.highlight": "Biringas",
+  "rbac.publisher.subtitle":
+    "Four short steps. Your profile then goes into moderation until photos are approved.",
+  "rbac.publisher.step.phone": "Phone & email",
+  "rbac.publisher.step.otp": "Verification",
+  "rbac.publisher.step.password": "Password",
+  "rbac.publisher.step.profile": "Profile",
+  "rbac.publisher.stepper.aria": "Sign-up progress",
+  "rbac.publisher.back": "Back",
+  "rbac.publisher.next": "Continue",
+  "rbac.publisher.submitting": "Working…",
+  "rbac.publisher.changeAccountType": "Just want to comment?",
+  "rbac.publisher.changeAccountType.cta": "Switch to a comments-only account",
+
+  "rbac.publisher.phone.title": "Phone and email",
+  "rbac.publisher.phone.subtitle":
+    "We use the phone to verify identity and for the profile's contact button.",
+  "rbac.publisher.phone.country": "Country",
+  "rbac.publisher.phone.field": "Phone",
+  "rbac.publisher.phone.field.placeholder": "e.g. 3237992985",
+  "rbac.publisher.phone.email": "Email",
+  "rbac.publisher.phone.email.placeholder": "you@email.com",
+  "rbac.publisher.phone.disabledNotice":
+    "SMS verification disabled in this build — the code is accepted optimistically.",
+  "rbac.publisher.phone.validation.country": "Pick your country.",
+  "rbac.publisher.phone.validation.phone": "Enter at least 7 digits.",
+  "rbac.publisher.phone.validation.email": "Enter a valid email.",
+
+  "rbac.publisher.otp.title": "Verify your phone",
+  "rbac.publisher.otp.subtitle":
+    "We would send a code by SMS or WhatsApp to {phone}.",
+  "rbac.publisher.otp.field": "6-digit code",
+  "rbac.publisher.otp.resend": "Resend code",
+  "rbac.publisher.otp.optimistic":
+    "Demo mode — any 6-digit code lets you continue.",
+  "rbac.publisher.otp.validation": "Enter all 6 digits.",
+
+  "rbac.publisher.password.title": "Create your password",
+  "rbac.publisher.password.subtitle":
+    "You will use this password to sign in to your profile panel.",
+  "rbac.publisher.password.field": "Password",
+  "rbac.publisher.password.field.placeholder": "Minimum 8 characters",
+  "rbac.publisher.password.confirm": "Confirm password",
+  "rbac.publisher.password.confirm.placeholder": "Same as above",
+  "rbac.publisher.password.validation.password": "Minimum 8 characters.",
+  "rbac.publisher.password.validation.confirm": "Passwords don't match.",
+  "rbac.publisher.password.validation.terms":
+    "You need to accept the terms to continue.",
+  "rbac.publisher.password.terms.lead":
+    "I am of legal age and I accept the privacy policy and terms of use.",
+
+  "rbac.publisher.profile.title": "Profile details",
+  "rbac.publisher.profile.subtitle":
+    "Public information about the listing. You can edit it later.",
+  "rbac.publisher.profile.section.location": "Profile location",
+  "rbac.publisher.profile.field.state": "State / department",
+  "rbac.publisher.profile.field.state.placeholder": "Pick a department",
+  "rbac.publisher.profile.field.city": "City",
+  "rbac.publisher.profile.field.city.placeholder": "Pick a city",
+  "rbac.publisher.profile.field.neighborhood": "Neighborhood / district",
+  "rbac.publisher.profile.field.neighborhood.placeholder": "Optional",
+  "rbac.publisher.profile.field.travels": "I travel to (max 7 cities)",
+  "rbac.publisher.profile.field.travels.placeholder": "Optional, up to 7",
+  "rbac.publisher.profile.section.details": "Profile details",
+  "rbac.publisher.profile.field.age": "Age",
+  "rbac.publisher.profile.field.age.placeholder": "Private, internal control only",
+  "rbac.publisher.profile.field.category": "Category",
+  "rbac.publisher.profile.field.category.placeholder": "Pick a category",
+  "rbac.publisher.profile.field.title": "Profile title",
+  "rbac.publisher.profile.field.title.placeholder":
+    "At least 40 characters. The title should be informative.",
+  "rbac.publisher.profile.field.description": "Description",
+  "rbac.publisher.profile.field.description.placeholder":
+    "Describe yourself. Do not put cities in this field — use «I travel to». Do not write in all caps.",
+  "rbac.publisher.profile.section.contact": "Contact details",
+  "rbac.publisher.profile.contact.help": "Choose at least one contact option.",
+  "rbac.publisher.profile.contact.email":
+    "I want to be contacted by email",
+  "rbac.publisher.profile.contact.phone": "Show my phone on the profile",
+  "rbac.publisher.profile.contact.whatsapp": "Show WhatsApp on the profile",
+  "rbac.publisher.profile.contact.telegram": "Show Telegram on the profile",
+  "rbac.publisher.profile.contact.noDeposit":
+    "I do not ask for an upfront deposit to book (optional)",
+  "rbac.publisher.profile.section.photos": "Photos",
+  "rbac.publisher.profile.photos.help":
+    "Real photos only — no stolen, no watermarks. Minimum 2 front-facing photos showing 2/3 of your body.",
+  "rbac.publisher.profile.photos.cta":
+    "Click or drag images here to upload",
+  "rbac.publisher.profile.photos.disabled":
+    "Photo upload disabled in this build — submission creates a profile in PENDING_MODERATION without files.",
+  "rbac.publisher.profile.terms.lead":
+    "I am of legal age. I accept the privacy policy and terms. I declare I am independent and publish this profile on my own.",
+  "rbac.publisher.profile.submit": "Publish profile",
+  "rbac.publisher.profile.submitting": "Sending to moderation…",
+  "rbac.publisher.profile.validation.required": "This field is required.",
+  "rbac.publisher.profile.validation.titleMin":
+    "Title must be at least 40 characters.",
+  "rbac.publisher.profile.validation.descriptionMin":
+    "Description must be at least 80 characters.",
+  "rbac.publisher.profile.validation.contact":
+    "Choose at least one contact option.",
+  "rbac.publisher.profile.validation.terms":
+    "You must accept the conditions to publish.",
+
+  "rbac.publisher.postPublish.metadata.title":
+    "Profile under moderation — Biringas",
+  "rbac.publisher.postPublish.banner":
+    "Your profile is under moderation. To activate it you need to verify your photos. ",
+  "rbac.publisher.postPublish.bannerLink": "More info here.",
+  "rbac.publisher.postPublish.question":
+    "Do you want to verify your profile photos?",
+  "rbac.publisher.postPublish.yes": "Yes",
+  "rbac.publisher.postPublish.no": "No",
+  "rbac.publisher.postPublish.skip": "I'll do it later",
+  "rbac.publisher.postPublish.rules.title":
+    "New profile verification system and new rules",
+  "rbac.publisher.postPublish.rules.1":
+    "The photo with the sign is taken by us.",
+  "rbac.publisher.postPublish.rules.2":
+    "Each photo to verify must show at least 2/3 of your body.",
+  "rbac.publisher.postPublish.rules.3":
+    "Every profile must have at least two front-facing photos.",
+  "rbac.publisher.postPublish.rules.4":
+    "If you cover your face it must be with a blur — no emojis. Crops are OK.",
+  "rbac.publisher.postPublish.rules.delete":
+    "Photos that DO NOT comply WILL be deleted.",
+  "rbac.publisher.postPublish.rules.twoSteps":
+    "Verification still happens in 2 steps.",
+  "rbac.publisher.postPublish.understood": "Understood",
+  "rbac.publisher.postPublish.next": "Start verification",
+  "rbac.publisher.postPublish.disabled":
+    "Photo verification isn't live yet. We'll let you know when we open it.",
+  "rbac.publisher.verify.step1.title": "Step 1 — Short video with sign",
+  "rbac.publisher.verify.step1.body":
+    "Frame the camera so it shows 2/3 of your body. Hold a sign that reads «Biringas». Show the sign and yourself live.",
+  "rbac.publisher.verify.step1.warn": "Do not record with backlight.",
+  "rbac.publisher.verify.step1.cta": "Start recording",
+  "rbac.publisher.verify.step2.title": "Step 2 — ID document",
+  "rbac.publisher.verify.step2.body":
+    "Pick which document you'll use to identify your account.",
+  "rbac.publisher.verify.step2.id": "ID card",
+  "rbac.publisher.verify.step2.passport": "Passport",
+  "rbac.publisher.verify.step2.front": "Take front photo",
+  "rbac.publisher.verify.step2.hint.1": "Make sure the whole document fits.",
+  "rbac.publisher.verify.step2.hint.2":
+    "The photo must not be blurry or poorly lit.",
+  "rbac.publisher.verify.step2.hint.3":
+    "Nothing can cover or censor the document.",
+  "rbac.publisher.verify.success.title": "Verification submitted",
+  "rbac.publisher.verify.success.body":
+    "We'll review your material in the next few hours and let you know.",
+  "rbac.publisher.verify.success.cta": "Back to panel",
+
+  /* Commentator flow */
+  "rbac.commentator.metadata.title": "Comments account — Biringas",
+  "rbac.commentator.kicker": "Comments-only account",
+  "rbac.commentator.title.lead": "You just want to",
+  "rbac.commentator.title.highlight": "comment",
+  "rbac.commentator.subtitle":
+    "Biringas only moderates comments — not profiles or personal pages, and is not related to their content.",
+  "rbac.commentator.banner":
+    "This form is for posting comments only. If you register here you will not be able to publish a profile.",
+  "rbac.commentator.card.title": "Account to post comments",
+  "rbac.commentator.field.country": "Country",
+  "rbac.commentator.field.country.placeholder": "Pick your country",
+  "rbac.commentator.field.email": "Email",
+  "rbac.commentator.field.email.placeholder": "you@email.com",
+  "rbac.commentator.field.emailHint": "Your email stays private.",
+  "rbac.commentator.field.nickname": "Nickname",
+  "rbac.commentator.field.nickname.placeholder":
+    "The name you'll comment with.",
+  "rbac.commentator.field.password": "Password",
+  "rbac.commentator.field.password.placeholder": "Minimum 8 characters",
+  "rbac.commentator.field.passwordConfirm": "Confirm password",
+  "rbac.commentator.field.passwordConfirm.placeholder": "Same as above",
+  "rbac.commentator.terms":
+    "I accept the privacy policy and terms of use of Biringas.com.",
+  "rbac.commentator.submit": "Register",
+  "rbac.commentator.submitting": "Creating account…",
+  "rbac.commentator.successToast.title": "Account created",
+  "rbac.commentator.successToast.body":
+    "All set — you can now leave comments on any profile.",
+  "rbac.commentator.alreadyAccount": "Already have an account?",
+  "rbac.commentator.signIn": "Sign in",
+  "rbac.commentator.switchToPublisher": "Want to publish a listing?",
+  "rbac.commentator.switchToPublisher.cta": "Register as publisher",
+  "rbac.commentator.validation.country": "Pick your country.",
+  "rbac.commentator.validation.email": "Enter a valid email.",
+  "rbac.commentator.validation.nickname": "Enter a nickname.",
+  "rbac.commentator.validation.password": "Minimum 8 characters.",
+  "rbac.commentator.validation.confirm": "Passwords don't match.",
+  "rbac.commentator.validation.terms": "Accept the terms to continue.",
+
+  "rbac.commentator.panel.metadata.title": "My comments — Biringas",
+  "rbac.commentator.panel.metadata.description":
+    "Limited comments-account panel.",
+  "rbac.commentator.panel.title": "Your account",
+  "rbac.commentator.panel.subtitle":
+    "Comments account — you cannot publish listings.",
+  "rbac.commentator.panel.section.options": "Account options",
+  "rbac.commentator.panel.nav.favorites": "Favorites",
+  "rbac.commentator.panel.nav.comments": "My comments",
+  "rbac.commentator.panel.nav.password": "Change password",
+  "rbac.commentator.panel.nav.delete": "Delete my account",
+  "rbac.commentator.panel.nav.signOut": "Sign out",
+  "rbac.commentator.panel.favorites.empty":
+    "You have no favorites right now.",
+  "rbac.commentator.panel.comments.empty":
+    "You have not commented on any profile yet.",
+  "rbac.commentator.panel.cantPublish.title":
+    "This account cannot publish profiles",
+  "rbac.commentator.panel.cantPublish.body":
+    "This account only leaves comments and saves favorites. To publish a listing you need to create a separate publisher account.",
+  "rbac.commentator.panel.cantPublish.cta": "Create publisher account",
+  "rbac.commentator.panel.success.updated":
+    "Your account has been updated.",
+  "rbac.commentator.panel.dialog.delete.title": "Delete this account",
+  "rbac.commentator.panel.dialog.delete.body":
+    "You are about to delete your account and all your comments. This cannot be undone.",
+  "rbac.commentator.panel.dialog.delete.confirm": "Yes, delete",
+  "rbac.commentator.panel.dialog.delete.cancel": "Cancel",
+  "rbac.commentator.panel.dialog.delete.disabled":
+    "Account deletion is not implemented in this build.",
 
   /* =================================================================
    * Wave E.2 · /mi-cuenta dashboard

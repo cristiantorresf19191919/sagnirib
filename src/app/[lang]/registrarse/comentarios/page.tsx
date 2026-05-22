@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import { isSupportedLocale } from "@/core/i18n/constants";
 import { t } from "@/core/i18n/messages";
 import { buildPageMetadata } from "@/core/seo/build-page-metadata";
-import { AccountTypeChooser } from "@/features/auth/components/AccountTypeChooser";
+import { CommentatorSignUpForm } from "@/features/auth/components/CommentatorSignUpForm";
 import { Container } from "@/shared/design-system/components/Container";
 import { Footer } from "@/shared/layout/Footer";
 import { Header } from "@/shared/layout/Header";
@@ -17,26 +17,20 @@ export async function generateMetadata({
   const { lang } = await params;
   const locale = isSupportedLocale(lang) ? lang : "es";
   return buildPageMetadata({
-    title: t(locale, "rbac.chooser.metadata.title"),
-    description: t(locale, "rbac.chooser.subtitle"),
-    pathname: "/registrarse",
+    title: t(locale, "rbac.commentator.metadata.title"),
+    description: t(locale, "rbac.commentator.subtitle"),
+    pathname: "/registrarse/comentarios",
     locale,
     indexable: false,
   });
 }
 
 /**
- * `/registrarse` — registration journey entry.
- *
- * Renders the two-card account-type chooser per the PDF. The fork
- * routes to `/registrarse/publicador` (Flow A) or `/registrarse/comentarios`
- * (Flow B). The legacy single-form sign-up still exists at the same route
- * via the chooser CTA — keeping both flows visually consistent is the
- * point of the RBAC PR.
- *
- * Never indexable — auth surfaces should not appear in search.
+ * Flow B — comments-only registration. Per the PDF this surface has a
+ * deliberately limited form (country + email + nickname + password) and
+ * routes the user to the limited dashboard at `/mi-cuenta/comentarios`.
  */
-export default async function RegistrarsePage({
+export default async function RegistrarseComentariosPage({
   params,
 }: Readonly<{ params: Promise<{ lang: string }> }>) {
   const { lang } = await params;
@@ -50,8 +44,8 @@ export default async function RegistrarsePage({
           aria-hidden
           className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-[520px] bg-[radial-gradient(circle_at_50%_0%,rgba(47,93,67,0.10),transparent_60%),radial-gradient(circle_at_85%_18%,rgba(200,166,118,0.10),transparent_55%)]"
         />
-        <Container width="wide">
-          <div className="mx-auto flex max-w-3xl flex-col items-center gap-8">
+        <Container width="narrow">
+          <div className="mx-auto flex max-w-md flex-col items-center gap-6">
             <header className="flex flex-col items-center gap-3 text-center">
               <span className="inline-flex items-center gap-3 text-[11px] font-semibold uppercase tracking-[0.28em] text-[var(--color-brand-primary)]">
                 <span
@@ -62,21 +56,21 @@ export default async function RegistrarsePage({
                   aria-hidden
                   className="inline-block h-1.5 w-1.5 rotate-45 bg-[var(--color-gold)] shadow-[0_0_0_3px_rgba(200,166,118,0.18)]"
                 />
-                {t(lang, "rbac.chooser.kicker")}
+                {t(lang, "rbac.commentator.kicker")}
               </span>
               <h1 className="font-[var(--font-display)] text-[clamp(28px,4vw,42px)] font-[370] leading-[1.05] tracking-[-0.025em] text-[var(--color-foreground)]">
-                {t(lang, "rbac.chooser.title.lead")}{" "}
+                {t(lang, "rbac.commentator.title.lead")}{" "}
                 <span className="italic font-[340] text-[var(--color-brand-primary)]">
-                  {t(lang, "rbac.chooser.title.highlight")}
+                  {t(lang, "rbac.commentator.title.highlight")}
                 </span>
                 .
               </h1>
-              <p className="max-w-md font-[var(--font-serif)] text-[15px] leading-[1.55] text-[var(--color-text-muted)]">
-                {t(lang, "rbac.chooser.subtitle")}
+              <p className="max-w-sm font-[var(--font-serif)] text-[15px] leading-[1.55] text-[var(--color-text-muted)]">
+                {t(lang, "rbac.commentator.subtitle")}
               </p>
             </header>
 
-            <AccountTypeChooser />
+            <CommentatorSignUpForm />
           </div>
         </Container>
       </main>
