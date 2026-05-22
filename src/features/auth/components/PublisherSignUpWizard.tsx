@@ -419,7 +419,7 @@ function WizardStepper({
         const active = s === currentStep;
         const done = idx < currentIdx;
         const tone = active
-          ? "border-[var(--color-brand-primary)] bg-[var(--color-brand-primary)] text-[var(--color-surface)]"
+          ? "border-[var(--color-brand-primary)] bg-[var(--color-brand-primary)] text-[var(--color-surface)] shadow-[var(--shadow-glow-primary)]"
           : done
             ? "border-[var(--color-brand-primary)]/50 bg-[var(--color-brand-primary)]/15 text-[var(--color-brand-primary)]"
             : "border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text-subtle)]";
@@ -429,21 +429,64 @@ function WizardStepper({
             className="flex flex-1 items-center gap-2 sm:gap-3"
             aria-current={active ? "step" : undefined}
           >
-            <span
-              className={`inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full border text-[11px] font-semibold ${tone}`}
+            <motion.span
+              layout
+              animate={
+                active
+                  ? { scale: [1, 1.08, 1] }
+                  : { scale: 1 }
+              }
+              transition={{
+                duration: 0.45,
+                ease: [0.22, 1, 0.36, 1],
+              }}
+              className={`relative inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full border text-[11px] font-semibold transition-colors duration-300 ${tone}`}
             >
-              {done ? <Check className="h-3.5 w-3.5" aria-hidden /> : idx + 1}
-            </span>
+              {/* Ring pulse when active */}
+              {active ? (
+                <motion.span
+                  aria-hidden
+                  className="absolute inset-0 rounded-full ring-2 ring-[var(--color-brand-primary)]/30"
+                  initial={{ scale: 1, opacity: 0.8 }}
+                  animate={{ scale: 1.6, opacity: 0 }}
+                  transition={{
+                    duration: 1.4,
+                    repeat: Infinity,
+                    ease: "easeOut",
+                  }}
+                />
+              ) : null}
+              <motion.span
+                key={done ? "check" : `${idx}`}
+                initial={{ opacity: 0, scale: 0.6 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
+                className="relative inline-flex items-center justify-center"
+              >
+                {done ? (
+                  <Check className="h-3.5 w-3.5" aria-hidden />
+                ) : (
+                  idx + 1
+                )}
+              </motion.span>
+            </motion.span>
             <span
-              className={`hidden truncate text-[11px] font-semibold uppercase tracking-[0.16em] sm:inline ${active || done ? "text-[var(--color-foreground)]" : "text-[var(--color-text-subtle)]"}`}
+              className={`hidden truncate text-[11px] font-semibold uppercase tracking-[0.16em] transition-colors duration-300 sm:inline ${active || done ? "text-[var(--color-foreground)]" : "text-[var(--color-text-subtle)]"}`}
             >
               {labels[s]}
             </span>
             {idx < STEP_ORDER.length - 1 ? (
               <span
                 aria-hidden
-                className={`h-px flex-1 ${done ? "bg-[var(--color-brand-primary)]/40" : "bg-[var(--color-border)]"}`}
-              />
+                className="relative h-px flex-1 overflow-hidden bg-[var(--color-border)]"
+              >
+                <motion.span
+                  className="absolute inset-y-0 left-0 bg-gradient-to-r from-[var(--color-brand-primary)] to-[var(--color-gold)]"
+                  initial={false}
+                  animate={{ width: done ? "100%" : "0%" }}
+                  transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+                />
+              </span>
             ) : null}
           </div>
         );

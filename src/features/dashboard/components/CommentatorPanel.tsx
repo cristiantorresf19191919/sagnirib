@@ -1,6 +1,6 @@
 "use client";
 
-import { motion, type Variants } from "framer-motion";
+import { AnimatePresence, motion, type Variants } from "framer-motion";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -112,13 +112,32 @@ export function CommentatorPanel() {
                 key={item.key}
                 type="button"
                 onClick={() => setActive(item.key)}
-                className={`inline-flex h-11 items-center gap-2.5 rounded-full px-3 text-left text-sm font-medium transition-colors duration-200 ease-[var(--ease-standard)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-background)] ${
+                className={`group relative inline-flex h-11 items-center gap-2.5 rounded-full px-3 text-left text-sm font-medium transition-colors duration-200 ease-[var(--ease-standard)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-background)] ${
                   isActive
-                    ? "bg-[var(--color-brand-primary)]/12 text-[var(--color-foreground)] ring-1 ring-[var(--color-brand-primary)]/30"
-                    : "text-[var(--color-text-muted)] hover:bg-[var(--color-background-elevated)] hover:text-[var(--color-foreground)]"
+                    ? "text-[var(--color-foreground)]"
+                    : "text-[var(--color-text-muted)] hover:text-[var(--color-foreground)]"
                 }`}
               >
-                <Icon className="h-4 w-4" aria-hidden />
+                {/* Shared-element pill — animates between items via layoutId */}
+                {isActive ? (
+                  <motion.span
+                    layoutId="commentator-nav-pill"
+                    aria-hidden
+                    transition={{
+                      type: "spring",
+                      stiffness: 380,
+                      damping: 30,
+                    }}
+                    className="absolute inset-0 -z-10 rounded-full bg-[var(--color-brand-primary)]/12 ring-1 ring-[var(--color-brand-primary)]/30"
+                  />
+                ) : null}
+                <motion.span
+                  whileHover={{ rotate: -8 }}
+                  transition={{ duration: 0.25 }}
+                  className="inline-flex h-4 w-4 items-center justify-center"
+                >
+                  <Icon className="h-4 w-4" aria-hidden />
+                </motion.span>
                 {item.label}
               </button>
             );
@@ -138,7 +157,17 @@ export function CommentatorPanel() {
         variants={REVEAL}
         className="flex flex-col gap-4"
       >
-        <CommentatorContent section={active} />
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={active}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+          >
+            <CommentatorContent section={active} />
+          </motion.div>
+        </AnimatePresence>
         <CantPublishCard />
       </motion.section>
     </motion.div>

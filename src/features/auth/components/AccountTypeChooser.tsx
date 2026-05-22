@@ -1,6 +1,13 @@
 "use client";
 
-import { motion, type Variants } from "framer-motion";
+import {
+  motion,
+  useMotionTemplate,
+  useMotionValue,
+  useReducedMotion,
+  useSpring,
+  type Variants,
+} from "framer-motion";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -11,7 +18,7 @@ import {
   Sparkles,
   UserCheck,
 } from "lucide-react";
-import { useState } from "react";
+import { useState, type PointerEvent as ReactPointerEvent } from "react";
 
 import { localizedHref } from "@/core/i18n/href";
 import { t } from "@/core/i18n/messages";
@@ -28,13 +35,13 @@ const REVEAL: Variants = {
   visible: {
     opacity: 1,
     y: 0,
-    transition: { duration: 0.45, ease: [0.22, 1, 0.36, 1] },
+    transition: { duration: 0.55, ease: [0.22, 1, 0.36, 1] },
   },
 };
 
 const STAGGER: Variants = {
   hidden: {},
-  visible: { transition: { staggerChildren: 0.08, delayChildren: 0.06 } },
+  visible: { transition: { staggerChildren: 0.1, delayChildren: 0.08 } },
 };
 
 /**
@@ -173,6 +180,43 @@ function ChooserCard({
   disabled,
   onPick,
 }: Readonly<ChooserCardProps>) {
+  const reducedMotion = useReducedMotion();
+  const px = useMotionValue(0);
+  const py = useMotionValue(0);
+  // Springs smooth the cursor-tracking spotlight + tilt so the card glides
+  // instead of snapping with mouse jitter.
+  const sx = useSpring(px, { stiffness: 180, damping: 22, mass: 0.45 });
+  const sy = useSpring(py, { stiffness: 180, damping: 22, mass: 0.45 });
+  const rotateX = useSpring(useMotionValue(0), {
+    stiffness: 220,
+    damping: 24,
+  });
+  const rotateY = useSpring(useMotionValue(0), {
+    stiffness: 220,
+    damping: 24,
+  });
+  // Editorial spotlight — picks up the brand-gold tone, sub-15% opacity so
+  // it reads as a sheen, not a highlight ring.
+  const spotlight = useMotionTemplate`radial-gradient(220px circle at ${sx}px ${sy}px, rgba(200,166,118,0.18), transparent 65%)`;
+
+  function onPointerMove(event: ReactPointerEvent<HTMLButtonElement>) {
+    if (reducedMotion) return;
+    const rect = event.currentTarget.getBoundingClientRect();
+    const x = event.clientX - rect.left;
+    const y = event.clientY - rect.top;
+    px.set(x);
+    py.set(y);
+    const nx = (x / rect.width) * 2 - 1;
+    const ny = (y / rect.height) * 2 - 1;
+    rotateY.set(nx * 4);
+    rotateX.set(-ny * 4);
+  }
+
+  function onPointerLeave() {
+    rotateX.set(0);
+    rotateY.set(0);
+  }
+
   const surface =
     tone === "primary"
       ? "border-[var(--color-brand-primary)]/35 bg-[var(--color-surface)] shadow-[var(--shadow-glow-primary)]"
@@ -191,27 +235,69 @@ function ChooserCard({
       variants={variants}
       type="button"
       onClick={onPick}
+      onPointerMove={onPointerMove}
+      onPointerLeave={onPointerLeave}
       disabled={disabled}
-      className={`group relative flex h-full flex-col gap-4 overflow-hidden rounded-[var(--radius-2xl)] border p-6 text-left transition-[transform,border-color] duration-200 ease-[var(--ease-standard)] hover:-translate-y-[2px] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-background)] disabled:cursor-not-allowed disabled:opacity-70 ${surface}`}
+      style={
+        reducedMotion
+          ? undefined
+          : { rotateX, rotateY, transformPerspective: 1000 }
+      }
+      whileTap={reducedMotion ? undefined : { scale: 0.985 }}
+      className={`group relative flex h-full flex-col gap-4 overflow-hidden rounded-[var(--radius-2xl)] border p-6 text-left transition-[border-color,box-shadow] duration-300 ease-[var(--ease-standard)] hover:border-[var(--color-brand-primary)]/55 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-background)] disabled:cursor-not-allowed disabled:opacity-70 ${surface}`}
     >
-      {tone === "primary" && recommended ? (
-        <span
-          aria-hidden
-          className="absolute right-4 top-4 inline-flex items-center gap-1 rounded-full bg-[var(--color-brand-primary)]/12 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--color-brand-primary)] ring-1 ring-[var(--color-brand-primary)]/30"
-        >
-          <Sparkles className="h-3 w-3" aria-hidden />
-          {recommended}
-        </span>
-      ) : null}
-
+      {/* Top gold hairline — editorial signature */}
       <span
         aria-hidden
-        className={`inline-flex h-11 w-11 items-center justify-center rounded-2xl ${iconTile}`}
+        className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[var(--color-gold)]/55 to-transparent"
+      />
+      {/* Cursor-tracked spotlight */}
+      {!reducedMotion ? (
+        <motion.span
+          aria-hidden
+          style={{ background: spotlight }}
+          className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100"
+        />
+      ) : null}
+      {/* Shimmer sweep on hover */}
+      <span
+        aria-hidden
+        className="pointer-events-none absolute inset-y-0 -left-1/3 block w-1/3 bg-gradient-to-r from-transparent via-[rgba(200,166,118,0.4)] to-transparent opacity-0 group-hover:opacity-100 motion-safe:group-hover:motion-shimmer-sweep"
+      />
+
+      {tone === "primary" && recommended ? (
+        <motion.span
+          aria-hidden
+          initial={{ opacity: 0, y: -4 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4, duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
+          className="absolute right-4 top-4 inline-flex items-center gap-1 rounded-full bg-[var(--color-brand-primary)]/12 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--color-brand-primary)] ring-1 ring-[var(--color-brand-primary)]/30"
+        >
+          <motion.span
+            animate={{ rotate: [0, 12, 0, -8, 0] }}
+            transition={{
+              repeat: Infinity,
+              repeatDelay: 4,
+              duration: 1.4,
+              ease: "easeInOut",
+            }}
+          >
+            <Sparkles className="h-3 w-3" aria-hidden />
+          </motion.span>
+          {recommended}
+        </motion.span>
+      ) : null}
+
+      <motion.span
+        aria-hidden
+        whileHover={reducedMotion ? undefined : { scale: 1.08, rotate: -3 }}
+        transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+        className={`relative inline-flex h-11 w-11 items-center justify-center rounded-2xl ${iconTile}`}
       >
         {icon}
-      </span>
+      </motion.span>
 
-      <div className="flex flex-col gap-2">
+      <div className="relative flex flex-col gap-2">
         <span className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[var(--color-text-subtle)]">
           {eyebrow}
         </span>
@@ -223,24 +309,45 @@ function ChooserCard({
         </p>
       </div>
 
-      <ul className="flex flex-col gap-1.5 text-xs text-[var(--color-text-muted)]">
-        {bullets.map((b) => (
-          <li key={b} className="inline-flex items-center gap-2">
+      <ul className="relative flex flex-col gap-1.5 text-xs text-[var(--color-text-muted)]">
+        {bullets.map((b, i) => (
+          <motion.li
+            key={b}
+            initial={{ opacity: 0, x: -6 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{
+              delay: 0.18 + i * 0.06,
+              duration: 0.35,
+              ease: [0.22, 1, 0.36, 1],
+            }}
+            className="inline-flex items-center gap-2"
+          >
             <Check
               className="h-3 w-3 text-[var(--color-brand-primary)]"
               aria-hidden
             />
             <span>{b}</span>
-          </li>
+          </motion.li>
         ))}
       </ul>
 
-      <span
-        className={`mt-auto inline-flex h-11 items-center justify-center gap-2 rounded-full px-5 text-sm font-semibold transition-[background,transform] duration-200 ease-[var(--ease-standard)] ${ctaCls}`}
+      <motion.span
+        whileHover={
+          reducedMotion ? undefined : { y: -2, transition: { duration: 0.2 } }
+        }
+        className={`relative mt-auto inline-flex h-11 items-center justify-center gap-2 rounded-full px-5 text-sm font-semibold transition-[background] duration-200 ease-[var(--ease-standard)] ${ctaCls}`}
       >
         {loading ? "…" : cta}
-        {!loading ? ctaIcon : null}
-      </span>
+        {!loading ? (
+          <motion.span
+            whileHover={
+              reducedMotion ? undefined : { x: 3, transition: { duration: 0.2 } }
+            }
+          >
+            {ctaIcon}
+          </motion.span>
+        ) : null}
+      </motion.span>
     </motion.button>
   );
 }
