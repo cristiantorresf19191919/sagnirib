@@ -44,8 +44,10 @@ export function getToasts(): ReadonlyArray<Toast> {
   return toasts;
 }
 
+const EMPTY_TOASTS: ReadonlyArray<Toast> = [];
+
 export function getServerToasts(): ReadonlyArray<Toast> {
-  return [];
+  return EMPTY_TOASTS;
 }
 
 let counter = 0;
