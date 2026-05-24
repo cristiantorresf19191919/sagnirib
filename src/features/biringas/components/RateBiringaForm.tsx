@@ -3,12 +3,17 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTransition, useState } from "react";
-import { CheckCircle2, LogIn, Star } from "lucide-react";
+import { CheckCircle2, LogIn, MessageSquare, Star } from "lucide-react";
 
 import { localizedHref } from "@/core/i18n/href";
 import { t } from "@/core/i18n/messages";
 import { useActiveLocale } from "@/core/i18n/use-active-locale";
 import { useAuthSession } from "@/features/auth/lib/use-auth-session";
+import {
+  ACCOUNT_TYPE_COMMENTATOR,
+  ACCOUNT_TYPE_PUBLISHER,
+  type AccountType,
+} from "@/features/auth/lib/rbac";
 
 import { submitReview } from "../actions/submit-review";
 
@@ -22,11 +27,24 @@ const REVIEW_LIMITS = {
 interface RateBiringaFormProps {
   listingSlug: string;
   listingName: string;
+  /**
+   * Account type picked at registration (read from the `biringas:account-type`
+   * cookie by the parent Server Component). Drives the role-aware messaging
+   * required by the PDF RBAC matrix:
+   *
+   *   - `commentator` → ideal author, the form encourages them
+   *   - `publisher`   → can comment per UX, but we surface a hint that
+   *                      reviewing their own listings is gated by Cloud
+   *                      Functions / Security Rules (PDF page 6)
+   *   - `null`        → unknown; treat as commentator-eligible
+   */
+  accountType?: AccountType | null;
 }
 
 export function RateBiringaForm({
   listingSlug,
   listingName,
+  accountType,
 }: Readonly<RateBiringaFormProps>) {
   const locale = useActiveLocale();
   const { status } = useAuthSession();
@@ -163,12 +181,40 @@ export function RateBiringaForm({
     return null;
   }
 
+  const roleBadge =
+    accountType === ACCOUNT_TYPE_COMMENTATOR
+      ? {
+          tone: "primary" as const,
+          icon: <MessageSquare className="h-3 w-3" aria-hidden />,
+          label: t(locale, "rbac.commentator.eyebrow"),
+        }
+      : accountType === ACCOUNT_TYPE_PUBLISHER
+        ? {
+            tone: "muted" as const,
+            icon: <MessageSquare className="h-3 w-3" aria-hidden />,
+            label: t(locale, "rbac.publisher.kicker"),
+          }
+        : null;
+
   return (
     <form
       data-testid="rate-biringa-form"
       onSubmit={onSubmit}
       className="rounded-[var(--radius-2xl)] border border-[var(--color-border)] bg-[var(--color-surface)]/70 p-6 backdrop-blur-sm"
     >
+      {roleBadge ? (
+        <span
+          data-testid="rate-biringa-role-badge"
+          className={`mb-3 inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] ring-1 ${
+            roleBadge.tone === "primary"
+              ? "bg-[var(--color-brand-primary)]/12 text-[var(--color-brand-primary)] ring-[var(--color-brand-primary)]/25"
+              : "bg-[var(--color-background-elevated)] text-[var(--color-text-muted)] ring-[var(--color-border)]"
+          }`}
+        >
+          {roleBadge.icon}
+          {roleBadge.label}
+        </span>
+      ) : null}
       <div className="flex flex-col gap-1">
         <h3 className="text-base font-semibold text-[var(--color-foreground)]">
           {t(locale, "rate.form.title", { name: listingName })}

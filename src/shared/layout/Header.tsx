@@ -8,6 +8,8 @@ import { t } from "@/core/i18n/messages";
 import { Container } from "@/shared/design-system/components/Container";
 import { Logo } from "@/shared/design-system/components/Logo";
 import { AuthBadge } from "@/features/auth/components/AuthBadge";
+import { readAccountTypeCookie } from "@/features/auth/lib/account-type-cookie";
+import { ACCOUNT_TYPE_COMMENTATOR } from "@/features/auth/lib/rbac";
 import { FavoritesNavLink } from "@/features/favorites/components/FavoritesNavLink";
 
 import { HeaderBackdrop } from "./HeaderBackdrop";
@@ -56,6 +58,12 @@ export async function Header({ hideCatalogCta = false }: HeaderProps) {
   const howLabel = t(locale, "header.nav.how");
   const publishLabel = t(locale, "header.cta.publish");
   const exploreLabel = t(locale, "header.cta.explore");
+
+  // RBAC: commentator accounts cannot publish profiles. Hiding the CTA is
+  // UX, not security — Firebase Security Rules + Cloud Functions remain
+  // the authoritative gate per ADR-010.
+  const accountType = await readAccountTypeCookie();
+  const hidePublishCta = accountType === ACCOUNT_TYPE_COMMENTATOR;
 
   return (
     <header data-testid="header" className="sticky top-0 z-30 isolate">
@@ -114,7 +122,10 @@ export async function Header({ hideCatalogCta = false }: HeaderProps) {
           <LocaleSwitcher current={locale} />
 
           {/* 4. SECONDARY CTA — seller-side ask. Outline pill so it reads
-              as the supporting action against the primary explore CTA. */}
+              as the supporting action against the primary explore CTA.
+              Hidden for commentator-account users — that role cannot
+              publish (PDF page 6 RBAC matrix). */}
+          {!hidePublishCta && (
           <Link
             data-testid="header-link-publish-profile"
             href={localizedHref(locale, "/publicar")}
@@ -128,6 +139,7 @@ export async function Header({ hideCatalogCta = false }: HeaderProps) {
             />
             <span className="hidden sm:inline">{publishLabel}</span>
           </Link>
+          )}
 
           {/* 5. PRIMARY CTA — buyer-side conversion. Filled forest pill,
               rightmost so it's the last and strongest action on the bar.

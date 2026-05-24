@@ -24,6 +24,7 @@ import { AvailabilityStrip } from "@/features/biringas/components/AvailabilitySt
 import { BookingRequestModal } from "@/features/biringas/components/BookingRequestModal";
 import { ContactReveal } from "@/features/biringas/components/ContactReveal";
 import { PremiumContentGrid } from "@/features/biringas/components/PremiumContentGrid";
+import { readAccountTypeCookie } from "@/features/auth/lib/account-type-cookie";
 import { RateBiringaForm } from "@/features/biringas/components/RateBiringaForm";
 import { RecentlyViewedStrip } from "@/features/biringas/components/RecentlyViewedStrip";
 import { RecordListingView } from "@/features/biringas/components/RecordListingView";
@@ -90,9 +91,10 @@ export default async function ProfilePage({ params }: Readonly<ProfilePageProps>
   if (!isSupportedLocale(lang)) notFound();
   // Reviews are auxiliary content — degrade to null on failure so the
   // profile keeps rendering. ReviewsSection is conditionally mounted below.
-  const [listing, reviews] = await Promise.all([
+  const [listing, reviews, accountType] = await Promise.all([
     findBySlug(slug),
     getListingReviews(slug).catch(() => null),
+    readAccountTypeCookie(),
   ]);
   if (!listing) notFound();
 
@@ -474,6 +476,7 @@ export default async function ProfilePage({ params }: Readonly<ProfilePageProps>
               <RateBiringaForm
                 listingSlug={listing.slug}
                 listingName={listing.name}
+                accountType={accountType}
               />
             </div>
           </Container>
