@@ -1,6 +1,6 @@
 import "server-only";
 
-import { AuthError, type AuthenticatedUser } from "@/server/auth/types";
+import { AuthError, Role, type AuthenticatedUser } from "@/server/auth/types";
 
 /**
  * No-op auth provider used when Firebase env is not configured.
@@ -31,6 +31,6 @@ export async function destroySession(): Promise<void> {
  * Mock parity for the role grant. The mock has no real user store, so the
  * call succeeds silently — the audit event from the barrel still fires.
  */
-export async function grantRoleRaw(_uid: string, _role: string): Promise<void> {
+export async function grantRoleRaw(_uid: string, _role: Role): Promise<void> {
   // No-op in mock mode.
 }

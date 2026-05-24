@@ -3,7 +3,7 @@ import "server-only";
 import { updateTag } from "next/cache";
 
 import { isFirebaseConfigured } from "@/core/config/firebase";
-import { grantRole } from "@/server/auth";
+import { grantRole, Role } from "@/server/auth";
 import { auditLog } from "@/server/security/audit-log";
 import { requireAuth } from "@/server/security/require-auth";
 import { validateActionInput } from "@/server/security/validate-action-input";
@@ -519,7 +519,7 @@ export async function createListingDraft(
     // First-publish role grant. `grantRole` is idempotent at the claims
     // level — if the user already has `model` for any reason, the merge is
     // a no-op. The audit event still fires; that is intentional.
-    await grantRole(user.uid, "model", user.uid);
+    await grantRole(user.uid, Role.Model, user.uid);
   }
 
   return { id: result.id };

@@ -2,6 +2,7 @@ import "server-only";
 
 import { getAuth } from "firebase-admin/auth";
 
+import { Role } from "@/server/auth/types";
 import { getApp } from "../app";
 
 /**
@@ -22,7 +23,7 @@ import { getApp } from "../app";
  * `getIdToken(true)` from the client, to see the role. For the wizard flow
  * that is fine — the role does not gate the wizard's own success screen.
  */
-export async function grantRoleRaw(uid: string, role: string): Promise<void> {
+export async function grantRoleRaw(uid: string, role: Role): Promise<void> {
   const auth = getAuth(getApp());
   const user = await auth.getUser(uid);
   const existing = (user.customClaims ?? {}) as Record<string, unknown>;

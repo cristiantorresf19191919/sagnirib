@@ -20,11 +20,17 @@ import { auditLog } from "@/server/security/audit-log";
  *     claims (additive merge). Audited.
  */
 
+import { Role } from "./types";
+
 export type { AuthenticatedUser, AuthErrorKind } from "./types";
-export { AuthError } from "./types";
+export { AuthError, Role } from "./types";
 
 const provider = isFirebaseConfigured()
   ? await import("@/server/adapters/firebase/auth")
+  : await import("@/server/mocks/auth");
+
+const { grantRoleRaw } = isFirebaseConfigured()
+  ? await import("@/server/adapters/firebase/auth/grant-role")
   : await import("@/server/mocks/auth");
 
 export const SESSION_COOKIE_NAME = provider.SESSION_COOKIE_NAME;
@@ -40,10 +46,10 @@ export const destroySession = provider.destroySession;
  */
 export async function grantRole(
   uid: string,
-  role: string,
+  role: Role,
   actorUid?: string,
 ): Promise<void> {
-  await provider.grantRoleRaw(uid, role);
+  await grantRoleRaw(uid, role);
   await auditLog({
     event: "auth.role_granted",
     actorId: actorUid ?? uid,
