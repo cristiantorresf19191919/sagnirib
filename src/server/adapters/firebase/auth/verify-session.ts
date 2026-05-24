@@ -4,7 +4,7 @@ import { cache } from "react";
 import { cookies } from "next/headers";
 import { getAuth, type DecodedIdToken } from "firebase-admin/auth";
 
-import { AuthError, type AuthenticatedUser } from "@/server/auth/types";
+import { AuthError, Role, type AuthenticatedUser } from "@/server/auth/types";
 import { getApp } from "../app";
 
 export const SESSION_COOKIE_NAME = "__session";
@@ -54,8 +54,9 @@ function mapClaimsToUser(claims: DecodedIdToken): AuthenticatedUser {
   // Roles are surfaced via a custom claim `roles: string[]`. Set them with
   // `admin.auth().setCustomUserClaims(uid, { roles: ["admin"] })`.
   const rawRoles = (claims as { roles?: unknown }).roles;
+  const knownRoles = new Set<string>(Object.values(Role));
   const roles = Array.isArray(rawRoles)
-    ? rawRoles.filter((v): v is string => typeof v === "string")
+    ? rawRoles.filter((v): v is Role => typeof v === "string" && knownRoles.has(v))
     : [];
   return {
     uid: claims.uid,

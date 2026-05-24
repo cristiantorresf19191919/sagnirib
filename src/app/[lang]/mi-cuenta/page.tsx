@@ -152,15 +152,6 @@ export default async function MiCuentaPage({
     projectId: firebaseConfig?.projectId ?? null,
     listMyDraftsError: draftsResult.error,
   };
-  console.warn(
-    "[mi-cuenta:diagnostic]",
-    JSON.stringify({
-      ...diagnostic,
-      roles: session.roles ?? [],
-      bookingCount: bookings.length,
-    }),
-  );
-
   return (
     <>
       <Header hideCatalogCta />
