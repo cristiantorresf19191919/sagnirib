@@ -24,7 +24,7 @@ export interface ValidatedFieldHandle {
 }
 
 export interface ValidatedFieldProps {
-  /** id forwarded to the rendered input via `inputId`. */
+  /** id forwarded to the rendered input. */
   id?: string;
   label: string;
   /** Renders the asterisk + sets aria-required on the input. */
@@ -35,9 +35,13 @@ export interface ValidatedFieldProps {
   hint?: ReactNode;
   /** Error string. When this transitions from undefined → string, the field shakes. */
   error?: string;
-  /** Required render-prop. Receives `{ inputId, aria-invalid, aria-describedby }`. */
+  /**
+   * Required render-prop. Receives valid HTML attributes only, so consumers
+   * can `{...api}` directly onto the input without leaking non-standard
+   * props to the DOM.
+   */
   children: (api: {
-    inputId: string;
+    id: string;
     "aria-invalid": boolean | undefined;
     "aria-describedby": string | undefined;
     "aria-required": boolean | undefined;
@@ -155,7 +159,7 @@ export const ValidatedField = forwardRef<ValidatedFieldHandle, ValidatedFieldPro
               {icon}
             </span>
             {children({
-              inputId,
+              id: inputId,
               "aria-invalid": error ? true : undefined,
               "aria-describedby": describedBy || undefined,
               "aria-required": required || undefined,
@@ -163,7 +167,7 @@ export const ValidatedField = forwardRef<ValidatedFieldHandle, ValidatedFieldPro
           </div>
         ) : (
           children({
-            inputId,
+            id: inputId,
             "aria-invalid": error ? true : undefined,
             "aria-describedby": describedBy || undefined,
             "aria-required": required || undefined,

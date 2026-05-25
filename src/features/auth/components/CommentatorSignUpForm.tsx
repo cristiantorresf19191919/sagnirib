@@ -311,7 +311,6 @@ export function CommentatorSignUpForm() {
           {(api) => (
             <select
               {...api}
-              id={api.inputId}
               value={country}
               onChange={(e) => {
                 setCountry(e.target.value);
@@ -342,7 +341,6 @@ export function CommentatorSignUpForm() {
           {(api) => (
             <input
               {...api}
-              id={api.inputId}
               type="email"
               autoComplete="email"
               value={email}
@@ -369,7 +367,6 @@ export function CommentatorSignUpForm() {
           {(api) => (
             <input
               {...api}
-              id={api.inputId}
               type="text"
               autoComplete="username"
               minLength={3}
@@ -401,7 +398,6 @@ export function CommentatorSignUpForm() {
             <div className="relative">
               <input
                 {...api}
-                id={api.inputId}
                 type={showPassword ? "text" : "password"}
                 autoComplete="new-password"
                 minLength={MIN_PASSWORD_LENGTH}
@@ -449,7 +445,6 @@ export function CommentatorSignUpForm() {
           {(api) => (
             <input
               {...api}
-              id={api.inputId}
               type={showPassword ? "text" : "password"}
               autoComplete="new-password"
               value={confirm}

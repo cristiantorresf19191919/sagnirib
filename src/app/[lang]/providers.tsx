@@ -1,3 +1,5 @@
+import { MotionConfig } from "framer-motion";
+
 import { BackOnlinePill } from "@/features/favorites/components/BackOnlinePill";
 import { FavoritesProvider } from "@/features/favorites/store/use-favorites";
 import { SafeCheckinWatcher } from "@/features/safety/components/SafeCheckinWatcher";
@@ -29,11 +31,18 @@ export function Providers({
   initialFavorites?: ReadonlyArray<string>;
 }) {
   return (
-    <FavoritesProvider initialFavorites={initialFavorites}>
-      {children}
-      <Toaster />
-      <BackOnlinePill />
-      <SafeCheckinWatcher />
-    </FavoritesProvider>
+    // App-wide motion settings. `reducedMotion="user"` tells framer-motion
+    // to honor `prefers-reduced-motion` internally so individual components
+    // never need to branch on `useReducedMotion()` at render time — that
+    // branching causes SSR/CSR hydration mismatches because the hook
+    // returns `null` on the server and a boolean on the client.
+    <MotionConfig reducedMotion="user">
+      <FavoritesProvider initialFavorites={initialFavorites}>
+        {children}
+        <Toaster />
+        <BackOnlinePill />
+        <SafeCheckinWatcher />
+      </FavoritesProvider>
+    </MotionConfig>
   );
 }

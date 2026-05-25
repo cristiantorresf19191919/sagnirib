@@ -824,7 +824,6 @@ function PhoneStep({
           {(api) => (
             <select
               {...api}
-              id={api.inputId}
               value={value.country}
               onChange={(e) => onChange({ ...value, country: e.target.value })}
               className={inputClsWithLeftIcon}
@@ -850,7 +849,6 @@ function PhoneStep({
           {(api) => (
             <input
               {...api}
-              id={api.inputId}
               type="tel"
               inputMode="numeric"
               autoComplete="tel-national"
@@ -879,7 +877,6 @@ function PhoneStep({
         {(api) => (
           <input
             {...api}
-            id={api.inputId}
             type="email"
             autoComplete="email"
             value={value.email}
@@ -938,7 +935,6 @@ function OtpStep({
         {(api) => (
           <input
             {...api}
-            id={api.inputId}
             type="text"
             inputMode="numeric"
             autoComplete="one-time-code"
@@ -1005,7 +1001,6 @@ function PasswordStep({
           <div className="relative">
             <input
               {...api}
-              id={api.inputId}
               type={showPassword ? "text" : "password"}
               autoComplete="new-password"
               minLength={8}
@@ -1044,7 +1039,6 @@ function PasswordStep({
         {(api) => (
           <input
             {...api}
-            id={api.inputId}
             type={showPassword ? "text" : "password"}
             autoComplete="new-password"
             value={value.confirm}
@@ -1131,7 +1125,6 @@ function ProfileStep({
             {(api) => (
               <input
                 {...api}
-                id={api.inputId}
                 type="text"
                 value={value.state}
                 onChange={(e) => onChange({ ...value, state: e.target.value })}
@@ -1153,7 +1146,6 @@ function ProfileStep({
             {(api) => (
               <input
                 {...api}
-                id={api.inputId}
                 type="text"
                 value={value.city}
                 onChange={(e) => onChange({ ...value, city: e.target.value })}
@@ -1172,7 +1164,6 @@ function ProfileStep({
             {(api) => (
               <input
                 {...api}
-                id={api.inputId}
                 type="text"
                 value={value.neighborhood}
                 onChange={(e) =>
@@ -1193,7 +1184,6 @@ function ProfileStep({
             {(api) => (
               <input
                 {...api}
-                id={api.inputId}
                 type="text"
                 value={value.travels}
                 onChange={(e) =>
@@ -1219,7 +1209,6 @@ function ProfileStep({
             {(api) => (
               <input
                 {...api}
-                id={api.inputId}
                 type="number"
                 min={18}
                 max={99}
@@ -1243,7 +1232,6 @@ function ProfileStep({
             {(api) => (
               <select
                 {...api}
-                id={api.inputId}
                 value={value.category}
                 onChange={(e) =>
                   onChange({ ...value, category: e.target.value })
@@ -1275,7 +1263,6 @@ function ProfileStep({
           {(api) => (
             <input
               {...api}
-              id={api.inputId}
               type="text"
               minLength={40}
               value={value.title}
@@ -1299,7 +1286,6 @@ function ProfileStep({
             <div className="flex flex-col gap-1.5">
               <textarea
                 {...api}
-                id={api.inputId}
                 rows={5}
                 minLength={DESCRIPTION_MIN}
                 maxLength={DESCRIPTION_MAX}
