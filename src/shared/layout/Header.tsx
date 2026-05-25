@@ -71,14 +71,14 @@ export async function Header({ hideCatalogCta = false }: HeaderProps) {
 
       <Container
         width="wide"
-        className="flex h-16 items-center justify-between gap-3 sm:gap-4"
+        className="flex h-16 items-center justify-between gap-3 lg:gap-4"
       >
         <Logo size="md" />
 
         <nav
           data-testid="header-nav"
           aria-label={t(locale, "header.aria.mainNav")}
-          className="flex items-center gap-0.5 sm:gap-1"
+          className="flex min-w-0 items-center gap-0.5 lg:gap-1"
         >
           {/* 1. DISCOVERY — How (learn) + Favorites (engage with what
               already resonated). Both collapse labels on mobile. */}
@@ -86,13 +86,13 @@ export async function Header({ hideCatalogCta = false }: HeaderProps) {
             data-testid="header-link-how-it-works"
             href={`${localizedHref(locale, "/")}#como-funciona`}
             aria-label={howLabel}
-            className="group/nav inline-flex h-11 items-center gap-1.5 rounded-full px-2.5 sm:px-4 text-sm font-medium text-[var(--color-text-muted)] transition-colors duration-200 ease-[var(--ease-standard)] hover:text-[var(--color-foreground)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-background)]"
+            className="group/nav inline-flex h-11 items-center gap-1.5 rounded-full px-2.5 lg:px-4 text-sm font-medium text-[var(--color-text-muted)] transition-colors duration-200 ease-[var(--ease-standard)] hover:text-[var(--color-foreground)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-background)]"
           >
             <HelpCircle
-              className="h-4 w-4 sm:hidden"
+              className="h-4 w-4 lg:hidden"
               aria-hidden
             />
-            <span className="relative hidden sm:inline-block">
+            <span className="relative hidden whitespace-nowrap lg:inline-block">
               {howLabel}
               <span
                 aria-hidden
@@ -107,7 +107,7 @@ export async function Header({ hideCatalogCta = false }: HeaderProps) {
               ACCOUNT + UTILITY + CTA cluster (right). */}
           <span
             aria-hidden
-            className="mx-1.5 hidden h-6 w-px bg-[var(--color-border)] sm:block"
+            className="mx-1.5 hidden h-6 w-px bg-[var(--color-border)] lg:block"
           />
 
           {/* 2. ACCOUNT — surface sign-in right where the user reaches
@@ -130,14 +130,14 @@ export async function Header({ hideCatalogCta = false }: HeaderProps) {
             data-testid="header-link-publish-profile"
             href={localizedHref(locale, "/publicar")}
             aria-label={publishLabel}
-            className="group/publish relative inline-flex h-11 items-center gap-1.5 overflow-hidden rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] px-3 sm:px-4 text-sm font-semibold text-[var(--color-foreground)] transition-[border-color,background,transform,box-shadow] duration-200 ease-[var(--ease-standard)] hover:-translate-y-[1px] hover:border-[var(--color-brand-primary-soft)] hover:bg-[var(--color-background-elevated)] hover:shadow-[var(--shadow-sm)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-background)]"
+            className="group/publish relative inline-flex h-11 items-center gap-1.5 overflow-hidden rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] px-3 lg:px-4 text-sm font-semibold text-[var(--color-foreground)] transition-[border-color,background,transform,box-shadow] duration-200 ease-[var(--ease-standard)] hover:-translate-y-[1px] hover:border-[var(--color-brand-primary-soft)] hover:bg-[var(--color-background-elevated)] hover:shadow-[var(--shadow-sm)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-background)]"
           >
             {/* Plus rotates 90° on hover → reads as "open / create". */}
             <Plus
-              className="h-4 w-4 transition-transform duration-300 ease-[var(--ease-standard)] group-hover/publish:rotate-90 sm:hidden"
+              className="h-4 w-4 transition-transform duration-300 ease-[var(--ease-standard)] group-hover/publish:rotate-90 lg:hidden"
               aria-hidden
             />
-            <span className="hidden sm:inline">{publishLabel}</span>
+            <span className="hidden whitespace-nowrap lg:inline">{publishLabel}</span>
           </Link>
           )}
 
@@ -149,14 +149,14 @@ export async function Header({ hideCatalogCta = false }: HeaderProps) {
             <Link
               data-testid="header-cta-explore"
               href={localizedHref(locale, "/explorar")}
-              className="group relative inline-flex h-11 items-center gap-1.5 overflow-hidden rounded-full bg-[var(--color-brand-primary)] px-4 sm:px-5 text-sm font-semibold text-[var(--color-surface)] shadow-[var(--shadow-glow-primary)] transition-[background,box-shadow,transform] duration-200 ease-[var(--ease-standard)] hover:-translate-y-[1px] hover:bg-[var(--color-brand-primary-strong)] hover:shadow-[0_18px_36px_-12px_rgba(47,93,67,0.5)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-background)]"
+              className="group relative inline-flex h-11 items-center gap-1.5 overflow-hidden rounded-full bg-[var(--color-brand-primary)] px-4 lg:px-5 text-sm font-semibold text-[var(--color-surface)] shadow-[var(--shadow-glow-primary)] transition-[background,box-shadow,transform] duration-200 ease-[var(--ease-standard)] hover:-translate-y-[1px] hover:bg-[var(--color-brand-primary-strong)] hover:shadow-[0_18px_36px_-12px_rgba(47,93,67,0.5)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-background)]"
             >
               {/* Shimmer sweep on hover — same vocabulary as the hero search */}
               <span
                 aria-hidden
                 className="pointer-events-none absolute inset-y-0 -left-1/3 block w-1/3 bg-gradient-to-r from-transparent via-[rgba(200,166,118,0.55)] to-transparent opacity-0 group-hover:opacity-100 motion-safe:group-hover:motion-shimmer-sweep"
               />
-              <span className="relative">{exploreLabel}</span>
+              <span className="relative whitespace-nowrap">{exploreLabel}</span>
               <ArrowUpRight
                 className="relative h-3.5 w-3.5 transition-transform duration-200 ease-[var(--ease-standard)] group-hover:-translate-y-px group-hover:translate-x-px"
                 aria-hidden

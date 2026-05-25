@@ -17,7 +17,10 @@ import { HeartButton } from "@/shared/ui/HeartButton";
 import { PriceTag } from "@/shared/ui/PriceTag";
 import { RatingBadge } from "@/shared/ui/RatingBadge";
 
-import { formatPricePerHour } from "@/features/biringas/format";
+import {
+  formatPricePerHour,
+  formatPricePerHourCompact,
+} from "@/features/biringas/format";
 import { StoryTimestamp } from "@/features/biringas/components/StoryTimestamp";
 
 import type { CatalogView } from "../lib/parse-filters";
@@ -79,7 +82,7 @@ export function CatalogCard({
       data-listing-id={listing.id}
       tone="surface"
       interactive
-      className={`group flex h-full flex-col p-3 ${featuredCls}`.trim()}
+      className={`group flex h-full flex-col p-2.5 sm:p-3 ${featuredCls}`.trim()}
     >
       <Link
         href={HREF(listing.slug)}
@@ -125,27 +128,42 @@ export function CatalogCard({
           </div>
         )}
 
-        <div className="absolute left-3 top-3 z-10 flex flex-col gap-1.5">
+        {/*
+         * Top-overlay badges. `right-14` keeps badges out of the heart
+         * button's territory (heart is 44px wide @ < sm with 8px gutter)
+         * so pills can never extend past the image edge or sit under the
+         * heart even at the narrowest column. `max-w-full + truncate`
+         * is a belt-and-braces guard for very long translations.
+         */}
+        <div className="pointer-events-none absolute left-2 right-14 top-2 z-10 flex flex-col items-start gap-1.5 sm:left-3 sm:right-16 sm:top-3">
           {featured && (
-            <span className="inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-[var(--color-gold-deep)] via-[var(--color-gold)] to-[var(--color-gold-deep)] px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--color-cream)] shadow-[0_4px_14px_-4px_rgba(200,166,118,0.6)] ring-1 ring-[rgba(255,247,232,0.45)]">
-              <Star className="h-2.5 w-2.5 fill-current" aria-hidden />
-              {t(locale, "catalog.card.featured")}
+            <span className="inline-flex max-w-full items-center gap-1 truncate rounded-full bg-gradient-to-r from-[var(--color-gold-deep)] via-[var(--color-gold)] to-[var(--color-gold-deep)] px-2 py-0.5 text-[9.5px] font-semibold uppercase tracking-[0.16em] text-[var(--color-cream)] shadow-[0_4px_14px_-4px_rgba(200,166,118,0.6)] ring-1 ring-[rgba(255,247,232,0.45)] sm:px-2.5 sm:text-[10px] sm:tracking-[0.18em]">
+              <Star className="h-2.5 w-2.5 shrink-0 fill-current" aria-hidden />
+              <span className="truncate">{t(locale, "catalog.card.featured")}</span>
             </span>
           )}
           {listing.availableNow ? (
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--color-brand-primary)] px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--color-surface)] shadow-[var(--shadow-glow-primary)] motion-safe:motion-glow-pulse">
+            <span
+              aria-label={t(locale, "catalog.card.availableNow")}
+              title={t(locale, "catalog.card.availableNow")}
+              className="inline-flex max-w-full items-center gap-1.5 rounded-full bg-[var(--color-brand-primary)] px-2 py-0.5 text-[9.5px] font-semibold uppercase tracking-[0.16em] text-[var(--color-surface)] shadow-[var(--shadow-glow-primary)] motion-safe:motion-glow-pulse sm:px-2.5 sm:py-1 sm:text-[10px] sm:tracking-[0.18em]"
+            >
               <span
                 aria-hidden
-                className="h-1.5 w-1.5 rounded-full bg-[var(--color-surface)] motion-safe:animate-pulse"
+                className="h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--color-surface)] motion-safe:animate-pulse"
               />
-              {t(locale, "catalog.card.availableNow")}
+              {/* Short label on the card — the pulsing dot already says
+                  "live". Full label lives in aria-label for screen readers. */}
+              <span className="truncate">
+                {t(locale, "catalog.card.availableNowShort")}
+              </span>
             </span>
           ) : listing.storyAt ? (
             <StoryTimestamp storyAt={listing.storyAt} />
           ) : null}
         </div>
 
-        <div className="absolute right-3 top-3 z-30">
+        <div className="pointer-events-auto absolute right-2 top-2 z-30 sm:right-3 sm:top-3">
           <HeartButton listingId={listing.id} listingSlug={listing.slug} />
         </div>
 
@@ -178,9 +196,20 @@ export function CatalogCard({
         )}
       </div>
 
-      <div className="relative flex flex-1 flex-col gap-2 px-1 pt-3">
+      {/*
+       * Content column. Heights are kept consistent across every card in
+       * the grid by:
+       *   - a `flex-col` parent on the Card with `h-full`
+       *   - this column claims `flex-1` and is itself a flex-col
+       *   - the bio uses `min-h-[1.25rem]` so a missing/short bio doesn't
+       *     collapse the row
+       *   - the meta footer is anchored with `mt-auto`
+       *   - the "extras" slot below price has a `min-h` reservation so
+       *     cards with and without audio/response-time chips still align
+       */}
+      <div className="relative flex flex-1 flex-col gap-1.5 px-1 pt-2.5 sm:gap-2 sm:pt-3">
         <header className="flex items-center justify-between gap-2">
-          <h3 className="flex min-w-0 items-center gap-1.5 text-base font-semibold text-[var(--color-foreground)]">
+          <h3 className="flex min-w-0 items-center gap-1.5 text-[15px] font-semibold leading-tight text-[var(--color-foreground)] sm:text-base">
             <span className="truncate">{listing.name}</span>
             {/* Inline verified check — small green badge next to the name,
                 matching the reference. Replaces the bottom-row Verificada
@@ -210,7 +239,7 @@ export function CatalogCard({
               </span>
             )}
           </h3>
-          <span className="shrink-0 text-xs text-[var(--color-text-muted)]">
+          <span className="shrink-0 whitespace-nowrap text-[11px] text-[var(--color-text-muted)] sm:text-xs">
             {listing.age} {t(locale, "catalog.card.ageSuffix")}
           </span>
         </header>
@@ -220,39 +249,51 @@ export function CatalogCard({
           size="sm"
         />
         {/* Single condensed feature line — shortBio truncated to one row
-            so the card reads light. The full bio is on the profile page. */}
-        <p className="line-clamp-1 text-xs leading-relaxed text-[var(--color-text-muted)]">
-          {listing.shortBio}
+            so the card reads light. `min-h` reserves the line so cards
+            with empty/short bios still align with their siblings. */}
+        <p className="line-clamp-1 min-h-[1.25rem] text-xs leading-relaxed text-[var(--color-text-muted)]">
+          {listing.shortBio || " "}
         </p>
-        <div className="mt-auto flex items-center justify-between gap-2 pt-1">
-          <span className="truncate text-xs text-[var(--color-text-muted)]">
+        {/* Footer: city (caption, top) + price (prominent, bottom).
+            Stacking eliminates the previous row-mode bug where the price
+            wrapped to two lines and the city truncated to "Bogo…" at
+            narrow column widths. Price uses `whitespace-nowrap` and a
+            compact "/h" suffix on the smallest viewports. */}
+        <div className="mt-auto flex flex-col items-start gap-0.5 pt-1.5">
+          <span className="max-w-full truncate text-[11px] text-[var(--color-text-muted)] sm:text-xs">
             {listing.city}
             {listing.neighborhood ? ` · ${listing.neighborhood}` : ""}
           </span>
           <PriceTag
             value={formatPricePerHour(listing.pricePerHour)}
             size="md"
-            className="font-[var(--font-display)] tabular-nums"
+            className="hidden whitespace-nowrap font-[var(--font-display)] tabular-nums sm:inline-flex"
+          />
+          {/* Mobile uses the compact "/ h" form so the price never wraps
+              inside a 160-180px card column. Hidden ≥ sm where the full
+              "/ hora" suffix has room. */}
+          <PriceTag
+            value={formatPricePerHourCompact(listing.pricePerHour)}
+            size="md"
+            className="inline-flex whitespace-nowrap font-[var(--font-display)] tabular-nums sm:hidden"
           />
         </div>
-        {/* Audio chip — only when relevant. Review count moved out:
-            the RatingBadge above already shows `(reviewCount)` next to
-            the score, so a second chip with a MessageSquare icon read
-            as "messages" not "reviews" and added visual noise without
-            new information. */}
-        {listing.hasAudio && (
-          <div className="text-[10px]">
-            <span className="inline-flex items-center gap-1 rounded-full bg-[var(--color-brand-secondary)]/12 px-2 py-0.5 font-medium text-[var(--color-brand-secondary-strong)]">
+        {/*
+         * Extras slot — keeps audio chip + activity signals OUT of the
+         * critical path so cards with and without these badges still line
+         * up. `min-h-[1.5rem]` reserves exactly one chip-row of vertical
+         * space; anything inside is absolutely positioned-style content
+         * but kept in normal flow for accessibility.
+         */}
+        <div className="mt-1 flex min-h-[1.5rem] flex-wrap items-center gap-x-2 gap-y-1">
+          {listing.hasAudio && (
+            <span className="inline-flex items-center gap-1 rounded-full bg-[var(--color-brand-secondary)]/12 px-2 py-0.5 text-[10px] font-medium text-[var(--color-brand-secondary-strong)]">
               <Volume2 className="h-3 w-3" aria-hidden />
               {t(locale, "catalog.card.audio")}
             </span>
-          </div>
-        )}
-
-        {/* Activity + response-time signals — deterministic from the
-            slug so the value is stable across renders. Helps buyers
-            pre-qualify before tapping into the profile. */}
-        <ActivitySignals listing={listing} locale={locale} />
+          )}
+          <ActivitySignals listing={listing} locale={locale} />
+        </div>
       </div>
     </Card>
   );
@@ -263,35 +304,27 @@ interface ActivitySignalsProps {
   locale: SupportedLocale;
 }
 
+/**
+ * Inline activity chips for the card meta row. Returns a fragment so the
+ * parent extras slot keeps a consistent flow / wrap layout regardless of
+ * which chips are present.
+ *
+ * The previous version emitted a redundant "Active now" caption — the
+ * pulsing "AHORA" pill on the image already encodes live presence, and
+ * a second line of text doubled the card height for live profiles only,
+ * breaking grid alignment.
+ */
 function ActivitySignals({ listing, locale }: Readonly<ActivitySignalsProps>) {
-  // Reply median is owner-earned — set by `respondToBooking` once the
-  // listing has at least a couple of responded bookings. Absent value
-  // hides the chip entirely; we do NOT synthesise a number anymore.
   const replyMin = listing.reputation.replyMedianMinutes ?? null;
-  // "Active now" only when the live flag is on. We don't surface a
-  // synthetic "Active hace Xh" from storyAt — that conflates "uploaded
-  // story" with "was online", which is misleading.
-  const lastActive = listing.availableNow
-    ? t(locale, "catalog.card.activeNow")
-    : null;
-  if (replyMin === null && !lastActive) return null;
+  if (replyMin === null) return null;
   return (
-    <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[10px] text-[var(--color-text-muted)]">
-      {replyMin !== null && (
-        <span className="inline-flex items-center gap-1 rounded-full bg-[var(--color-brand-primary)]/10 px-2 py-0.5 font-semibold text-[var(--color-brand-primary)]">
-          <span
-            aria-hidden
-            className="inline-block h-1.5 w-1.5 rounded-full bg-[var(--color-brand-primary)]"
-          />
-          {t(locale, "catalog.card.respondsIn", { minutes: replyMin })}
-        </span>
-      )}
-      {lastActive && (
-        <span className="text-[10px] text-[var(--color-text-subtle)]">
-          {lastActive}
-        </span>
-      )}
-    </div>
+    <span className="inline-flex items-center gap-1 rounded-full bg-[var(--color-brand-primary)]/10 px-2 py-0.5 text-[10px] font-semibold text-[var(--color-brand-primary)]">
+      <span
+        aria-hidden
+        className="inline-block h-1.5 w-1.5 rounded-full bg-[var(--color-brand-primary)]"
+      />
+      {t(locale, "catalog.card.respondsIn", { minutes: replyMin })}
+    </span>
   );
 }
 

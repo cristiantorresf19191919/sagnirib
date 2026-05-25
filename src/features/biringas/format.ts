@@ -15,3 +15,12 @@ export function formatPriceCop(value: number): string {
 export function formatPricePerHour(value: number): string {
   return `${formatPriceCop(value)} / hora`;
 }
+
+/**
+ * Compact price for narrow card surfaces — drops the "/ hora" suffix so
+ * the value never wraps to a second line inside a 160-180px card column.
+ * The "/ h" suffix preserves the per-hour semantic at minimum width.
+ */
+export function formatPricePerHourCompact(value: number): string {
+  return `${formatPriceCop(value)} / h`;
+}

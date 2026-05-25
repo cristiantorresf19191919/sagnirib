@@ -31,7 +31,7 @@ export function FavoritesNavLink() {
         }`}
         aria-hidden
       />
-      <span className="hidden sm:inline">Favoritas</span>
+      <span className="hidden whitespace-nowrap lg:inline">Favoritas</span>
       {hasItems && (
         <span
           aria-hidden
