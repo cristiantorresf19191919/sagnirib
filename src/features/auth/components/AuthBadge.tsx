@@ -40,7 +40,7 @@ export function AuthBadge() {
         className="group inline-flex h-11 items-center gap-1.5 rounded-full px-3 text-sm font-medium text-[var(--color-text-muted)] transition-colors hover:text-[var(--color-foreground)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-background)]"
       >
         <LogIn className="h-4 w-4" aria-hidden />
-        <span className="hidden sm:inline">{t(locale, "header.signIn")}</span>
+        <span className="hidden whitespace-nowrap lg:inline">{t(locale, "header.signIn")}</span>
       </Link>
     );
   }
@@ -69,10 +69,10 @@ export function AuthBadge() {
         href={miCuentaHref}
         title={user?.email ?? undefined}
         aria-label={t(locale, "auth.badge.openAccount")}
-        className="inline-flex h-11 items-center gap-1.5 rounded-full px-2.5 sm:px-3 text-sm font-medium text-[var(--color-foreground)] transition-colors duration-200 ease-[var(--ease-standard)] hover:bg-[var(--color-background-elevated)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-background)]"
+        className="inline-flex h-11 items-center gap-1.5 rounded-full px-2.5 lg:px-3 text-sm font-medium text-[var(--color-foreground)] transition-colors duration-200 ease-[var(--ease-standard)] hover:bg-[var(--color-background-elevated)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-background)]"
       >
         <UserIcon className="h-4 w-4" aria-hidden />
-        <span className="hidden sm:inline max-w-[140px] truncate">
+        <span className="hidden lg:inline max-w-[140px] truncate">
           {label}
         </span>
       </Link>

@@ -14,8 +14,8 @@ import {
 } from "lucide-react";
 import {
   motion,
+  MotionConfig,
   useInView,
-  useReducedMotion,
   type TargetAndTransition,
   type Variants,
 } from "framer-motion";
@@ -162,11 +162,11 @@ const ICON_HOVER: TargetAndTransition = {
 };
 
 export function HowItWorks() {
-  const reduced = useReducedMotion();
   const locale = useActiveLocale();
   const STEPS = buildSteps(locale);
 
   return (
+    <MotionConfig reducedMotion="user">
     <section
       data-testid="how-it-works"
       id="como-funciona"
@@ -272,18 +272,13 @@ export function HowItWorks() {
           <HowItWorksConnector />
           <motion.ol
             className="relative grid gap-6 md:grid-cols-3 lg:gap-8"
-            variants={reduced ? undefined : SECTION_PARENT}
-            initial={reduced ? false : "hidden"}
-            whileInView={reduced ? undefined : "visible"}
+            variants={SECTION_PARENT}
+            initial="hidden"
+            whileInView="visible"
             viewport={{ once: true, amount: 0.2, margin: "-80px" }}
           >
             {STEPS.map((step, idx) => (
-              <StepCard
-                key={step.numeral}
-                step={step}
-                index={idx}
-                reduced={!!reduced}
-              />
+              <StepCard key={step.numeral} step={step} index={idx} />
             ))}
           </motion.ol>
         </div>
@@ -291,19 +286,19 @@ export function HowItWorks() {
         {/* Privacy / trust ribbon — closes the section with a discrete
             promise. Layout: shield + headline on the left, three inline
             trust items on the right (stack vertically on mobile). */}
-        <PrivacyTrustBar locale={locale} reduced={!!reduced} />
+        <PrivacyTrustBar locale={locale} />
       </Container>
     </section>
+    </MotionConfig>
   );
 }
 
 interface StepCardProps {
   step: Step;
   index: number;
-  reduced: boolean;
 }
 
-function StepCard({ step, index, reduced }: Readonly<StepCardProps>) {
+function StepCard({ step, index }: Readonly<StepCardProps>) {
   const Icon = step.icon;
   const isCta = !!step.cta;
   const ref = useRef<HTMLLIElement>(null);
@@ -324,7 +319,7 @@ function StepCard({ step, index, reduced }: Readonly<StepCardProps>) {
   const cardContent = (
     <>
       {/* "Grow-from-previous" connector spark — decorative, pointer-events off. */}
-      {!reduced && index > 0 && (
+      {index > 0 && (
         <motion.span
           aria-hidden
           className="pointer-events-none absolute left-0 top-1/2 -z-[1] block h-3 w-3 -translate-y-1/2 rounded-full bg-[var(--color-gold)] shadow-[0_0_0_4px_rgba(200,166,118,0.22),0_0_16px_4px_rgba(200,166,118,0.32)]"
@@ -341,24 +336,24 @@ function StepCard({ step, index, reduced }: Readonly<StepCardProps>) {
 
       {/* Inner stagger container */}
       <motion.div
-        variants={reduced ? undefined : INNER_PARENT}
-        initial={reduced ? false : "hidden"}
-        animate={reduced ? undefined : inView ? "visible" : "hidden"}
+        variants={INNER_PARENT}
+        initial="hidden"
+        animate={inView ? "visible" : "hidden"}
         className="relative flex flex-1 flex-col gap-5"
       >
         {/* Numeral + icon row */}
         <div className="flex items-start justify-between gap-4">
           <motion.span
             aria-hidden
-            variants={reduced ? undefined : ITEM_RISE}
+            variants={ITEM_RISE}
             className="bg-gradient-to-br from-[var(--color-brand-primary)] to-[var(--color-brand-primary-soft)] bg-clip-text text-[5.5rem] font-bold leading-none tracking-tight text-transparent will-change-transform"
           >
             {step.numeral}
           </motion.span>
           <motion.span
             aria-hidden
-            variants={reduced ? undefined : ITEM_POP}
-            whileHover={reduced ? undefined : ICON_HOVER}
+            variants={ITEM_POP}
+            whileHover={ICON_HOVER}
             className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[var(--color-brand-primary)]/10 text-[var(--color-brand-primary)] ring-1 ring-[var(--color-brand-primary)]/20"
           >
             <Icon className="h-5 w-5" aria-hidden />
@@ -368,25 +363,25 @@ function StepCard({ step, index, reduced }: Readonly<StepCardProps>) {
         {/* Gold hairline divider */}
         <motion.span
           aria-hidden
-          variants={reduced ? undefined : ITEM_RISE}
+          variants={ITEM_RISE}
           className="block h-px w-12 bg-gradient-to-r from-[var(--color-gold)] to-transparent"
         />
 
         <div className="flex flex-col gap-2.5">
           <motion.span
-            variants={reduced ? undefined : ITEM_RISE}
+            variants={ITEM_RISE}
             className="text-[10px] font-semibold uppercase tracking-[0.32em] text-[var(--color-text-subtle)]"
           >
             {step.eyebrow}
           </motion.span>
           <motion.h3
-            variants={reduced ? undefined : ITEM_RISE}
+            variants={ITEM_RISE}
             className="text-2xl font-semibold leading-tight tracking-tight text-[var(--color-foreground)]"
           >
             {step.title}
           </motion.h3>
           <motion.p
-            variants={reduced ? undefined : ITEM_RISE}
+            variants={ITEM_RISE}
             className="text-sm leading-relaxed text-[var(--color-text-muted)]"
           >
             {step.description}
@@ -394,7 +389,7 @@ function StepCard({ step, index, reduced }: Readonly<StepCardProps>) {
         </div>
 
         <motion.div
-          variants={reduced ? undefined : ITEM_RISE}
+          variants={ITEM_RISE}
           className="relative mt-2 h-[140px] sm:h-[160px]"
         >
           {step.illustration({ inView })}
@@ -405,7 +400,7 @@ function StepCard({ step, index, reduced }: Readonly<StepCardProps>) {
         {step.cta && (
           <motion.div
             aria-hidden
-            variants={reduced ? undefined : ITEM_RISE}
+            variants={ITEM_RISE}
             className="mt-auto pt-2"
           >
             <span className="group/cta inline-flex items-center gap-2 rounded-full bg-[var(--color-forest)] px-5 py-2.5 text-sm font-semibold text-[var(--color-cream)] shadow-[0_8px_22px_-10px_rgba(31,61,46,0.55)] transition-[background,box-shadow,transform] duration-200 ease-[var(--ease-standard)] group-hover:-translate-y-[1px] group-hover:bg-[var(--color-forest-deep)] group-hover:shadow-[0_14px_30px_-10px_rgba(31,61,46,0.6)]">
@@ -425,8 +420,8 @@ function StepCard({ step, index, reduced }: Readonly<StepCardProps>) {
     <motion.li
       ref={ref}
       data-testid={`how-it-works-step-${step.numeral}`}
-      variants={reduced ? undefined : CARD_GROW_VARIANTS}
-      whileHover={reduced ? undefined : "hover"}
+      variants={CARD_GROW_VARIANTS}
+      whileHover="hover"
       style={{ transformOrigin: "left center", willChange: "transform, opacity, filter" }}
       className={`group relative overflow-hidden rounded-[var(--radius-2xl)] border [contain:layout_paint] ${surfaceCls} ${isCta ? "cursor-pointer hover:border-[var(--color-forest)]/45" : "cursor-default"}`.trim()}
     >
@@ -457,13 +452,12 @@ function StepCard({ step, index, reduced }: Readonly<StepCardProps>) {
  */
 function PrivacyTrustBar({
   locale,
-  reduced,
-}: Readonly<{ locale: SupportedLocale; reduced: boolean }>) {
+}: Readonly<{ locale: SupportedLocale }>) {
   return (
     <motion.div
       data-testid="how-it-works-trust-bar"
-      initial={reduced ? false : { opacity: 0, y: 18 }}
-      whileInView={reduced ? undefined : { opacity: 1, y: 0 }}
+      initial={{ opacity: 0, y: 18 }}
+      whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: "-60px" }}
       transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
       className="relative mt-12 grid grid-cols-1 items-center gap-5 rounded-[var(--radius-2xl)] border border-[var(--color-border)] bg-[var(--color-cream-soft)]/70 p-5 sm:p-6 md:grid-cols-[1fr_auto] md:gap-8 lg:mt-16"

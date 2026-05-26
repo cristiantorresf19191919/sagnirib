@@ -2,6 +2,7 @@
 
 import {
   motion,
+  MotionConfig,
   useMotionTemplate,
   useMotionValue,
   useReducedMotion,
@@ -95,6 +96,7 @@ export function AccountTypeChooser() {
   const signInHref = localizedHref(locale, "/ingresar");
 
   return (
+    <MotionConfig reducedMotion="user">
     <motion.div
       variants={STAGGER}
       initial="hidden"
@@ -175,6 +177,7 @@ export function AccountTypeChooser() {
         </Link>
       </motion.p>
     </motion.div>
+    </MotionConfig>
   );
 }
 
@@ -267,12 +270,8 @@ function ChooserCard({
       onPointerMove={onPointerMove}
       onPointerLeave={onPointerLeave}
       disabled={disabled}
-      style={
-        reducedMotion
-          ? undefined
-          : { rotateX, rotateY, transformPerspective: 1000 }
-      }
-      whileTap={reducedMotion ? undefined : { scale: 0.985 }}
+      style={{ rotateX, rotateY, transformPerspective: 1000 }}
+      whileTap={{ scale: 0.985 }}
       className={`group relative flex h-full flex-col gap-4 overflow-hidden rounded-[var(--radius-2xl)] border p-6 text-left transition-[border-color,box-shadow] duration-300 ease-[var(--ease-standard)] hover:border-[var(--color-brand-primary)]/55 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-background)] disabled:cursor-not-allowed disabled:opacity-70 ${surface}`}
     >
       {/* Top gold hairline — editorial signature */}
@@ -286,13 +285,11 @@ function ChooserCard({
       <CornerOrnament position="bottom-left" />
       <CornerOrnament position="bottom-right" />
       {/* Cursor-tracked spotlight */}
-      {!reducedMotion ? (
-        <motion.span
-          aria-hidden
-          style={{ background: spotlight }}
-          className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100"
-        />
-      ) : null}
+      <motion.span
+        aria-hidden
+        style={{ background: spotlight }}
+        className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100"
+      />
       {/* Shimmer sweep on hover */}
       <span
         aria-hidden
@@ -324,7 +321,7 @@ function ChooserCard({
 
       <motion.span
         aria-hidden
-        whileHover={reducedMotion ? undefined : { scale: 1.08, rotate: -3 }}
+        whileHover={{ scale: 1.08, rotate: -3 }}
         transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
         className={`relative inline-flex h-11 w-11 items-center justify-center rounded-2xl ${iconTile}`}
       >
@@ -366,18 +363,12 @@ function ChooserCard({
       </ul>
 
       <motion.span
-        whileHover={
-          reducedMotion ? undefined : { y: -2, transition: { duration: 0.2 } }
-        }
+        whileHover={{ y: -2, transition: { duration: 0.2 } }}
         className={`relative mt-auto inline-flex h-11 items-center justify-center gap-2 rounded-full px-5 text-sm font-semibold transition-[background] duration-200 ease-[var(--ease-standard)] ${ctaCls}`}
       >
         {loading ? "…" : cta}
         {!loading ? (
-          <motion.span
-            whileHover={
-              reducedMotion ? undefined : { x: 3, transition: { duration: 0.2 } }
-            }
-          >
+          <motion.span whileHover={{ x: 3, transition: { duration: 0.2 } }}>
             {ctaIcon}
           </motion.span>
         ) : null}

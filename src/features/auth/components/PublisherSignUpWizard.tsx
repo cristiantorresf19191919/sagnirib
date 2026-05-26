@@ -692,7 +692,6 @@ function PhoneStep({
           {(api) => (
             <select
               {...api}
-              id={api.inputId}
               value={value.country}
               onChange={(e) => onChange({ ...value, country: e.target.value })}
               className={inputClsWithLeftIcon}
@@ -718,7 +717,6 @@ function PhoneStep({
           {(api) => (
             <input
               {...api}
-              id={api.inputId}
               type="tel"
               inputMode="numeric"
               autoComplete="tel-national"
@@ -747,7 +745,6 @@ function PhoneStep({
         {(api) => (
           <input
             {...api}
-            id={api.inputId}
             type="email"
             autoComplete="email"
             value={value.email}
@@ -806,7 +803,6 @@ function OtpStep({
         {(api) => (
           <input
             {...api}
-            id={api.inputId}
             type="text"
             inputMode="numeric"
             autoComplete="one-time-code"
@@ -873,7 +869,6 @@ function PasswordStep({
           <div className="relative">
             <input
               {...api}
-              id={api.inputId}
               type={showPassword ? "text" : "password"}
               autoComplete="new-password"
               minLength={8}
@@ -912,7 +907,6 @@ function PasswordStep({
         {(api) => (
           <input
             {...api}
-            id={api.inputId}
             type={showPassword ? "text" : "password"}
             autoComplete="new-password"
             value={value.confirm}

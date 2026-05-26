@@ -1,6 +1,6 @@
 "use client";
 
-import { motion, useReducedMotion } from "framer-motion";
+import { motion } from "framer-motion";
 
 /**
  * Atmospheric background layer for editorial surfaces.
@@ -18,10 +18,12 @@ import { motion, useReducedMotion } from "framer-motion";
 export function EditorialAtmosphere({
   intensity = "default",
 }: Readonly<{ intensity?: "default" | "soft" | "rich" }>) {
-  const reducedMotion = useReducedMotion();
-
   // Drift amplitudes — kept small (≤ 24px) so the motion reads as
-  // ambient lighting, not parallax.
+  // ambient lighting, not parallax. Framer-motion respects
+  // `prefers-reduced-motion` automatically via the surrounding
+  // MotionConfig — branching on `useReducedMotion()` here causes
+  // SSR/CSR hydration mismatches because the hook returns `null` on
+  // the server and a boolean on the client's first paint.
   const amplitude =
     intensity === "rich" ? 28 : intensity === "soft" ? 12 : 20;
   const driftDuration =
@@ -39,11 +41,7 @@ export function EditorialAtmosphere({
       {/* Forest glow — anchors brand, top-center */}
       <motion.div
         className="absolute -top-32 left-1/2 h-[820px] w-[820px] -translate-x-1/2 rounded-full bg-[radial-gradient(circle_at_center,rgba(47,93,67,0.18),transparent_60%)]"
-        animate={
-          reducedMotion
-            ? undefined
-            : { x: [-amplitude, amplitude, -amplitude], y: [0, amplitude / 2, 0] }
-        }
+        animate={{ x: [-amplitude, amplitude, -amplitude], y: [0, amplitude / 2, 0] }}
         transition={{
           duration: driftDuration,
           repeat: Infinity,
@@ -53,14 +51,10 @@ export function EditorialAtmosphere({
       {/* Gold glow — accent, upper-right */}
       <motion.div
         className="absolute -top-16 right-[-10%] h-[520px] w-[520px] rounded-full bg-[radial-gradient(circle_at_center,rgba(200,166,118,0.18),transparent_65%)]"
-        animate={
-          reducedMotion
-            ? undefined
-            : {
-                x: [amplitude, -amplitude / 2, amplitude],
-                y: [-amplitude / 2, amplitude, -amplitude / 2],
-              }
-        }
+        animate={{
+          x: [amplitude, -amplitude / 2, amplitude],
+          y: [-amplitude / 2, amplitude, -amplitude / 2],
+        }}
         transition={{
           duration: driftDuration * 1.2,
           repeat: Infinity,
@@ -71,14 +65,7 @@ export function EditorialAtmosphere({
       {/* Cream wash — warm undertone, lower-left */}
       <motion.div
         className="absolute bottom-0 left-[-10%] h-[420px] w-[420px] rounded-full bg-[radial-gradient(circle_at_center,rgba(229,162,58,0.08),transparent_70%)]"
-        animate={
-          reducedMotion
-            ? undefined
-            : {
-                x: [0, amplitude / 2, 0],
-                y: [0, -amplitude / 2, 0],
-              }
-        }
+        animate={{ x: [0, amplitude / 2, 0], y: [0, -amplitude / 2, 0] }}
         transition={{
           duration: driftDuration * 1.4,
           repeat: Infinity,
@@ -113,7 +100,6 @@ export function EditorialAtmosphere({
 export function EditorialKicker({
   label,
 }: Readonly<{ label: string }>) {
-  const reducedMotion = useReducedMotion();
   return (
     <motion.span
       initial={{ opacity: 0, y: -4 }}
@@ -127,11 +113,7 @@ export function EditorialKicker({
       />
       <motion.span
         aria-hidden
-        animate={
-          reducedMotion
-            ? undefined
-            : { rotate: [45, 405] }
-        }
+        animate={{ rotate: [45, 405] }}
         transition={{
           duration: 14,
           repeat: Infinity,

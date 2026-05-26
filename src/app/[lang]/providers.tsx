@@ -1,5 +1,8 @@
+import { MotionConfig } from "framer-motion";
+
 import { BackOnlinePill } from "@/features/favorites/components/BackOnlinePill";
 import { FavoritesProvider } from "@/features/favorites/store/use-favorites";
+import { SafeCheckinWatcher } from "@/features/safety/components/SafeCheckinWatcher";
 import { Toaster } from "@/shared/ui/toast";
 
 /**
@@ -11,14 +14,14 @@ import { Toaster } from "@/shared/ui/toast";
  *  - `BackOnlinePill` — retention surface that announces when a
  *    favorited listing flips to `availableNow`. Renders nothing for
  *    users with zero favorites.
+ *  - `SafeCheckinWatcher` — polls localStorage every 15s while the
+ *    tab is visible; surfaces a countdown banner while armed and an
+ *    alert modal when a deadline crosses. Pure client-side; no
+ *    network traffic at any point.
  *
  * `initialFavorites` is supplied by the Server Component layout (ADR-013).
  * The provider merges it with localStorage on first paint so signed-in
  * users see their cross-device shortlist without a hydration flash.
- *
- * Safe Check-in (SafeCheckinWatcher) is temporarily disabled. To
- * re-enable, restore the import and mount it alongside BackOnlinePill;
- * the feature code under `src/features/safety/` is preserved intact.
  */
 export function Providers({
   children,
@@ -28,10 +31,18 @@ export function Providers({
   initialFavorites?: ReadonlyArray<string>;
 }) {
   return (
-    <FavoritesProvider initialFavorites={initialFavorites}>
-      {children}
-      <Toaster />
-      <BackOnlinePill />
-    </FavoritesProvider>
+    // App-wide motion settings. `reducedMotion="user"` tells framer-motion
+    // to honor `prefers-reduced-motion` internally so individual components
+    // never need to branch on `useReducedMotion()` at render time — that
+    // branching causes SSR/CSR hydration mismatches because the hook
+    // returns `null` on the server and a boolean on the client.
+    <MotionConfig reducedMotion="user">
+      <FavoritesProvider initialFavorites={initialFavorites}>
+        {children}
+        <Toaster />
+        <BackOnlinePill />
+        <SafeCheckinWatcher />
+      </FavoritesProvider>
+    </MotionConfig>
   );
 }
