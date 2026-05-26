@@ -12,15 +12,20 @@ import {
  * Mirrors the photo orchestrator in `@/features/enrollment/lib/upload-photo`
  * with two differences:
  *   - the ticket request takes a `kind` ('document_front' | 'document_back'
- *     | 'selfie') instead of a sessionId
- *   - the server-minted path lands under `verifications/{uid}/` instead of
- *     the wizard's staging prefix
+ *     | 'selfie') and a `personId` (ADR-018 — KYC is per-person, not
+ *     per-account)
+ *   - the server-minted path lands under `verifications/{personId}/`
+ *     instead of the wizard's staging prefix
  */
 
 export type KycUploadKind = "document_front" | "document_back" | "selfie";
 export type KycUploadPhase = "compressing" | "uploading" | "confirming";
 
 export interface KycUploadOptions {
+  /** ADR-018 — the person this asset belongs to. Threaded through to
+   *  the ticket + confirm Server Actions so the server can verify
+   *  ownership and mint the personId-scoped path. */
+  personId: string;
   kind: KycUploadKind;
   onPhase?: (phase: KycUploadPhase) => void;
   signal?: AbortSignal;
@@ -80,6 +85,7 @@ export async function uploadKycFile(
 
   options.onPhase?.("uploading");
   const ticketRes = await requestKycUploadTicket({
+    personId: options.personId,
     kind: options.kind,
     contentType: compressed.file.type,
     sizeBytes: compressed.file.size,
@@ -124,7 +130,10 @@ export async function uploadKycFile(
   }
 
   options.onPhase?.("confirming");
-  const confirmRes = await confirmKycUpload({ path: ticket.path });
+  const confirmRes = await confirmKycUpload({
+    personId: options.personId,
+    path: ticket.path,
+  });
   if (!confirmRes.ok || !confirmRes.data) {
     throw new KycUploadError(
       "confirmation",

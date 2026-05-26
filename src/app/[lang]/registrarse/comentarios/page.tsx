@@ -1,10 +1,18 @@
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 
+import { localizedHref } from "@/core/i18n/href";
 import { isSupportedLocale } from "@/core/i18n/constants";
 import { t } from "@/core/i18n/messages";
 import { buildPageMetadata } from "@/core/seo/build-page-metadata";
+import { AccountTypeLockedScreen } from "@/features/auth/components/AccountTypeLockedScreen";
 import { CommentatorSignUpForm } from "@/features/auth/components/CommentatorSignUpForm";
+import { getSession } from "@/server/auth";
+import {
+  ACCOUNT_TYPE_COMMENTATOR,
+  ACCOUNT_TYPE_PUBLISHER,
+  getMyAccountType,
+} from "@/server/users";
 import { Container } from "@/shared/design-system/components/Container";
 import {
   EditorialAtmosphere,
@@ -34,6 +42,35 @@ export default async function RegistrarseComentariosPage({
 }: Readonly<{ params: Promise<{ lang: string }> }>) {
   const { lang } = await params;
   if (!isSupportedLocale(lang)) notFound();
+
+  // ADR-019 gate — symmetric to /registrarse/publicador. A publisher
+  // landing here by direct URL would otherwise fill the form and get
+  // silently bounced.
+  const session = await getSession().catch(() => null);
+  if (session) {
+    const accountType = await getMyAccountType().catch(() => null);
+    if (accountType === ACCOUNT_TYPE_COMMENTATOR) {
+      redirect(localizedHref(lang, "/mi-cuenta/comentarios"));
+    }
+    if (accountType === ACCOUNT_TYPE_PUBLISHER) {
+      return (
+        <>
+          <Header hideCatalogCta />
+          <main className="relative isolate bg-[var(--color-background)] py-20 sm:py-28">
+            <EditorialAtmosphere intensity="soft" />
+            <Container width="narrow">
+              <AccountTypeLockedScreen
+                locale={lang}
+                currentAccountType={ACCOUNT_TYPE_PUBLISHER}
+              />
+            </Container>
+          </main>
+          <Footer />
+        </>
+      );
+    }
+    redirect(localizedHref(lang, "/mi-cuenta"));
+  }
 
   return (
     <>

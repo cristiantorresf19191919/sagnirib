@@ -7,7 +7,8 @@ import { buildPageMetadata } from "@/core/seo/build-page-metadata";
 import { Container } from "@/shared/design-system/components/Container";
 import { Footer } from "@/shared/layout/Footer";
 import { Header } from "@/shared/layout/Header";
-import { SignInForm } from "@/features/auth/components/SignInForm";
+import { readAccountTypeCookie } from "@/features/auth/lib/account-type-cookie";
+import { SignInGate } from "@/features/auth/components/SignInGate";
 
 export async function generateMetadata({
   params,
@@ -53,6 +54,8 @@ export default async function IngresarPage({
     : searchParamsResolved.next;
   const next = raw && raw.startsWith("/") && !raw.startsWith("//") ? raw : undefined;
 
+  const initialAccountType = await readAccountTypeCookie();
+
   return (
     <>
       <Header hideCatalogCta />
@@ -87,7 +90,7 @@ export default async function IngresarPage({
               </p>
             </header>
 
-            <SignInForm next={next} />
+            <SignInGate initialAccountType={initialAccountType} next={next} />
           </div>
         </Container>
       </main>

@@ -29,7 +29,7 @@ const provider = isFirebaseConfigured()
   ? await import("@/server/adapters/firebase/auth")
   : await import("@/server/mocks/auth");
 
-const { grantRoleRaw } = isFirebaseConfigured()
+const { grantRoleRaw, revokeRoleRaw } = isFirebaseConfigured()
   ? await import("@/server/adapters/firebase/auth/grant-role")
   : await import("@/server/mocks/auth");
 
@@ -39,10 +39,15 @@ export const createSession = provider.createSession;
 export const destroySession = provider.destroySession;
 
 /**
- * Grants a role to a user (additive). Auditable wrapper around the
- * provider's raw helper. Call sites pass `actorUid` explicitly so the audit
+ * Grants a role to a user. Auditable wrapper around the provider's
+ * raw helper. Call sites pass `actorUid` explicitly so the audit
  * trail records who initiated the grant — typically the same user (a
  * self-grant after publishing a draft), but occasionally an admin.
+ *
+ * Mutual exclusion (ADR-019): the underlying `grantRoleRaw` throws
+ * `AuthError('conflicting-role')` if the user already holds the
+ * opposite of an account-type role. The audit event does NOT fire in
+ * that case — only successful grants are recorded.
  */
 export async function grantRole(
   uid: string,
@@ -52,6 +57,28 @@ export async function grantRole(
   await grantRoleRaw(uid, role);
   await auditLog({
     event: "auth.role_granted",
+    actorId: actorUid ?? uid,
+    resource: `user:${uid}`,
+    metadata: { role },
+  });
+}
+
+/**
+ * Removes a role from a user (ADR-019 lazy-migration cleanup). Used
+ * only by the users barrel's migration probe to revoke the
+ * non-winning role on legacy dual-role accounts. There is
+ * intentionally no Server Action exposing this — application code
+ * never has a legitimate reason to revoke roles outside the
+ * one-shot migration.
+ */
+export async function revokeRole(
+  uid: string,
+  role: Role,
+  actorUid?: string,
+): Promise<void> {
+  await revokeRoleRaw(uid, role);
+  await auditLog({
+    event: "auth.role_revoked",
     actorId: actorUid ?? uid,
     resource: `user:${uid}`,
     metadata: { role },

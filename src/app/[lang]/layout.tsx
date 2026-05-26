@@ -118,10 +118,13 @@ export default async function RootLayout({
       className={`h-full antialiased ${sans.variable} ${mono.variable} ${display.variable} ${serif.variable}`}
       suppressHydrationWarning
     >
-      <head>
-        <ThemeScript />
-      </head>
       <body className="min-h-full flex flex-col bg-[var(--color-background)] text-[var(--color-foreground)]">
+        {/*
+         * Theme pre-paint script. `next/script` with `beforeInteractive`
+         * is auto-hoisted into <head> by Next, so placement in body is
+         * intentional — keeps the React tree out of <head> entirely.
+         */}
+        <ThemeScript />
         {/*
          * Brand-wide structured data per home SEO Route Contract — emitted
          * once at the layout root so every page inherits it. Page-level

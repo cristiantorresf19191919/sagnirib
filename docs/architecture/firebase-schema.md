@@ -12,6 +12,9 @@ listings/{listingId}/reviews/{reviewId}
 listing_drafts/{draftId}                       # see ADR-011
 favorites/{uid}/items/{listingId}              # see ADR-013
 bookings/{bookingId}                           # see ADR-016
+persons/{personId}                             # see ADR-018 (supersedes ADR-014's verifications/{uid})
+users/{uid}                                    # see ADR-019 (account-type lock — publisher vs commentator)
+verifications/{uid}                            # KYC physical storage during ADR-018 Phase A. Logical view via `persons/{personId}.kyc`. Carries `documentType` + `documentNumber` (ADR-018 amendment) which enforce per-person uniqueness across accounts.
 ```
 
 `{listingId}` is an opaque Firestore-generated id. The user-facing slug is
@@ -55,6 +58,7 @@ can change without doc rewrites.
 | `createdAt`       | Timestamp                  |                                                           |
 | `updatedAt`       | Timestamp                  | Default `orderBy` for `listAll`.                          |
 | `verifiedAt`      | Timestamp \| null          | Set when `verified` flips to `true`. Mapper falls back to `createdAt` when missing on a verified listing. |
+| `personId`        | string \| null             | Person (modelo física) this listing represents (ADR-018). Null on legacy listings auto-migrated lazily on first owner login. Indexed for `listListingsByPerson`. |
 | `plan`            | map \| null                | Active paid plan. Drives the "Destacada" badge and `listFeatured`. See § "`plan` map". |
 | `videos`          | array\<map\> \| null       | Short-form clips (ADR-015). At most `STORAGE_LIMITS.videoMaxPerListing` (today: 2). See § "`videos` array". |
 
@@ -180,6 +184,7 @@ this collection. See ADR-011 for the lifecycle and the moderation flow.
 | Field         | Type        | Notes                                                |
 | ------------- | ----------- | ---------------------------------------------------- |
 | `ownerUid`    | string      | Firebase Auth uid of the submitter. Indexed for queue per-user. |
+| `personId`    | string      | Person (modelo física) this draft is for (ADR-018). Required on new drafts; auto-backfilled on legacy drafts via Phase A migration. Indexed. |
 | `status`      | string      | `pending_review` at write time. Admin tooling flips to `approved` / `rejected`. |
 | `payload`     | map         | The wizard `EnrollmentDraft`, normalized — see below. |
 | `submittedAt` | Timestamp   | Client-supplied; `orderBy('submittedAt', 'desc')` for queues. |
@@ -281,6 +286,71 @@ Writes always go through the Server Action stack
 (`requestBooking`, `respondToBooking`, `submitBuyerReview`,
 `completeMockCheckout` for the plan side-effect).
 
+## Collection — `persons/{personId}`
+
+Physical models that an account owner administers. One account owner
+(`ownerUid`) has 1 person (modelo individual) or N persons (partner /
+agencia). Each person has at most one active draft AND one published
+listing — the 1:1 person↔listing rule from ADR-018 is enforced by
+`createListingDraft` before write.
+
+| Field                | Type              | Notes                                                                 |
+| -------------------- | ----------------- | --------------------------------------------------------------------- |
+| `id`                 | string            | == document id. Opaque Firestore-generated id; survives name renames. |
+| `ownerUid`           | string            | Account that administers this person. Indexed for `listPersonsByOwner`. |
+| `displayName`        | string            | Dashboard label, 3..64 chars.                                          |
+| `kyc.status`         | string            | `not_submitted \| pending_review \| approved \| rejected`. Replaces ADR-014's per-uid status. |
+| `kyc.documentFrontPath` | string \| null | `persons/{personId}/document_front.<ext>`.                             |
+| `kyc.documentBackPath`  | string \| null | `persons/{personId}/document_back.<ext>`.                              |
+| `kyc.selfiePath`     | string \| null    | `persons/{personId}/selfie.<ext>`.                                     |
+| `kyc.submittedAt`    | Timestamp \| null | Last submit time. Present iff status ≠ `not_submitted`.                |
+| `kyc.createdAt`      | Timestamp \| null | First-ever submit for this person. Set once.                           |
+| `kyc.approvedAt`     | Timestamp \| null | Present iff status = `approved`.                                       |
+| `kyc.approvedByUid`  | string \| null    | Founder uid that approved (admin codebase writes this).                |
+| `kyc.rejectedAt`     | Timestamp \| null | Present iff status = `rejected`.                                       |
+| `kyc.rejectedByUid`  | string \| null    | Founder uid that rejected.                                             |
+| `kyc.rejectionReason`| string \| null    | 3..500 chars; surfaces on the dashboard KYC card.                      |
+| `activeDraftId`      | string \| null    | Current draft owned by this person. Enforces 1:1.                      |
+| `activeListingSlug`  | string \| null    | Current published listing slug for this person.                        |
+| `createdAt`          | Timestamp         | `serverTimestamp()` at person creation.                                |
+
+The nested `kyc` map keeps the dashboard a single read per person (no
+join). Resubmission overwrites — historical attempts live in the audit
+log (`biringa.person.kyc.submitted` events keyed by `resource:
+person:{personId}`).
+
+## Collection — `users/{uid}`
+
+Account-type lock per Firebase Auth user (ADR-019). Exactly one doc per
+uid. Doc id mirrors `request.auth.uid` so the read is always
+`.doc(uid).get()` — zero query cost. The `accountType` field is
+**immutable** after first write; no Server Action ever overwrites it.
+To switch journeys, the user creates a new account with a different
+email.
+
+This collection supersedes the cookie-as-authority model that
+ADR-018 § "Account-type cookie on Google sign-in" introduced. The
+cookie continues to exist as a UX hint but the doc is the source of
+truth for every gate (`createListingDraft`, `/publicar` redirect,
+`/mi-cuenta` router, `Header` CTA visibility).
+
+| Field                    | Type                                                       | Notes                                                                 |
+| ------------------------ | ---------------------------------------------------------- | --------------------------------------------------------------------- |
+| `uid`                    | string                                                     | == document id, mirrored for convenience.                             |
+| `accountType`            | `'publisher' \| 'commentator'`                             | **Immutable** after first write. The single source of truth for the publisher-vs-commentator distinction. |
+| `email`                  | string \| null                                             | Snapshot at lock time; not the source of truth for the current email. |
+| `accountTypeChosenAt`    | Timestamp                                                  | `serverTimestamp()` at the first (and only) write.                    |
+| `accountTypeChosenVia`   | `'pre-oauth' \| 'post-oauth-modal' \| 'lazy-migration'`    | Audit marker for which funnel produced the lock.                       |
+| `createdAt`              | Timestamp                                                  | Equals `accountTypeChosenAt` today; kept distinct so future per-uid fields don't have to add a parallel created timestamp. |
+
+The write happens via the `setAccountTypeOnceRaw` adapter, which uses
+a Firestore **transaction** to read-then-write atomically. Two
+parallel requests cannot both observe the doc as missing — the
+loser's call returns `{ kind: 'locked-different' }` or
+`{ kind: 'noop-same' }` depending on what won.
+
+No composite indexes required (all reads are `.doc(uid).get()`).
+
 ## Composite indexes
 
 Required to satisfy the queries in `src/server/adapters/firebase/biringas/index.ts`:
@@ -296,6 +366,11 @@ Required to satisfy the queries in `src/server/adapters/firebase/biringas/index.
 | `bookings` | `listingSlug ASC`, `submittedAt DESC`                               | `listBookingsForListingsRaw` (inbox).  |
 | `bookings` | `listingSlug ASC`, `respondedAt DESC`                               | `computeReplyMedianMinutesForSlug`.    |
 | `reviews` (group) | `verified ASC`, `date DESC`                                  | `listTestimonials` (home cross-listing feed). |
+| `persons`  | `ownerUid ASC`, `createdAt DESC`                                    | `listPersonsByOwner` (dashboard, ADR-018). |
+| `persons`  | `kyc.status ASC`, `kyc.submittedAt DESC`                            | admin-codebase KYC queue (future, ADR-018). |
+| `listing_drafts` | `personId ASC`, `submittedAt DESC`                            | "drafts for this person" (ADR-018).    |
+| `listings` | `personId ASC`, `updatedAt DESC`                                    | "listings for this person" (ADR-018).  |
+| `verifications` | `documentType ASC`, `documentNumber ASC`, `status ASC`         | `findActiveKycByDocumentNumber` — uniqueness check at KYC submit (ADR-018 amendment). |
 
 Firestore prompts for any missing index at first run with a console URL — apply when they appear. Add new entries here as queries grow.
 

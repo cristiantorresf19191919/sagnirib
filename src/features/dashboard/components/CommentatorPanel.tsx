@@ -1,10 +1,8 @@
 "use client";
 
 import { AnimatePresence, motion, type Variants } from "framer-motion";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
-  ArrowRight,
   Heart,
   KeyRound,
   LogOut,
@@ -301,34 +299,32 @@ function EmptySurface({
   );
 }
 
+/**
+ * Informational notice on the commentator dashboard. No CTA — the
+ * accountType lock is immutable (ADR-019), so the only "next step"
+ * for someone who wants to publish is to register a new account with
+ * a different email. The body says exactly that; offering a button
+ * here would be misleading because every wizard target now refuses
+ * the navigation via `AccountTypeLockedScreen`.
+ */
 function CantPublishCard() {
   const locale = useActiveLocale();
-  const href = localizedHref(locale, "/registrarse/publicador");
   return (
-    <div className="flex flex-col gap-3 rounded-[var(--radius-2xl)] border border-[var(--color-brand-accent)]/30 bg-[var(--color-brand-accent)]/8 p-5 text-[var(--color-foreground)] sm:flex-row sm:items-center sm:justify-between">
-      <div className="flex items-start gap-3">
-        <span
-          aria-hidden
-          className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-[var(--color-brand-accent)]/20 text-[var(--color-brand-accent-strong)] ring-1 ring-[var(--color-brand-accent)]/35"
-        >
-          <ShieldAlert className="h-4.5 w-4.5" aria-hidden />
-        </span>
-        <div className="flex flex-col gap-1">
-          <h3 className="font-[var(--font-display)] text-base font-[420] tracking-tight">
-            {t(locale, "rbac.commentator.panel.cantPublish.title")}
-          </h3>
-          <p className="text-xs text-[var(--color-text-muted)]">
-            {t(locale, "rbac.commentator.panel.cantPublish.body")}
-          </p>
-        </div>
-      </div>
-      <Link
-        href={href}
-        className="inline-flex h-10 shrink-0 items-center gap-1.5 self-start rounded-full bg-[var(--color-brand-primary)] px-4 text-xs font-semibold text-[var(--color-surface)] shadow-[var(--shadow-glow-primary)] transition-[background,transform] hover:-translate-y-[1px] hover:bg-[var(--color-brand-primary-strong)] sm:self-auto"
+    <div className="flex items-start gap-3 rounded-[var(--radius-2xl)] border border-[var(--color-brand-accent)]/30 bg-[var(--color-brand-accent)]/8 p-5 text-[var(--color-foreground)]">
+      <span
+        aria-hidden
+        className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-[var(--color-brand-accent)]/20 text-[var(--color-brand-accent-strong)] ring-1 ring-[var(--color-brand-accent)]/35"
       >
-        {t(locale, "rbac.commentator.panel.cantPublish.cta")}
-        <ArrowRight className="h-3.5 w-3.5" aria-hidden />
-      </Link>
+        <ShieldAlert className="h-4.5 w-4.5" aria-hidden />
+      </span>
+      <div className="flex flex-col gap-1">
+        <h3 className="font-[var(--font-display)] text-base font-[420] tracking-tight">
+          {t(locale, "rbac.commentator.panel.cantPublish.title")}
+        </h3>
+        <p className="text-xs text-[var(--color-text-muted)]">
+          {t(locale, "rbac.commentator.panel.cantPublish.body")}
+        </p>
+      </div>
     </div>
   );
 }

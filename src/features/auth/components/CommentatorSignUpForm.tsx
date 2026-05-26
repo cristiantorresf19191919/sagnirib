@@ -18,6 +18,8 @@ import type { SupportedLocale } from "@/core/branding/brand-config";
 import { localizedHref } from "@/core/i18n/href";
 import { t } from "@/core/i18n/messages";
 import { useActiveLocale } from "@/core/i18n/use-active-locale";
+import { setAccountType } from "@/features/auth/actions/set-account-type";
+import { ACCOUNT_TYPE_COMMENTATOR } from "@/features/auth/lib/rbac";
 import { useAuthSession } from "@/features/auth/lib/use-auth-session";
 import { toast } from "@/shared/ui/toast";
 import {
@@ -75,7 +77,8 @@ const FIELD_ORDER: ReadonlyArray<FieldKey> = [
 export function CommentatorSignUpForm() {
   const router = useRouter();
   const locale = useActiveLocale();
-  const { status, signUpWithEmail, signInWithGoogle } = useAuthSession();
+  const { status, signUpWithEmail, signInWithGoogle, signOut } =
+    useAuthSession();
   const [country, setCountry] = useState<string>("CO");
   const [email, setEmail] = useState("");
   const [nickname, setNickname] = useState("");
@@ -217,11 +220,26 @@ export function CommentatorSignUpForm() {
     }
   }
 
+  /**
+   * ADR-019 refusal — mirror of `PublisherSignUpWizard.onGoogleShortcut`.
+   * A Google email already locked to publisher cannot be re-purposed as
+   * a commentator; the explicit `setAccountType` call surfaces the lock
+   * and the form signs the user back out so they can pick a different
+   * Google account.
+   */
   async function onGoogle() {
     setErrors({});
     setSubmitting(true);
     try {
       await signInWithGoogle();
+      const result = await setAccountType(ACCOUNT_TYPE_COMMENTATOR);
+      if (!result.ok && result.error?.kind === "account-type-locked") {
+        const msg = t(locale, "auth.signup.google.lockedAsPartner");
+        await signOut().catch(() => undefined);
+        setErrors({ form: msg });
+        toast.error(t(locale, "rbac.form.toast.error.title"), msg);
+        return;
+      }
       toast.success(
         t(locale, "rbac.commentator.successToast.title"),
         t(locale, "rbac.commentator.successToast.body"),

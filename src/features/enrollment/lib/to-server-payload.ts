@@ -19,9 +19,11 @@ import type { EnrollmentDraft } from "./types";
 export function toServerPayload(
   draft: EnrollmentDraft,
   sessionId: string,
+  personId?: string,
 ): CreateListingDraftInput {
   return {
     sessionId,
+    ...(personId ? { personId } : {}),
     payload: {
       details: {
         displayName: draft.details.displayName.trim(),

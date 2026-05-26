@@ -16,25 +16,34 @@ import { parseVerificationPath, verificationAssetPath } from "./path";
  * that the photo adapter already uses (same Firebase app, same bucket).
  *
  * Two operations:
- *   - signKycUploadUrlRawForOwner — V4 PUT URL bound to path + MIME +
+ *   - signKycUploadUrlRawForPerson — V4 PUT URL bound to path + MIME +
  *     byte-range. Same security model as the photo upload (ADR-012).
- *   - confirmKycUploadRawForOwner — HEAD-checks the blob, validates
+ *   - confirmKycUploadRawForPerson — HEAD-checks the blob, validates
  *     ownership via path shape.
  *
  * The path is server-minted, so even if the client tampers with the
  * `kind` field, the URL is still bound to a path the server picked.
+ * ADR-018 Phase A: the second path segment is the **personId** (not
+ * the account uid). Person-ownership is verified by the barrel BEFORE
+ * the adapter is invoked.
  */
 
 const VERIFICATION_CACHE_CONTROL = "private, max-age=0, no-store";
 
-export async function signKycUploadUrlRawForOwner(
-  ownerUid: string,
+export async function signKycUploadUrlRawForPerson(
+  personId: string,
+  // `ownerUid` is accepted for signature parity with the mock adapter
+  // (which uses it to tag the in-memory blob owner). The Firebase
+  // signed URL is bound to the path + MIME + byte-range and does not
+  // need the uid embedded; the caller already verified ownership
+  // before reaching this adapter.
+  _ownerUid: string,
   input: KycUploadTicketInput,
 ): Promise<KycUploadTicket> {
   const bucket = getBucket();
 
   const path = verificationAssetPath({
-    ownerUid,
+    personId,
     kind: input.kind,
     mime: input.contentType,
   });
@@ -72,8 +81,52 @@ export async function signKycUploadUrlRawForOwner(
   };
 }
 
-export async function confirmKycUploadRawForOwner(
-  expectedOwnerUid: string,
+/**
+ * Mints a short-lived V4 signed GET URL for an already-uploaded KYC
+ * asset, so the dashboard can render `pending_review` / `approved`
+ * documents as a read-only view.
+ *
+ * Defense in depth — the path is parsed for shape AND its embedded
+ * `personId` segment is required to match `expectedPersonId`, so even
+ * if the barrel mis-passes a path from a different person, the adapter
+ * refuses to sign. TTL is short (default 10 min) and intentionally
+ * shorter than the cookie/session lifetime; URLs leaked through the
+ * referer chain stop working quickly.
+ */
+export async function signKycReadUrlRawForPerson(
+  expectedPersonId: string,
+  path: string,
+  ttlSeconds: number = 600,
+): Promise<string> {
+  const parts = parseVerificationPath(path);
+  if (!parts) {
+    throw new FirebaseAdapterError(
+      "invalid-argument",
+      `verification/signKycReadUrl: path does not match verification shape: ${path}`,
+    );
+  }
+  if (parts.personId !== expectedPersonId) {
+    throw new FirebaseAdapterError(
+      "permission-denied",
+      "verification/signKycReadUrl: path does not match the supplied personId",
+    );
+  }
+
+  const expiresMs = Date.now() + ttlSeconds * 1000;
+  try {
+    const [signed] = await getBucket().file(path).getSignedUrl({
+      version: "v4",
+      action: "read",
+      expires: expiresMs,
+    });
+    return signed;
+  } catch (err) {
+    throw wrapKycStorageError("signKycReadUrl", err);
+  }
+}
+
+export async function confirmKycUploadRawForPerson(
+  expectedPersonId: string,
   path: string,
 ): Promise<KycAsset> {
   const parts = parseVerificationPath(path);
@@ -83,10 +136,10 @@ export async function confirmKycUploadRawForOwner(
       `verification/confirmKycUpload: path does not match verification shape: ${path}`,
     );
   }
-  if (parts.ownerUid !== expectedOwnerUid) {
+  if (parts.personId !== expectedPersonId) {
     throw new FirebaseAdapterError(
       "permission-denied",
-      "verification/confirmKycUpload: caller is not the owner of this path",
+      "verification/confirmKycUpload: path does not match the supplied personId",
     );
   }
 

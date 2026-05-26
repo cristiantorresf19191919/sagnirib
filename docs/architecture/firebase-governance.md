@@ -102,6 +102,38 @@ export async function updateListing(rawInput: unknown) {
 Direct writes from Route Handlers, Server Components, or scripts other than
 `scripts/seed-*` are forbidden.
 
+### Cascading deletes (ADR-020)
+
+When a delete owns side-port resources (drafts, KYC, listings, storage
+objects), follow this order — the precedent is `deleteMyPerson` in
+[src/server/persons/index.ts](src/server/persons/index.ts):
+
+1. **Refuse before mutating.** Compute the preconditions and return a
+   typed refusal outcome. Don't throw — refusals are part of the
+   contract, thrown errors are for unexpected failures (network /
+   Firestore / unauthenticated).
+2. **Mutate side-port resources first, and make each one idempotent.**
+   If the primary mutation fails after a side-port write, the retry
+   has to replay cleanly. `cancelDraftRaw` no-ops on
+   `already-cancelled`; `deleteVerificationRaw` no-ops on missing;
+   `markPersonDeletedRaw` no-ops on already-set.
+3. **Soft-delete the primary last.** Reads from the primary's pointers
+   (`meta.activeDraftId`, `meta.activeListingSlug`) need to stay live
+   while the cascade runs.
+4. **Prefer soft-delete on docs that own audit history.** A
+   `deletedAt` field keeps `auditLog` event resources resolvable for
+   T&S queries; hard-delete erases the backstop. Exception: docs that
+   gate **uniqueness** (e.g. KYC `documentNumber`) should be
+   hard-deleted so the user can re-register.
+5. **Storage GC is async.** Don't try to delete blobs synchronously in
+   the cascade — a separate sweep job reconciles Storage against
+   Firestore. Audit-log the paths so the sweep can find them.
+6. **Single audit event for the whole cascade.** Per-step events
+   double-log noise the consumer doesn't need. The cascade is atomic
+   from the user's perspective; the event should be too.
+7. **`updateTag` last.** Firing it before the writes risks a partial
+   revalidate against pre-write state.
+
 ## Scenario 4 — I need to add a function to an existing port
 
 Example: add `listByCity(city)` to the `biringas` port.
@@ -180,32 +212,42 @@ Use `getSession()` from `@/server/auth` for optional auth, or
 `requireAuth()` from `@/server/security/require-auth` when auth is
 mandatory. Both are cached per request.
 
-## Scenario 9 — I need to touch KYC verification (ADR-014)
+## Scenario 9 — I need to touch KYC verification (ADR-014 + ADR-018)
 
 KYC has two halves — modelo upload (this codebase) and admin review (the
-admin codebase). Both write to the same `verifications/{uid}` doc and
-the same `verifications/{uid}/` Storage prefix.
+admin codebase). After ADR-018 both write to `persons/{personId}.kyc`
+and the `persons/{personId}/` Storage prefix. The legacy
+`verifications/{uid}` doc + prefix stays alive read-only during the
+admin-codebase cutover (Phase B in ADR-018).
 
 **Authoritative read order:**
 
-1. `docs/adr/ADR-014-kyc-verification-basic.md` — the decision and shape.
-2. `src/server/verification/types.ts` — the canonical KycRecord shape.
-3. This file (Scenario 9).
+1. `docs/adr/ADR-018-person-scoped-kyc-and-partner-accounts.md` —
+   current decision and shape (supersedes ADR-014's "one verification
+   per uid").
+2. `docs/adr/ADR-014-kyc-verification-basic.md` — the original
+   contract; still applies for the upload/confirm/submit shape per
+   asset.
+3. `src/server/persons/types.ts` — the canonical PersonRecord +
+   nested KycStatus shape.
+4. This file (Scenario 9).
 
 **Where things live in this codebase (modelo side):**
 
 ```
-src/app/verificacion/                       # public explainer + 3-step wizard route
+src/app/verificacion/                       # public explainer + per-person 3-step wizard
 src/features/verification/
-├── components/VerificationWizard.tsx       # 3-step status-aware form
+├── components/VerificationWizard.tsx       # 3-step status-aware form (takes personId)
 ├── lib/upload-kyc-file.ts                  # compress + ticket + PUT + confirm
-└── actions/verify.ts                       # "use server" wrappers (3 actions)
-src/server/verification/
-├── index.ts                                # barrel — validateActionInput + requireAuth + audit
-├── schemas.ts                              # path regex, uid cross-check
-└── types.ts                                # canonical types
-src/server/adapters/firebase/verification/  # signs PUT URLs, writes the doc
-src/server/mocks/verification/              # in-memory mock for dev / tests
+└── actions/verify.ts                       # "use server" wrappers (4 actions, person-scoped)
+src/server/persons/                         # NEW (ADR-018) — owns persons + nested KYC
+├── index.ts                                # barrel — validateActionInput + requireAuth + ownership + audit
+├── schemas.ts                              # personId/path regex, ownership cross-check
+└── types.ts                                # PersonRecord + KycStatus
+src/server/adapters/firebase/persons/       # NEW — signs PUT URLs scoped by personId, writes the doc
+src/server/mocks/persons/                   # NEW — in-memory mock for dev / tests
+src/server/verification/                    # LEGACY — kept read-only during admin cutover
+└── …                                       # delete once admin codebase migrates (ADR-018 Phase B)
 ```
 
 **Where things live in the admin codebase:**
@@ -223,19 +265,29 @@ sagnirib-admin/src/server/adapters/firebase/verification/  # status flip transac
 sagnirib-admin/src/server/adapters/firebase/biringas/mark-verified.ts  # listings.verified backfill
 ```
 
-**Two non-obvious invariants:**
+**Three non-obvious invariants:**
 
-1. **Approval gate on listings.** The admin's `approveDraft` refuses if
-   `verifications/{ownerUid}.status !== "approved"`. Pre-ADR-014 listings
-   stay published; only future approvals are gated. Source: ADR-014 §
-   "Approval gate on listings".
+1. **Approval gate on listings (post-ADR-018).** The admin's
+   `approveDraft` refuses if
+   `persons/{draft.personId}.kyc.status !== "approved"`. Pre-ADR-014
+   listings stay published; only future approvals are gated. Source:
+   ADR-018 § "Approval gate on listings" (supersedes ADR-014's
+   uid-scoped check).
 
-2. **Backfill on KYC approve.** When the admin flips a verification to
-   `approved`, every listing owned by that uid gets `verified: true` in
-   a single batch. The barrel invalidates `CACHE_TAGS.listing(slug)` for
-   each. This is what makes the gold badge appear without a separate
-   migration job. Source: ADR-014 § "Migration note" + this file's
-   `markListingsVerifiedByOwnerRaw`.
+2. **Backfill on KYC approve.** When the admin flips a person's KYC to
+   `approved`, every listing that points at that `personId` gets
+   `verified: true` in a single batch. The barrel invalidates
+   `CACHE_TAGS.listing(slug)` for each. The MAIN codebase exposes
+   `markListingsVerifiedByPersonRaw(personId)` to that effect; the
+   legacy `markListingsVerifiedByOwnerRaw(uid)` remains as a fallback
+   until the admin codebase migrates.
+
+3. **1:1 person ↔ listing.** ADR-018 forbids a person from having more
+   than one active listing/draft. `createListingDraft` checks
+   `persons/{personId}.activeDraftId === null` (or refers to the draft
+   being resubmitted) before writing. "Duplicar perfil" is rejected
+   with `invalid-argument` and the dashboard surfaces an inline
+   "actualizá la existente" message.
 
 **Tasks that need an ADR (not a PR comment):**
 

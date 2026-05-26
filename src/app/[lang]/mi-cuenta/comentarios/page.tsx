@@ -1,10 +1,13 @@
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 
+import { localizedHref } from "@/core/i18n/href";
 import { isSupportedLocale } from "@/core/i18n/constants";
 import { t } from "@/core/i18n/messages";
 import { buildPageMetadata } from "@/core/seo/build-page-metadata";
 import { CommentatorPanel } from "@/features/dashboard/components/CommentatorPanel";
+import { getSession } from "@/server/auth";
+import { ACCOUNT_TYPE_PUBLISHER, getMyAccountType } from "@/server/users";
 import { Container } from "@/shared/design-system/components/Container";
 import { Footer } from "@/shared/layout/Footer";
 import { Header } from "@/shared/layout/Header";
@@ -26,18 +29,40 @@ export async function generateMetadata({
 }
 
 /**
- * Limited dashboard for commentators (PDF page 12).
- *
- * Not auth-gated server-side in this iteration — the route renders the
- * panel even for anonymous visitors so the visual flow is easy to demo.
- * Server-side gating on `session.roles` lands in the follow-up PR that
- * wires custom claims to the account-type cookie.
+ * Limited dashboard for commentators (PDF page 12). Auth-gated: anonymous
+ * visitors get redirected to the localized sign-in page with `?next=` so
+ * they return here after authenticating. The commentator role itself is
+ * minted by `signUpWithIdToken` / `loginWithIdToken` when the account-type
+ * cookie is set; this page does not gate on the role string yet — the
+ * `/mi-cuenta` router redirects users with `account-type=commentator` here,
+ * so role-string drift between sessions stays cookie-driven by design.
  */
 export default async function MiCuentaComentariosPage({
   params,
 }: Readonly<{ params: Promise<{ lang: string }> }>) {
   const { lang } = await params;
   if (!isSupportedLocale(lang)) notFound();
+
+  const session = await getSession().catch(() => null);
+  if (!session) {
+    redirect(
+      localizedHref(
+        lang,
+        `/ingresar?next=${encodeURIComponent("/mi-cuenta/comentarios")}`,
+      ),
+    );
+  }
+
+  // ADR-019 — publisher-locked accounts have their own dashboard at
+  // `/mi-cuenta`. Send them there so the bidirectional redirect closes
+  // the loop (commentators are sent here from `/mi-cuenta`, publishers
+  // are sent away from `/comentarios`). Without this, a publisher who
+  // typed the URL directly would land on the commentator surface
+  // unintentionally.
+  const accountType = await getMyAccountType().catch(() => null);
+  if (accountType === ACCOUNT_TYPE_PUBLISHER) {
+    redirect(localizedHref(lang, "/mi-cuenta"));
+  }
 
   return (
     <>

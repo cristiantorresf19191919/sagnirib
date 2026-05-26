@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import {
   ArrowLeft,
+  Ban,
   CheckCircle2,
   Clock,
   CreditCard,
@@ -176,6 +177,16 @@ function buildStatusPresentation(
       title: t(locale, "draft.status.rejected.title"),
       body: t(locale, "draft.status.rejected.body"),
     },
+    cancelled: {
+      icon: Ban,
+      surface:
+        "border-[var(--color-border)] bg-[var(--color-background-elevated)]",
+      iconTile:
+        "bg-[var(--color-background-elevated)] text-[var(--color-text-muted)] ring-1 ring-[var(--color-border)]",
+      glow: "shadow-[var(--shadow-sm)]",
+      title: t(locale, "draft.status.cancelled.title"),
+      body: t(locale, "draft.status.cancelled.body"),
+    },
   };
 }
 
@@ -263,6 +274,12 @@ function StatusPill({
       classes:
         "border-[var(--color-brand-highlight)]/45 bg-[var(--color-brand-highlight)]/15 text-[var(--color-brand-highlight)]",
       icon: ShieldAlert,
+    },
+    cancelled: {
+      label: t(locale, "draft.pill.cancelled"),
+      classes:
+        "border-[var(--color-border)] bg-[var(--color-background-elevated)] text-[var(--color-text-muted)]",
+      icon: Ban,
     },
   };
   const cell = tone[status];

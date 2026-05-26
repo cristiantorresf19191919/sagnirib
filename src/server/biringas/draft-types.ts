@@ -9,7 +9,17 @@ import "server-only";
  * the form UI shifts.
  */
 
-export type ListingDraftStatus = "pending_review" | "approved" | "rejected";
+/**
+ * `cancelled` (ADR-020) is the terminal state set when the modelo
+ * deletes the parent person. The admin queue filters it out so a
+ * cancelled draft never reaches human review, and the public slug is
+ * released (treated like `rejected` by `findActiveDraftBySlug`).
+ */
+export type ListingDraftStatus =
+  | "pending_review"
+  | "approved"
+  | "rejected"
+  | "cancelled";
 
 export interface ListingDraftPayloadDetails {
   displayName: string;
@@ -112,6 +122,9 @@ export interface ListingDraftPayload {
 export interface ListingDraftRecord {
   id: string;
   ownerUid: string;
+  /** Person (modelo física) this draft represents (ADR-018). Optional on
+   *  legacy drafts written before the field existed; backfilled lazily. */
+  personId?: string;
   status: ListingDraftStatus;
   payload: ListingDraftPayload;
   submittedAt: string;
@@ -131,6 +144,18 @@ export interface ListingDraftRecord {
 export interface CreateListingDraftInput {
   sessionId: string;
   payload: ListingDraftPayload;
+  /**
+   * Person (modelo física) this draft is being submitted for (ADR-018).
+   * When omitted, the barrel auto-resolves:
+   *   - account has 1 person → use it (default flow for individual modelos)
+   *   - account has 0 persons → mint a fresh person from `payload.details.displayName`
+   *   - account has N persons → reject with `invalid-argument` (Partner UX must
+   *     pass an explicit personId)
+   *
+   * When provided, the barrel verifies the caller owns the person AND the
+   * person has no active draft already (1:1 person↔listing rule).
+   */
+  personId?: string;
 }
 
 /**
@@ -142,6 +167,9 @@ export interface CreateListingDraftInput {
 export interface CreateListingDraftRawInput {
   ownerUid: string;
   draftId: string;
+  /** Resolved personId from the barrel (ADR-018). Adapter writes it on the
+   *  draft doc so the admin codebase + the dashboard can re-link. */
+  personId: string;
   payload: ListingDraftPayload;
 }
 

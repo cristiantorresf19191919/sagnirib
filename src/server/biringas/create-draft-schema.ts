@@ -40,8 +40,21 @@ export const createListingDraftSchema: ActionInputSchema<CreateListingDraftInput
     }
     const payload = r.payload as Record<string, unknown>;
 
+    let personId: string | undefined;
+    if (r.personId !== undefined && r.personId !== null) {
+      if (typeof r.personId !== "string") {
+        throw new Error("createListingDraft: personId must be a string");
+      }
+      const trimmed = r.personId.trim();
+      if (!/^[A-Za-z0-9_-]{6,128}$/.test(trimmed)) {
+        throw new Error("createListingDraft: personId has invalid shape");
+      }
+      personId = trimmed;
+    }
+
     return {
       sessionId,
+      ...(personId ? { personId } : {}),
       payload: {
         details: parseDetails(payload.details),
         description: parseDescription(payload.description),
