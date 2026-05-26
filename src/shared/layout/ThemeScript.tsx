@@ -31,6 +31,14 @@ const SCRIPT = `(function(){try{var ok={light:1,dark:1,desire:1,bloom:1,ember:1,
 
 export function ThemeScript() {
   return (
+    // The `no-before-interactive-script-outside-document` rule is a Pages-
+    // Router-era check that expects `beforeInteractive` only in
+    // `pages/_document.js`. In App Router the equivalent placement is the
+    // root layout, which is this very file's caller (`app/[lang]/layout.tsx`,
+    // the only layout in the tree — there is no `app/layout.tsx`). The
+    // strategy IS the right one here for the reasons documented above; the
+    // plugin just doesn't recognize App Router.
+    // eslint-disable-next-line @next/next/no-before-interactive-script-outside-document
     <Script
       id="theme-pre-paint"
       strategy="beforeInteractive"
