@@ -10,7 +10,7 @@ read in this order: ADR-010 → `docs/architecture/firebase-governance.md`
 2. **`firebase-admin/storage`** is reachable only from `src/server/adapters/firebase/storage/**` (tighter scope than rule 1). Cloud Storage access has its own port — never piggyback on the biringas or auth adapters.
 3. **`firebase/*` (Web SDK)** is reachable only from `src/features/auth/lib/**`.
 4. **`FIREBASE_*` and `NEXT_PUBLIC_FIREBASE_*`** env vars are read only in `src/core/config/firebase.ts`, `src/core/config/firebase-client.ts`, and `scripts/seed-firebase.ts`.
-5. **Features import from barrels** (`@/server/biringas`, `@/server/auth`, `@/server/storage`) — never from `@/server/adapters/...` or `@/server/mocks/...` directly.
+5. **Features import from barrels** (`@/server/biringas`, `@/server/auth`, `@/server/storage`, `@/server/persons`, `@/server/users`, `@/server/verification`) — never from `@/server/adapters/...` or `@/server/mocks/...` directly.
 6. **`*Raw` adapter helpers** (e.g. `getPrivateContactRaw`) are never re-exported from a barrel and never imported by a feature. The barrel-wrapped version with `requireAuth()` + `auditLog()` is the only public surface.
 7. **All Firestore writes** go through Server Actions with `'use server'` + `validateActionInput` + `requireAuth()` + `auditLog()` + `revalidateTag()`.
 8. **All Storage writes** go through Server Actions that issue **server-signed V4 PUT URLs** with a fixed path, MIME, and byte-range. The client never holds Storage credentials, never picks its own destination path, and never calls `firebase/storage` directly. (ADR-012)

@@ -15,21 +15,49 @@ import { isSupportedLocale } from "@/core/i18n/constants";
 import { localizedHref } from "@/core/i18n/href";
 import { t } from "@/core/i18n/messages";
 import { buildPageMetadata } from "@/core/seo/build-page-metadata";
+import { readAccountTypeCookie } from "@/features/auth/lib/account-type-cookie";
 import { getSession } from "@/server/auth";
-import { getMyVerification } from "@/server/verification";
+import { getMyPersons } from "@/server/persons";
+import {
+  ACCOUNT_TYPE_COMMENTATOR,
+  getMyAccountType,
+  type AccountType,
+} from "@/server/users";
 import { Container } from "@/shared/design-system/components/Container";
 import { Footer } from "@/shared/layout/Footer";
 import { Header } from "@/shared/layout/Header";
 
 type CtaState = "anonymous" | "needs_kyc" | "pending" | "approved";
 
+/**
+ * Aggregate KYC state across all of the caller's persons (ADR-018).
+ * Priority for the CTA chip:
+ *   - approved → at least one person is verified
+ *   - pending  → at least one person is awaiting review (and none
+ *                approved yet)
+ *   - needs_kyc → otherwise (no persons, or all `not_submitted` /
+ *                 `rejected`)
+ */
 async function resolveCtaState(): Promise<CtaState> {
   const session = await getSession().catch(() => null);
   if (!session) return "anonymous";
-  const my = await getMyVerification().catch(() => null);
-  if (my?.status === "approved") return "approved";
-  if (my?.status === "pending_review") return "pending";
+  const persons = await getMyPersons().catch(() => []);
+  if (persons.some((p) => p.kyc.status === "approved")) return "approved";
+  if (persons.some((p) => p.kyc.status === "pending_review")) return "pending";
   return "needs_kyc";
+}
+
+/**
+ * Returns the visitor's account type for CTA visibility. Same shape
+ * as `Header.resolveAccountTypeForCta` — authenticated reads the DB
+ * doc (authoritative), anonymous falls back to the cookie hint.
+ */
+async function resolveAccountTypeForCta(): Promise<AccountType | null> {
+  const session = await getSession().catch(() => null);
+  if (session) {
+    return getMyAccountType().catch(() => null);
+  }
+  return readAccountTypeCookie();
 }
 
 export async function generateMetadata({
@@ -85,7 +113,11 @@ export default async function VerificacionPage({
 }: Readonly<{ params: Promise<{ lang: string }> }>) {
   const { lang } = await params;
   if (!isSupportedLocale(lang)) notFound();
-  const ctaState = await resolveCtaState();
+  const [ctaState, accountType] = await Promise.all([
+    resolveCtaState(),
+    resolveAccountTypeForCta(),
+  ]);
+  const showPublishCta = accountType !== ACCOUNT_TYPE_COMMENTATOR;
   const steps = buildSteps(lang);
   const faq = buildFaq(lang);
 
@@ -241,18 +273,20 @@ export default async function VerificacionPage({
               ))}
             </dl>
 
-            <div className="mt-12 flex flex-col items-center gap-4 text-center">
-              <p className="max-w-xl text-sm text-[var(--color-text-muted)]">
-                {t(lang, "verificacion.cta.publishQuestion")}
-              </p>
-              <Link
-                href={localizedHref(lang, "/publicar")}
-                className="inline-flex h-12 items-center gap-2 rounded-full bg-[var(--color-brand-primary)] px-6 text-sm font-semibold text-[var(--color-surface)] shadow-[var(--shadow-glow-primary)] transition-[background,transform] duration-200 ease-[var(--ease-standard)] hover:-translate-y-[1px] hover:bg-[var(--color-brand-primary-strong)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-background)]"
-              >
-                {t(lang, "verificacion.cta.publishLink")}
-                <ArrowRight className="h-4 w-4" aria-hidden />
-              </Link>
-            </div>
+            {showPublishCta ? (
+              <div className="mt-12 flex flex-col items-center gap-4 text-center">
+                <p className="max-w-xl text-sm text-[var(--color-text-muted)]">
+                  {t(lang, "verificacion.cta.publishQuestion")}
+                </p>
+                <Link
+                  href={localizedHref(lang, "/publicar")}
+                  className="inline-flex h-12 items-center gap-2 rounded-full bg-[var(--color-brand-primary)] px-6 text-sm font-semibold text-[var(--color-surface)] shadow-[var(--shadow-glow-primary)] transition-[background,transform] duration-200 ease-[var(--ease-standard)] hover:-translate-y-[1px] hover:bg-[var(--color-brand-primary-strong)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-background)]"
+                >
+                  {t(lang, "verificacion.cta.publishLink")}
+                  <ArrowRight className="h-4 w-4" aria-hidden />
+                </Link>
+              </div>
+            ) : null}
           </Container>
         </section>
       </main>

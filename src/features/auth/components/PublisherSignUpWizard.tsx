@@ -23,31 +23,21 @@ import type { SupportedLocale } from "@/core/branding/brand-config";
 import { localizedHref } from "@/core/i18n/href";
 import { t } from "@/core/i18n/messages";
 import { useActiveLocale } from "@/core/i18n/use-active-locale";
+import { setAccountType } from "@/features/auth/actions/set-account-type";
 import { useAuthSession } from "@/features/auth/lib/use-auth-session";
-import { PHONE_AUTH_ENABLED } from "@/features/auth/lib/rbac";
-import { MarketingTipsLoader } from "@/features/auth/components/MarketingTipsLoader";
-import { PhotoUploadField } from "@/features/auth/components/PhotoUploadField";
 import {
-  CharacterCounter,
-  FormErrorSummary,
+  ACCOUNT_TYPE_PUBLISHER,
+  PHONE_AUTH_ENABLED,
+} from "@/features/auth/lib/rbac";
+import {
   ValidatedField,
   type ValidatedFieldHandle,
 } from "@/shared/ui/form";
 import { toast } from "@/shared/ui/toast";
 
-type WizardStep = "phone" | "otp" | "password" | "profile";
+type WizardStep = "phone" | "otp" | "password";
 
-const STEP_ORDER: ReadonlyArray<WizardStep> = [
-  "phone",
-  "otp",
-  "password",
-  "profile",
-];
-
-const DESCRIPTION_MIN = 80;
-const DESCRIPTION_MAX = 200;
-const PHOTO_MIN = 2;
-const PHOTO_MAX = 10;
+const STEP_ORDER: ReadonlyArray<WizardStep> = ["phone", "otp", "password"];
 
 interface PhoneState {
   country: string;
@@ -61,40 +51,10 @@ interface PasswordState {
   acceptTerms: boolean;
 }
 
-interface ProfileState {
-  state: string;
-  city: string;
-  neighborhood: string;
-  travels: string;
-  age: string;
-  category: string;
-  title: string;
-  description: string;
-  contactEmail: boolean;
-  contactPhone: boolean;
-  contactWhatsapp: boolean;
-  contactTelegram: boolean;
-  noDeposit: boolean;
-  acceptTerms: boolean;
-}
-
 type PhoneErrors = Partial<Record<"country" | "phone" | "email", string>>;
 type OtpErrors = Partial<Record<"otp", string>>;
 type PasswordErrors = Partial<
   Record<"password" | "confirm" | "terms", string>
->;
-type ProfileErrors = Partial<
-  Record<
-    | "state"
-    | "city"
-    | "category"
-    | "title"
-    | "description"
-    | "contact"
-    | "photos"
-    | "terms",
-    string
-  >
 >;
 
 const COUNTRIES: ReadonlyArray<{ code: string; label: string; dial: string }> = [
@@ -106,15 +66,6 @@ const COUNTRIES: ReadonlyArray<{ code: string; label: string; dial: string }> = 
   { code: "UY", label: "Uruguay", dial: "+598" },
   { code: "ES", label: "España", dial: "+34" },
   { code: "BR", label: "Brasil", dial: "+55" },
-];
-
-const CATEGORIES: ReadonlyArray<string> = [
-  "Acompañantes",
-  "Masajes",
-  "Eventos",
-  "Salidas",
-  "Videollamadas",
-  "Otros",
 ];
 
 const REVEAL: Variants = {
@@ -134,25 +85,35 @@ const REVEAL: Variants = {
 const inputCls =
   "h-12 w-full appearance-none rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-background)] px-3 text-sm text-[var(--color-foreground)] placeholder:text-[var(--color-text-subtle)] focus:border-[var(--color-brand-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-brand-primary)]/30 aria-[invalid=true]:border-[var(--color-brand-highlight)] aria-[invalid=true]:focus:ring-[var(--color-brand-highlight)]/35";
 const inputClsWithLeftIcon = `${inputCls} pl-10`;
-const textareaCls =
-  "w-full rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-background)] px-3 py-2.5 text-sm text-[var(--color-foreground)] placeholder:text-[var(--color-text-subtle)] focus:border-[var(--color-brand-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-brand-primary)]/30 aria-[invalid=true]:border-[var(--color-brand-highlight)] aria-[invalid=true]:focus:ring-[var(--color-brand-highlight)]/35";
 
 /**
- * Flow A — multi-step publisher registration wizard.
+ * Publisher (partner) signup wizard — ACCOUNT-LEVEL data only.
  *
- * Per-step validation maps to per-field errors so the UI can shake the
- * specific offending control via `ValidatedField`. On final submit we
- * mount `MarketingTipsLoader` to keep the wait productive with rotating
- * conversion advice.
+ * Three steps: phone+email → OTP → password. Submit creates the
+ * Firebase Auth user; `signUpWithIdToken` writes
+ * `users/{uid}.accountType = 'publisher'` (ADR-019) from the
+ * `biringas:account-type` cookie that `/registrarse` already set.
  *
- * The OTP, photo-upload, and phone verification are gated by feature
- * flags in `rbac.ts` — they render visually but accept inputs
- * optimistically until the real wiring lands.
+ * After signup the publisher lands on `/mi-cuenta` (their dashboard).
+ * From there, modelo-level work happens:
+ *
+ *   - Creating a `persons/{personId}` doc — partner can have 1 or N
+ *     modelos (ADR-018).
+ *   - Submitting KYC at `/verificacion/enviar`, per person (ADR-018
+ *     amendment).
+ *   - Publishing a listing at `/publicar`, scoped to a specific
+ *     person (ADR-018 § "createListingDraft gains personId").
+ *
+ * The wizard NEVER asks for modelo profile data (city, age, category,
+ * title, photos, contact prefs). Those are properties of a published
+ * listing, not of the account that publishes it. Conflating them was
+ * the bug closed by this refactor.
  */
 export function PublisherSignUpWizard() {
   const router = useRouter();
   const locale = useActiveLocale();
-  const { status, signUpWithEmail, signInWithGoogle } = useAuthSession();
+  const { status, signUpWithEmail, signInWithGoogle, signOut } =
+    useAuthSession();
 
   const [step, setStep] = useState<WizardStep>("phone");
   const [phone, setPhone] = useState<PhoneState>({
@@ -169,24 +130,6 @@ export function PublisherSignUpWizard() {
     acceptTerms: false,
   });
   const [pwErrors, setPwErrors] = useState<PasswordErrors>({});
-  const [profile, setProfile] = useState<ProfileState>({
-    state: "",
-    city: "",
-    neighborhood: "",
-    travels: "",
-    age: "",
-    category: "",
-    title: "",
-    description: "",
-    contactEmail: true,
-    contactPhone: false,
-    contactWhatsapp: false,
-    contactTelegram: false,
-    noDeposit: false,
-    acceptTerms: false,
-  });
-  const [photos, setPhotos] = useState<ReadonlyArray<File>>([]);
-  const [profileErrors, setProfileErrors] = useState<ProfileErrors>({});
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
@@ -244,41 +187,10 @@ export function PublisherSignUpWizard() {
     return next;
   }
 
-  function validateProfile(): ProfileErrors {
-    const next: ProfileErrors = {};
-    if (!profile.state.trim())
-      next.state = t(locale, "rbac.publisher.profile.validation.required");
-    if (!profile.city.trim())
-      next.city = t(locale, "rbac.publisher.profile.validation.required");
-    if (!profile.category)
-      next.category = t(locale, "rbac.publisher.profile.validation.required");
-    if (profile.title.trim().length < 40)
-      next.title = t(locale, "rbac.publisher.profile.validation.titleMin");
-    const descLen = profile.description.trim().length;
-    if (descLen < DESCRIPTION_MIN)
-      next.description = t(
-        locale,
-        "rbac.publisher.profile.validation.descriptionMin",
-      );
-    else if (descLen > DESCRIPTION_MAX)
-      next.description = t(
-        locale,
-        "rbac.publisher.profile.validation.descriptionMax",
-        { max: DESCRIPTION_MAX },
-      );
-    if (
-      !profile.contactEmail &&
-      !profile.contactPhone &&
-      !profile.contactWhatsapp &&
-      !profile.contactTelegram
-    )
-      next.contact = t(locale, "rbac.publisher.profile.validation.contact");
-    if (!profile.acceptTerms)
-      next.terms = t(locale, "rbac.publisher.profile.validation.terms");
-    return next;
-  }
-
-  function shakeFirst(keys: ReadonlyArray<string>, errors: Record<string, string | undefined>) {
+  function shakeFirst(
+    keys: ReadonlyArray<string>,
+    errors: Record<string, string | undefined>,
+  ) {
     for (const k of keys) {
       if (errors[k]) {
         refs.current[k]?.shake();
@@ -315,20 +227,6 @@ export function PublisherSignUpWizard() {
         return;
       }
       setStep("password");
-      return;
-    }
-    if (step === "password") {
-      const errs = validatePassword();
-      setPwErrors(errs);
-      if (Object.keys(errs).length) {
-        shakeFirst(["password", "confirm", "terms"], errs);
-        toast.error(
-          t(locale, "rbac.form.toast.invalid.title"),
-          t(locale, "rbac.form.toast.invalid.body"),
-        );
-        return;
-      }
-      setStep("profile");
     }
   }
 
@@ -338,12 +236,37 @@ export function PublisherSignUpWizard() {
     if (idx > 0) setStep(STEP_ORDER[idx - 1] as WizardStep);
   }
 
+  /**
+   * Google OAuth shortcut on step 1. Google auth itself proves
+   * email+identity, so we skip OTP and password and complete the
+   * signup immediately. Lands on `/mi-cuenta`.
+   *
+   * ADR-019 refusal: this is a SIGNUP surface, not a login surface.
+   * `signInWithGoogle` will happily authenticate an existing Google
+   * email that already had `users/{uid}.accountType = 'commentator'`
+   * locked — without an explicit check the user would silently land
+   * on the commentator dashboard wondering why their "publisher
+   * signup" didn't apply. After the Google popup we call
+   * `setAccountType('publisher')`: if the doc was already locked to
+   * commentator it returns `account-type-locked`, and we sign the
+   * user back out and surface a "use another Google account" error.
+   */
   async function onGoogleShortcut() {
     setSubmitError(null);
     setSubmitting(true);
     try {
       await signInWithGoogle();
-      setStep("profile");
+      const result = await setAccountType(ACCOUNT_TYPE_PUBLISHER);
+      if (!result.ok && result.error?.kind === "account-type-locked") {
+        const msg = t(locale, "auth.signup.google.lockedAsClient");
+        await signOut().catch(() => undefined);
+        setSubmitError(msg);
+        toast.error(t(locale, "rbac.form.toast.error.title"), msg);
+        setSubmitting(false);
+        return;
+      }
+      router.push(localizedHref(locale, "/mi-cuenta"));
+      router.refresh();
     } catch (err) {
       const code =
         typeof (err as { code?: unknown } | undefined)?.code === "string"
@@ -355,24 +278,26 @@ export function PublisherSignUpWizard() {
           : ((err as Error)?.message ?? t(locale, "auth.error.unknown"));
       setSubmitError(msg);
       toast.error(t(locale, "rbac.form.toast.error.title"), msg);
-    } finally {
       setSubmitting(false);
     }
   }
 
+  /**
+   * Final submit (only fires on the password step). Creates the
+   * Firebase Auth user; downstream `signUpWithIdToken` writes
+   * `users/{uid}` with `accountType: 'publisher'` from the cookie the
+   * `/registrarse` chooser set.
+   */
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (step !== "profile") {
+    if (step !== "password") {
       goNext();
       return;
     }
-    const errs = validateProfile();
-    setProfileErrors(errs);
+    const errs = validatePassword();
+    setPwErrors(errs);
     if (Object.keys(errs).length) {
-      shakeFirst(
-        ["state", "city", "category", "title", "description", "contact", "photos", "terms"],
-        errs,
-      );
+      shakeFirst(["password", "confirm", "terms"], errs);
       toast.error(
         t(locale, "rbac.form.toast.invalid.title"),
         t(locale, "rbac.form.toast.invalid.body"),
@@ -385,15 +310,11 @@ export function PublisherSignUpWizard() {
       if (status !== "disabled" && !status?.includes("authenticated")) {
         await signUpWithEmail(phone.email, pw.password);
       }
-      // Brief artificial delay so the loader's first tip is readable —
-      // also useful UX padding while we wait for Firebase to mint the
-      // session cookie.
-      await new Promise<void>((resolve) => setTimeout(resolve, 1600));
       toast.success(
         t(locale, "rbac.form.toast.success.title"),
         t(locale, "rbac.form.toast.success.body"),
       );
-      router.push(`${localizedHref(locale, "/mi-cuenta")}?just_published=1`);
+      router.push(localizedHref(locale, "/mi-cuenta"));
       router.refresh();
     } catch (err) {
       const code =
@@ -418,204 +339,153 @@ export function PublisherSignUpWizard() {
   );
 
   return (
-    <>
-      <motion.form
-        onSubmit={onSubmit}
-        noValidate
-        className="relative flex w-full flex-col gap-6 overflow-hidden rounded-[var(--radius-2xl)] border border-[var(--color-border)] bg-[var(--color-surface)] p-6 shadow-[var(--shadow-lg)] sm:p-8"
-      >
-        <span
-          aria-hidden
-          className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[var(--color-gold)]/55 to-transparent"
-        />
+    <motion.form
+      onSubmit={onSubmit}
+      noValidate
+      className="relative flex w-full flex-col gap-6 overflow-hidden rounded-[var(--radius-2xl)] border border-[var(--color-border)] bg-[var(--color-surface)] p-6 shadow-[var(--shadow-lg)] sm:p-8"
+    >
+      <span
+        aria-hidden
+        className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[var(--color-gold)]/55 to-transparent"
+      />
 
-        <ChapterMarker currentStep={step} locale={locale} />
-        <WizardStepper currentStep={step} locale={locale} />
+      <ChapterMarker currentStep={step} locale={locale} />
+      <WizardStepper currentStep={step} locale={locale} />
 
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={step}
-            variants={REVEAL}
-            initial="hidden"
-            animate="visible"
-            exit="exit"
-            className="flex flex-col gap-5"
-          >
-            {step === "phone" ? (
-              <>
-                <PhoneStep
-                  locale={locale}
-                  value={phone}
-                  onChange={(next) => {
-                    setPhone(next);
-                    if (Object.keys(phoneErrors).length) setPhoneErrors({});
-                  }}
-                  errors={phoneErrors}
-                  setRef={setRef}
-                  countries={COUNTRIES}
-                />
-                {status !== "disabled" ? (
-                  <>
-                    <div
-                      role="separator"
-                      aria-orientation="horizontal"
-                      className="flex items-center gap-3 text-[10px] uppercase tracking-[0.22em] text-[var(--color-text-subtle)]"
-                    >
-                      <span
-                        className="h-px flex-1 bg-[var(--color-border)]"
-                        aria-hidden
-                      />
-                      <span>{t(locale, "auth.signin.divider")}</span>
-                      <span
-                        className="h-px flex-1 bg-[var(--color-border)]"
-                        aria-hidden
-                      />
-                    </div>
-                    <button
-                      type="button"
-                      onClick={onGoogleShortcut}
-                      disabled={submitting}
-                      className="inline-flex h-12 items-center justify-center gap-2 rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] px-5 text-sm font-semibold text-[var(--color-foreground)] transition-[border-color,background,transform] duration-200 ease-[var(--ease-standard)] hover:-translate-y-[1px] hover:border-[var(--color-brand-primary-soft)] hover:bg-[var(--color-background-elevated)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-background)] disabled:cursor-not-allowed disabled:opacity-70"
-                    >
-                      <GoogleGlyph />
-                      {t(locale, "auth.signin.google")}
-                    </button>
-                  </>
-                ) : null}
-              </>
-            ) : null}
-            {step === "otp" ? (
-              <OtpStep
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={step}
+          variants={REVEAL}
+          initial="hidden"
+          animate="visible"
+          exit="exit"
+          className="flex flex-col gap-5"
+        >
+          {step === "phone" ? (
+            <>
+              <PhoneStep
                 locale={locale}
-                value={otp}
-                onChange={(v) => {
-                  setOtp(v);
-                  if (otpErrors.otp) setOtpErrors({});
-                }}
-                error={otpErrors.otp}
-                setRef={setRef}
-                e164={e164}
-              />
-            ) : null}
-            {step === "password" ? (
-              <PasswordStep
-                locale={locale}
-                value={pw}
+                value={phone}
                 onChange={(next) => {
-                  setPw(next);
-                  if (Object.keys(pwErrors).length) setPwErrors({});
+                  setPhone(next);
+                  if (Object.keys(phoneErrors).length) setPhoneErrors({});
                 }}
-                errors={pwErrors}
+                errors={phoneErrors}
                 setRef={setRef}
+                countries={COUNTRIES}
               />
-            ) : null}
-            {step === "profile" ? (
-              <ProfileStep
-                locale={locale}
-                value={profile}
-                onChange={(next) => {
-                  setProfile(next);
-                  if (Object.keys(profileErrors).length) {
-                    setProfileErrors({});
-                  }
-                }}
-                photos={photos}
-                onPhotosChange={(next) => {
-                  setPhotos(next);
-                  if (profileErrors.photos)
-                    setProfileErrors({ ...profileErrors, photos: undefined });
-                }}
-                errors={profileErrors}
-                setRef={setRef}
-              />
-            ) : null}
-          </motion.div>
-        </AnimatePresence>
-
-        {step === "profile" ? (
-          <FormErrorSummary
-            items={summaryFromProfileErrors(profileErrors, locale)}
-            heading={t(locale, "rbac.form.errorSummary.heading")}
-            onJumpTo={(fieldId) => refs.current[fieldId]?.shake()}
-          />
-        ) : null}
-
-        {submitError && (
-          <p
-            role="alert"
-            className="rounded-[var(--radius-md)] border border-[var(--color-brand-highlight)]/40 bg-[var(--color-brand-highlight)]/10 px-3 py-2 text-xs text-[var(--color-brand-highlight)]"
-          >
-            {submitError}
-          </p>
-        )}
-
-        <div className="flex items-center justify-between gap-3 border-t border-[var(--color-border)] pt-5">
-          <button
-            type="button"
-            onClick={goBack}
-            disabled={step === "phone" || submitting}
-            className="inline-flex h-11 items-center gap-2 rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] px-4 text-xs font-semibold text-[var(--color-foreground)] transition-colors hover:border-[var(--color-brand-primary-soft)] hover:bg-[var(--color-background-elevated)] disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            <ArrowLeft className="h-3.5 w-3.5" aria-hidden />
-            {t(locale, "rbac.publisher.back")}
-          </button>
-
-          <button
-            type="submit"
-            disabled={submitting}
-            className="inline-flex h-11 items-center gap-2 rounded-full bg-[var(--color-brand-primary)] px-5 text-sm font-semibold text-[var(--color-surface)] shadow-[var(--shadow-glow-primary)] transition-[background,transform] duration-200 hover:-translate-y-[1px] hover:bg-[var(--color-brand-primary-strong)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-background)] disabled:cursor-not-allowed disabled:opacity-70"
-          >
-            {step === "profile" ? (
-              submitting ? (
-                t(locale, "rbac.publisher.profile.submitting")
-              ) : (
+              {status !== "disabled" ? (
                 <>
-                  <UserCheck className="h-4 w-4" aria-hidden />
-                  {t(locale, "rbac.publisher.profile.submit")}
+                  <div
+                    role="separator"
+                    aria-orientation="horizontal"
+                    className="flex items-center gap-3 text-[10px] uppercase tracking-[0.22em] text-[var(--color-text-subtle)]"
+                  >
+                    <span
+                      className="h-px flex-1 bg-[var(--color-border)]"
+                      aria-hidden
+                    />
+                    <span>{t(locale, "auth.signin.divider")}</span>
+                    <span
+                      className="h-px flex-1 bg-[var(--color-border)]"
+                      aria-hidden
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={onGoogleShortcut}
+                    disabled={submitting}
+                    className="inline-flex h-12 items-center justify-center gap-2 rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] px-5 text-sm font-semibold text-[var(--color-foreground)] transition-[border-color,background,transform] duration-200 ease-[var(--ease-standard)] hover:-translate-y-[1px] hover:border-[var(--color-brand-primary-soft)] hover:bg-[var(--color-background-elevated)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-background)] disabled:cursor-not-allowed disabled:opacity-70"
+                  >
+                    <GoogleGlyph />
+                    {t(locale, "auth.signin.google")}
+                  </button>
                 </>
-              )
+              ) : null}
+            </>
+          ) : null}
+          {step === "otp" ? (
+            <OtpStep
+              locale={locale}
+              value={otp}
+              onChange={(v) => {
+                setOtp(v);
+                if (otpErrors.otp) setOtpErrors({});
+              }}
+              error={otpErrors.otp}
+              setRef={setRef}
+              e164={e164}
+            />
+          ) : null}
+          {step === "password" ? (
+            <PasswordStep
+              locale={locale}
+              value={pw}
+              onChange={(next) => {
+                setPw(next);
+                if (Object.keys(pwErrors).length) setPwErrors({});
+              }}
+              errors={pwErrors}
+              setRef={setRef}
+            />
+          ) : null}
+        </motion.div>
+      </AnimatePresence>
+
+      {submitError && (
+        <p
+          role="alert"
+          className="rounded-[var(--radius-md)] border border-[var(--color-brand-highlight)]/40 bg-[var(--color-brand-highlight)]/10 px-3 py-2 text-xs text-[var(--color-brand-highlight)]"
+        >
+          {submitError}
+        </p>
+      )}
+
+      <div className="flex items-center justify-between gap-3 border-t border-[var(--color-border)] pt-5">
+        <button
+          type="button"
+          onClick={goBack}
+          disabled={step === "phone" || submitting}
+          className="inline-flex h-11 items-center gap-2 rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] px-4 text-xs font-semibold text-[var(--color-foreground)] transition-colors hover:border-[var(--color-brand-primary-soft)] hover:bg-[var(--color-background-elevated)] disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          <ArrowLeft className="h-3.5 w-3.5" aria-hidden />
+          {t(locale, "rbac.publisher.back")}
+        </button>
+
+        <button
+          type="submit"
+          disabled={submitting}
+          className="inline-flex h-11 items-center gap-2 rounded-full bg-[var(--color-brand-primary)] px-5 text-sm font-semibold text-[var(--color-surface)] shadow-[var(--shadow-glow-primary)] transition-[background,transform] duration-200 hover:-translate-y-[1px] hover:bg-[var(--color-brand-primary-strong)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-background)] disabled:cursor-not-allowed disabled:opacity-70"
+        >
+          {step === "password" ? (
+            submitting ? (
+              t(locale, "rbac.publisher.password.submitting")
             ) : (
               <>
-                {t(locale, "rbac.publisher.next")}
-                <ArrowRight className="h-4 w-4" aria-hidden />
+                <UserCheck className="h-4 w-4" aria-hidden />
+                {t(locale, "rbac.publisher.password.submit")}
               </>
-            )}
-          </button>
-        </div>
+            )
+          ) : (
+            <>
+              {t(locale, "rbac.publisher.next")}
+              <ArrowRight className="h-4 w-4" aria-hidden />
+            </>
+          )}
+        </button>
+      </div>
 
-        <p className="text-center text-[11px] text-[var(--color-text-muted)]">
-          {t(locale, "rbac.publisher.changeAccountType")}{" "}
-          <Link
-            href={switchToCommentatorHref}
-            className="font-semibold text-[var(--color-brand-primary)] underline-offset-2 hover:underline"
-          >
-            {t(locale, "rbac.publisher.changeAccountType.cta")}
-          </Link>
-        </p>
-      </motion.form>
-
-      <MarketingTipsLoader open={submitting && step === "profile"} />
-    </>
+      <p className="text-center text-[11px] text-[var(--color-text-muted)]">
+        {t(locale, "rbac.publisher.changeAccountType")}{" "}
+        <Link
+          href={switchToCommentatorHref}
+          className="font-semibold text-[var(--color-brand-primary)] underline-offset-2 hover:underline"
+        >
+          {t(locale, "rbac.publisher.changeAccountType.cta")}
+        </Link>
+      </p>
+    </motion.form>
   );
-}
-
-function summaryFromProfileErrors(
-  errs: ProfileErrors,
-  locale: SupportedLocale,
-): ReadonlyArray<{ fieldId: string; label: string; message: string }> {
-  const labels: Record<keyof ProfileErrors, string> = {
-    state: t(locale, "rbac.publisher.profile.field.state"),
-    city: t(locale, "rbac.publisher.profile.field.city"),
-    category: t(locale, "rbac.publisher.profile.field.category"),
-    title: t(locale, "rbac.publisher.profile.field.title"),
-    description: t(locale, "rbac.publisher.profile.field.description"),
-    contact: t(locale, "rbac.publisher.profile.section.contact"),
-    photos: t(locale, "rbac.publisher.profile.section.photos"),
-    terms: t(locale, "auth.signup.terms.terms"),
-  };
-  return (Object.keys(errs) as Array<keyof ProfileErrors>)
-    .filter((k) => Boolean(errs[k]))
-    .map((k) => ({ fieldId: k, label: labels[k], message: errs[k]! }));
 }
 
 /* -------------------------------------------------------------------------- */
@@ -633,7 +503,6 @@ function ChapterMarker({
     phone: t(locale, "rbac.publisher.step.phone"),
     otp: t(locale, "rbac.publisher.step.otp"),
     password: t(locale, "rbac.publisher.step.password"),
-    profile: t(locale, "rbac.publisher.step.profile"),
   };
   const idx = STEP_ORDER.indexOf(currentStep);
   const pad = (n: number) => String(n + 1).padStart(2, "0");
@@ -694,7 +563,6 @@ function WizardStepper({
       phone: t(locale, "rbac.publisher.step.phone"),
       otp: t(locale, "rbac.publisher.step.otp"),
       password: t(locale, "rbac.publisher.step.password"),
-      profile: t(locale, "rbac.publisher.step.profile"),
     }),
     [locale],
   );
@@ -966,7 +834,7 @@ function OtpStep({
 }
 
 /* -------------------------------------------------------------------------- */
-/* Step 3 — Password                                                          */
+/* Step 3 — Password (final step, completes the signup)                       */
 /* -------------------------------------------------------------------------- */
 
 function PasswordStep({
@@ -1088,379 +956,8 @@ function PasswordStep({
 }
 
 /* -------------------------------------------------------------------------- */
-/* Step 4 — Profile details                                                   */
-/* -------------------------------------------------------------------------- */
-
-function ProfileStep({
-  locale,
-  value,
-  onChange,
-  photos,
-  onPhotosChange,
-  errors,
-  setRef,
-}: {
-  locale: SupportedLocale;
-  value: ProfileState;
-  onChange: (next: ProfileState) => void;
-  photos: ReadonlyArray<File>;
-  onPhotosChange: (next: ReadonlyArray<File>) => void;
-  errors: ProfileErrors;
-  setRef: (key: string) => (handle: ValidatedFieldHandle | null) => void;
-}) {
-  return (
-    <div className="flex flex-col gap-6">
-      <header className="flex flex-col gap-1">
-        <h2 className="font-[var(--font-display)] text-xl font-[420] tracking-tight text-[var(--color-foreground)]">
-          {t(locale, "rbac.publisher.profile.title")}
-        </h2>
-        <p className="text-sm leading-relaxed text-[var(--color-text-muted)]">
-          {t(locale, "rbac.publisher.profile.subtitle")}
-        </p>
-      </header>
-
-      <Fieldset legend={t(locale, "rbac.publisher.profile.section.location")}>
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <ValidatedField
-            ref={setRef("state")}
-            id="state"
-            label={t(locale, "rbac.publisher.profile.field.state")}
-            required
-            error={errors.state}
-          >
-            {(api) => (
-              <input
-                {...api}
-                id={api.inputId}
-                type="text"
-                value={value.state}
-                onChange={(e) => onChange({ ...value, state: e.target.value })}
-                placeholder={t(
-                  locale,
-                  "rbac.publisher.profile.field.state.placeholder",
-                )}
-                className={inputCls}
-              />
-            )}
-          </ValidatedField>
-          <ValidatedField
-            ref={setRef("city")}
-            id="city"
-            label={t(locale, "rbac.publisher.profile.field.city")}
-            required
-            error={errors.city}
-          >
-            {(api) => (
-              <input
-                {...api}
-                id={api.inputId}
-                type="text"
-                value={value.city}
-                onChange={(e) => onChange({ ...value, city: e.target.value })}
-                placeholder={t(
-                  locale,
-                  "rbac.publisher.profile.field.city.placeholder",
-                )}
-                className={inputCls}
-              />
-            )}
-          </ValidatedField>
-          <ValidatedField
-            id="neighborhood"
-            label={t(locale, "rbac.publisher.profile.field.neighborhood")}
-          >
-            {(api) => (
-              <input
-                {...api}
-                id={api.inputId}
-                type="text"
-                value={value.neighborhood}
-                onChange={(e) =>
-                  onChange({ ...value, neighborhood: e.target.value })
-                }
-                placeholder={t(
-                  locale,
-                  "rbac.publisher.profile.field.neighborhood.placeholder",
-                )}
-                className={inputCls}
-              />
-            )}
-          </ValidatedField>
-          <ValidatedField
-            id="travels"
-            label={t(locale, "rbac.publisher.profile.field.travels")}
-          >
-            {(api) => (
-              <input
-                {...api}
-                id={api.inputId}
-                type="text"
-                value={value.travels}
-                onChange={(e) =>
-                  onChange({ ...value, travels: e.target.value })
-                }
-                placeholder={t(
-                  locale,
-                  "rbac.publisher.profile.field.travels.placeholder",
-                )}
-                className={inputCls}
-              />
-            )}
-          </ValidatedField>
-        </div>
-      </Fieldset>
-
-      <Fieldset legend={t(locale, "rbac.publisher.profile.section.details")}>
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <ValidatedField
-            id="age"
-            label={t(locale, "rbac.publisher.profile.field.age")}
-          >
-            {(api) => (
-              <input
-                {...api}
-                id={api.inputId}
-                type="number"
-                min={18}
-                max={99}
-                value={value.age}
-                onChange={(e) => onChange({ ...value, age: e.target.value })}
-                placeholder={t(
-                  locale,
-                  "rbac.publisher.profile.field.age.placeholder",
-                )}
-                className={inputCls}
-              />
-            )}
-          </ValidatedField>
-          <ValidatedField
-            ref={setRef("category")}
-            id="category"
-            label={t(locale, "rbac.publisher.profile.field.category")}
-            required
-            error={errors.category}
-          >
-            {(api) => (
-              <select
-                {...api}
-                id={api.inputId}
-                value={value.category}
-                onChange={(e) =>
-                  onChange({ ...value, category: e.target.value })
-                }
-                className={inputCls}
-              >
-                <option value="">
-                  {t(
-                    locale,
-                    "rbac.publisher.profile.field.category.placeholder",
-                  )}
-                </option>
-                {CATEGORIES.map((c) => (
-                  <option key={c} value={c}>
-                    {c}
-                  </option>
-                ))}
-              </select>
-            )}
-          </ValidatedField>
-        </div>
-        <ValidatedField
-          ref={setRef("title")}
-          id="title"
-          label={t(locale, "rbac.publisher.profile.field.title")}
-          required
-          error={errors.title}
-        >
-          {(api) => (
-            <input
-              {...api}
-              id={api.inputId}
-              type="text"
-              minLength={40}
-              value={value.title}
-              onChange={(e) => onChange({ ...value, title: e.target.value })}
-              placeholder={t(
-                locale,
-                "rbac.publisher.profile.field.title.placeholder",
-              )}
-              className={inputCls}
-            />
-          )}
-        </ValidatedField>
-        <ValidatedField
-          ref={setRef("description")}
-          id="description"
-          label={t(locale, "rbac.publisher.profile.field.description")}
-          required
-          error={errors.description}
-        >
-          {(api) => (
-            <div className="flex flex-col gap-1.5">
-              <textarea
-                {...api}
-                id={api.inputId}
-                rows={5}
-                minLength={DESCRIPTION_MIN}
-                maxLength={DESCRIPTION_MAX}
-                value={value.description}
-                onChange={(e) =>
-                  onChange({
-                    ...value,
-                    description: e.target.value.slice(0, DESCRIPTION_MAX),
-                  })
-                }
-                placeholder={t(
-                  locale,
-                  "rbac.publisher.profile.field.description.placeholder",
-                )}
-                className={textareaCls}
-              />
-              <div className="flex items-center justify-between gap-3">
-                <span className="text-[10px] text-[var(--color-text-subtle)]">
-                  {t(
-                    locale,
-                    "rbac.publisher.profile.field.description.hint",
-                    { max: DESCRIPTION_MAX },
-                  )}
-                </span>
-                <CharacterCounter
-                  current={value.description.length}
-                  min={DESCRIPTION_MIN}
-                  max={DESCRIPTION_MAX}
-                />
-              </div>
-            </div>
-          )}
-        </ValidatedField>
-      </Fieldset>
-
-      <Fieldset legend={t(locale, "rbac.publisher.profile.section.contact")}>
-        <p className="text-[11px] text-[var(--color-text-subtle)]">
-          {t(locale, "rbac.publisher.profile.contact.help")}
-        </p>
-        <div
-          className={`flex flex-col gap-2 rounded-[var(--radius-md)] border px-3 py-2 transition-colors ${errors.contact ? "border-[var(--color-brand-highlight)]/45 bg-[var(--color-brand-highlight)]/6" : "border-transparent"}`}
-        >
-          {[
-            {
-              key: "contactEmail" as const,
-              label: t(locale, "rbac.publisher.profile.contact.email"),
-            },
-            {
-              key: "contactPhone" as const,
-              label: t(locale, "rbac.publisher.profile.contact.phone"),
-            },
-            {
-              key: "contactWhatsapp" as const,
-              label: t(locale, "rbac.publisher.profile.contact.whatsapp"),
-            },
-            {
-              key: "contactTelegram" as const,
-              label: t(locale, "rbac.publisher.profile.contact.telegram"),
-            },
-            {
-              key: "noDeposit" as const,
-              label: t(locale, "rbac.publisher.profile.contact.noDeposit"),
-            },
-          ].map((opt) => (
-            <label
-              key={opt.key}
-              className="inline-flex items-start gap-2 text-xs text-[var(--color-text-muted)]"
-            >
-              <input
-                type="checkbox"
-                checked={Boolean(value[opt.key])}
-                onChange={(e) =>
-                  onChange({ ...value, [opt.key]: e.target.checked })
-                }
-                className="mt-0.5 h-4 w-4 cursor-pointer accent-[var(--color-brand-primary)]"
-              />
-              <span>{opt.label}</span>
-            </label>
-          ))}
-        </div>
-        <AnimatePresence>
-          {errors.contact ? (
-            <motion.p
-              role="alert"
-              initial={{ opacity: 0, y: -4, height: 0 }}
-              animate={{ opacity: 1, y: 0, height: "auto" }}
-              exit={{ opacity: 0, y: -4, height: 0 }}
-              transition={{ duration: 0.2 }}
-              className="text-[11px] text-[var(--color-brand-highlight)]"
-            >
-              {errors.contact}
-            </motion.p>
-          ) : null}
-        </AnimatePresence>
-      </Fieldset>
-
-      <Fieldset legend={t(locale, "rbac.publisher.profile.section.photos")}>
-        <p className="text-[11px] text-[var(--color-text-muted)]">
-          {t(locale, "rbac.publisher.profile.photos.help")}
-        </p>
-        <PhotoUploadField
-          files={photos}
-          onChange={onPhotosChange}
-          min={PHOTO_MIN}
-          max={PHOTO_MAX}
-          error={errors.photos}
-        />
-        <DisabledNotice
-          body={t(locale, "rbac.publisher.profile.photos.disabled")}
-        />
-      </Fieldset>
-
-      <label
-        className={`flex items-start gap-2.5 rounded-[var(--radius-md)] border px-3 py-2 text-xs text-[var(--color-text-muted)] transition-colors ${errors.terms ? "border-[var(--color-brand-highlight)]/45 bg-[var(--color-brand-highlight)]/6" : "border-transparent"}`}
-      >
-        <input
-          type="checkbox"
-          checked={value.acceptTerms}
-          onChange={(e) =>
-            onChange({ ...value, acceptTerms: e.target.checked })
-          }
-          aria-invalid={errors.terms ? true : undefined}
-          className="mt-0.5 h-4 w-4 cursor-pointer accent-[var(--color-brand-primary)]"
-        />
-        <span>{t(locale, "rbac.publisher.profile.terms.lead")}</span>
-      </label>
-      <AnimatePresence>
-        {errors.terms ? (
-          <motion.p
-            role="alert"
-            initial={{ opacity: 0, y: -4, height: 0 }}
-            animate={{ opacity: 1, y: 0, height: "auto" }}
-            exit={{ opacity: 0, y: -4, height: 0 }}
-            transition={{ duration: 0.2 }}
-            className="text-[11px] text-[var(--color-brand-highlight)]"
-          >
-            {errors.terms}
-          </motion.p>
-        ) : null}
-      </AnimatePresence>
-    </div>
-  );
-}
-
-/* -------------------------------------------------------------------------- */
 /* Tiny helpers                                                               */
 /* -------------------------------------------------------------------------- */
-
-function Fieldset({
-  legend,
-  children,
-}: Readonly<{ legend: string; children: React.ReactNode }>) {
-  return (
-    <fieldset className="flex flex-col gap-3 rounded-[var(--radius-xl)] border border-[var(--color-border)] bg-[var(--color-background-elevated)]/50 p-4">
-      <legend className="px-1 text-[10px] font-semibold uppercase tracking-[0.22em] text-[var(--color-brand-primary)]">
-        {legend}
-      </legend>
-      {children}
-    </fieldset>
-  );
-}
 
 function DisabledNotice({ body }: { body: string }) {
   return (

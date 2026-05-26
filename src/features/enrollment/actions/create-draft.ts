@@ -19,7 +19,10 @@ import { createListingDraft as createListingDraftImpl } from "@/server/biringas"
 
 export interface ActionResult<T = void> {
   ok: boolean;
-  error?: { kind: string; message: string };
+  error?: {
+    kind: string;
+    message: string;
+  };
   data?: T;
 }
 

@@ -6,7 +6,12 @@ import {
 } from "@/server/verification/types";
 
 /**
- * Path generators for the verification bucket prefix (ADR-014).
+ * Path generators for the verification bucket prefix (ADR-014, ADR-018).
+ *
+ * ADR-018 Phase A: the bucket prefix stays as `verifications/`; the
+ * second segment used to be the account uid and is now the **personId**
+ * (the doc-id space is opaque, so legacy lazy-migrated accounts whose
+ * personId equals uid keep working untouched).
  *
  * `firebase-data-ownership` rule 9 forbids hardcoded prefixes anywhere
  * outside the storage adapter family. This file is the source of truth.
@@ -26,13 +31,13 @@ export function extensionForMime(mime: string): string {
 }
 
 export function verificationAssetPath(args: {
-  ownerUid: string;
+  personId: string;
   kind: VerificationUploadKind;
   mime: string;
 }): string {
   return [
     VERIFICATION_PATH_PREFIX,
-    args.ownerUid,
+    args.personId,
     `${args.kind}.${extensionForMime(args.mime)}`,
   ].join("/");
 }
@@ -42,7 +47,7 @@ const VERIFICATION_PATH_REGEX = new RegExp(
 );
 
 export interface VerificationPathParts {
-  ownerUid: string;
+  personId: string;
   kind: VerificationUploadKind;
   extension: string;
 }
@@ -53,7 +58,7 @@ export function parseVerificationPath(
   const m = VERIFICATION_PATH_REGEX.exec(path);
   if (!m) return null;
   return {
-    ownerUid: m[1],
+    personId: m[1],
     kind: m[2] as VerificationUploadKind,
     extension: m[3],
   };

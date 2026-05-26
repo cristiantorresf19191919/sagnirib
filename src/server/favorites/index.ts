@@ -3,6 +3,7 @@ import "server-only";
 import { updateTag } from "next/cache";
 
 import { isFirebaseConfigured } from "@/core/config/firebase";
+import { AuthError } from "@/server/auth";
 import { auditLog } from "@/server/security/audit-log";
 import { requireAuth } from "@/server/security/require-auth";
 import { validateActionInput } from "@/server/security/validate-action-input";
@@ -50,12 +51,29 @@ const syncFavoritesRaw = adapter.syncFavoritesRaw;
  * because every Server Component that hydrates the favorites provider
  * needs to call this and gracefully render the anonymous state.
  *
+ * Hardened for `session-revoked` / `session-expired` / `invalid-session`:
+ * RootLayout calls this on every request, and Firebase can mark a cookie
+ * revoked when refresh tokens rotate (e.g. after a grant-admin run or a
+ * sign-out from a sibling app). Crashing the layout would be worse UX than
+ * treating a dead cookie as anonymous — the next sign-in re-mints it.
+ *
  * NOT audited — reads are frequent and cheap, and the auth log is
  * reserved for writes per ADR-010 §5.
  */
 export async function listMyFavorites(): Promise<ReadonlyArray<string>> {
   const { getSession } = await import("@/server/auth");
-  const user = await getSession();
+  let user: Awaited<ReturnType<typeof getSession>>;
+  try {
+    user = await getSession();
+  } catch (err) {
+    if (err instanceof AuthError) {
+      console.warn(
+        `[favorites] treating session as anonymous (${err.kind}): ${err.message}`,
+      );
+      return [];
+    }
+    throw err;
+  }
   if (!user) return [];
   return listMyFavoritesRaw(user.uid);
 }

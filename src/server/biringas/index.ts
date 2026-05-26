@@ -3,10 +3,15 @@ import "server-only";
 import { updateTag } from "next/cache";
 
 import { isFirebaseConfigured } from "@/core/config/firebase";
-import { grantRole, Role } from "@/server/auth";
+import {
+  _setPersonActiveDraftInternal,
+  createMyPerson,
+  getMyPersons,
+} from "@/server/persons";
 import { auditLog } from "@/server/security/audit-log";
 import { requireAuth } from "@/server/security/require-auth";
 import { validateActionInput } from "@/server/security/validate-action-input";
+import { requirePublisher } from "@/server/users";
 
 import { copyStagedToDraftForOwner } from "@/server/storage";
 
@@ -412,7 +417,63 @@ export async function createListingDraft(
     createListingDraftSchema,
     rawInput,
   );
-  const user = await requireAuth();
+  // ADR-019 — only publisher-locked accounts can write drafts. Throws
+  // with `kind === 'forbidden'` for commentators and undecided
+  // accounts; the wizard action wrapper maps this to a friendly UI
+  // error. Returns `{ uid, accountType: 'publisher' }` — the shape
+  // matches the previous `requireAuth()` return so the rest of this
+  // function reads `user.uid` unchanged.
+  const user = await requirePublisher();
+
+  // ADR-018 — resolve which person (modelo física) this draft is for.
+  // Two paths:
+  //   (a) Caller supplied an explicit `personId` (dashboard card click
+  //       → "publicar este perfil"). Verify ownership + free-slot.
+  //   (b) Caller omitted it ("Publicar otro perfil" CTA or direct
+  //       /publicar). Always mint a fresh modelo with the wizard's
+  //       displayName. Existing idle modelos are NOT auto-picked —
+  //       the publisher must reach them through their per-card CTA
+  //       (which sends `?personId=…`). Each click of "Publicar otro
+  //       perfil" is intentionally a brand-new profile.
+  //
+  // KYC is a per-person concern enforced on the admin side at
+  // promotion time, not here at draft creation. A draft can enter
+  // `pending_review` with KYC `not_submitted`; the dashboard surfaces
+  // the per-person "Verificar identidad" CTA so the publisher knows
+  // what's outstanding.
+  let resolvedPersonId: string;
+
+  if (input.personId) {
+    const persons = await getMyPersons();
+    const owned = persons.find((p) => p.id === input.personId);
+    if (!owned) {
+      const err = new Error(
+        "createListingDraft: personId does not belong to this account",
+      );
+      (err as { kind?: string }).kind = "permission-denied";
+      throw err;
+    }
+    if (owned.activeDraftId !== null) {
+      const err = new Error(
+        `createListingDraft: person ${owned.id} already has an active draft (${owned.activeDraftId}). Update the existing one instead of creating a duplicate.`,
+      );
+      (err as { kind?: string }).kind = "invalid-argument";
+      throw err;
+    }
+    if (owned.activeListingSlug) {
+      const err = new Error(
+        `createListingDraft: person ${owned.id} already has a published listing (${owned.activeListingSlug}). Update the existing one instead of creating a duplicate.`,
+      );
+      (err as { kind?: string }).kind = "invalid-argument";
+      throw err;
+    }
+    resolvedPersonId = owned.id;
+  } else {
+    const minted = await createMyPerson({
+      displayName: input.payload.details.displayName,
+    });
+    resolvedPersonId = minted.id;
+  }
 
   // Slug uniqueness — published catalog first, then the draft queue.
   const slug = input.payload.details.preferredSlug;
@@ -496,8 +557,19 @@ export async function createListingDraft(
 
   const result = await adapter.createListingDraftRaw({
     ownerUid: user.uid,
+    personId: resolvedPersonId,
     draftId,
     payload: finalPayload,
+  });
+
+  // ADR-018 — bind the person to this draft so future submissions get
+  // the "ya tiene perfil activo" rejection. Must happen AFTER the draft
+  // write so a Firestore failure on the draft write does not leave the
+  // person pointing at a non-existent draft.
+  await _setPersonActiveDraftInternal({
+    personId: resolvedPersonId,
+    ownerUid: user.uid,
+    draftId: result.id,
   });
 
   await auditLog({
@@ -505,6 +577,7 @@ export async function createListingDraft(
     actorId: user.uid,
     resource: `draft:${result.id}`,
     metadata: {
+      personId: resolvedPersonId,
       preferredSlug: slug,
       city: input.payload.details.city,
       category: input.payload.details.category,
@@ -515,12 +588,10 @@ export async function createListingDraft(
     },
   });
 
-  if (!result.hasOtherDrafts) {
-    // First-publish role grant. `grantRole` is idempotent at the claims
-    // level — if the user already has `model` for any reason, the merge is
-    // a no-op. The audit event still fires; that is intentional.
-    await grantRole(user.uid, Role.Model, user.uid);
-  }
+  // No role grant here. Per ADR-019 § "Enforcement at every mutation
+  // point", `Role.Model` is granted on signup (driven by the locked
+  // `users/{uid}.accountType`); reaching this point implies the
+  // caller already holds it because `requirePublisher` accepted them.
 
   return { id: result.id };
 }

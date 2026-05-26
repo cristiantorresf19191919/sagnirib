@@ -52,6 +52,7 @@ export async function createListingDraftRaw(
   try {
     await db.collection("listing_drafts").doc(input.draftId).set({
       ownerUid: input.ownerUid,
+      personId: input.personId,
       status: "pending_review",
       payload: serializePayload(input.payload),
       submittedAt,
@@ -86,6 +87,7 @@ export async function findActiveDraftBySlug(slug: string): Promise<boolean> {
       .get();
     for (const doc of snap.docs) {
       const status = (doc.data() as { status?: unknown }).status;
+      // `rejected` and `cancelled` (ADR-020) both release the slug.
       if (status === "pending_review" || status === "approved") {
         return true;
       }
@@ -93,6 +95,48 @@ export async function findActiveDraftBySlug(slug: string): Promise<boolean> {
     return false;
   } catch (err) {
     throw wrapFirestoreError("findActiveDraftBySlug", err);
+  }
+}
+
+/**
+ * ADR-020 cascade. Flips `listing_drafts/{draftId}.status` to
+ * `cancelled` and stamps `cancelledAt`. The owner-check is performed
+ * inside the transaction to defend against the (impossible-in-practice)
+ * case where the barrel's pre-read raced with a writer; the doc must
+ * still belong to `ownerUid` at write time.
+ *
+ * Idempotent — re-cancelling an already-cancelled draft is a no-op.
+ */
+export async function cancelDraftRaw(
+  draftId: string,
+  ownerUid: string,
+): Promise<void> {
+  const db = getDb();
+  const ref = db.collection("listing_drafts").doc(draftId);
+  try {
+    await db.runTransaction(async (tx) => {
+      const snap = await tx.get(ref);
+      if (!snap.exists) return;
+      const data = snap.data() as { ownerUid?: unknown; status?: unknown };
+      if (data.ownerUid !== ownerUid) {
+        const err = new Error(
+          "cancelDraft: caller is not the owner of this draft",
+        );
+        (err as { kind?: string }).kind = "permission-denied";
+        throw err;
+      }
+      if (data.status === "cancelled") return;
+      tx.set(
+        ref,
+        {
+          status: "cancelled",
+          cancelledAt: FieldValue.serverTimestamp(),
+        },
+        { merge: true },
+      );
+    });
+  } catch (err) {
+    throw wrapFirestoreError("cancelDraft", err);
   }
 }
 
@@ -207,6 +251,7 @@ export async function getDraftByIdForOwnerRaw(
     return {
       id: doc.id,
       ownerUid: String(data.ownerUid),
+      ...(typeof data.personId === "string" ? { personId: data.personId } : {}),
       status: coerceStatus(data.status),
       payload: deserializePayload(data.payload),
       submittedAt: (submitted?.toDate() ?? new Date()).toISOString(),
@@ -223,7 +268,9 @@ export async function getDraftByIdForOwnerRaw(
  * for the UI (read-only "Ver detalles" path).
  */
 function coerceStatus(raw: unknown): ListingDraftStatus {
-  if (raw === "approved" || raw === "rejected") return raw;
+  if (raw === "approved" || raw === "rejected" || raw === "cancelled") {
+    return raw;
+  }
   return "pending_review";
 }
 

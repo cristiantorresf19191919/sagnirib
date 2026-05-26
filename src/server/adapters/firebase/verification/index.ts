@@ -1,10 +1,13 @@
 import "server-only";
 
 export {
-  signKycUploadUrlRawForOwner,
-  confirmKycUploadRawForOwner,
+  signKycUploadUrlRawForPerson,
+  signKycReadUrlRawForPerson,
+  confirmKycUploadRawForPerson,
 } from "./storage";
 export {
+  deleteVerificationRaw,
+  findActiveKycByDocumentNumberRaw,
   getVerificationRaw,
   submitVerificationRaw,
 } from "./firestore";

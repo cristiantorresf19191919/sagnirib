@@ -564,6 +564,31 @@ const es: MessageDict = {
   "auth.signin.title.highlight": "Biringas",
   "auth.signin.subtitle":
     "Tus favoritos, búsquedas guardadas y reservas — todo en un lugar discreto y verificado.",
+  "auth.signin.gate.kicker": "Primero contanos qué cuenta usás",
+  "auth.signin.gate.help":
+    "Lo guardamos en este dispositivo. Podés cambiar cuando quieras.",
+  "auth.signin.gate.continueAs": "Continuarás como",
+  "auth.signin.gate.partner.title": "Soy partner",
+  "auth.signin.gate.partner.body":
+    "Publicás perfiles (uno o varios). Acceso al panel de modelos, KYC por cada una y solicitudes de reserva.",
+  "auth.signin.gate.partner.short": "partner",
+  "auth.signin.gate.client.title": "Soy cliente",
+  "auth.signin.gate.client.body":
+    "Buscás, guardás favoritos y dejás reseñas. Sin publicación de perfiles.",
+  "auth.signin.gate.client.short": "cliente",
+  "auth.signin.gate.modal.title": "¿Qué tipo de cuenta querés?",
+  "auth.signin.gate.modal.body":
+    "Necesitamos saberlo para mostrarte el panel correcto. Tu elección queda registrada en tu cuenta de manera permanente.",
+  "auth.accountType.locked.title": "Tu cuenta ya tiene un tipo asignado",
+  "auth.accountType.locked.asClient":
+    "Tu cuenta está registrada como cliente. Para publicar perfiles, creá una cuenta nueva con otro correo.",
+  "auth.accountType.locked.asPartner":
+    "Tu cuenta está registrada como Partner. Para comentar como cliente, creá una cuenta nueva con otro correo.",
+  "auth.accountType.locked.backToDashboard": "Volver al panel",
+  "auth.signup.google.lockedAsClient":
+    "Este correo de Google ya está registrado como cliente. Para publicar perfiles, usá otra cuenta de Google con un correo distinto.",
+  "auth.signup.google.lockedAsPartner":
+    "Este correo de Google ya está registrado como Partner. Para crear una cuenta de cliente, usá otra cuenta de Google con un correo distinto.",
   "auth.signup.metadata.title": "Crear cuenta — Biringas",
   "auth.signup.kicker": "Cuenta nueva",
   "auth.signup.title.lead": "Unite a",
@@ -769,6 +794,8 @@ const es: MessageDict = {
     "Tenés que aceptar los términos para continuar.",
   "rbac.publisher.password.terms.lead":
     "Soy mayor de edad y acepto la política de privacidad y los términos de uso.",
+  "rbac.publisher.password.submit": "Crear cuenta partner",
+  "rbac.publisher.password.submitting": "Creando cuenta…",
 
   /* Publisher — profile step */
   "rbac.publisher.profile.title": "Detalles de tu perfil",
@@ -826,6 +853,10 @@ const es: MessageDict = {
 
   /* Publisher — post-publish */
   "rbac.publisher.postPublish.metadata.title": "Perfil bajo moderación — Biringas",
+  "rbac.publisher.postPublish.confirm.title": "¡Recibimos tu publicación!",
+  "rbac.publisher.postPublish.confirm.body":
+    "Tu publicación y la verificación de identidad están en revisión. Te avisamos por WhatsApp cuando esté lista — suele tardar entre 4 y 24 horas.",
+  "rbac.publisher.postPublish.confirm.dismiss": "Cerrar",
   "rbac.publisher.postPublish.banner":
     "Tu perfil está bajo moderación. Para poder activarlo, debés verificar tus fotos. ",
   "rbac.publisher.postPublish.bannerLink": "Más información aquí.",
@@ -934,11 +965,9 @@ const es: MessageDict = {
     "No tenés ningún favorito actualmente.",
   "rbac.commentator.panel.comments.empty":
     "Todavía no comentaste ningún perfil.",
-  "rbac.commentator.panel.cantPublish.title": "Tu cuenta no publica perfiles",
+  "rbac.commentator.panel.cantPublish.title": "Tu cuenta es solo para comentarios",
   "rbac.commentator.panel.cantPublish.body":
-    "Esta cuenta sólo puede dejar comentarios y guardar favoritos. Si querés publicar un anuncio tenés que crear otra cuenta como publicador.",
-  "rbac.commentator.panel.cantPublish.cta":
-    "Crear cuenta de publicador",
+    "El tipo de cuenta es permanente. Para publicar perfiles tenés que registrar una cuenta nueva con un correo distinto — desde esta no se puede cambiar.",
   "rbac.commentator.panel.success.updated":
     "Tu cuenta se ha modificado correctamente.",
   "rbac.commentator.panel.dialog.delete.title": "Borrar esta cuenta",
@@ -1020,10 +1049,10 @@ const es: MessageDict = {
   "miCuenta.fallbackName": "modelo",
 
   /* Empty drafts state */
-  "miCuenta.empty.title": "Aún no publicaste un perfil",
+  "miCuenta.empty.title": "Aún no publicaste ninguna modelo",
   "miCuenta.empty.body":
-    "Cuando publiques tu perfil verás aquí solicitudes, podrás editar tus fotos y ajustar tu agenda en cualquier momento.",
-  "miCuenta.empty.cta": "Publica tu perfil",
+    "Cuando publiques una modelo verás aquí las solicitudes, podrás editar sus fotos y ajustar su agenda en cualquier momento.",
+  "miCuenta.empty.cta": "Publicar una modelo",
 
   /* Profile tab */
   "miCuenta.profile.single": "Tu perfil publicado:",
@@ -1070,6 +1099,62 @@ const es: MessageDict = {
   "miCuenta.kyc.aria.rejected": "Rechazado",
   "miCuenta.kyc.aria.inReview": "En revisión",
 
+  /* Persons / multi-modelo (ADR-018) */
+  "miCuenta.persons.listKicker": "Tus modelos ({count})",
+  "miCuenta.persons.create.cta": "Crear nueva modelo",
+  "miCuenta.persons.create.title": "Nueva modelo",
+  "miCuenta.persons.create.help":
+    "Cada modelo se verifica por separado y publica su propio perfil. Empezá por el nombre.",
+  "miCuenta.persons.create.nameLabel": "Nombre o alias",
+  "miCuenta.persons.create.namePlaceholder": "Ej: Sofía",
+  "miCuenta.persons.create.submit": "Crear",
+  "miCuenta.persons.create.submitting": "Creando…",
+  "miCuenta.persons.create.cancel": "Cancelar",
+  "miCuenta.persons.create.error.fallback":
+    "No pudimos crearla. Intentá de nuevo en unos segundos.",
+  "miCuenta.persons.empty.title": "Empezá creando tu primera modelo",
+  "miCuenta.persons.empty.body":
+    "Cada modelo es independiente: tiene su propia verificación de identidad y sus propias publicaciones. La verificación se pide cuando publiques.",
+  "miCuenta.profiles.listKicker": "Tus perfiles ({count})",
+  "miCuenta.profiles.publishAnother": "Publicar otro perfil",
+  "miCuenta.profiles.empty.title": "Empezá publicando tu primer perfil",
+  "miCuenta.profiles.empty.body":
+    "Cada perfil se publica y se verifica por separado. Vas a hacer la verificación de identidad en el mismo flujo.",
+  "miCuenta.profiles.empty.cta": "Publica tu primer perfil",
+  "miCuenta.profile.kyc.notSubmitted": "Identidad pendiente",
+  "miCuenta.profile.kyc.pending": "Identidad en revisión",
+  "miCuenta.profile.kyc.approved": "Identidad verificada",
+  "miCuenta.profile.kyc.rejected": "Identidad rechazada",
+  "miCuenta.profile.listing.none": "Sin publicación todavía",
+  "miCuenta.profile.listing.inReview": "Publicación en revisión",
+  "miCuenta.profile.listing.published": "Publicado",
+  "miCuenta.profile.listing.rejected": "Publicación rechazada",
+  "miCuenta.profile.action.verifyIdentity": "Verificar identidad",
+  "miCuenta.profile.action.publish": "Publicar este perfil",
+  "miCuenta.profile.action.viewDetails": "Ver detalles",
+  "miCuenta.profile.action.editResend": "Editar y reenviar",
+  "miCuenta.profile.action.viewListing": "Ver mi publicación",
+  "miCuenta.profile.action.viewVerification": "Ver verificación enviada",
+  "miCuenta.profile.action.delete": "Eliminar el perfil {name}",
+  "miCuenta.profile.delete.modal.title": "¿Eliminar el perfil {name}?",
+  "miCuenta.profile.delete.modal.body":
+    "Se cancelará la publicación en revisión, se eliminará la verificación de identidad y el perfil dejará de aparecer en tu dashboard. Esta acción no se puede deshacer.",
+  "miCuenta.profile.delete.modal.blocked.body":
+    "Este perfil tiene una publicación activa en el catálogo. Despublícala primero o contactá a soporte para eliminarla — borrar el perfil ahora dejaría la publicación huérfana.",
+  "miCuenta.profile.delete.modal.typeToConfirm":
+    "Escribí «{name}» para confirmar",
+  "miCuenta.profile.delete.modal.cancel": "Cancelar",
+  "miCuenta.profile.delete.modal.confirm": "Eliminar perfil",
+  "miCuenta.profile.delete.toast.success.title": "Perfil eliminado",
+  "miCuenta.profile.delete.toast.success.body":
+    "El perfil de {name} se eliminó de tu cuenta.",
+  "miCuenta.profile.delete.toast.error.title": "No se pudo eliminar el perfil",
+  "miCuenta.profile.delete.toast.error.body":
+    "Algo salió mal. Intentá de nuevo en unos segundos o contactá a soporte si persiste.",
+  "miCuenta.profile.delete.toast.blocked.title": "Hay una publicación activa",
+  "miCuenta.profile.delete.toast.blocked.body":
+    "El perfil ya está publicado en el catálogo. Despublicalo primero o contactá a soporte.",
+
   /* Draft detail page */
   "draft.metadata.title": "Detalle del borrador — Biringas",
   "draft.metadata.description": "Vista en revisión de un borrador del catálogo.",
@@ -1088,12 +1173,16 @@ const es: MessageDict = {
   "draft.status.rejected.title": "Publicación rechazada",
   "draft.status.rejected.body":
     "Hubo un detalle que no pasó la revisión. Podés editar el borrador y volver a enviarlo.",
+  "draft.status.cancelled.title": "Publicación cancelada",
+  "draft.status.cancelled.body":
+    "Se canceló porque eliminaste el perfil al que pertenecía. Si querés volver a publicar, creá un nuevo perfil desde el dashboard.",
   "draft.status.rejection.reason": "Motivo:",
   "draft.receivedOn": "Recibido {when}",
 
   "draft.pill.pending": "En revisión",
   "draft.pill.approved": "Aprobado",
   "draft.pill.rejected": "Rechazado",
+  "draft.pill.cancelled": "Cancelado",
 
   "draft.section.public": "Datos públicos",
   "draft.section.private": "Datos privados (solo vos los ves)",
@@ -1388,18 +1477,49 @@ const es: MessageDict = {
     "Ya tienes una verificación en revisión. Espera la respuesta antes de reenviar.",
   "verificacion.wizard.error.submitDefault":
     "No pudimos enviar la verificación. Intenta de nuevo.",
+  "verificacion.wizard.error.documentNumberInvalid":
+    "El número de documento es muy corto o muy largo. Verificá que esté completo.",
+  "verificacion.wizard.error.duplicateDocument":
+    "Ese documento ya está registrado en otra cuenta. Si crees que es un error, contactá soporte.",
   "verificacion.wizard.previousRejection": "Verificación anterior rechazada:",
+
+  "verificacion.wizard.doc.kicker": "Datos del documento",
+  "verificacion.wizard.doc.title": "Identidad estructurada",
+  "verificacion.wizard.doc.subtitle":
+    "Capturamos el tipo y número del documento para evitar registros duplicados. El número se guarda en privado, solo el equipo de revisión lo ve.",
+  "verificacion.wizard.doc.typeLabel": "Tipo de documento",
+  "verificacion.wizard.doc.type.CC": "Cédula (CC)",
+  "verificacion.wizard.doc.type.CE": "Cédula de extranjería (CE)",
+  "verificacion.wizard.doc.type.PASSPORT": "Pasaporte",
+  "verificacion.wizard.doc.numberLabel": "Número de documento",
+  "verificacion.wizard.doc.numberHelper":
+    "Ingresá el número tal como aparece en el documento. Quitamos puntos y espacios automáticamente.",
+  "verificacion.wizard.doc.normalizedHint": "Lo guardamos como",
+  "verificacion.wizard.doc.placeholder.cc": "1.234.567",
+  "verificacion.wizard.doc.placeholder.ce": "1234567",
+  "verificacion.wizard.doc.placeholder.passport": "AB123456",
 
   "verificacion.wizard.submitted.title": "Verificación enviada",
   "verificacion.wizard.submitted.body":
     "Tus archivos están en revisión. Confirmamos identidad y consentimiento usualmente en menos de 24 horas. Cuando esté lista te avisamos por WhatsApp y tu perfil queda activo en el catálogo.",
   "verificacion.wizard.backToCatalog": "Volver al catálogo",
+  "verificacion.wizard.continueToNext": "Continuar con tu publicación",
   "verificacion.wizard.pending.title": "Verificación en revisión",
   "verificacion.wizard.pending.body":
     "Recibimos tu documentación el {when}. Te avisamos en cuanto esté lista.",
   "verificacion.wizard.approved.title": "Identidad verificada",
   "verificacion.wizard.approved.body":
     "Tu verificación quedó aprobada el {when}. Las modelos con identidad verificada aparecen con la insignia dorada en el catálogo.",
+  "verificacion.wizard.readonly.pendingNotice":
+    "Estamos revisando estos documentos. No puedes editarlos mientras la verificación está en curso.",
+  "verificacion.wizard.readonly.approvedNotice":
+    "Estos son los documentos con los que tu identidad fue verificada.",
+  "verificacion.wizard.readonly.documentSectionTitle": "Documento enviado",
+  "verificacion.wizard.readonly.docTypeLabel": "Tipo de documento",
+  "verificacion.wizard.readonly.docNumberLabel": "Número (últimos 4)",
+  "verificacion.wizard.readonly.documentFront": "Frente del documento",
+  "verificacion.wizard.readonly.documentBack": "Dorso del documento",
+  "verificacion.wizard.readonly.selfie": "Selfie con documento",
 
   /* =================================================================
    * D.2 · /p/[slug] deep components
@@ -2735,6 +2855,31 @@ const en: MessageDict = {
   "auth.signin.title.highlight": "Biringas",
   "auth.signin.subtitle":
     "Your favorites, saved searches and bookings — all in one discreet, verified place.",
+  "auth.signin.gate.kicker": "First, tell us which account you use",
+  "auth.signin.gate.help":
+    "We save it to this device. You can change it whenever you want.",
+  "auth.signin.gate.continueAs": "Continuing as",
+  "auth.signin.gate.partner.title": "I'm a partner",
+  "auth.signin.gate.partner.body":
+    "You publish profiles (one or many). Access the model dashboard, per-model KYC and booking requests.",
+  "auth.signin.gate.partner.short": "partner",
+  "auth.signin.gate.client.title": "I'm a client",
+  "auth.signin.gate.client.body":
+    "You browse, save favorites and leave reviews. No profile publishing.",
+  "auth.signin.gate.client.short": "client",
+  "auth.signin.gate.modal.title": "What kind of account?",
+  "auth.signin.gate.modal.body":
+    "We need this to show you the right panel. Your choice is permanently recorded on your account.",
+  "auth.accountType.locked.title": "Your account already has a type",
+  "auth.accountType.locked.asClient":
+    "Your account is registered as a client. To publish profiles, create a new account with a different email.",
+  "auth.accountType.locked.asPartner":
+    "Your account is registered as a Partner. To comment as a client, create a new account with a different email.",
+  "auth.accountType.locked.backToDashboard": "Back to dashboard",
+  "auth.signup.google.lockedAsClient":
+    "This Google email is already registered as a client. To publish profiles, use a different Google account.",
+  "auth.signup.google.lockedAsPartner":
+    "This Google email is already registered as a Partner. To create a client account, use a different Google account.",
   "auth.signup.metadata.title": "Create account — Biringas",
   "auth.signup.kicker": "New account",
   "auth.signup.title.lead": "Join",
@@ -2936,6 +3081,8 @@ const en: MessageDict = {
     "You need to accept the terms to continue.",
   "rbac.publisher.password.terms.lead":
     "I am of legal age and I accept the privacy policy and terms of use.",
+  "rbac.publisher.password.submit": "Create partner account",
+  "rbac.publisher.password.submitting": "Creating account…",
 
   "rbac.publisher.profile.title": "Profile details",
   "rbac.publisher.profile.subtitle":
@@ -2992,6 +3139,10 @@ const en: MessageDict = {
 
   "rbac.publisher.postPublish.metadata.title":
     "Profile under moderation — Biringas",
+  "rbac.publisher.postPublish.confirm.title": "We've got your listing!",
+  "rbac.publisher.postPublish.confirm.body":
+    "Your listing and identity verification are under review. We'll ping you on WhatsApp once it's ready — usually within 4 to 24 hours.",
+  "rbac.publisher.postPublish.confirm.dismiss": "Dismiss",
   "rbac.publisher.postPublish.banner":
     "Your profile is under moderation. To activate it you need to verify your photos. ",
   "rbac.publisher.postPublish.bannerLink": "More info here.",
@@ -3096,10 +3247,9 @@ const en: MessageDict = {
   "rbac.commentator.panel.comments.empty":
     "You have not commented on any profile yet.",
   "rbac.commentator.panel.cantPublish.title":
-    "This account cannot publish profiles",
+    "This account is for comments only",
   "rbac.commentator.panel.cantPublish.body":
-    "This account only leaves comments and saves favorites. To publish a listing you need to create a separate publisher account.",
-  "rbac.commentator.panel.cantPublish.cta": "Create publisher account",
+    "Account type is permanent. To publish profiles, register a new account with a different email — you can't switch from this one.",
   "rbac.commentator.panel.success.updated":
     "Your account has been updated.",
   "rbac.commentator.panel.dialog.delete.title": "Delete this account",
@@ -3181,10 +3331,10 @@ const en: MessageDict = {
   "miCuenta.fallbackName": "companion",
 
   /* Empty drafts state */
-  "miCuenta.empty.title": "You haven't published a profile yet",
+  "miCuenta.empty.title": "You haven't published any model yet",
   "miCuenta.empty.body":
-    "Once you publish your profile, you'll see incoming requests here, edit your photos, and adjust your availability anytime.",
-  "miCuenta.empty.cta": "Publish your profile",
+    "Once you publish a model, you'll see incoming requests here, edit her photos, and adjust her availability anytime.",
+  "miCuenta.empty.cta": "Publish a model",
 
   /* Profile tab */
   "miCuenta.profile.single": "Your published profile:",
@@ -3231,6 +3381,62 @@ const en: MessageDict = {
   "miCuenta.kyc.aria.rejected": "Rejected",
   "miCuenta.kyc.aria.inReview": "In review",
 
+  /* Persons / multi-modelo (ADR-018) */
+  "miCuenta.persons.listKicker": "Your models ({count})",
+  "miCuenta.persons.create.cta": "Add new model",
+  "miCuenta.persons.create.title": "New model",
+  "miCuenta.persons.create.help":
+    "Each model is verified separately and publishes her own profile. Start with the name.",
+  "miCuenta.persons.create.nameLabel": "Name or alias",
+  "miCuenta.persons.create.namePlaceholder": "e.g. Sofía",
+  "miCuenta.persons.create.submit": "Create",
+  "miCuenta.persons.create.submitting": "Creating…",
+  "miCuenta.persons.create.cancel": "Cancel",
+  "miCuenta.persons.create.error.fallback":
+    "We couldn't create her. Try again in a moment.",
+  "miCuenta.persons.empty.title": "Start by creating your first model",
+  "miCuenta.persons.empty.body":
+    "Each model is independent: she has her own identity verification and her own listings. Verification is requested when she publishes.",
+  "miCuenta.profiles.listKicker": "Your profiles ({count})",
+  "miCuenta.profiles.publishAnother": "Publish another profile",
+  "miCuenta.profiles.empty.title": "Publish your first profile",
+  "miCuenta.profiles.empty.body":
+    "Each profile is published and verified separately. You'll do the identity check inside the same flow.",
+  "miCuenta.profiles.empty.cta": "Publish your first profile",
+  "miCuenta.profile.kyc.notSubmitted": "Identity pending",
+  "miCuenta.profile.kyc.pending": "Identity under review",
+  "miCuenta.profile.kyc.approved": "Identity verified",
+  "miCuenta.profile.kyc.rejected": "Identity rejected",
+  "miCuenta.profile.listing.none": "No listing yet",
+  "miCuenta.profile.listing.inReview": "Listing under review",
+  "miCuenta.profile.listing.published": "Published",
+  "miCuenta.profile.listing.rejected": "Listing rejected",
+  "miCuenta.profile.action.verifyIdentity": "Verify identity",
+  "miCuenta.profile.action.publish": "Publish this profile",
+  "miCuenta.profile.action.viewDetails": "View details",
+  "miCuenta.profile.action.editResend": "Edit and resend",
+  "miCuenta.profile.action.viewListing": "View my listing",
+  "miCuenta.profile.action.viewVerification": "View submitted verification",
+  "miCuenta.profile.action.delete": "Delete {name}'s profile",
+  "miCuenta.profile.delete.modal.title": "Delete {name}'s profile?",
+  "miCuenta.profile.delete.modal.body":
+    "The listing under review will be cancelled, the identity verification will be deleted, and the profile will disappear from your dashboard. This can't be undone.",
+  "miCuenta.profile.delete.modal.blocked.body":
+    "This profile has an active listing in the catalog. Unpublish it first or contact support — deleting now would leave the listing orphaned.",
+  "miCuenta.profile.delete.modal.typeToConfirm":
+    "Type «{name}» to confirm",
+  "miCuenta.profile.delete.modal.cancel": "Cancel",
+  "miCuenta.profile.delete.modal.confirm": "Delete profile",
+  "miCuenta.profile.delete.toast.success.title": "Profile deleted",
+  "miCuenta.profile.delete.toast.success.body":
+    "{name}'s profile was removed from your account.",
+  "miCuenta.profile.delete.toast.error.title": "Couldn't delete the profile",
+  "miCuenta.profile.delete.toast.error.body":
+    "Something went wrong. Try again in a moment or contact support if it keeps failing.",
+  "miCuenta.profile.delete.toast.blocked.title": "There's an active listing",
+  "miCuenta.profile.delete.toast.blocked.body":
+    "This profile is published in the catalog. Unpublish it first or contact support.",
+
   /* Draft detail page */
   "draft.metadata.title": "Draft detail — Biringas",
   "draft.metadata.description": "Read-only view of a catalog draft under review.",
@@ -3249,12 +3455,16 @@ const en: MessageDict = {
   "draft.status.rejected.title": "Listing rejected",
   "draft.status.rejected.body":
     "Something didn't pass review. You can edit the draft and resubmit.",
+  "draft.status.cancelled.title": "Listing cancelled",
+  "draft.status.cancelled.body":
+    "It was cancelled because you deleted the profile it belonged to. To publish again, create a new profile from the dashboard.",
   "draft.status.rejection.reason": "Reason:",
   "draft.receivedOn": "Received {when}",
 
   "draft.pill.pending": "In review",
   "draft.pill.approved": "Approved",
   "draft.pill.rejected": "Rejected",
+  "draft.pill.cancelled": "Cancelled",
 
   "draft.section.public": "Public data",
   "draft.section.private": "Private data (only you see it)",
@@ -3549,18 +3759,49 @@ const en: MessageDict = {
     "You already have a verification under review. Wait for the response before resubmitting.",
   "verificacion.wizard.error.submitDefault":
     "We couldn't submit the verification. Try again.",
+  "verificacion.wizard.error.documentNumberInvalid":
+    "The document number is too short or too long. Make sure it's complete.",
+  "verificacion.wizard.error.duplicateDocument":
+    "That document is already registered on another account. If you think this is a mistake, contact support.",
   "verificacion.wizard.previousRejection": "Previous verification rejected:",
+
+  "verificacion.wizard.doc.kicker": "Document details",
+  "verificacion.wizard.doc.title": "Structured identity",
+  "verificacion.wizard.doc.subtitle":
+    "We capture the type and number of your ID document to prevent duplicate registrations. The number stays private — only the review team sees it.",
+  "verificacion.wizard.doc.typeLabel": "Document type",
+  "verificacion.wizard.doc.type.CC": "ID card (CC)",
+  "verificacion.wizard.doc.type.CE": "Foreign ID (CE)",
+  "verificacion.wizard.doc.type.PASSPORT": "Passport",
+  "verificacion.wizard.doc.numberLabel": "Document number",
+  "verificacion.wizard.doc.numberHelper":
+    "Enter the number exactly as it appears on the document. We strip dots and spaces automatically.",
+  "verificacion.wizard.doc.normalizedHint": "Stored as",
+  "verificacion.wizard.doc.placeholder.cc": "1.234.567",
+  "verificacion.wizard.doc.placeholder.ce": "1234567",
+  "verificacion.wizard.doc.placeholder.passport": "AB123456",
 
   "verificacion.wizard.submitted.title": "Verification submitted",
   "verificacion.wizard.submitted.body":
     "Your files are under review. We confirm identity and consent usually within 24 hours. When it's ready we'll let you know on WhatsApp and your profile goes live in the catalog.",
   "verificacion.wizard.backToCatalog": "Back to the catalog",
+  "verificacion.wizard.continueToNext": "Continue with your listing",
   "verificacion.wizard.pending.title": "Verification under review",
   "verificacion.wizard.pending.body":
     "We received your documentation on {when}. We'll let you know as soon as it's ready.",
   "verificacion.wizard.approved.title": "Identity verified",
   "verificacion.wizard.approved.body":
     "Your verification was approved on {when}. Companions with verified identity appear with the gold badge in the catalog.",
+  "verificacion.wizard.readonly.pendingNotice":
+    "We're reviewing these documents. You can't edit them while verification is in progress.",
+  "verificacion.wizard.readonly.approvedNotice":
+    "These are the documents your identity was verified with.",
+  "verificacion.wizard.readonly.documentSectionTitle": "Submitted document",
+  "verificacion.wizard.readonly.docTypeLabel": "Document type",
+  "verificacion.wizard.readonly.docNumberLabel": "Number (last 4)",
+  "verificacion.wizard.readonly.documentFront": "Document front",
+  "verificacion.wizard.readonly.documentBack": "Document back",
+  "verificacion.wizard.readonly.selfie": "Selfie with document",
 
   /* =================================================================
    * D.2 · /p/[slug] deep components

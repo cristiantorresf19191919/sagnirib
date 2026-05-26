@@ -9,8 +9,13 @@ import { Container } from "@/shared/design-system/components/Container";
 import { Logo } from "@/shared/design-system/components/Logo";
 import { AuthBadge } from "@/features/auth/components/AuthBadge";
 import { readAccountTypeCookie } from "@/features/auth/lib/account-type-cookie";
-import { ACCOUNT_TYPE_COMMENTATOR } from "@/features/auth/lib/rbac";
 import { FavoritesNavLink } from "@/features/favorites/components/FavoritesNavLink";
+import { getSession } from "@/server/auth";
+import {
+  ACCOUNT_TYPE_COMMENTATOR,
+  getMyAccountType,
+  type AccountType,
+} from "@/server/users";
 
 import { HeaderBackdrop } from "./HeaderBackdrop";
 import { ThemeToggle } from "./ThemeToggle";
@@ -51,6 +56,25 @@ interface HeaderProps {
  * Mobile (< sm) collapses labels to icons but preserves the order; touch
  * targets stay 44×44 px throughout.
  */
+/**
+ * Resolves the account type for CTA visibility decisions:
+ *
+ *   - Authenticated → `users/{uid}.accountType` is the authority. A
+ *     stale cookie cannot mis-render the CTA.
+ *   - Anonymous → fall back to the `biringas:account-type` cookie
+ *     which captures a pre-auth chooser pick. Hiding the publish CTA
+ *     for a self-declared cliente, even before login, matches the
+ *     funnel UX. Defaults to "show" (return null) if the cookie is
+ *     absent.
+ */
+async function resolveAccountTypeForCta(): Promise<AccountType | null> {
+  const session = await getSession().catch(() => null);
+  if (session) {
+    return getMyAccountType().catch(() => null);
+  }
+  return readAccountTypeCookie();
+}
+
 export async function Header({ hideCatalogCta = false }: HeaderProps) {
   // Locale is resolved server-side so the strings render correctly on
   // first paint without a client-side language flicker.
@@ -59,10 +83,13 @@ export async function Header({ hideCatalogCta = false }: HeaderProps) {
   const publishLabel = t(locale, "header.cta.publish");
   const exploreLabel = t(locale, "header.cta.explore");
 
-  // RBAC: commentator accounts cannot publish profiles. Hiding the CTA is
-  // UX, not security — Firebase Security Rules + Cloud Functions remain
-  // the authoritative gate per ADR-010.
-  const accountType = await readAccountTypeCookie();
+  // ADR-019: commentator-locked accounts cannot publish, so the CTA is
+  // hidden. The DB doc `users/{uid}.accountType` is the authority
+  // (`getMyAccountType`); the cookie remains a hint for anonymous
+  // visitors who already picked but haven't authenticated yet. Hiding
+  // the CTA is UX — the mutation gate inside `createListingDraft`
+  // (`requirePublisher`) remains the actual security boundary.
+  const accountType = await resolveAccountTypeForCta();
   const hidePublishCta = accountType === ACCOUNT_TYPE_COMMENTATOR;
 
   return (

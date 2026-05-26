@@ -10,6 +10,7 @@ import { buildPageMetadata } from "@/core/seo/build-page-metadata";
 import { EnrollmentWizard } from "@/features/enrollment/components/EnrollmentWizard";
 import type { EnrollmentCatalogs } from "@/features/enrollment/lib/catalogs";
 import { getSession } from "@/server/auth";
+import { ACCOUNT_TYPE_COMMENTATOR, getMyAccountType } from "@/server/users";
 import {
   APPEARANCE_CATALOG,
   ATTENTION_CATALOG,
@@ -42,7 +43,11 @@ export async function generateMetadata({
 
 export default async function PublicarPage({
   params,
-}: Readonly<{ params: Promise<{ lang: string }> }>) {
+  searchParams,
+}: Readonly<{
+  params: Promise<{ lang: string }>;
+  searchParams: Promise<{ personId?: string | string[] }>;
+}>) {
   const { lang } = await params;
   if (!isSupportedLocale(lang)) notFound();
 
@@ -55,6 +60,33 @@ export default async function PublicarPage({
     const next = localizedHref(lang, "/publicar");
     redirect(`${localizedHref(lang, "/ingresar")}?next=${encodeURIComponent(next)}`);
   }
+
+  // ADR-019 — commentator-locked accounts cannot publish. Send them to
+  // their dashboard instead of letting them fill the wizard and hit the
+  // `requirePublisher` throw at submit time. The DB doc is the
+  // authority; we read it here so a stale cookie can't slip a
+  // commentator past the gate.
+  const accountType = await getMyAccountType().catch(() => null);
+  if (accountType === ACCOUNT_TYPE_COMMENTATOR) {
+    redirect(localizedHref(lang, "/mi-cuenta/comentarios"));
+  }
+
+  // ADR-018 — KYC is a per-person concern, not a publish-time gate.
+  // Drafts can be created for a freshly minted person whose KYC is
+  // still `not_submitted`; the gate is enforced on the admin side
+  // before a draft is promoted to a live listing. The dashboard's
+  // per-person card surfaces the "Verificar identidad" CTA so the
+  // publisher knows what's outstanding.
+  //
+  // `?personId=…` is the per-card "publicar este perfil" CTA from
+  // `ProfileList`. Forwarded to the wizard so the server action
+  // attaches the draft to that specific person instead of minting a
+  // fresh one.
+  const personIdParam = await searchParams
+    .then((sp) => sp.personId)
+    .catch(() => undefined);
+  const targetPersonId =
+    typeof personIdParam === "string" ? personIdParam : undefined;
 
   const catalogs: EnrollmentCatalogs = {
     cities: SUPPORTED_CITIES,
@@ -96,7 +128,7 @@ export default async function PublicarPage({
             </span>
           </header>
 
-          <EnrollmentWizard catalogs={catalogs} />
+          <EnrollmentWizard catalogs={catalogs} personId={targetPersonId} />
         </Container>
       </main>
       <Footer />

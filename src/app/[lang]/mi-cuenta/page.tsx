@@ -1,18 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import {
-  ArrowRight,
-  BadgeCheck,
-  Clock,
-  Loader2,
-  MapPin,
-  Plus,
-  ShieldAlert,
-  ShieldCheck,
-  ShieldQuestion,
-  Sparkles,
-} from "lucide-react";
+import { Plus, Sparkles } from "lucide-react";
 
 import type { SupportedLocale } from "@/core/branding/brand-config";
 import { isSupportedLocale } from "@/core/i18n/constants";
@@ -23,13 +12,17 @@ import {
   getFirebaseConfig,
   isFirebaseConfigured,
 } from "@/core/config/firebase";
-import { readAccountTypeCookie } from "@/features/auth/lib/account-type-cookie";
-import { ACCOUNT_TYPE_COMMENTATOR } from "@/features/auth/lib/rbac";
+import { AccountTypeFallbackModal } from "@/features/auth/components/AccountTypeFallbackModal";
+import {
+  ACCOUNT_TYPE_COMMENTATOR,
+  getMyAccountType,
+} from "@/server/users";
 import { AvailabilityStrip } from "@/features/biringas/components/AvailabilityStrip";
 import { AvailabilityToggle } from "@/features/dashboard/components/AvailabilityToggle";
 import { BookingInboxList } from "@/features/dashboard/components/BookingInboxList";
 import { DashboardShell } from "@/features/dashboard/components/DashboardShell";
 import { ReferralCard } from "@/features/dashboard/components/ReferralCard";
+import { ProfileList } from "@/features/persons/components/ProfileList";
 import { PostPublishPrompt } from "@/features/verification/components/PostPublishPrompt";
 import { getSession } from "@/server/auth";
 import {
@@ -43,11 +36,7 @@ import {
   type ReferralStats,
   referralCodeForUid,
 } from "@/server/biringas";
-import {
-  getMyVerification,
-  type VerificationRecord,
-  type VerificationStatus,
-} from "@/server/verification";
+import { getMyPersons, type PersonRecord } from "@/server/persons";
 import { Container } from "@/shared/design-system/components/Container";
 import { Footer } from "@/shared/layout/Footer";
 import { Header } from "@/shared/layout/Header";
@@ -87,16 +76,26 @@ export default async function MiCuentaPage({
     redirect(`${localizedHref(lang, "/ingresar")}?next=${encodeURIComponent(next)}`);
   }
 
-  // Commentator-account users see the limited surface, never the publisher
-  // dashboard. The cookie is set by the chooser and persists across sessions;
-  // once custom claims are minted server-side, replace the cookie check with
-  // a `session.roles.includes(ROLE_COMMENT_PUBLISHER)` check.
-  const accountType = await readAccountTypeCookie();
+  // ADR-019 — `users/{uid}.accountType` is the sole authoritative
+  // source for the publisher-vs-commentator decision. Commentator
+  // accounts land on a different dashboard surface; bounce them
+  // there. The cookie + custom claim are derived from this read and
+  // are NOT consulted here (the previous cookie-first design was the
+  // path through which a flipped cookie could surface the publisher
+  // dashboard to a commentator).
+  const accountType = await getMyAccountType().catch(() => null);
   if (accountType === ACCOUNT_TYPE_COMMENTATOR) {
     redirect(localizedHref(lang, "/mi-cuenta/comentarios"));
   }
 
-  const [draftsResult, bookings, referralStats, verification] =
+  // Post-OAuth fallback (ADR-019 § "Locking semantics" Path 2). Trigger:
+  // the user authenticated (often via Google) without ever picking a
+  // surface AND has no doc yet. The modal forces a pick which writes
+  // the doc + grants the role + sets the cookie — one round-trip
+  // closes all three.
+  const needsAccountTypeModal = accountType === null;
+
+  const [draftsResult, bookings, referralStats, persons] =
     await Promise.all([
       listMyDrafts().then(
         (value) => ({ value, error: null as string | null }),
@@ -121,9 +120,13 @@ export default async function MiCuentaPage({
           hasRedeemed: false,
         } satisfies ReferralStats;
       }),
-      getMyVerification().catch((err) => {
-        console.error("[mi-cuenta] getMyVerification failed", err);
-        return null as VerificationRecord | null;
+      // ADR-018: per-person KYC. `getMyPersons` lazily migrates a legacy
+      // `verifications/{uid}` doc into `persons/{uid}` on first read so
+      // existing accounts keep showing the same status without a
+      // separate migration job.
+      getMyPersons().catch((err) => {
+        console.error("[mi-cuenta] getMyPersons failed", err);
+        return [] as ReadonlyArray<PersonRecord>;
       }),
     ]);
   const drafts = draftsResult.value;
@@ -167,6 +170,7 @@ export default async function MiCuentaPage({
   return (
     <>
       <Header hideCatalogCta />
+      <AccountTypeFallbackModal open={needsAccountTypeModal} />
       <main
         data-testid="mi-cuenta"
         className="relative isolate bg-[var(--color-background)] py-12 sm:py-16"
@@ -187,7 +191,7 @@ export default async function MiCuentaPage({
                   locale={lang}
                   drafts={drafts}
                   publishedBySlug={publishedBySlug}
-                  verification={verification}
+                  persons={persons}
                   diagnostic={diagnostic}
                 />
               ),
@@ -280,7 +284,7 @@ interface TabProps {
 }
 
 interface ProfileTabProps extends TabProps {
-  verification: VerificationRecord | null;
+  persons: ReadonlyArray<PersonRecord>;
   publishedBySlug: ReadonlyMap<string, BiringaListing>;
   diagnostic?: DiagnosticInfo;
 }
@@ -289,84 +293,78 @@ function ProfileTab({
   locale,
   drafts,
   publishedBySlug,
-  verification,
+  persons,
   diagnostic,
 }: Readonly<ProfileTabProps>) {
-  if (drafts.length === 0) {
-    return (
-      <div className="flex flex-col gap-4">
-        <KycStatusCard locale={locale} verification={verification} />
-        <EmptyDraftsState locale={locale} />
-        {diagnostic ? <DiagnosticPanel info={diagnostic} /> : null}
-      </div>
-    );
-  }
   return (
     <div className="flex flex-col gap-4">
-      <KycStatusCard locale={locale} verification={verification} />
-      <p className="text-sm leading-relaxed text-[var(--color-text-muted)]">
-        {drafts.length === 1
-          ? t(locale, "miCuenta.profile.single")
-          : t(locale, "miCuenta.profile.multiple", { count: drafts.length })}
-      </p>
+      <ProfileList
+        locale={locale}
+        persons={persons}
+        drafts={drafts}
+        publishedBySlug={publishedBySlug}
+      />
+      {persons.length > 0 ? (
+        <div className="rounded-[var(--radius-lg)] border border-dashed border-[var(--color-border)] bg-[var(--color-background-elevated)] p-4 text-xs text-[var(--color-text-muted)]">
+          <p className="leading-relaxed">{t(locale, "miCuenta.profile.reviewNote")}</p>
+        </div>
+      ) : null}
+      {persons.length > 0 && publishedBySlug.size > 0 ? (
+        <AvailabilityFooter
+          locale={locale}
+          drafts={drafts}
+          publishedBySlug={publishedBySlug}
+        />
+      ) : null}
       {diagnostic ? <DiagnosticPanel info={diagnostic} /> : null}
+    </div>
+  );
+}
 
-      <ul className="flex flex-col gap-3">
-        {drafts.map((d) => {
-          const published = publishedBySlug.get(d.preferredSlug);
-          return (
-            <li
-              key={d.id}
-              className="flex flex-col gap-3 rounded-[var(--radius-xl)] border border-[var(--color-border)] bg-[var(--color-surface)] p-5 shadow-[var(--shadow-sm)]"
-            >
-              <div className="flex flex-wrap items-center justify-between gap-4">
-                <div className="flex flex-col gap-1">
-                  <span className="inline-flex items-center gap-2 text-base font-semibold text-[var(--color-foreground)]">
-                    {d.displayName}
-                    <DraftStatusBadgeIcon locale={locale} status={d.status} />
-                  </span>
-                  <span className="inline-flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-[var(--color-text-muted)]">
-                    <span className="inline-flex items-center gap-1">
-                      <MapPin className="h-3 w-3" aria-hidden />
-                      {d.city}
-                    </span>
-                    <span aria-hidden>·</span>
-                    <span className="capitalize">{d.category}</span>
-                    <span aria-hidden>·</span>
-                    <DraftStatusPill locale={locale} status={d.status} />
-                  </span>
-                </div>
-                <div className="flex items-center gap-2">
-                  {d.status === "approved" ? (
-                    <Link
-                      href={localizedHref(locale, `/p/${d.preferredSlug}`)}
-                      className="inline-flex h-10 items-center gap-1.5 rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] px-4 text-xs font-semibold text-[var(--color-foreground)] transition-colors hover:border-[var(--color-brand-primary-soft)] hover:bg-[var(--color-background-elevated)]"
-                    >
-                      {t(locale, "miCuenta.profile.viewProfile")}
-                    </Link>
-                  ) : null}
-                  <DraftActionLink locale={locale} draft={d} />
-                </div>
-              </div>
-              {published ? (
-                <div className="flex flex-wrap items-center gap-3 border-t border-[var(--color-border)] pt-3 text-[11px]">
-                  <span className="text-[var(--color-text-muted)]">
-                    {t(locale, "miCuenta.profile.catalogStatus")}
-                  </span>
-                  <AvailabilityToggle
-                    listingSlug={published.slug}
-                    initialAvailable={published.availableNow}
-                  />
-                </div>
-              ) : null}
-            </li>
-          );
-        })}
+/**
+ * Footer surface that surfaces the availability toggle for each
+ * published listing. Pulled out of the per-card layout to keep the
+ * unified profile card uncluttered — availability is a per-listing
+ * setting, not a per-modelo header, and partners with many modelos
+ * benefit from a single condensed availability column over identical
+ * toggles inside each card.
+ */
+function AvailabilityFooter({
+  locale,
+  drafts,
+  publishedBySlug,
+}: Readonly<{
+  locale: SupportedLocale;
+  drafts: ReadonlyArray<DraftSummary>;
+  publishedBySlug: ReadonlyMap<string, BiringaListing>;
+}>) {
+  const published = drafts
+    .map((d) => ({ d, listing: publishedBySlug.get(d.preferredSlug) }))
+    .filter((row): row is { d: DraftSummary; listing: BiringaListing } =>
+      Boolean(row.listing),
+    );
+  if (published.length === 0) return null;
+  return (
+    <div className="flex flex-col gap-2 rounded-[var(--radius-xl)] border border-[var(--color-border)] bg-[var(--color-surface)] p-4 shadow-[var(--shadow-sm)]">
+      <span className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[var(--color-text-subtle)]">
+        {t(locale, "miCuenta.profile.catalogStatus")}
+      </span>
+      <ul className="flex flex-col divide-y divide-[var(--color-border)]">
+        {published.map(({ d, listing }) => (
+          <li
+            key={d.id}
+            className="flex flex-wrap items-center justify-between gap-3 py-2.5 first:pt-0 last:pb-0"
+          >
+            <span className="text-sm font-semibold text-[var(--color-foreground)]">
+              {d.displayName}
+            </span>
+            <AvailabilityToggle
+              listingSlug={listing.slug}
+              initialAvailable={listing.availableNow}
+            />
+          </li>
+        ))}
       </ul>
-
-      <div className="rounded-[var(--radius-lg)] border border-dashed border-[var(--color-border)] bg-[var(--color-background-elevated)] p-4 text-xs text-[var(--color-text-muted)]">
-        <p className="leading-relaxed">{t(locale, "miCuenta.profile.reviewNote")}</p>
-      </div>
     </div>
   );
 }
@@ -398,235 +396,6 @@ function AgendaTab({ locale, drafts }: Readonly<TabProps>) {
           {t(locale, "miCuenta.agenda.comingSoon.body")}
         </p>
       </div>
-    </div>
-  );
-}
-
-/* -------------------------------------------------------------------------- */
-/*  Per-draft status surface — badge icon, inline pill, action link           */
-/* -------------------------------------------------------------------------- */
-
-function DraftStatusBadgeIcon({
-  locale,
-  status,
-}: Readonly<{ locale: SupportedLocale; status: ListingDraftStatus }>) {
-  if (status === "approved") {
-    return (
-      <ShieldCheck
-        className="h-4 w-4 text-[var(--color-brand-primary)]"
-        aria-label={t(locale, "miCuenta.kyc.aria.approved")}
-      />
-    );
-  }
-  if (status === "rejected") {
-    return (
-      <ShieldAlert
-        className="h-4 w-4 text-[var(--color-brand-highlight)]"
-        aria-label={t(locale, "miCuenta.kyc.aria.rejected")}
-      />
-    );
-  }
-  return (
-    <BadgeCheck
-      className="h-4 w-4 text-[var(--color-brand-warn)]"
-      aria-label={t(locale, "miCuenta.kyc.aria.inReview")}
-    />
-  );
-}
-
-function DraftStatusPill({
-  locale,
-  status,
-}: Readonly<{ locale: SupportedLocale; status: ListingDraftStatus }>) {
-  if (status === "approved") {
-    return (
-      <span className="inline-flex items-center gap-1 rounded-full bg-[var(--color-brand-primary)]/15 px-2 py-0.5 font-semibold uppercase tracking-[0.16em] text-[var(--color-brand-primary)]">
-        <ShieldCheck className="h-2.5 w-2.5" aria-hidden />
-        {t(locale, "miCuenta.draft.status.approved")}
-      </span>
-    );
-  }
-  if (status === "rejected") {
-    return (
-      <span className="inline-flex items-center gap-1 rounded-full bg-[var(--color-brand-highlight)]/15 px-2 py-0.5 font-semibold uppercase tracking-[0.16em] text-[var(--color-brand-highlight)]">
-        <ShieldAlert className="h-2.5 w-2.5" aria-hidden />
-        {t(locale, "miCuenta.draft.status.rejected")}
-      </span>
-    );
-  }
-  return (
-    <span className="inline-flex items-center gap-1 rounded-full bg-[var(--color-brand-warn)]/15 px-2 py-0.5 font-semibold uppercase tracking-[0.16em] text-[var(--color-brand-accent-strong)]">
-      <Clock className="h-2.5 w-2.5" aria-hidden />
-      {t(locale, "miCuenta.draft.status.inReview")}
-    </span>
-  );
-}
-
-function DraftActionLink({
-  locale,
-  draft,
-}: Readonly<{ locale: SupportedLocale; draft: DraftSummary }>) {
-  if (draft.status === "pending_review") {
-    return (
-      <Link
-        href={localizedHref(locale, `/mi-cuenta/borradores/${draft.id}`)}
-        className="inline-flex h-10 items-center gap-1.5 rounded-full bg-[var(--color-brand-primary)] px-4 text-xs font-semibold text-[var(--color-surface)] shadow-[var(--shadow-glow-primary)] transition-[background,transform] duration-200 hover:-translate-y-[1px] hover:bg-[var(--color-brand-primary-strong)]"
-      >
-        {t(locale, "miCuenta.draft.action.details")}
-        <ArrowRight className="h-3.5 w-3.5" aria-hidden />
-      </Link>
-    );
-  }
-  if (draft.status === "rejected") {
-    return (
-      <Link
-        href={localizedHref(locale, `/mi-cuenta/borradores/${draft.id}`)}
-        className="inline-flex h-10 items-center gap-1.5 rounded-full bg-[var(--color-brand-highlight)] px-4 text-xs font-semibold text-[var(--color-surface)] shadow-[var(--shadow-md)] transition-[background,transform] duration-200 hover:-translate-y-[1px]"
-      >
-        {t(locale, "miCuenta.draft.action.editResend")}
-        <ArrowRight className="h-3.5 w-3.5" aria-hidden />
-      </Link>
-    );
-  }
-  return (
-    <Link
-      href={`${localizedHref(locale, "/publicar")}?edit=${draft.id}`}
-      className="inline-flex h-10 items-center gap-1.5 rounded-full bg-[var(--color-brand-primary)] px-4 text-xs font-semibold text-[var(--color-surface)] shadow-[var(--shadow-glow-primary)] transition-[background,transform] duration-200 hover:-translate-y-[1px] hover:bg-[var(--color-brand-primary-strong)]"
-    >
-      {t(locale, "miCuenta.draft.action.edit")}
-      <ArrowRight className="h-3.5 w-3.5" aria-hidden />
-    </Link>
-  );
-}
-
-/* -------------------------------------------------------------------------- */
-/*  KYC status — visible at the top of the profile tab                        */
-/* -------------------------------------------------------------------------- */
-
-interface KycPresentation {
-  icon: typeof ShieldCheck;
-  surface: string;
-  iconTile: string;
-  glow: string;
-  title: string;
-  body: string;
-  meta?: { icon: typeof Clock; label: string };
-  cta?: { label: string; href: string };
-}
-
-function buildKycPresentation(
-  locale: SupportedLocale,
-): Record<VerificationStatus, KycPresentation> {
-  const verifyHref = localizedHref(locale, "/verificacion/enviar");
-  return {
-    approved: {
-      icon: ShieldCheck,
-      surface:
-        "border-[var(--color-brand-primary)]/35 bg-[var(--color-brand-primary)]/8",
-      iconTile:
-        "bg-[var(--color-brand-primary)]/15 text-[var(--color-brand-primary)] ring-1 ring-[var(--color-brand-primary)]/35",
-      glow: "shadow-[var(--shadow-glow-primary)]",
-      title: t(locale, "miCuenta.kyc.approved.title"),
-      body: t(locale, "miCuenta.kyc.approved.body"),
-    },
-    pending_review: {
-      icon: Loader2,
-      surface:
-        "border-[var(--color-brand-accent)]/45 bg-[var(--color-brand-accent)]/10",
-      iconTile:
-        "bg-[var(--color-brand-accent)]/18 text-[var(--color-brand-accent-strong)] ring-1 ring-[var(--color-brand-accent)]/45",
-      glow: "shadow-[var(--shadow-glow-accent)]",
-      title: t(locale, "miCuenta.kyc.pending.title"),
-      body: t(locale, "miCuenta.kyc.pending.body"),
-      meta: { icon: Clock, label: t(locale, "miCuenta.kyc.pending.meta") },
-    },
-    rejected: {
-      icon: ShieldAlert,
-      surface:
-        "border-[var(--color-brand-highlight)]/45 bg-[var(--color-brand-highlight)]/8",
-      iconTile:
-        "bg-[var(--color-brand-highlight)]/15 text-[var(--color-brand-highlight)] ring-1 ring-[var(--color-brand-highlight)]/45",
-      glow: "shadow-[var(--shadow-md)]",
-      title: t(locale, "miCuenta.kyc.rejected.title"),
-      body: t(locale, "miCuenta.kyc.rejected.body"),
-      cta: { label: t(locale, "miCuenta.kyc.rejected.cta"), href: verifyHref },
-    },
-    not_submitted: {
-      icon: ShieldQuestion,
-      surface:
-        "border-[var(--color-brand-primary)]/30 bg-[var(--color-brand-primary)]/6",
-      iconTile:
-        "bg-[var(--color-brand-primary)]/12 text-[var(--color-brand-primary)] ring-1 ring-[var(--color-brand-primary)]/25",
-      glow: "shadow-[var(--shadow-glow-primary)]",
-      title: t(locale, "miCuenta.kyc.notSubmitted.title"),
-      body: t(locale, "miCuenta.kyc.notSubmitted.body"),
-      cta: {
-        label: t(locale, "miCuenta.kyc.notSubmitted.cta"),
-        href: verifyHref,
-      },
-    },
-  };
-}
-
-function KycStatusCard({
-  locale,
-  verification,
-}: Readonly<{
-  locale: SupportedLocale;
-  verification: VerificationRecord | null;
-}>) {
-  const status: VerificationStatus = verification?.status ?? "not_submitted";
-  const presentation = buildKycPresentation(locale)[status];
-  const Icon = presentation.icon;
-  const animateIcon = status === "pending_review";
-  const MetaIcon = presentation.meta?.icon;
-
-  return (
-    <div
-      className={`relative flex flex-col gap-4 overflow-hidden rounded-[var(--radius-2xl)] border p-5 text-[var(--color-foreground)] sm:flex-row sm:items-center sm:justify-between sm:gap-5 ${presentation.surface} ${presentation.glow}`}
-    >
-      <div className="flex items-start gap-4">
-        <span
-          aria-hidden
-          className={`mt-0.5 inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl ${presentation.iconTile}`}
-        >
-          <Icon
-            className={`h-5 w-5 ${animateIcon ? "animate-spin" : ""}`}
-            aria-hidden
-          />
-        </span>
-        <div className="flex flex-col gap-1.5">
-          <span className="font-[var(--font-display)] text-base font-[420] tracking-[-0.01em] text-[var(--color-foreground)]">
-            {presentation.title}
-          </span>
-          <span className="text-sm leading-relaxed text-[var(--color-text-muted)]">
-            {presentation.body}
-          </span>
-          {presentation.meta && MetaIcon ? (
-            <span className="mt-1 inline-flex w-fit items-center gap-1.5 rounded-full bg-[var(--color-surface)]/70 px-2.5 py-1 text-[11px] font-medium text-[var(--color-text-muted)] ring-1 ring-[var(--color-border)]">
-              <MetaIcon className="h-3 w-3" aria-hidden />
-              {presentation.meta.label}
-            </span>
-          ) : null}
-          {status === "rejected" && verification?.rejectionReason ? (
-            <span className="mt-1 inline-block rounded-[var(--radius-sm)] bg-[var(--color-surface)]/80 px-2 py-1 text-[11px] text-[var(--color-foreground)] ring-1 ring-[var(--color-brand-highlight)]/20">
-              <strong className="font-semibold">
-                {t(locale, "miCuenta.kyc.rejected.reason")}
-              </strong>{" "}
-              {verification.rejectionReason}
-            </span>
-          ) : null}
-        </div>
-      </div>
-      {presentation.cta ? (
-        <Link
-          href={presentation.cta.href}
-          className="inline-flex h-10 shrink-0 items-center justify-center gap-1.5 rounded-full bg-[var(--color-brand-primary)] px-4 text-xs font-semibold text-[var(--color-surface)] shadow-[var(--shadow-glow-primary)] transition-[background,transform] duration-200 hover:-translate-y-[1px] hover:bg-[var(--color-brand-primary-strong)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-background)]"
-        >
-          {presentation.cta.label}
-          <ArrowRight className="h-3.5 w-3.5" aria-hidden />
-        </Link>
-      ) : null}
     </div>
   );
 }

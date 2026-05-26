@@ -16,6 +16,7 @@ import type {
 interface StoredDraft {
   id: string;
   ownerUid: string;
+  personId: string;
   status: ListingDraftStatus;
   payload: CreateListingDraftRawInput["payload"];
   submittedAt: Date;
@@ -31,6 +32,7 @@ export async function createListingDraftRaw(
   DRAFTS.push({
     id: input.draftId,
     ownerUid: input.ownerUid,
+    personId: input.personId,
     status: "pending_review",
     payload: input.payload,
     submittedAt: new Date(),
@@ -39,11 +41,34 @@ export async function createListingDraftRaw(
 }
 
 /**
- * Mock parity for `findActiveDraftBySlug`. Active = not rejected. Mock
- * doesn't model rejection yet, so every stored draft counts as active.
+ * Mock parity for `findActiveDraftBySlug`. A slug is active when a
+ * draft is in `pending_review` or `approved`. `rejected` and
+ * `cancelled` (ADR-020) release the slug.
  */
 export async function findActiveDraftBySlug(slug: string): Promise<boolean> {
-  return DRAFTS.some((d) => d.payload.details.preferredSlug === slug);
+  return DRAFTS.some(
+    (d) =>
+      d.payload.details.preferredSlug === slug &&
+      (d.status === "pending_review" || d.status === "approved"),
+  );
+}
+
+/**
+ * ADR-020 cascade. Mock parity for `cancelDraftRaw`. No-op when the
+ * draft doesn't exist or belongs to a different owner — matches the
+ * "treat as 404" stance of `getDraftByIdForOwnerRaw`.
+ */
+export async function cancelDraftRaw(
+  draftId: string,
+  ownerUid: string,
+): Promise<void> {
+  const idx = DRAFTS.findIndex(
+    (d) => d.id === draftId && d.ownerUid === ownerUid,
+  );
+  if (idx === -1) return;
+  const found = DRAFTS[idx];
+  if (!found || found.status === "cancelled") return;
+  DRAFTS[idx] = { ...found, status: "cancelled" };
 }
 
 /**
@@ -107,6 +132,7 @@ export async function getDraftByIdForOwnerRaw(
   return {
     id: found.id,
     ownerUid: found.ownerUid,
+    ...(found.personId ? { personId: found.personId } : {}),
     status: found.status,
     payload: found.payload,
     submittedAt: found.submittedAt.toISOString(),

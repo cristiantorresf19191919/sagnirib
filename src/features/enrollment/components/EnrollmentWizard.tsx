@@ -90,9 +90,10 @@ const STEP_ORDER: ReadonlyArray<StepId> = [
 
 interface EnrollmentWizardProps {
   catalogs: EnrollmentCatalogs;
+  personId?: string;
 }
 
-export function EnrollmentWizard({ catalogs }: EnrollmentWizardProps) {
+export function EnrollmentWizard({ catalogs, personId }: EnrollmentWizardProps) {
   const locale = useActiveLocale();
   const STEPS = buildSteps(locale);
   const [draft, setDraft] = useState<EnrollmentDraft>(INITIAL_DRAFT);
@@ -253,7 +254,9 @@ export function EnrollmentWizard({ catalogs }: EnrollmentWizardProps) {
     setSubmitting(true);
     setErrorBanner(null);
 
-    const result = await createListingDraft(toServerPayload(draft, sessionId));
+    const result = await createListingDraft(
+      toServerPayload(draft, sessionId, personId),
+    );
 
     setSubmitting(false);
 

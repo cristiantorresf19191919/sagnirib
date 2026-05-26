@@ -34,3 +34,11 @@ export async function destroySession(): Promise<void> {
 export async function grantRoleRaw(_uid: string, _role: Role): Promise<void> {
   // No-op in mock mode.
 }
+
+/**
+ * Mock parity for the role revoke (ADR-019 lazy-migration path). No
+ * persistent claims in mock mode, so revoke is silently a no-op.
+ */
+export async function revokeRoleRaw(_uid: string, _role: Role): Promise<void> {
+  // No-op in mock mode.
+}

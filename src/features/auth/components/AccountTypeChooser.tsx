@@ -13,6 +13,7 @@ import { useRouter } from "next/navigation";
 import {
   ArrowRight,
   Check,
+  Lock,
   MessageSquare,
   ShieldCheck,
   Sparkles,
@@ -58,14 +59,35 @@ export function AccountTypeChooser() {
   const router = useRouter();
   const locale = useActiveLocale();
   const [pending, setPending] = useState<AccountType | null>(null);
+  /**
+   * Lock-error surface (ADR-019). Set when the visitor is already
+   * authenticated AND their persisted `accountType` differs from the
+   * pick. Prevents the silent "click → push to wizard → wizard fails
+   * at submit" UX of the old code.
+   */
+  const [lockedAs, setLockedAs] = useState<AccountType | null>(null);
 
   async function pick(accountType: AccountType, nextPath: string) {
     setPending(accountType);
+    setLockedAs(null);
     try {
-      await setAccountType(accountType);
+      const result = await setAccountType(accountType);
+      if (!result.ok) {
+        if (
+          result.error?.kind === "account-type-locked" &&
+          result.error.currentAccountType
+        ) {
+          setLockedAs(result.error.currentAccountType);
+          setPending(null);
+          return;
+        }
+        console.error("[rbac] setAccountType failed", result.error);
+        setPending(null);
+        return;
+      }
       router.push(localizedHref(locale, nextPath));
     } catch (err) {
-      console.error("[rbac] setAccountType failed", err);
+      console.error("[rbac] setAccountType threw", err);
       setPending(null);
     }
   }
@@ -122,6 +144,12 @@ export function AccountTypeChooser() {
           }
         />
       </div>
+
+      {lockedAs !== null ? (
+        <motion.div variants={REVEAL}>
+          <LockedNotice locale={locale} currentAccountType={lockedAs} />
+        </motion.div>
+      ) : null}
 
       <motion.div
         variants={REVEAL}
@@ -355,5 +383,40 @@ function ChooserCard({
         ) : null}
       </motion.span>
     </motion.button>
+  );
+}
+
+/**
+ * Reusable copy block for the ADR-019 lock refusal. Same shape as the
+ * one in `SignInGate` and `AccountTypeFallbackModal` — duplicated
+ * intentionally so each surface owns its visual treatment.
+ */
+function LockedNotice({
+  locale,
+  currentAccountType,
+}: Readonly<{
+  locale: ReturnType<typeof useActiveLocale>;
+  currentAccountType: AccountType;
+}>) {
+  const message =
+    currentAccountType === ACCOUNT_TYPE_COMMENTATOR
+      ? t(locale, "auth.accountType.locked.asClient")
+      : t(locale, "auth.accountType.locked.asPartner");
+  return (
+    <div
+      role="alert"
+      className="flex items-start gap-3 rounded-[var(--radius-lg)] border border-[var(--color-brand-warn)]/30 bg-[var(--color-brand-warn)]/8 p-4 text-[13px] leading-relaxed text-[var(--color-foreground)]"
+    >
+      <Lock
+        className="mt-0.5 h-4 w-4 shrink-0 text-[var(--color-brand-warn)]"
+        aria-hidden
+      />
+      <div className="flex flex-col gap-1">
+        <span className="font-semibold">
+          {t(locale, "auth.accountType.locked.title")}
+        </span>
+        <span className="text-[var(--color-text-muted)]">{message}</span>
+      </div>
+    </div>
   );
 }

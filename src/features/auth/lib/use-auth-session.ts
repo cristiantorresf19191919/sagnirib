@@ -151,6 +151,16 @@ export function useAuthSession(): UseAuthSession {
         setUser(null);
         setStatus("anonymous");
         setServerSession(UNKNOWN_SERVER_SESSION);
+        // Clear any stale `__session` cookie the SDK has since lost
+        // (signed out in another tab, refresh token revoked, browser
+        // storage cleared while the cookie survived). Without this,
+        // server components keep seeing a valid session and gates like
+        // `/publicar` let an anonymous user through.
+        try {
+          await signOutAction();
+        } catch (err) {
+          console.warn("[auth] stale session cleanup failed", err);
+        }
         return;
       }
       let next: ServerSessionState;

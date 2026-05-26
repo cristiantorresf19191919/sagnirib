@@ -15,8 +15,6 @@ import { useAuthSession } from "@/features/auth/lib/use-auth-session";
 import { useClientMounted } from "@/shared/lib/use-client-mounted";
 import { toast } from "@/shared/ui/toast";
 
-import { SafeCheckinSetup } from "@/features/safety/components/SafeCheckinSetup";
-
 import { requestBooking } from "../actions/request-booking";
 import {
   composeProposedAt,
@@ -140,7 +138,6 @@ function BookingRequestOverlay({
   const [message, setMessage] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
-  const [showSafeCheckin, setShowSafeCheckin] = useState(false);
 
   const onSubmit = (event: React.FormEvent) => {
     event.preventDefault();
@@ -159,7 +156,7 @@ function BookingRequestOverlay({
           t(locale, "booking.toast.title"),
           t(locale, "booking.toast.body", { name: listingName }),
         );
-        setShowSafeCheckin(true);
+        onClose();
       } else {
         const friendly =
           result.error?.kind === "booking-disabled"
@@ -225,14 +222,6 @@ function BookingRequestOverlay({
             <p className="text-sm text-[var(--color-text-muted)]">
               {t(locale, "booking.modal.loading")}
             </p>
-          ) : showSafeCheckin ? (
-            <SafeCheckinSetup
-              listingName={listingName}
-              listingSlug={listingSlug}
-              city={defaultCity}
-              defaultMinutes={durationHours * 60}
-              onClose={onClose}
-            />
           ) : (
             <form
               onSubmit={onSubmit}

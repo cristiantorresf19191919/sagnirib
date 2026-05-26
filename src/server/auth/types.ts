@@ -8,6 +8,18 @@ import "server-only";
 export const Role = {
   /** User who has submitted at least one listing draft. */
   Model: "model",
+  /**
+   * Operator with privileged access to the admin codebase
+   * (`sagnirib-admin`). Listed here so MAIN does not strip the claim
+   * during session minting; MAIN itself does not gate features on it.
+   */
+  Admin: "admin",
+  /**
+   * User who completed the commentator (cliente) sign-up flow. Granted
+   * automatically by `signUpWithIdToken` when the account-type cookie is
+   * set to `commentator`. Drives the `/mi-cuenta/comentarios` panel.
+   */
+  Commentator: "commentator",
 } as const;
 
 export type Role = (typeof Role)[keyof typeof Role];
@@ -35,6 +47,13 @@ export type AuthErrorKind =
   | "session-revoked"
   | "session-expired"
   | "not-configured"
+  /**
+   * `grantRole` was called with a role that is mutually exclusive with
+   * one the user already holds (ADR-019 § "Mutual exclusion at the
+   * role layer"). Today this is `Role.Model` ↔ `Role.Commentator`;
+   * `Role.Admin` is orthogonal and never triggers this.
+   */
+  | "conflicting-role"
   | "internal";
 
 export class AuthError extends Error {
