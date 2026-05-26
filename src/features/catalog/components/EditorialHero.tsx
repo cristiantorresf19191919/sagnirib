@@ -11,7 +11,6 @@ import { UnderlineSweep } from "@/shared/motion/UnderlineSweep";
 
 import { EditorialHeroMosaicColumn } from "./EditorialHeroMosaicColumn";
 import { HeroCitySelect } from "./HeroCitySelect";
-import { HeroMosaicCard } from "./HeroMosaicCard";
 import { LuckyButton } from "./LuckyButton";
 
 interface CityOption {
@@ -102,6 +101,12 @@ function buildMarqueeItems(
 const TILE_HEIGHTS_A = [240, 320, 240, 320] as const;
 const TILE_HEIGHTS_B = [360, 220, 360, 220] as const;
 const TILE_HEIGHTS_C = [280, 240, 280, 240] as const;
+
+// Mobile reel uses 2 columns with tighter heights — the desktop mosaic is too
+// dense to fit on a 360 px viewport without making tiles unreadable. The two
+// strips still alternate up/down so the parallax reads as the same idea.
+const MOBILE_TILE_HEIGHTS_A = [200, 260, 200, 260] as const;
+const MOBILE_TILE_HEIGHTS_B = [240, 200, 240, 200] as const;
 
 const MOSAIC_TILES_PER_COLUMN = 4;
 const MOSAIC_COL_A_START = 0;
@@ -199,6 +204,7 @@ export async function EditorialHero({
           drift="up"
           durationSeconds={34}
           testIdSuffix="a"
+          interactive={false}
         />
         <EditorialHeroMosaicColumn
           tiles={colB}
@@ -246,14 +252,22 @@ export async function EditorialHero({
         }}
       />
 
-      {/* Content column */}
+      {/* Content column.
+          `pointer-events-none` on the wrapper + `pointer-events-auto` on the
+          copy column lets hover/click pass through the wrapper's empty right
+          half (the grid's 0.85fr cell) and its padding regions down to the
+          mosaic underneath. Without this, the empty right cell sits at z-[5]
+          on top of mosaic columns B and most of C, blocking their hover-to-
+          pause + click. The effect was viewport-dependent — on narrower
+          laptops the wrapper covered proportionally more of the mosaic, so
+          even column C stopped working. */}
       <div
         data-testid="editorial-hero-content"
-        className="relative z-[5] mx-auto w-full max-w-[1440px] px-5 pb-16 pt-12 sm:px-9 sm:pb-20 sm:pt-20 lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(0,0.85fr)] lg:gap-15 lg:pt-[70px]"
+        className="pointer-events-none relative z-[5] mx-auto w-full max-w-[1440px] px-5 pb-16 pt-12 sm:px-9 sm:pb-20 sm:pt-20 lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(0,0.85fr)] lg:gap-15 lg:pt-[70px]"
       >
         <div
           data-testid="editorial-hero-copy"
-          className="flex max-w-[620px] gap-5 lg:gap-6"
+          className="pointer-events-auto flex max-w-[620px] gap-5 lg:gap-6"
         >
           {/* Vertical rail — desktop only, decorative. Mirrors V5's
               `.biringa-hero__rail`: rotated brand line + gradient hairline
@@ -475,32 +489,54 @@ export async function EditorialHero({
             </ul>
           </div>
         </div>
-        <div aria-hidden />
       </div>
 
-      {/* Mobile / tablet — horizontal snap carousel below the copy */}
+      {/* Mobile / tablet — two vertical cinema strips below the copy.
+          Mirrors the desktop mosaic idea (auto-scrolling reels with
+          alternating drift) instead of the old horizontal snap carousel.
+          The container's height frames the visible window; the underlying
+          reel keeps scrolling underneath. Tiles remain tappable while
+          moving — same pattern as the bottom marquee.
+          Top + bottom fade veils soften the hard cut where the reel meets
+          the container edge (without them, tiles get sliced mid-image and
+          read as broken). Same gradient shape as the desktop side veils
+          but rotated to the vertical axis. */}
       <div
         data-testid="editorial-hero-mosaic-mobile"
-        className="relative z-[5] mb-4 lg:hidden"
+        className="relative z-[5] mx-auto mb-6 h-[clamp(380px,72vw,460px)] w-full max-w-[640px] px-5 sm:h-[clamp(420px,55vw,520px)] sm:px-9 lg:hidden"
+        aria-label={t(locale, "editorialHero.mosaicMobile.aria")}
       >
-        <div
-          data-testid="editorial-hero-mosaic-mobile-track"
-          className="flex snap-x snap-mandatory gap-2.5 overflow-x-auto px-6 pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-          aria-label={t(locale, "editorialHero.mosaicMobile.aria")}
-        >
-          {mosaic.map((listing, idx) => (
-            <div
-              key={listing.id}
-              className="snap-start shrink-0 basis-[68%] sm:basis-[44%]"
-            >
-              <HeroMosaicCard
-                listing={listing}
-                height={idx === 0 ? 360 : 320}
-                hideLive={idx % 2 === 1}
-                priority={idx === 0}
-              />
-            </div>
-          ))}
+        <div className="relative grid h-full w-full grid-cols-2 gap-2.5">
+          <EditorialHeroMosaicColumn
+            tiles={colA}
+            heights={MOBILE_TILE_HEIGHTS_A}
+            drift="up"
+            durationSeconds={32}
+            testIdSuffix="mobile-a"
+          />
+          <EditorialHeroMosaicColumn
+            tiles={colB}
+            heights={MOBILE_TILE_HEIGHTS_B}
+            drift="down"
+            durationSeconds={40}
+            testIdSuffix="mobile-b"
+          />
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-x-0 top-0 z-[3] h-16"
+            style={{
+              background:
+                "linear-gradient(180deg, var(--color-cream) 0%, color-mix(in srgb, var(--color-cream) 70%, transparent) 55%, transparent 100%)",
+            }}
+          />
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-x-0 bottom-0 z-[3] h-20"
+            style={{
+              background:
+                "linear-gradient(0deg, var(--color-cream) 0%, color-mix(in srgb, var(--color-cream) 70%, transparent) 55%, transparent 100%)",
+            }}
+          />
         </div>
       </div>
 
