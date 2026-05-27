@@ -31,6 +31,20 @@
  */
 export const PLANS_ENABLED = false as boolean;
 
+/**
+ * Master toggle for the faceVisible / paymentByCard / availableNow toggles
+ * in Step 2. Hidden for MVP launch — flip to `true` in the same PR that
+ * connects the availability and payment-method features post-launch.
+ */
+export const PROFILE_TOGGLES_ENABLED = false as boolean;
+
+/**
+ * Master toggle for the video upload section in Step 2. Hidden for MVP
+ * launch — flip to `true` in the same PR that enables video storage and
+ * the video playback surface on the profile page.
+ */
+export const PROFILE_VIDEOS_ENABLED = false as boolean;
+
 /** Forced default while `PLANS_ENABLED === false`. Esencial keeps the
  *  audit / Firestore record consistent with the post-launch contract. */
 export const MVP_LOCKED_PACKAGE_ID = "esencial" as const;

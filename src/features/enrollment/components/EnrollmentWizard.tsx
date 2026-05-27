@@ -10,6 +10,7 @@ import { t } from "@/core/i18n/messages";
 
 import { createListingDraft } from "../actions/create-draft";
 import type { EnrollmentCatalogs } from "../lib/catalogs";
+import { containsUrl } from "../lib/bio-content-rules";
 import {
   calculateTotal,
   formatCop,
@@ -101,27 +102,12 @@ export function EnrollmentWizard({ catalogs, personId }: EnrollmentWizardProps) 
   const [completed, setCompleted] = useState<ReadonlyArray<StepId>>([]);
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
-  const [errorBanner, setErrorBanner] = useState<string | null>(null);
-  // Incremented on every failed validation so repeated clicks with the same
-  // error string still re-trigger the scroll-into-view effect below.
-  const [errorTick, setErrorTick] = useState(0);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [forceShowErrors, setForceShowErrors] = useState(false);
   const [direction, setDirection] = useState<1 | -1>(1);
   const reduced = useReducedMotion();
-  const errorBannerRef = useRef<HTMLDivElement | null>(null);
   const wizardTopRef = useRef<HTMLDivElement | null>(null);
   const isInitialStepRef = useRef(true);
-
-  // When validation fails the banner renders above the step content. On long
-  // steps the submit button sits well below the fold, so without this scroll
-  // the click looks like a no-op. Pull the banner into view so the cause is
-  // immediately visible.
-  useEffect(() => {
-    if (!errorBanner) return;
-    errorBannerRef.current?.scrollIntoView({
-      behavior: reduced ? "auto" : "smooth",
-      block: "center",
-    });
-  }, [errorBanner, errorTick, reduced]);
 
   // Each step's form is long enough that the submit button lives well below
   // the fold; if we leave the scroll position untouched the next step renders
@@ -176,6 +162,8 @@ export function EnrollmentWizard({ catalogs, personId }: EnrollmentWizardProps) 
     if (current === "description") {
       const d = draft.description;
       if (!d.shortBio.trim()) return v("publicar.validation.shortBio");
+      if (containsUrl(d.shortBio)) return v("publicar.validation.bioUrl");
+      if (containsUrl(d.bio)) return v("publicar.validation.bioUrl");
       if (d.bio.trim().length < 60) return v("publicar.validation.bioLength");
       if (d.services.length === 0) return v("publicar.validation.services");
       if (hasInFlightUploads(d.gallery))
@@ -210,11 +198,10 @@ export function EnrollmentWizard({ catalogs, personId }: EnrollmentWizardProps) 
   function next() {
     const err = validateCurrent();
     if (err) {
-      setErrorBanner(err);
-      setErrorTick((tick) => tick + 1);
+      setForceShowErrors(true);
       return;
     }
-    setErrorBanner(null);
+    setForceShowErrors(false);
     setCompleted((prev) => (prev.includes(current) ? prev : [...prev, current]));
     const idx = STEP_ORDER.indexOf(current);
     if (idx < STEP_ORDER.length - 1) {
@@ -224,7 +211,7 @@ export function EnrollmentWizard({ catalogs, personId }: EnrollmentWizardProps) 
   }
 
   function back() {
-    setErrorBanner(null);
+    setForceShowErrors(false);
     const idx = STEP_ORDER.indexOf(current);
     if (idx > 0) {
       setDirection(-1);
@@ -236,23 +223,22 @@ export function EnrollmentWizard({ catalogs, personId }: EnrollmentWizardProps) 
     if (id === current) return;
     if (!completed.includes(id) && STEP_ORDER.indexOf(id) > STEP_ORDER.indexOf(current))
       return;
-    // Determine direction based on relative position.
     setDirection(
       STEP_ORDER.indexOf(id) > STEP_ORDER.indexOf(current) ? 1 : -1,
     );
-    setErrorBanner(null);
+    setForceShowErrors(false);
     setCurrent(id);
   }
 
   async function submit() {
     const err = validateCurrent();
     if (err) {
-      setErrorBanner(err);
-      setErrorTick((tick) => tick + 1);
+      setForceShowErrors(true);
       return;
     }
     setSubmitting(true);
-    setErrorBanner(null);
+    setForceShowErrors(false);
+    setSubmitError(null);
 
     const result = await createListingDraft(
       toServerPayload(draft, sessionId, personId),
@@ -261,8 +247,7 @@ export function EnrollmentWizard({ catalogs, personId }: EnrollmentWizardProps) 
     setSubmitting(false);
 
     if (!result.ok) {
-      setErrorBanner(humanizeDraftError(result.error));
-      setErrorTick((tick) => tick + 1);
+      setSubmitError(humanizeDraftError(result.error));
       return;
     }
 
@@ -287,16 +272,6 @@ export function EnrollmentWizard({ catalogs, personId }: EnrollmentWizardProps) 
         />
         <UsefulTip title={tip.title}>{tip.body}</UsefulTip>
       </div>
-
-      {errorBanner && (
-        <div
-          ref={errorBannerRef}
-          role="alert"
-          className="rounded-[var(--radius-md)] border border-[var(--color-brand-highlight)]/40 bg-[var(--color-brand-highlight)]/8 px-4 py-3 text-sm text-[var(--color-brand-highlight)]"
-        >
-          {errorBanner}
-        </div>
-      )}
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,320px)]">
         <div className="flex flex-col gap-6">
@@ -337,6 +312,7 @@ export function EnrollmentWizard({ catalogs, personId }: EnrollmentWizardProps) 
                   values={draft.details}
                   catalogs={catalogs}
                   onChange={handleChangeDetails}
+                  forceShowErrors={forceShowErrors}
                 />
               )}
               {current === "description" && (
@@ -346,6 +322,7 @@ export function EnrollmentWizard({ catalogs, personId }: EnrollmentWizardProps) 
                   onChange={handleChangeDescription}
                   sessionId={sessionId}
                   galleryMax={galleryMaxFor(draft.publish.packageId)}
+                  forceShowErrors={forceShowErrors}
                 />
               )}
               {current === "attributes" && (
@@ -356,12 +333,15 @@ export function EnrollmentWizard({ catalogs, personId }: EnrollmentWizardProps) 
                     languages: catalogs.languages,
                   }}
                   onChange={handleChangeAttributes}
+                  forceShowErrors={forceShowErrors}
                 />
               )}
               {current === "publish" && (
                 <StepPublish
                   values={draft.publish}
                   onChange={handleChangePublish}
+                  forceShowErrors={forceShowErrors}
+                  submitError={submitError}
                 />
               )}
             </motion.div>

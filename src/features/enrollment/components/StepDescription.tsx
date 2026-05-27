@@ -14,6 +14,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { t } from "@/core/i18n/messages";
 import { useActiveLocale } from "@/core/i18n/use-active-locale";
 import type { EnrollmentCatalogs } from "../lib/catalogs";
+import { containsUrl } from "../lib/bio-content-rules";
 import type {
   DescriptionValues,
   GalleryItem,
@@ -28,6 +29,7 @@ import {
 } from "../lib/upload-video";
 import { ChipChoice, TextAreaField, ToggleSwitch } from "./FormField";
 import { SectionShell } from "./SectionShell";
+import { PROFILE_TOGGLES_ENABLED, PROFILE_VIDEOS_ENABLED } from "../lib/pricing";
 
 /**
  * Step 2 of the publish wizard.
@@ -72,6 +74,7 @@ interface StepDescriptionProps {
   /** Plan-driven gallery cap. The submit-time DRAFT_LIMITS.galleryMax = 24
    *  is the absolute ceiling regardless of plan. */
   galleryMax: number;
+  forceShowErrors: boolean;
 }
 
 export function StepDescription({
@@ -80,8 +83,19 @@ export function StepDescription({
   onChange,
   sessionId,
   galleryMax,
+  forceShowErrors,
 }: StepDescriptionProps) {
   const locale = useActiveLocale();
+  const [touched, setTouched] = useState<ReadonlySet<string>>(new Set());
+
+  function touch(name: string) {
+    setTouched((prev) => new Set([...prev, name]));
+  }
+
+  function show(name: string): boolean {
+    return forceShowErrors || touched.has(name);
+  }
+
   function update<K extends keyof DescriptionValues>(
     key: K,
     value: DescriptionValues[K],
@@ -90,11 +104,11 @@ export function StepDescription({
   }
 
   function toggleService(s: string) {
-    const has = values.services.includes(s);
-    update(
-      "services",
-      has ? values.services.filter((x) => x !== s) : [...values.services, s],
-    );
+    const next = values.services.includes(s)
+      ? values.services.filter((x) => x !== s)
+      : [...values.services, s];
+    update("services", next);
+    if (next.length === 0) touch("services");
   }
   function togglePlace(p: string) {
     const has = values.meetingContexts.includes(p);
@@ -105,6 +119,34 @@ export function StepDescription({
         : [...values.meetingContexts, p],
     );
   }
+
+  const v = (key: string) => t(locale, key);
+
+  const errors = {
+    shortBio: !values.shortBio.trim()
+      ? v("publicar.validation.shortBio")
+      : containsUrl(values.shortBio)
+        ? v("publicar.validation.bioUrl")
+        : undefined,
+    bio: values.bio.trim().length < 60
+      ? v("publicar.validation.bioLength")
+      : containsUrl(values.bio)
+        ? v("publicar.validation.bioUrl")
+        : undefined,
+    services: values.services.length === 0 ? v("publicar.validation.services") : undefined,
+    galleryInFlight: hasInFlightUploads(values.gallery)
+      ? v("publicar.validation.galleryInFlight")
+      : undefined,
+    galleryErrored: hasErroredUploads(values.gallery)
+      ? v("publicar.validation.galleryErrored")
+      : undefined,
+    videosInFlight: hasInFlightVideoUploads(values.videos)
+      ? v("publicar.validation.videosInFlight")
+      : undefined,
+    videosErrored: hasErroredVideoUploads(values.videos)
+      ? v("publicar.validation.videosErrored")
+      : undefined,
+  };
 
   // ----- Gallery upload pipeline ------------------------------------------
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -453,9 +495,11 @@ export function StepDescription({
         placeholder={t(locale, "step.description.shortBio.placeholder")}
         value={values.shortBio}
         onChange={(e) => update("shortBio", e.target.value)}
+        onBlur={() => touch("shortBio")}
         hint={t(locale, "step.description.shortBio.hint", {
           count: values.shortBio.length,
         })}
+        error={show("shortBio") ? errors.shortBio : undefined}
       />
       <TextAreaField
         label={t(locale, "step.description.bio.label")}
@@ -465,9 +509,11 @@ export function StepDescription({
         placeholder={t(locale, "step.description.bio.placeholder")}
         value={values.bio}
         onChange={(e) => update("bio", e.target.value)}
+        onBlur={() => touch("bio")}
         hint={t(locale, "step.description.bio.hint", {
           count: values.bio.length,
         })}
+        error={show("bio") ? errors.bio : undefined}
       />
 
       <fieldset className="flex flex-col gap-2">
@@ -487,6 +533,11 @@ export function StepDescription({
             />
           ))}
         </div>
+        {show("services") && errors.services && (
+          <p role="alert" className="text-[11px] text-[var(--color-brand-highlight)]">
+            {errors.services}
+          </p>
+        )}
       </fieldset>
 
       <fieldset className="flex flex-col gap-2">
@@ -508,23 +559,25 @@ export function StepDescription({
         </div>
       </fieldset>
 
-      <div className="grid gap-3 md:grid-cols-2">
-        <ToggleSwitch
-          label={t(locale, "step.description.toggle.faceVisible.label")}
-          description={t(locale, "step.description.toggle.faceVisible.body")}
-          checked={values.faceVisible}
-          onChange={(v) => update("faceVisible", v)}
-        />
-        <ToggleSwitch
-          label={t(locale, "step.description.toggle.paymentByCard.label")}
-          description={t(
-            locale,
-            "step.description.toggle.paymentByCard.body",
-          )}
-          checked={values.paymentByCard}
-          onChange={(v) => update("paymentByCard", v)}
-        />
-      </div>
+      {PROFILE_TOGGLES_ENABLED && (
+        <div className="grid gap-3 md:grid-cols-2">
+          <ToggleSwitch
+            label={t(locale, "step.description.toggle.faceVisible.label")}
+            description={t(locale, "step.description.toggle.faceVisible.body")}
+            checked={values.faceVisible}
+            onChange={(v) => update("faceVisible", v)}
+          />
+          <ToggleSwitch
+            label={t(locale, "step.description.toggle.paymentByCard.label")}
+            description={t(
+              locale,
+              "step.description.toggle.paymentByCard.body",
+            )}
+            checked={values.paymentByCard}
+            onChange={(v) => update("paymentByCard", v)}
+          />
+        </div>
+      )}
 
       <div className="flex flex-col gap-3">
         <div className="flex flex-wrap items-end justify-between gap-2">
@@ -588,71 +641,83 @@ export function StepDescription({
             {galleryError}
           </p>
         )}
-      </div>
-
-      {/* Videos block (ADR-015) — max 2 clips, 3..30s each. Optional. */}
-      <div className="flex flex-col gap-3">
-        <div className="flex flex-wrap items-end justify-between gap-2">
-          <span className="text-[12px] font-semibold tracking-tight text-[var(--color-foreground)]">
-            {t(locale, "step.description.videos.title")}
-          </span>
-          <span className="text-[11px] text-[var(--color-text-subtle)]">
-            {t(locale, "step.description.videos.counter", {
-              count: values.videos.length,
-            })}
-            {videoInFlightCount > 0
-              ? " " +
-                t(locale, "step.description.videos.uploading", {
-                  count: videoInFlightCount,
-                })
-              : null}
-          </span>
-        </div>
-        <p className="text-[11px] text-[var(--color-text-subtle)]">
-          {t(locale, "step.description.videos.helper")}
-        </p>
-        <input
-          ref={videoInputRef}
-          type="file"
-          accept="video/mp4,video/webm"
-          multiple
-          onChange={handleVideosSelected}
-          className="sr-only"
-          aria-hidden
-          tabIndex={-1}
-        />
-        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
-          {values.videos.map((item) => (
-            <VideoCard
-              key={item.id}
-              item={item}
-              onRemove={() => removeVideo(item)}
-              onRetry={() => retryVideo(item)}
-            />
-          ))}
-          {values.videos.length < 2 && (
-            <button
-              type="button"
-              onClick={openVideoPicker}
-              className="flex aspect-video flex-col items-center justify-center gap-1.5 rounded-[var(--radius-md)] border border-dashed border-[var(--color-border)] bg-[var(--color-background-elevated)] text-[var(--color-text-muted)] transition-colors hover:border-[var(--color-brand-primary)] hover:text-[var(--color-brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-background)]"
-              aria-label={t(locale, "step.description.videos.add.aria")}
-            >
-              <Film className="h-5 w-5" aria-hidden />
-              <span className="text-[11px] font-semibold uppercase tracking-[0.18em]">
-                {t(locale, "step.description.videos.add.label")}
-              </span>
-            </button>
-          )}
-        </div>
-        {videoError && (
-          <p
-            role="alert"
-            className="text-[11px] text-[var(--color-brand-highlight)]"
-          >
-            {videoError}
+        {forceShowErrors && (errors.galleryInFlight ?? errors.galleryErrored) && (
+          <p role="alert" className="text-[11px] text-[var(--color-brand-highlight)]">
+            {errors.galleryInFlight ?? errors.galleryErrored}
           </p>
         )}
       </div>
+
+      {/* Videos block (ADR-015) — max 2 clips, 3..30s each. Optional. */}
+      {PROFILE_VIDEOS_ENABLED && (
+        <div className="flex flex-col gap-3">
+          <div className="flex flex-wrap items-end justify-between gap-2">
+            <span className="text-[12px] font-semibold tracking-tight text-[var(--color-foreground)]">
+              {t(locale, "step.description.videos.title")}
+            </span>
+            <span className="text-[11px] text-[var(--color-text-subtle)]">
+              {t(locale, "step.description.videos.counter", {
+                count: values.videos.length,
+              })}
+              {videoInFlightCount > 0
+                ? " " +
+                  t(locale, "step.description.videos.uploading", {
+                    count: videoInFlightCount,
+                  })
+                : null}
+            </span>
+          </div>
+          <p className="text-[11px] text-[var(--color-text-subtle)]">
+            {t(locale, "step.description.videos.helper")}
+          </p>
+          <input
+            ref={videoInputRef}
+            type="file"
+            accept="video/mp4,video/webm"
+            multiple
+            onChange={handleVideosSelected}
+            className="sr-only"
+            aria-hidden
+            tabIndex={-1}
+          />
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
+            {values.videos.map((item) => (
+              <VideoCard
+                key={item.id}
+                item={item}
+                onRemove={() => removeVideo(item)}
+                onRetry={() => retryVideo(item)}
+              />
+            ))}
+            {values.videos.length < 2 && (
+              <button
+                type="button"
+                onClick={openVideoPicker}
+                className="flex aspect-video flex-col items-center justify-center gap-1.5 rounded-[var(--radius-md)] border border-dashed border-[var(--color-border)] bg-[var(--color-background-elevated)] text-[var(--color-text-muted)] transition-colors hover:border-[var(--color-brand-primary)] hover:text-[var(--color-brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-background)]"
+                aria-label={t(locale, "step.description.videos.add.aria")}
+              >
+                <Film className="h-5 w-5" aria-hidden />
+                <span className="text-[11px] font-semibold uppercase tracking-[0.18em]">
+                  {t(locale, "step.description.videos.add.label")}
+                </span>
+              </button>
+            )}
+          </div>
+          {videoError && (
+            <p
+              role="alert"
+              className="text-[11px] text-[var(--color-brand-highlight)]"
+            >
+              {videoError}
+            </p>
+          )}
+        {forceShowErrors && (errors.videosInFlight ?? errors.videosErrored) && (
+          <p role="alert" className="text-[11px] text-[var(--color-brand-highlight)]">
+            {errors.videosInFlight ?? errors.videosErrored}
+          </p>
+        )}
+        </div>
+      )}
     </SectionShell>
   );
 }

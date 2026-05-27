@@ -10,17 +10,23 @@ import type {
 interface BaseProps {
   label: string;
   hint?: string;
+  error?: string;
   /** Use when grouping multi-controls (chips, radios) under a single label. */
   children?: ReactNode;
 }
 
-export function FieldShell({ label, hint, children }: BaseProps) {
+export function FieldShell({ label, hint, error, children }: BaseProps) {
   return (
     <label className="flex flex-col gap-2">
       <span className="text-[12px] font-semibold tracking-tight text-[var(--color-foreground)]">
         {label}
       </span>
       {children}
+      {error && (
+        <span role="alert" className="text-[11px] text-[var(--color-brand-highlight)]">
+          {error}
+        </span>
+      )}
       {hint && (
         <span className="text-[11px] text-[var(--color-text-subtle)]">
           {hint}
@@ -33,15 +39,24 @@ export function FieldShell({ label, hint, children }: BaseProps) {
 export interface TextFieldProps extends InputHTMLAttributes<HTMLInputElement> {
   label: string;
   hint?: string;
+  error?: string;
 }
 
-const FIELD_BASE =
-  "h-12 w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] px-4 text-sm text-[var(--color-foreground)] placeholder:text-[var(--color-text-subtle)] transition-[border-color,box-shadow] duration-150 focus:border-[var(--color-brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)]/30";
+const FIELD_SHARED =
+  "h-12 w-full rounded-[var(--radius-md)] border bg-[var(--color-surface)] px-4 text-sm text-[var(--color-foreground)] placeholder:text-[var(--color-text-subtle)] transition-[border-color,box-shadow] duration-150 focus:border-[var(--color-brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)]/30";
 
-export function TextField({ label, hint, className = "", ...props }: TextFieldProps) {
+function fieldBorder(error?: string) {
+  return error ? "border-[var(--color-brand-highlight)]" : "border-[var(--color-border)]";
+}
+
+export function TextField({ label, hint, error, className = "", ...props }: TextFieldProps) {
   return (
-    <FieldShell label={label} hint={hint}>
-      <input className={`${FIELD_BASE} ${className}`.trim()} {...props} />
+    <FieldShell label={label} hint={hint} error={error}>
+      <input
+        className={`${FIELD_SHARED} ${fieldBorder(error)} ${className}`.trim()}
+        aria-invalid={error ? true : undefined}
+        {...props}
+      />
     </FieldShell>
   );
 }
@@ -49,21 +64,24 @@ export function TextField({ label, hint, className = "", ...props }: TextFieldPr
 export interface SelectFieldProps extends SelectHTMLAttributes<HTMLSelectElement> {
   label: string;
   hint?: string;
+  error?: string;
   children: ReactNode;
 }
 
 export function SelectField({
   label,
   hint,
+  error,
   className = "",
   children,
   ...props
 }: SelectFieldProps) {
   return (
-    <FieldShell label={label} hint={hint}>
+    <FieldShell label={label} hint={hint} error={error}>
       <span className="relative inline-flex w-full items-center">
         <select
-          className={`${FIELD_BASE} appearance-none pr-10 ${className}`.trim()}
+          className={`${FIELD_SHARED} ${fieldBorder(error)} appearance-none pr-10 ${className}`.trim()}
+          aria-invalid={error ? true : undefined}
           {...props}
         >
           {children}
@@ -83,20 +101,23 @@ export interface TextAreaFieldProps
   extends TextareaHTMLAttributes<HTMLTextAreaElement> {
   label: string;
   hint?: string;
+  error?: string;
 }
 
 export function TextAreaField({
   label,
   hint,
+  error,
   className = "",
   rows = 4,
   ...props
 }: TextAreaFieldProps) {
   return (
-    <FieldShell label={label} hint={hint}>
+    <FieldShell label={label} hint={hint} error={error}>
       <textarea
         rows={rows}
-        className={`min-h-[112px] w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-3 text-sm leading-relaxed text-[var(--color-foreground)] placeholder:text-[var(--color-text-subtle)] transition-[border-color,box-shadow] duration-150 focus:border-[var(--color-brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)]/30 ${className}`.trim()}
+        className={`min-h-[112px] w-full rounded-[var(--radius-md)] border bg-[var(--color-surface)] px-4 py-3 text-sm leading-relaxed text-[var(--color-foreground)] placeholder:text-[var(--color-text-subtle)] transition-[border-color,box-shadow] duration-150 focus:border-[var(--color-brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)]/30 ${fieldBorder(error)} ${className}`.trim()}
+        aria-invalid={error ? true : undefined}
         {...props}
       />
     </FieldShell>
