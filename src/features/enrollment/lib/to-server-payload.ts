@@ -75,7 +75,8 @@ export function toServerPayload(
         hair: draft.attributes.hair.trim(),
         height: draft.attributes.height.trim(),
         body: draft.attributes.body.trim(),
-        breast: draft.attributes.breast.trim(),
+        breastSize: draft.attributes.breastSize.trim(),
+        breastType: draft.attributes.breastType.trim(),
         // `pubis` is optional UI-side; collapse `""` to undefined so the
         // schema's required-vs-optional shape stays clean and Firestore
         // doesn't persist an empty string.

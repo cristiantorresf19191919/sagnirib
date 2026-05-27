@@ -109,7 +109,8 @@ export default async function ProfilePage({ params }: Readonly<ProfilePageProps>
     [t(lang, "profile.attributes.hair"), listing.attributes.hair ?? empty],
     [t(lang, "profile.attributes.height"), listing.attributes.height ?? empty],
     [t(lang, "profile.attributes.body"), listing.attributes.body ?? empty],
-    [t(lang, "profile.attributes.breast"), listing.attributes.breast ?? empty],
+    [t(lang, "profile.attributes.breastSize"), listing.attributes.breastSize ?? empty],
+    [t(lang, "profile.attributes.breastType"), listing.attributes.breastType ?? empty],
     [t(lang, "profile.attributes.country"), listing.attributes.country ?? empty],
   ];
   const languages = listing.attributes.languages ?? [];

@@ -89,7 +89,8 @@ function asAttributes(value: unknown): BiringaAttributes {
     hair: typeof r.hair === "string" ? r.hair : undefined,
     height: typeof r.height === "string" ? r.height : undefined,
     body: typeof r.body === "string" ? r.body : undefined,
-    breast: typeof r.breast === "string" ? r.breast : undefined,
+    breastSize: typeof r.breastSize === "string" ? r.breastSize : undefined,
+    breastType: typeof r.breastType === "string" ? r.breastType : undefined,
     pubis: typeof r.pubis === "string" ? r.pubis : undefined,
     country: typeof r.country === "string" ? r.country : undefined,
     languages: Array.isArray(r.languages)

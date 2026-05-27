@@ -28,7 +28,8 @@ const APPEARANCE_FIELDS: ReadonlyArray<AppearanceKey> = [
   "hair",
   "height",
   "body",
-  "breast",
+  "breastSize",
+  "breastType",
   "pubis",
 ];
 
@@ -38,7 +39,8 @@ const REQUIRED_FIELDS: ReadonlySet<AppearanceKey> = new Set([
   "hair",
   "height",
   "body",
-  "breast",
+  "breastSize",
+  "breastType",
 ]);
 
 const FIELDS_WITH_HINT: ReadonlySet<AppearanceKey> = new Set(["country", "pubis"]);
