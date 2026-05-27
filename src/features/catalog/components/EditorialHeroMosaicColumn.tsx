@@ -11,6 +11,11 @@ interface EditorialHeroMosaicColumnProps {
    *  three strips never advance in lockstep. */
   readonly durationSeconds: number;
   readonly testIdSuffix: string;
+  /** Whether the column accepts pointer events (hover-to-pause, click).
+   *  Column A is rendered under the cream/blur veil and barely visible, so
+   *  it is intentionally non-interactive — leaving it clickable would let
+   *  users land on tiles they can't really see. Defaults to `true`. */
+  readonly interactive?: boolean;
 }
 
 /**
@@ -37,6 +42,7 @@ export function EditorialHeroMosaicColumn({
   drift,
   durationSeconds,
   testIdSuffix,
+  interactive = true,
 }: Readonly<EditorialHeroMosaicColumnProps>) {
   if (tiles.length === 0) return null;
 
@@ -51,7 +57,7 @@ export function EditorialHeroMosaicColumn({
   return (
     <div
       data-testid={`editorial-hero-mosaic-column-${testIdSuffix}`}
-      className="group/reel relative h-full overflow-hidden [transform:translateZ(0)] [contain:layout_paint] [backface-visibility:hidden]"
+      className={`group/reel relative h-full overflow-hidden [transform:translateZ(0)] [contain:layout_paint] [backface-visibility:hidden] ${interactive ? "" : "pointer-events-none"}`}
     >
       <div
         className={`flex flex-col will-change-transform [transform:translateZ(0)] [backface-visibility:hidden] ${reelClass} group-hover/reel:[animation-play-state:paused]`}
