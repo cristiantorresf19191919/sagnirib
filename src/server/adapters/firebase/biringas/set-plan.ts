@@ -9,10 +9,9 @@ import { wrapFirestoreError } from "@/server/adapters/firebase/errors";
 /**
  * Writes a listing's `plan` field (ADR-013 + ADR-015 plan extension).
  *
- * Lookup is by slug — same as `recordListingViewRaw` and
- * `setListingAvailableNowRaw`. Bumps `updatedAt` so the catalog's
- * default sort floats the listing when a plan is freshly purchased
- * (small bonus that mirrors how `availableNow` toggle reorders).
+ * Lookup is by slug — same pattern as `recordListingViewRaw`. Bumps
+ * `updatedAt` so the catalog's default sort floats the listing when
+ * a plan is freshly purchased.
  *
  * `null` clears the field via `FieldValue.delete()` so the mapper
  * falls back to `plan: undefined` (free tier) on the next read.

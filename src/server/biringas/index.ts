@@ -104,7 +104,6 @@ const computeReplyMedianMinutesForSlug =
   adapter.computeReplyMedianMinutesForSlug;
 const setListingReplyMedianMinutesRaw =
   adapter.setListingReplyMedianMinutesRaw;
-const setListingAvailableNowRaw = adapter.setListingAvailableNowRaw;
 const setListingPlanRaw = adapter.setListingPlanRaw;
 const listDraftsByOwnerRaw = adapter.listDraftsByOwnerRaw;
 const getDraftByIdForOwnerRaw = adapter.getDraftByIdForOwnerRaw;
@@ -1047,73 +1046,3 @@ export async function getCheckoutSession(
   return session;
 }
 
-/**
- * Owner toggle: flips a listing's `availableNow` flag.
- *
- * Standard mutation contract (ADR-010 §5): validate → requireAuth →
- * ownership check → adapter → audit → revalidate.
- *
- * Ownership is established the same way as `respondToBooking` — the
- * caller must own an `approved` draft whose `preferredSlug` matches
- * the target slug. Pre-approval drafts cannot toggle availability
- * because there's no public listing to flip yet.
- *
- * The catalog's "Disponible ahora" badge + the in-card pulsing dot
- * read this flag; both surfaces re-fetch on the next render once the
- * `listings` and per-listing tags get invalidated.
- */
-export async function setMyListingAvailability(
-  rawInput: unknown,
-): Promise<{ available: boolean }> {
-  if (!rawInput || typeof rawInput !== "object") {
-    throw new Error("setMyListingAvailability: input must be an object");
-  }
-  const r = rawInput as Record<string, unknown>;
-  const slug = typeof r.slug === "string" ? r.slug.trim().toLowerCase() : null;
-  const available = typeof r.available === "boolean" ? r.available : null;
-  if (!slug || available === null) {
-    throw new Error(
-      "setMyListingAvailability: slug (string) and available (boolean) are required",
-    );
-  }
-  if (!/^[a-z0-9-]{1,200}$/.test(slug)) {
-    throw new Error("setMyListingAvailability: slug has invalid shape");
-  }
-
-  const user = await requireAuth();
-
-  // Ownership: the caller owns an approved draft for this slug. Pulling
-  // the full drafts list is fine — owner-side queues are short.
-  const owned = await listDraftsByOwnerRaw(user.uid);
-  const target = owned.find(
-    (d) => d.preferredSlug === slug && d.status === "approved",
-  );
-  if (!target) {
-    const err = new Error(
-      "setMyListingAvailability: listing not found or not yours",
-    );
-    (err as { kind?: string }).kind = "not-found";
-    throw err;
-  }
-
-  const ok = await setListingAvailableNowRaw(slug, available);
-  if (!ok) {
-    const err = new Error(
-      "setMyListingAvailability: listing no longer exists",
-    );
-    (err as { kind?: string }).kind = "not-found";
-    throw err;
-  }
-
-  await auditLog({
-    event: "biringa.listing.availability_changed",
-    actorId: user.uid,
-    resource: `listing:${slug}`,
-    metadata: { available },
-  });
-
-  updateTag(CACHE_TAGS.listing(slug));
-  updateTag(CACHE_TAGS.listings);
-
-  return { available };
-}

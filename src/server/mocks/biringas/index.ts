@@ -81,9 +81,6 @@ function applyFilters(
   if (filters.paymentByCard) {
     results = results.filter((ad) => ad.paymentByCard);
   }
-  if (filters.availableNow) {
-    results = results.filter((ad) => ad.availableNow);
-  }
   if (filters.attention && filters.attention.length > 0) {
     const wanted = filters.attention;
     results = results.filter((ad) => intersects(ad.attention, wanted));
@@ -308,7 +305,6 @@ export {
 } from "./request-booking";
 export { reportListingRaw, listReportsRaw } from "./report-listing";
 export { recordListingViewRaw } from "./record-view";
-export { setListingAvailableNowRaw } from "./set-availability";
 export { setListingPlanRaw } from "./set-plan";
 export {
   listDraftsByOwnerRaw,

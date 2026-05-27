@@ -18,7 +18,6 @@ import {
   getMyAccountType,
 } from "@/server/users";
 import { AvailabilityStrip } from "@/features/biringas/components/AvailabilityStrip";
-import { AvailabilityToggle } from "@/features/dashboard/components/AvailabilityToggle";
 import { BookingInboxList } from "@/features/dashboard/components/BookingInboxList";
 import { DashboardShell } from "@/features/dashboard/components/DashboardShell";
 import { ReferralCard } from "@/features/dashboard/components/ReferralCard";
@@ -349,7 +348,7 @@ function AvailabilityFooter({
         {t(locale, "miCuenta.profile.catalogStatus")}
       </span>
       <ul className="flex flex-col divide-y divide-[var(--color-border)]">
-        {published.map(({ d, listing }) => (
+        {published.map(({ d }) => (
           <li
             key={d.id}
             className="flex flex-wrap items-center justify-between gap-3 py-2.5 first:pt-0 last:pb-0"
@@ -357,10 +356,6 @@ function AvailabilityFooter({
             <span className="text-sm font-semibold text-[var(--color-foreground)]">
               {d.displayName}
             </span>
-            <AvailabilityToggle
-              listingSlug={listing.slug}
-              initialAvailable={listing.availableNow}
-            />
           </li>
         ))}
       </ul>

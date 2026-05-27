@@ -40,7 +40,6 @@ export function encodeFilters(filters: ListingsFilters): URLSearchParams {
   if (filters.withReviews) out.set("reviews", "1");
   if (filters.faceVisible) out.set("face", "1");
   if (filters.paymentByCard) out.set("card", "1");
-  if (filters.availableNow) out.set("now", "1");
   filters.attention?.forEach((v) => out.append("attention", v));
   filters.contactChannels?.forEach((v) => out.append("contact", v));
   filters.services?.forEach((v) => out.append("service", v));

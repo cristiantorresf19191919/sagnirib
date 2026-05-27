@@ -526,10 +526,6 @@ function DescriptionCard({
         label={t(locale, "draft.field.paymentByCard")}
         value={<BooleanBadge locale={locale} value={d.paymentByCard} />}
       />
-      <Field
-        label={t(locale, "draft.field.availableNow")}
-        value={<BooleanBadge locale={locale} value={d.availableNow} />}
-      />
     </SectionCard>
   );
 }

@@ -42,10 +42,6 @@ function buildChips(
 ): ReadonlyArray<{ label: string; href: string }> {
   return [
     {
-      label: t(locale, "editorialHero.chip.availableNow"),
-      href: localizedHref(locale, "/explorar?available=1"),
-    },
-    {
       label: t(locale, "editorialHero.chip.dinnerBogota"),
       href: localizedHref(locale, "/explorar?city=Bogot%C3%A1"),
     },
@@ -122,8 +118,7 @@ const MOSAIC_TOTAL_TILES = MOSAIC_COL_C_END;
  *
  * Copy column (left, V5 structure):
  *   - Vertical gold rail (desktop only) with rotated brand line + diamond.
- *   - Top row: hairline + diamond + uppercase kicker on the left, live
- *     pulse dot + "N en línea" on the right.
+ *   - Top row: hairline + diamond + uppercase kicker on the left.
  *   - Three-line headline: "Encuentra a / *tu Biringa* / ideal."
  *     — italic gold with a swept gold underline on the middle line,
  *     forest-colored period flourish on the last.
@@ -287,9 +282,9 @@ export async function EditorialHero({
           </div>
 
           <div className="flex min-w-0 flex-1 flex-col">
-            {/* Top row — eyebrow on the left, live counter on the right. */}
+            {/* Top row — eyebrow on the left. */}
             <div
-              className="motion-safe:motion-hero-reveal flex items-center justify-between gap-4"
+              className="motion-safe:motion-hero-reveal flex items-center gap-4"
               style={{ animationDelay: "0.05s" }}
             >
               <div className="flex min-w-0 items-center gap-2.5 overflow-hidden">
@@ -303,21 +298,6 @@ export async function EditorialHero({
                 />
                 <span className="truncate text-[10px] font-medium uppercase tracking-[0.22em] text-[var(--color-ink-soft)]">
                   {kicker}
-                </span>
-              </div>
-              <div
-                className="flex shrink-0 items-center gap-2"
-                aria-live="polite"
-              >
-                <span
-                  aria-hidden
-                  className="relative inline-flex h-2 w-2 items-center justify-center"
-                >
-                  <span className="absolute inset-0 rounded-full bg-[#4D9B6E] opacity-70 motion-safe:motion-pulse-ring" />
-                  <span className="relative inline-block h-2 w-2 rounded-full bg-[#4D9B6E] motion-safe:motion-hero-pulse" />
-                </span>
-                <span className="whitespace-nowrap text-xs font-medium tabular-nums text-[var(--color-ink)]">
-                  <CountUp to={38} /> {t(locale, "editorialHero.live.online")}
                 </span>
               </div>
             </div>

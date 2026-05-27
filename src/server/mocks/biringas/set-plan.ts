@@ -9,8 +9,7 @@ import { BIRINGA_LISTINGS } from "./data";
  *
  * Mutates the seed listing's `plan` field in place. BIRINGA_LISTINGS
  * is a `const` array but the listing objects inside are mutable —
- * same pattern as `setListingAvailableNowRaw` and
- * `setListingReplyMedianMinutesRaw`.
+ * same pattern as `setListingReplyMedianMinutesRaw`.
  *
  * Pass `null` to clear the plan (expired window, refund flow). The
  * read-time `isPlanActive(listing)` helper already treats absent +

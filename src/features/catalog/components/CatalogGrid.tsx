@@ -10,10 +10,10 @@ import { Sparkle } from "@/shared/design-system/components/Sparkle";
 import { CardReveal } from "@/shared/motion/CardReveal";
 import { FadeIn } from "@/shared/motion/FadeIn";
 
-import { encodeFilters, type CatalogView } from "../lib/parse-filters";
+import { type CatalogView } from "../lib/parse-filters";
 import { CatalogCard } from "./CatalogCard";
 import { ResultsToolbar } from "./ResultsToolbar";
-import { DisponiblesAhoraTile, HistoriasTopTile } from "./SpecialTiles";
+import { HistoriasTopTile } from "./SpecialTiles";
 import { ViewSwitcher } from "./ViewSwitcher";
 
 interface CatalogGridProps {
@@ -31,16 +31,6 @@ const GRID_CLASS: Record<CatalogView, string> = {
     "mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-5 lg:grid-cols-3 lg:gap-6 xl:grid-cols-4 xl:gap-6",
   list: "mt-8 grid grid-cols-1 gap-3",
 };
-
-function nowFilterHref(
-  filters: ListingsFilters,
-  locale: "es" | "en",
-): string {
-  const next: ListingsFilters = { ...filters, availableNow: true, page: undefined };
-  const qs = encodeFilters(next).toString();
-  const base = localizedHref(locale, "/explorar");
-  return qs ? `${base}?${qs}` : `${base}?now=1`;
-}
 
 export async function CatalogGrid({
   filters,
@@ -147,14 +137,6 @@ export async function CatalogGrid({
                 </CardReveal>
               );
             })}
-            {showSpecialTiles && (
-              <CardReveal
-                index={data.length + 1}
-                data-testid="catalog-tile-available-now"
-              >
-                <DisponiblesAhoraTile href={nowFilterHref(filters, locale)} />
-              </CardReveal>
-            )}
           </ul>
         )}
       </Container>
@@ -163,7 +145,6 @@ export async function CatalogGrid({
 }
 
 const EMPTY_STATE_SHORTCUTS = [
-  { label: "Disponibles ahora · Bogotá", href: "/explorar?now=1&city=Bogot%C3%A1" },
   { label: "Verificadas · Medellín", href: "/explorar?verified=1&city=Medell%C3%ADn" },
   { label: "Videollamada", href: "/explorar?category=videollamadas" },
   { label: "Top calificadas", href: "/explorar?sort=rating&reviews=1" },

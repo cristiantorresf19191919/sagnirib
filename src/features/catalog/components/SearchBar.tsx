@@ -158,7 +158,6 @@ function PreservedFilters({ filters, omit, view }: PreservedFiltersProps) {
   flag("reviews", filters.withReviews);
   flag("face", filters.faceVisible);
   flag("card", filters.paymentByCard);
-  flag("now", filters.availableNow);
 
   const multi = (key: string, values: ReadonlyArray<string> | undefined) => {
     if (skip.has(key) || !values) return;

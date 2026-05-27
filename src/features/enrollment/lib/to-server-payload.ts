@@ -50,7 +50,6 @@ export function toServerPayload(
         meetingContexts: [...draft.description.meetingContexts],
         faceVisible: draft.description.faceVisible,
         paymentByCard: draft.description.paymentByCard,
-        availableNow: draft.description.availableNow,
         // Only photos that finished the upload + confirm round-trip have an
         // `uploadedPath`; anything still queued is silently dropped. The
         // wizard validator separately refuses to submit while an upload is

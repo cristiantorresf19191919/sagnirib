@@ -142,23 +142,7 @@ export function CatalogCard({
               <span className="truncate">{t(locale, "catalog.card.featured")}</span>
             </span>
           )}
-          {listing.availableNow ? (
-            <span
-              aria-label={t(locale, "catalog.card.availableNow")}
-              title={t(locale, "catalog.card.availableNow")}
-              className="inline-flex max-w-full items-center gap-1.5 rounded-full bg-[var(--color-brand-primary)] px-2 py-0.5 text-[9.5px] font-semibold uppercase tracking-[0.16em] text-[var(--color-surface)] shadow-[var(--shadow-glow-primary)] motion-safe:motion-glow-pulse sm:px-2.5 sm:py-1 sm:text-[10px] sm:tracking-[0.18em]"
-            >
-              <span
-                aria-hidden
-                className="h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--color-surface)] motion-safe:animate-pulse"
-              />
-              {/* Short label on the card — the pulsing dot already says
-                  "live". Full label lives in aria-label for screen readers. */}
-              <span className="truncate">
-                {t(locale, "catalog.card.availableNowShort")}
-              </span>
-            </span>
-          ) : listing.storyAt ? (
+          {listing.storyAt ? (
             <StoryTimestamp storyAt={listing.storyAt} />
           ) : null}
         </div>
@@ -219,24 +203,6 @@ export function CatalogCard({
                 aria-label={t(locale, "catalog.card.verifiedProfile")}
                 className="h-4 w-4 shrink-0 text-[var(--color-brand-primary)]"
               />
-            )}
-            {/* In-text live indicator — separate from the corner pill so
-                the signal travels with the name in long lists. */}
-            {listing.availableNow && (
-              <span
-                aria-label={t(locale, "catalog.card.onlineNow")}
-                title={t(locale, "catalog.card.onlineNow")}
-                className="relative inline-flex h-1.5 w-1.5 shrink-0 items-center justify-center"
-              >
-                <span
-                  aria-hidden
-                  className="absolute inset-0 rounded-full bg-[#4D9B6E] opacity-70 motion-safe:motion-pulse-ring"
-                />
-                <span
-                  aria-hidden
-                  className="relative inline-block h-1.5 w-1.5 rounded-full bg-[#4D9B6E] motion-safe:motion-hero-pulse"
-                />
-              </span>
             )}
           </h3>
           <span className="shrink-0 whitespace-nowrap text-[11px] text-[var(--color-text-muted)] sm:text-xs">
@@ -374,15 +340,6 @@ function ListCard({
             className="object-cover transition-[filter,transform] duration-[600ms] ease-[var(--ease-standard)] group-hover:scale-[1.04] group-hover:saturate-[1.08]"
           />
         </div>
-        {listing.availableNow ? (
-          <span className="absolute left-1.5 top-1.5 z-10 inline-flex items-center gap-1 rounded-full bg-[var(--color-brand-primary)] px-1.5 py-0.5 text-[8px] font-semibold uppercase tracking-[0.18em] text-[var(--color-surface)] motion-safe:motion-glow-pulse">
-            <span
-              aria-hidden
-              className="h-1 w-1 rounded-full bg-[var(--color-surface)] motion-safe:animate-pulse"
-            />
-            {t(locale, "catalog.card.availableNowShort")}
-          </span>
-        ) : null}
       </div>
 
       <div className="relative flex flex-1 flex-col justify-between gap-1.5 py-0.5">
@@ -390,22 +347,6 @@ function ListCard({
           <header className="flex items-baseline justify-between gap-2">
             <h3 className="flex min-w-0 items-baseline gap-1.5 text-sm font-semibold text-[var(--color-foreground)] sm:text-base">
               <span className="truncate">{listing.name}</span>
-              {listing.availableNow && (
-                <span
-                  aria-label={t(locale, "catalog.card.onlineNow")}
-                  title={t(locale, "catalog.card.onlineNow")}
-                  className="relative inline-flex h-1.5 w-1.5 shrink-0 items-center justify-center"
-                >
-                  <span
-                    aria-hidden
-                    className="absolute inset-0 rounded-full bg-[#4D9B6E] opacity-70 motion-safe:motion-pulse-ring"
-                  />
-                  <span
-                    aria-hidden
-                    className="relative inline-block h-1.5 w-1.5 rounded-full bg-[#4D9B6E] motion-safe:motion-hero-pulse"
-                  />
-                </span>
-              )}
               <span className="ml-1 text-xs font-normal text-[var(--color-text-muted)]">
                 {listing.age} {t(locale, "catalog.card.ageSuffix")}
               </span>

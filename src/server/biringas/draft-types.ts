@@ -62,7 +62,6 @@ export interface ListingDraftPayloadDescription {
   meetingContexts: ReadonlyArray<string>;
   faceVisible: boolean;
   paymentByCard: boolean;
-  availableNow: boolean;
   /**
    * Photos attached to this draft. Empty array is allowed (modelo can still
    * submit a draft for human review without photos — admin attaches the

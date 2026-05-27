@@ -166,7 +166,6 @@ function parseDescription(raw: unknown): ListingDraftPayloadDescription {
     ),
     faceVisible: expectBool(d.faceVisible, "description.faceVisible"),
     paymentByCard: expectBool(d.paymentByCard, "description.paymentByCard"),
-    availableNow: expectBool(d.availableNow, "description.availableNow"),
     gallery: expectStagingPhotoArray(
       d.gallery,
       "description.gallery",

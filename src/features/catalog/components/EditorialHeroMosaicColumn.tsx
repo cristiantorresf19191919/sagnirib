@@ -71,7 +71,6 @@ export function EditorialHeroMosaicColumn({
             <HeroMosaicCard
               listing={listing}
               height={heights[idx % heights.length] ?? 280}
-              hideLive={idx % 2 === 1}
               // LCP: only the very first tile per column gets `priority`
               // (3 columns × 1 tile = 3 preload-hinted images, the standard
               // LCP-candidate budget). Subsequent tiles in the same column

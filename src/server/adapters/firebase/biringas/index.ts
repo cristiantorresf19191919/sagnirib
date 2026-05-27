@@ -21,8 +21,8 @@ export { CACHE_TAGS };
  * Firestore adapter for the Biringas catalog.
  *
  * Strategy (see docs/architecture/firebase-schema.md):
- *   - Push down cheap equality filters: category, city, verifiedOnly,
- *     availableNow. Everything else runs in memory after the read.
+ *   - Push down cheap equality filters: category, city, verifiedOnly.
+ *     Everything else runs in memory after the read.
  *   - Sort by `updatedAt desc` at the query level; final sort
  *     (`storyAt ?? updatedAt`) happens in memory.
  *   - Pagination is offset-based for parity with the existing mock contract;
@@ -54,9 +54,6 @@ async function fetchCandidates(
   }
   if (filters.verifiedOnly) {
     query = query.where("verified", "==", true);
-  }
-  if (filters.availableNow) {
-    query = query.where("availableNow", "==", true);
   }
 
   query = query.limit(FETCH_LIMIT);
@@ -263,7 +260,6 @@ export {
 } from "./request-booking";
 export { reportListingRaw } from "./report-listing";
 export { recordListingViewRaw } from "./record-view";
-export { setListingAvailableNowRaw } from "./set-availability";
 export { setListingPlanRaw } from "./set-plan";
 export {
   listDraftsByOwnerRaw,

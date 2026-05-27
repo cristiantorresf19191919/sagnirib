@@ -33,7 +33,6 @@ function activeFilterCount(filters: ListingsFilters): number {
   if (filters.withReviews) n += 1;
   if (filters.faceVisible) n += 1;
   if (filters.paymentByCard) n += 1;
-  if (filters.availableNow) n += 1;
   n += filters.attention?.length ?? 0;
   n += filters.contactChannels?.length ?? 0;
   n += filters.services?.length ?? 0;

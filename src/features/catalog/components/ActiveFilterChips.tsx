@@ -15,7 +15,6 @@ import {
   Star,
   UserSquare,
   X,
-  Zap,
   type LucideIcon,
 } from "lucide-react";
 
@@ -166,7 +165,6 @@ function buildChips(
     { key: "withAudio", labelKey: "catalog.filterChips.withAudio", tone: "secondary", icon: Mic },
     { key: "withReviews", labelKey: "catalog.filterChips.withReviews", tone: "highlight", icon: MessageSquare },
     { key: "paymentByCard", labelKey: "catalog.filterChips.paymentByCard", tone: "accent", icon: CreditCard },
-    { key: "availableNow", labelKey: "catalog.filterChips.availableNow", tone: "highlight", icon: Zap },
   ];
   for (const { key, labelKey, tone, icon } of flags) {
     if (filters[key]) {
