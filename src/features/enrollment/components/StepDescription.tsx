@@ -28,6 +28,7 @@ import {
 } from "../lib/upload-video";
 import { ChipChoice, TextAreaField, ToggleSwitch } from "./FormField";
 import { SectionShell } from "./SectionShell";
+import { PROFILE_TOGGLES_ENABLED, PROFILE_VIDEOS_ENABLED } from "../lib/pricing";
 
 /**
  * Step 2 of the publish wizard.
@@ -508,29 +509,31 @@ export function StepDescription({
         </div>
       </fieldset>
 
-      <div className="grid gap-3 md:grid-cols-3">
-        <ToggleSwitch
-          label={t(locale, "step.description.toggle.faceVisible.label")}
-          description={t(locale, "step.description.toggle.faceVisible.body")}
-          checked={values.faceVisible}
-          onChange={(v) => update("faceVisible", v)}
-        />
-        <ToggleSwitch
-          label={t(locale, "step.description.toggle.paymentByCard.label")}
-          description={t(
-            locale,
-            "step.description.toggle.paymentByCard.body",
-          )}
-          checked={values.paymentByCard}
-          onChange={(v) => update("paymentByCard", v)}
-        />
-        <ToggleSwitch
-          label={t(locale, "step.description.toggle.availableNow.label")}
-          description={t(locale, "step.description.toggle.availableNow.body")}
-          checked={values.availableNow}
-          onChange={(v) => update("availableNow", v)}
-        />
-      </div>
+      {PROFILE_TOGGLES_ENABLED && (
+        <div className="grid gap-3 md:grid-cols-3">
+          <ToggleSwitch
+            label={t(locale, "step.description.toggle.faceVisible.label")}
+            description={t(locale, "step.description.toggle.faceVisible.body")}
+            checked={values.faceVisible}
+            onChange={(v) => update("faceVisible", v)}
+          />
+          <ToggleSwitch
+            label={t(locale, "step.description.toggle.paymentByCard.label")}
+            description={t(
+              locale,
+              "step.description.toggle.paymentByCard.body",
+            )}
+            checked={values.paymentByCard}
+            onChange={(v) => update("paymentByCard", v)}
+          />
+          <ToggleSwitch
+            label={t(locale, "step.description.toggle.availableNow.label")}
+            description={t(locale, "step.description.toggle.availableNow.body")}
+            checked={values.availableNow}
+            onChange={(v) => update("availableNow", v)}
+          />
+        </div>
+      )}
 
       <div className="flex flex-col gap-3">
         <div className="flex flex-wrap items-end justify-between gap-2">
@@ -597,68 +600,70 @@ export function StepDescription({
       </div>
 
       {/* Videos block (ADR-015) — max 2 clips, 3..30s each. Optional. */}
-      <div className="flex flex-col gap-3">
-        <div className="flex flex-wrap items-end justify-between gap-2">
-          <span className="text-[12px] font-semibold tracking-tight text-[var(--color-foreground)]">
-            {t(locale, "step.description.videos.title")}
-          </span>
-          <span className="text-[11px] text-[var(--color-text-subtle)]">
-            {t(locale, "step.description.videos.counter", {
-              count: values.videos.length,
-            })}
-            {videoInFlightCount > 0
-              ? " " +
-                t(locale, "step.description.videos.uploading", {
-                  count: videoInFlightCount,
-                })
-              : null}
-          </span>
-        </div>
-        <p className="text-[11px] text-[var(--color-text-subtle)]">
-          {t(locale, "step.description.videos.helper")}
-        </p>
-        <input
-          ref={videoInputRef}
-          type="file"
-          accept="video/mp4,video/webm"
-          multiple
-          onChange={handleVideosSelected}
-          className="sr-only"
-          aria-hidden
-          tabIndex={-1}
-        />
-        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
-          {values.videos.map((item) => (
-            <VideoCard
-              key={item.id}
-              item={item}
-              onRemove={() => removeVideo(item)}
-              onRetry={() => retryVideo(item)}
-            />
-          ))}
-          {values.videos.length < 2 && (
-            <button
-              type="button"
-              onClick={openVideoPicker}
-              className="flex aspect-video flex-col items-center justify-center gap-1.5 rounded-[var(--radius-md)] border border-dashed border-[var(--color-border)] bg-[var(--color-background-elevated)] text-[var(--color-text-muted)] transition-colors hover:border-[var(--color-brand-primary)] hover:text-[var(--color-brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-background)]"
-              aria-label={t(locale, "step.description.videos.add.aria")}
+      {PROFILE_VIDEOS_ENABLED && (
+        <div className="flex flex-col gap-3">
+          <div className="flex flex-wrap items-end justify-between gap-2">
+            <span className="text-[12px] font-semibold tracking-tight text-[var(--color-foreground)]">
+              {t(locale, "step.description.videos.title")}
+            </span>
+            <span className="text-[11px] text-[var(--color-text-subtle)]">
+              {t(locale, "step.description.videos.counter", {
+                count: values.videos.length,
+              })}
+              {videoInFlightCount > 0
+                ? " " +
+                  t(locale, "step.description.videos.uploading", {
+                    count: videoInFlightCount,
+                  })
+                : null}
+            </span>
+          </div>
+          <p className="text-[11px] text-[var(--color-text-subtle)]">
+            {t(locale, "step.description.videos.helper")}
+          </p>
+          <input
+            ref={videoInputRef}
+            type="file"
+            accept="video/mp4,video/webm"
+            multiple
+            onChange={handleVideosSelected}
+            className="sr-only"
+            aria-hidden
+            tabIndex={-1}
+          />
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
+            {values.videos.map((item) => (
+              <VideoCard
+                key={item.id}
+                item={item}
+                onRemove={() => removeVideo(item)}
+                onRetry={() => retryVideo(item)}
+              />
+            ))}
+            {values.videos.length < 2 && (
+              <button
+                type="button"
+                onClick={openVideoPicker}
+                className="flex aspect-video flex-col items-center justify-center gap-1.5 rounded-[var(--radius-md)] border border-dashed border-[var(--color-border)] bg-[var(--color-background-elevated)] text-[var(--color-text-muted)] transition-colors hover:border-[var(--color-brand-primary)] hover:text-[var(--color-brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-background)]"
+                aria-label={t(locale, "step.description.videos.add.aria")}
+              >
+                <Film className="h-5 w-5" aria-hidden />
+                <span className="text-[11px] font-semibold uppercase tracking-[0.18em]">
+                  {t(locale, "step.description.videos.add.label")}
+                </span>
+              </button>
+            )}
+          </div>
+          {videoError && (
+            <p
+              role="alert"
+              className="text-[11px] text-[var(--color-brand-highlight)]"
             >
-              <Film className="h-5 w-5" aria-hidden />
-              <span className="text-[11px] font-semibold uppercase tracking-[0.18em]">
-                {t(locale, "step.description.videos.add.label")}
-              </span>
-            </button>
+              {videoError}
+            </p>
           )}
         </div>
-        {videoError && (
-          <p
-            role="alert"
-            className="text-[11px] text-[var(--color-brand-highlight)]"
-          >
-            {videoError}
-          </p>
-        )}
-      </div>
+      )}
     </SectionShell>
   );
 }

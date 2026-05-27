@@ -3,6 +3,7 @@ import "server-only";
 import type { ActionInputSchema } from "@/server/security/validate-action-input";
 import { APPEARANCE_CATALOG } from "@/server/mocks/biringas/data";
 import { STORAGE_LIMITS } from "@/server/storage/types";
+import { containsUrl } from "@/features/enrollment/lib/bio-content-rules";
 
 import {
   type CreateListingDraftInput,
@@ -134,14 +135,23 @@ function parseDescription(raw: unknown): ListingDraftPayloadDescription {
   }
   const d = raw as Record<string, unknown>;
 
+  const shortBio = expectString(
+    d.shortBio,
+    "description.shortBio",
+    1,
+    DRAFT_LIMITS.shortBioMax,
+  );
+  if (containsUrl(shortBio)) {
+    throw new Error("createListingDraft: description.shortBio must not contain URLs");
+  }
+  const bio = expectString(d.bio, "description.bio", 60, DRAFT_LIMITS.bioMax);
+  if (containsUrl(bio)) {
+    throw new Error("createListingDraft: description.bio must not contain URLs");
+  }
+
   return {
-    shortBio: expectString(
-      d.shortBio,
-      "description.shortBio",
-      1,
-      DRAFT_LIMITS.shortBioMax,
-    ),
-    bio: expectString(d.bio, "description.bio", 60, DRAFT_LIMITS.bioMax),
+    shortBio,
+    bio,
     services: expectStringArray(
       d.services,
       "description.services",
