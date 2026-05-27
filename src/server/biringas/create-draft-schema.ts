@@ -350,10 +350,15 @@ function parseAttributes(raw: unknown): ListingDraftPayloadAttributes {
     APPEARANCE_CATALOG.height,
   );
   const body = expectEnum(d.body, "attributes.body", APPEARANCE_CATALOG.body);
-  const breast = expectEnum(
-    d.breast,
-    "attributes.breast",
-    APPEARANCE_CATALOG.breast,
+  const breastSize = expectEnum(
+    d.breastSize,
+    "attributes.breastSize",
+    APPEARANCE_CATALOG.breastSize,
+  );
+  const breastType = expectEnum(
+    d.breastType,
+    "attributes.breastType",
+    APPEARANCE_CATALOG.breastType,
   );
 
   // `pubis` is optional. The wizard collapses "" → undefined before sending,
@@ -378,7 +383,8 @@ function parseAttributes(raw: unknown): ListingDraftPayloadAttributes {
     hair,
     height,
     body,
-    breast,
+    breastSize,
+    breastType,
     pubis,
     languages,
   };

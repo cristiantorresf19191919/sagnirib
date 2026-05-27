@@ -56,7 +56,8 @@ function buildAppearanceLabels(
     hair: t(locale, "filters.appearance.hair"),
     height: t(locale, "filters.appearance.height"),
     body: t(locale, "filters.appearance.body"),
-    breast: t(locale, "filters.appearance.breast"),
+    breastSize: t(locale, "filters.appearance.breastSize"),
+    breastType: t(locale, "filters.appearance.breastType"),
     pubis: t(locale, "filters.appearance.pubis"),
   };
 }

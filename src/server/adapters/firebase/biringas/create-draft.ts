@@ -346,7 +346,8 @@ function deserializePayload(raw: unknown): ListingDraftPayload {
       hair: String(attributes.hair ?? ""),
       height: String(attributes.height ?? ""),
       body: String(attributes.body ?? ""),
-      breast: String(attributes.breast ?? ""),
+      breastSize: String(attributes.breastSize ?? ""),
+      breastType: String(attributes.breastType ?? ""),
       country: String(attributes.country ?? ""),
       ...(typeof attributes.pubis === "string" && attributes.pubis.length > 0
         ? { pubis: attributes.pubis }
