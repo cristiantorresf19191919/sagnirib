@@ -118,8 +118,6 @@ export interface BiringaListing {
   paymentByCard: boolean;
   /** True when face is visible in the public photos. */
   faceVisible: boolean;
-  /** True when the listing flagged immediate availability. */
-  availableNow: boolean;
   /** ISO time of the most recent story; drives "Grabada a las HH:MM". */
   storyAt?: string;
 
@@ -189,7 +187,6 @@ export interface ListingsFilters {
   withReviews?: boolean;
   faceVisible?: boolean;
   paymentByCard?: boolean;
-  availableNow?: boolean;
   attention?: ReadonlyArray<AttentionTarget>;
   contactChannels?: ReadonlyArray<ContactChannel>;
   services?: ReadonlyArray<string>;

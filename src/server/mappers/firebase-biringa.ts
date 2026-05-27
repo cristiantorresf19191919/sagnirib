@@ -229,7 +229,6 @@ export function mapListing(id: string, data: Raw): BiringaListing {
     ) as ReadonlyArray<ContactChannel>,
     paymentByCard: asBool(data.paymentByCard),
     faceVisible: asBool(data.faceVisible),
-    availableNow: asBool(data.availableNow),
     storyAt: toIsoOptional(data.storyAt),
 
     reputation: asReputation(data.reputation, {

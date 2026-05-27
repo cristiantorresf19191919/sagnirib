@@ -320,7 +320,6 @@ function deserializePayload(raw: unknown): ListingDraftPayload {
         : [],
       faceVisible: Boolean(description.faceVisible),
       paymentByCard: Boolean(description.paymentByCard),
-      availableNow: Boolean(description.availableNow),
       gallery: Array.isArray(description.gallery)
         ? (description.gallery as ReadonlyArray<{ path?: unknown }>)
             .map((g) => ({ path: String(g.path ?? "") }))

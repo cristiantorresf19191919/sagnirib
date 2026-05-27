@@ -2,7 +2,7 @@
 
 import { motion } from "framer-motion";
 import Link from "next/link";
-import { ArrowRight, Sparkles } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 
 import { Sparkle } from "@/shared/design-system/components/Sparkle";
 
@@ -174,55 +174,3 @@ export function HistoriasTopTile({ href }: TileProps) {
   );
 }
 
-/**
- * "Disponibles AHORA" tile — links to `?now=1`.
- */
-export function DisponiblesAhoraTile({ href }: TileProps) {
-  return (
-    <motion.div
-      whileHover={SPRING_HOVER}
-      whileTap={SPRING_TAP}
-      className="contents"
-    >
-      <Link
-        href={href}
-        className={`${TILE_BASE} border border-[var(--color-brand-primary)]/35 bg-[var(--color-brand-primary)] text-[var(--color-surface)] shadow-[var(--shadow-glow-primary)] hover:shadow-[var(--shadow-lg)]`}
-      >
-        <span
-          aria-hidden
-          className="pointer-events-none absolute -left-16 -bottom-16 h-56 w-56 rounded-full bg-[radial-gradient(closest-side,rgba(255,255,255,0.18),transparent_70%)] blur-2xl"
-        />
-        <Sparkle
-          tone="muted"
-          size={48}
-          className="absolute right-5 top-5 opacity-60"
-        />
-
-        <div className="relative flex items-start justify-between gap-3">
-          <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-[var(--color-surface)]/15 text-[var(--color-surface)]">
-            <Sparkles className="h-5 w-5" aria-hidden />
-          </span>
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--color-surface)]/15 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.22em] text-[var(--color-surface)] ring-1 ring-[var(--color-surface)]/25">
-            <span
-              aria-hidden
-              className="h-1.5 w-1.5 rounded-full bg-[var(--color-surface)] motion-safe:animate-pulse"
-            />
-            En vivo
-          </span>
-        </div>
-
-        <div className="relative mt-auto">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.32em] text-[var(--color-brand-primary-soft)]">
-            Online
-          </p>
-          <h3 className="mt-2 text-2xl font-bold leading-tight text-[var(--color-surface)] sm:text-[1.65rem]">
-            Disponibles AHORA
-          </h3>
-          <p className="mt-2 text-xs leading-relaxed text-[var(--color-surface)]/85">
-            Atención inmediata, hoy mismo. Filtra el catálogo por disponibilidad.
-          </p>
-        </div>
-      </Link>
-    </motion.div>
-  );
-}

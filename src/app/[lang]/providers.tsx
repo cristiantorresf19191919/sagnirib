@@ -1,6 +1,5 @@
 import { MotionConfig } from "framer-motion";
 
-import { BackOnlinePill } from "@/features/favorites/components/BackOnlinePill";
 import { FavoritesProvider } from "@/features/favorites/store/use-favorites";
 import { SafeCheckinWatcher } from "@/features/safety/components/SafeCheckinWatcher";
 import { Toaster } from "@/shared/ui/toast";
@@ -11,9 +10,6 @@ import { Toaster } from "@/shared/ui/toast";
  *
  *  - `Toaster` — global notification stack; any client component can
  *    push via `import { toast } from "@/shared/ui/toast"`.
- *  - `BackOnlinePill` — retention surface that announces when a
- *    favorited listing flips to `availableNow`. Renders nothing for
- *    users with zero favorites.
  *  - `SafeCheckinWatcher` — polls localStorage every 15s while the
  *    tab is visible; surfaces a countdown banner while armed and an
  *    alert modal when a deadline crosses. Pure client-side; no
@@ -40,7 +36,6 @@ export function Providers({
       <FavoritesProvider initialFavorites={initialFavorites}>
         {children}
         <Toaster />
-        <BackOnlinePill />
         <SafeCheckinWatcher />
       </FavoritesProvider>
     </MotionConfig>

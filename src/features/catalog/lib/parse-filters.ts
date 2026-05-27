@@ -157,7 +157,6 @@ export function parseFilters(params: RawSearchParams): ListingsFilters {
   if (boolFlag(single(params.reviews))) filters.withReviews = true;
   if (boolFlag(single(params.face))) filters.faceVisible = true;
   if (boolFlag(single(params.card))) filters.paymentByCard = true;
-  if (boolFlag(single(params.now))) filters.availableNow = true;
 
   const attention = pickMany<AttentionTarget>(
     many(params.attention),

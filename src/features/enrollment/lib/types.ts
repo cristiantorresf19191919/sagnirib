@@ -79,7 +79,6 @@ export interface DescriptionValues {
   meetingContexts: ReadonlyArray<string>;
   faceVisible: boolean;
   paymentByCard: boolean;
-  availableNow: boolean;
   gallery: ReadonlyArray<GalleryItem>;
   /** Short-form video clips (ADR-015). Empty by default. Max 2. */
   videos: ReadonlyArray<VideoItem>;
@@ -135,7 +134,6 @@ export const INITIAL_DRAFT: EnrollmentDraft = {
     meetingContexts: [],
     faceVisible: false,
     paymentByCard: false,
-    availableNow: false,
     gallery: [],
     videos: [],
   },

@@ -17,7 +17,7 @@ import type {
  *
  * For the catalog scale (low thousands of listings) memory post-filtering
  * is correct and cheap. Push down the cheap predicates (category, city,
- * verified, availableNow) and let the rest run in memory.
+ * verified) and let the rest run in memory.
  */
 
 function intersects<T>(a: ReadonlyArray<T>, b: ReadonlyArray<T>): boolean {

@@ -11,8 +11,6 @@ interface HeroMosaicCardProps {
   readonly listing: BiringaListing;
   /** Tile height — drives the editorial rhythm of the column. */
   readonly height: number;
-  /** Hide the "live" pill even when listing is `availableNow` (for variety). */
-  readonly hideLive?: boolean;
   readonly priority?: boolean;
 }
 
@@ -21,8 +19,7 @@ interface HeroMosaicCardProps {
  *
  * Layout matches the reference comp:
  *  - Top-LEFT: rating pill (5.0 ★) on a dark frosted background.
- *  - Bottom-LEFT: stacked name/age + neighborhood "Neighborhood, City" +
- *    a green-dot "En línea" pill when the listing is online.
+ *  - Bottom-LEFT: stacked name/age + neighborhood "Neighborhood, City".
  *  - Bottom-RIGHT: a gold verified-shield circle — anchors the verification
  *    promise on every visible card.
  *  - Photograph: lightly softened (no longer heavy-blurred) so the face
@@ -44,11 +41,9 @@ interface HeroMosaicCardProps {
 export async function HeroMosaicCard({
   listing,
   height,
-  hideLive = false,
   priority = false,
 }: HeroMosaicCardProps) {
   const locale = await readLocale();
-  const showLive = !hideLive && listing.availableNow;
   const location = listing.neighborhood
     ? `${listing.neighborhood}, ${listing.city}`
     : listing.city;
@@ -118,18 +113,6 @@ export async function HeroMosaicCard({
           <p className="mt-1.5 truncate text-[12.5px] leading-tight opacity-90">
             {location}
           </p>
-          {showLive && (
-            <span className="mt-2 inline-flex items-center gap-1.5 rounded-full border border-[rgba(248,242,228,0.22)] bg-[rgba(20,28,24,0.45)] px-2 py-0.5 text-[10.5px] font-medium text-[#F2EBDC] backdrop-blur-md">
-              <span
-                aria-hidden
-                className="relative inline-flex h-1.5 w-1.5 items-center justify-center"
-              >
-                <span className="absolute inset-0 rounded-full bg-[#7BCB9A] opacity-70 motion-safe:motion-pulse-ring" />
-                <span className="relative inline-block h-1.5 w-1.5 rounded-full bg-[#7BCB9A] motion-safe:motion-hero-pulse" />
-              </span>
-              {t(locale, "heroMosaicCard.online")}
-            </span>
-          )}
         </div>
 
         {/* Bottom-RIGHT: gold verified shield circle */}

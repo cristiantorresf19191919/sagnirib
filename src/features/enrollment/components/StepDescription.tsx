@@ -508,7 +508,7 @@ export function StepDescription({
         </div>
       </fieldset>
 
-      <div className="grid gap-3 md:grid-cols-3">
+      <div className="grid gap-3 md:grid-cols-2">
         <ToggleSwitch
           label={t(locale, "step.description.toggle.faceVisible.label")}
           description={t(locale, "step.description.toggle.faceVisible.body")}
@@ -523,12 +523,6 @@ export function StepDescription({
           )}
           checked={values.paymentByCard}
           onChange={(v) => update("paymentByCard", v)}
-        />
-        <ToggleSwitch
-          label={t(locale, "step.description.toggle.availableNow.label")}
-          description={t(locale, "step.description.toggle.availableNow.body")}
-          checked={values.availableNow}
-          onChange={(v) => update("availableNow", v)}
         />
       </div>
 

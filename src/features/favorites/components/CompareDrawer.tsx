@@ -542,7 +542,6 @@ function buildRows(
 
   const yes = t(locale, "compareDrawer.value.yes");
   const no = t(locale, "compareDrawer.value.no");
-  const now = t(locale, "compareDrawer.value.now");
   const dash = t(locale, "compareDrawer.value.dash");
 
   return [
@@ -597,16 +596,6 @@ function buildRows(
       cell: (l) => ({
         content: <Pill on={l.verified}>{l.verified ? yes : no}</Pill>,
         verdict: verdict(l.verified),
-      }),
-    },
-    {
-      key: "available",
-      label: t(locale, "compareDrawer.row.available"),
-      cell: (l) => ({
-        content: (
-          <Pill on={l.availableNow}>{l.availableNow ? now : dash}</Pill>
-        ),
-        verdict: verdict(l.availableNow),
       }),
     },
     {

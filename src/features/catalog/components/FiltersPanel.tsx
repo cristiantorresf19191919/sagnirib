@@ -6,7 +6,6 @@ import { t } from "@/core/i18n/messages";
 import type { SupportedLocale } from "@/core/branding/brand-config";
 import {
   Check,
-  Clock,
   Coins,
   Eraser,
   Eye,
@@ -93,7 +92,6 @@ function buildSectionCounts(filters: ListingsFilters): SectionCounts {
   if (filters.withVideo) content += 1;
   if (filters.withAudio) content += 1;
   if (filters.withReviews) content += 1;
-  if (filters.availableNow) content += 1;
 
   let appearance = 0;
   if (filters.attributes) {
@@ -166,7 +164,6 @@ function sectionResetHref(
       next.withVideo = undefined;
       next.withAudio = undefined;
       next.withReviews = undefined;
-      next.availableNow = undefined;
       break;
     case "appearance":
       next.attributes = undefined;
@@ -222,7 +219,6 @@ export async function FiltersPanel({ filters, view }: FiltersPanelProps) {
                 "reviews",
                 "face",
                 "card",
-                "now",
                 "attention",
                 "contact",
                 "service",
@@ -428,12 +424,6 @@ export async function FiltersPanel({ filters, view }: FiltersPanelProps) {
                     checked={filters.withReviews ?? false}
                     label={t(locale, "filters.flag.reviews")}
                     icon={<MessageSquare className="h-3 w-3" aria-hidden />}
-                  />
-                  <FlagChip
-                    name="now"
-                    checked={filters.availableNow ?? false}
-                    label={t(locale, "filters.flag.now")}
-                    icon={<Clock className="h-3 w-3" aria-hidden />}
                   />
                 </ChipRow>
               </SectionCard>

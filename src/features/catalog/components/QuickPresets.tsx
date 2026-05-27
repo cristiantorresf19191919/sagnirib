@@ -2,7 +2,6 @@ import Link from "next/link";
 import {
   BadgeCheck,
   Eye,
-  Flame,
   Sparkles,
   Star,
   Video,
@@ -38,15 +37,6 @@ interface Preset {
 }
 
 const PRESETS: ReadonlyArray<Preset> = [
-  {
-    id: "now",
-    labelKey: "catalog.preset.availableNow",
-    icon: Flame,
-    tone: "highlight",
-    apply: (f) => ({ ...f, availableNow: true, page: undefined }),
-    remove: (f) => ({ ...f, availableNow: undefined, page: undefined }),
-    isActive: (f) => Boolean(f.availableNow),
-  },
   {
     id: "verified",
     labelKey: "catalog.preset.verified",
