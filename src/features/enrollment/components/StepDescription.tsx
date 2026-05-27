@@ -14,6 +14,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { t } from "@/core/i18n/messages";
 import { useActiveLocale } from "@/core/i18n/use-active-locale";
 import type { EnrollmentCatalogs } from "../lib/catalogs";
+import { containsUrl } from "../lib/bio-content-rules";
 import type {
   DescriptionValues,
   GalleryItem,
@@ -73,6 +74,7 @@ interface StepDescriptionProps {
   /** Plan-driven gallery cap. The submit-time DRAFT_LIMITS.galleryMax = 24
    *  is the absolute ceiling regardless of plan. */
   galleryMax: number;
+  forceShowErrors: boolean;
 }
 
 export function StepDescription({
@@ -81,8 +83,19 @@ export function StepDescription({
   onChange,
   sessionId,
   galleryMax,
+  forceShowErrors,
 }: StepDescriptionProps) {
   const locale = useActiveLocale();
+  const [touched, setTouched] = useState<ReadonlySet<string>>(new Set());
+
+  function touch(name: string) {
+    setTouched((prev) => new Set([...prev, name]));
+  }
+
+  function show(name: string): boolean {
+    return forceShowErrors || touched.has(name);
+  }
+
   function update<K extends keyof DescriptionValues>(
     key: K,
     value: DescriptionValues[K],
@@ -91,11 +104,11 @@ export function StepDescription({
   }
 
   function toggleService(s: string) {
-    const has = values.services.includes(s);
-    update(
-      "services",
-      has ? values.services.filter((x) => x !== s) : [...values.services, s],
-    );
+    const next = values.services.includes(s)
+      ? values.services.filter((x) => x !== s)
+      : [...values.services, s];
+    update("services", next);
+    if (next.length === 0) touch("services");
   }
   function togglePlace(p: string) {
     const has = values.meetingContexts.includes(p);
@@ -106,6 +119,34 @@ export function StepDescription({
         : [...values.meetingContexts, p],
     );
   }
+
+  const v = (key: string) => t(locale, key);
+
+  const errors = {
+    shortBio: !values.shortBio.trim()
+      ? v("publicar.validation.shortBio")
+      : containsUrl(values.shortBio)
+        ? v("publicar.validation.bioUrl")
+        : undefined,
+    bio: values.bio.trim().length < 60
+      ? v("publicar.validation.bioLength")
+      : containsUrl(values.bio)
+        ? v("publicar.validation.bioUrl")
+        : undefined,
+    services: values.services.length === 0 ? v("publicar.validation.services") : undefined,
+    galleryInFlight: hasInFlightUploads(values.gallery)
+      ? v("publicar.validation.galleryInFlight")
+      : undefined,
+    galleryErrored: hasErroredUploads(values.gallery)
+      ? v("publicar.validation.galleryErrored")
+      : undefined,
+    videosInFlight: hasInFlightVideoUploads(values.videos)
+      ? v("publicar.validation.videosInFlight")
+      : undefined,
+    videosErrored: hasErroredVideoUploads(values.videos)
+      ? v("publicar.validation.videosErrored")
+      : undefined,
+  };
 
   // ----- Gallery upload pipeline ------------------------------------------
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -454,9 +495,11 @@ export function StepDescription({
         placeholder={t(locale, "step.description.shortBio.placeholder")}
         value={values.shortBio}
         onChange={(e) => update("shortBio", e.target.value)}
+        onBlur={() => touch("shortBio")}
         hint={t(locale, "step.description.shortBio.hint", {
           count: values.shortBio.length,
         })}
+        error={show("shortBio") ? errors.shortBio : undefined}
       />
       <TextAreaField
         label={t(locale, "step.description.bio.label")}
@@ -466,9 +509,11 @@ export function StepDescription({
         placeholder={t(locale, "step.description.bio.placeholder")}
         value={values.bio}
         onChange={(e) => update("bio", e.target.value)}
+        onBlur={() => touch("bio")}
         hint={t(locale, "step.description.bio.hint", {
           count: values.bio.length,
         })}
+        error={show("bio") ? errors.bio : undefined}
       />
 
       <fieldset className="flex flex-col gap-2">
@@ -488,6 +533,11 @@ export function StepDescription({
             />
           ))}
         </div>
+        {show("services") && errors.services && (
+          <p role="alert" className="text-[11px] text-[var(--color-brand-highlight)]">
+            {errors.services}
+          </p>
+        )}
       </fieldset>
 
       <fieldset className="flex flex-col gap-2">
@@ -597,6 +647,11 @@ export function StepDescription({
             {galleryError}
           </p>
         )}
+        {forceShowErrors && (errors.galleryInFlight ?? errors.galleryErrored) && (
+          <p role="alert" className="text-[11px] text-[var(--color-brand-highlight)]">
+            {errors.galleryInFlight ?? errors.galleryErrored}
+          </p>
+        )}
       </div>
 
       {/* Videos block (ADR-015) — max 2 clips, 3..30s each. Optional. */}
@@ -662,6 +717,11 @@ export function StepDescription({
               {videoError}
             </p>
           )}
+        {forceShowErrors && (errors.videosInFlight ?? errors.videosErrored) && (
+          <p role="alert" className="text-[11px] text-[var(--color-brand-highlight)]">
+            {errors.videosInFlight ?? errors.videosErrored}
+          </p>
+        )}
         </div>
       )}
     </SectionShell>

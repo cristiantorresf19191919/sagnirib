@@ -21,9 +21,11 @@ import { SectionShell } from "./SectionShell";
 interface StepPublishProps {
   values: PublishValues;
   onChange: (next: PublishValues) => void;
+  forceShowErrors: boolean;
+  submitError: string | null;
 }
 
-export function StepPublish({ values, onChange }: StepPublishProps) {
+export function StepPublish({ values, onChange, forceShowErrors, submitError }: StepPublishProps) {
   const locale = useActiveLocale();
 
   function update<K extends keyof PublishValues>(key: K, v: PublishValues[K]) {
@@ -115,17 +117,40 @@ export function StepPublish({ values, onChange }: StepPublishProps) {
         <legend className="px-2 text-[11px] font-semibold uppercase tracking-[0.22em] text-[var(--color-text-muted)]">
           {t(locale, "step.publish.terms.legend")}
         </legend>
-        <CheckLine
-          checked={values.acceptsAdult}
-          onChange={(v) => update("acceptsAdult", v)}
-          label={t(locale, "step.publish.terms.adult")}
-        />
-        <CheckLine
-          checked={values.acceptsTerms}
-          onChange={(v) => update("acceptsTerms", v)}
-          label={t(locale, "step.publish.terms.terms")}
-        />
+        <div className="flex flex-col gap-1">
+          <CheckLine
+            checked={values.acceptsAdult}
+            onChange={(v) => update("acceptsAdult", v)}
+            label={t(locale, "step.publish.terms.adult")}
+          />
+          {forceShowErrors && !values.acceptsAdult && (
+            <p role="alert" className="pl-8 text-[11px] text-[var(--color-brand-highlight)]">
+              {t(locale, "publicar.validation.adultConsent")}
+            </p>
+          )}
+        </div>
+        <div className="flex flex-col gap-1">
+          <CheckLine
+            checked={values.acceptsTerms}
+            onChange={(v) => update("acceptsTerms", v)}
+            label={t(locale, "step.publish.terms.terms")}
+          />
+          {forceShowErrors && !values.acceptsTerms && (
+            <p role="alert" className="pl-8 text-[11px] text-[var(--color-brand-highlight)]">
+              {t(locale, "publicar.validation.acceptTerms")}
+            </p>
+          )}
+        </div>
       </fieldset>
+
+      {submitError && (
+        <div
+          role="alert"
+          className="rounded-[var(--radius-md)] border border-[var(--color-brand-highlight)]/40 bg-[var(--color-brand-highlight)]/8 px-4 py-3 text-sm text-[var(--color-brand-highlight)]"
+        >
+          {submitError}
+        </div>
+      )}
     </SectionShell>
   );
 }
