@@ -7,7 +7,7 @@ import {
   MessageSquare,
   UserCheck,
 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { t } from "@/core/i18n/messages";
 import { useActiveLocale } from "@/core/i18n/use-active-locale";
@@ -25,6 +25,13 @@ interface SignInGateProps {
   initialAccountType: AccountType | null;
   /** Forwarded to the wrapped SignInForm. */
   next?: string;
+  /**
+   * When the caller already knows the user's intent (e.g. they arrived via
+   * "Publish Profile"), pass the implied type here. If no prior cookie exists,
+   * the fork is skipped and this value is written to the cookie on mount so
+   * loginWithIdToken can read it when the sign-in completes.
+   */
+  suggestedAccountType?: AccountType;
 }
 
 const REVEAL: Variants = {
@@ -65,11 +72,26 @@ const STAGGER: Variants = {
 export function SignInGate({
   initialAccountType,
   next,
+  suggestedAccountType,
 }: Readonly<SignInGateProps>) {
   const locale = useActiveLocale();
   const [accountType, setAccountTypeState] = useState<AccountType | null>(
-    initialAccountType,
+    initialAccountType ?? suggestedAccountType ?? null,
   );
+
+  // When a suggestion is provided and no prior cookie exists, write the cookie
+  // on mount. This runs before the user can complete sign-in (which requires
+  // a network round-trip), so loginWithIdToken will see the correct value.
+  useEffect(() => {
+    if (initialAccountType === null && suggestedAccountType != null) {
+      setAccountType(suggestedAccountType).catch(() => {
+        // Silently swallowed — the AccountTypeFallbackModal handles the
+        // undecided case if the write fails.
+      });
+    }
+    // Intentionally runs once on mount only.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const [pending, setPending] = useState<AccountType | null>(null);
   /**
    * Lock-error surface (ADR-019). Set when the caller is already

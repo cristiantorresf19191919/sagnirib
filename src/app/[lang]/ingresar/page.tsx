@@ -9,6 +9,7 @@ import { Footer } from "@/shared/layout/Footer";
 import { Header } from "@/shared/layout/Header";
 import { readAccountTypeCookie } from "@/features/auth/lib/account-type-cookie";
 import { SignInGate } from "@/features/auth/components/SignInGate";
+import { ACCOUNT_TYPE_PUBLISHER } from "@/features/auth/lib/rbac";
 
 export async function generateMetadata({
   params,
@@ -52,10 +53,18 @@ export default async function IngresarPage({
   const raw = Array.isArray(searchParamsResolved.next)
     ? searchParamsResolved.next[0]
     : searchParamsResolved.next;
-  const next = raw && raw.startsWith("/") && !raw.startsWith("//") ? raw : undefined;
+  const next =
+    raw && raw.startsWith("/") && !raw.startsWith("//") ? raw : undefined;
 
   const initialAccountType = await readAccountTypeCookie();
 
+  // If the user arrived via "Publish Profile" and hasn't picked a type yet,
+  // pre-select publisher so the fork screen is skipped — their intent is clear.
+  // /\/publicar(\/|$)/ matches /es/publicar, /en/publicar, /es/publicar/planes, etc.
+  const suggestedAccountType =
+    initialAccountType === null && /\/publicar(\/|$)/.test(next ?? "")
+      ? ACCOUNT_TYPE_PUBLISHER
+      : undefined;
   return (
     <>
       <Header hideCatalogCta />
@@ -90,7 +99,11 @@ export default async function IngresarPage({
               </p>
             </header>
 
-            <SignInGate initialAccountType={initialAccountType} next={next} />
+            <SignInGate
+              initialAccountType={initialAccountType}
+              next={next}
+              suggestedAccountType={suggestedAccountType}
+            />
           </div>
         </Container>
       </main>
