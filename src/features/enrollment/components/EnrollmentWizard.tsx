@@ -10,6 +10,7 @@ import { t } from "@/core/i18n/messages";
 
 import { createListingDraft } from "../actions/create-draft";
 import type { EnrollmentCatalogs } from "../lib/catalogs";
+import { containsUrl } from "../lib/bio-content-rules";
 import {
   calculateTotal,
   formatCop,
@@ -176,6 +177,8 @@ export function EnrollmentWizard({ catalogs, personId }: EnrollmentWizardProps) 
     if (current === "description") {
       const d = draft.description;
       if (!d.shortBio.trim()) return v("publicar.validation.shortBio");
+      if (containsUrl(d.shortBio)) return v("publicar.validation.bioUrl");
+      if (containsUrl(d.bio)) return v("publicar.validation.bioUrl");
       if (d.bio.trim().length < 60) return v("publicar.validation.bioLength");
       if (d.services.length === 0) return v("publicar.validation.services");
       if (hasInFlightUploads(d.gallery))

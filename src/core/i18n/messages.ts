@@ -199,6 +199,8 @@ const es: MessageDict = {
   "publicar.validation.contactChannels":
     "Selecciona al menos un canal de contacto.",
   "publicar.validation.shortBio": "Escribe una descripción corta.",
+  "publicar.validation.bioUrl":
+    "El texto no puede incluir enlaces ni URLs.",
   "publicar.validation.bioLength":
     "La descripción larga debe tener al menos 60 caracteres.",
   "publicar.validation.services":
@@ -1861,7 +1863,7 @@ const es: MessageDict = {
   "step.description.gallery.counter": "{count} / {max}",
   "step.description.gallery.uploading": "· {count} subiendo",
   "step.description.gallery.helper":
-    "Comprimimos cada foto antes de subirla (calidad alta, sin EXIF — tus metadatos quedan privados). JPG, PNG, WebP o HEIC. Hasta 40 MB por foto antes de comprimir; quedan ~500 KB en el servidor.",
+    "Acepta JPG, PNG, WebP o HEIC. Tus metadatos personales nunca se comparten.",
   "step.description.gallery.add.aria": "Agregar foto",
   "step.description.gallery.add.label": "Subir foto",
   "step.description.gallery.retryTooltip": "Reintentar subida",
@@ -2489,6 +2491,8 @@ const en: MessageDict = {
   "publicar.validation.contactChannels":
     "Pick at least one contact channel.",
   "publicar.validation.shortBio": "Write a short description.",
+  "publicar.validation.bioUrl":
+    "Text cannot include links or URLs.",
   "publicar.validation.bioLength":
     "The long description must have at least 60 characters.",
   "publicar.validation.services":
@@ -4142,7 +4146,7 @@ const en: MessageDict = {
   "step.description.gallery.counter": "{count} / {max}",
   "step.description.gallery.uploading": "· {count} uploading",
   "step.description.gallery.helper":
-    "We compress every photo before uploading (high quality, no EXIF — your metadata stays private). JPG, PNG, WebP or HEIC. Up to 40 MB per photo before compression; ~500 KB on the server.",
+    "Accepts JPG, PNG, WebP or HEIC. Your personal metadata is never shared.",
   "step.description.gallery.add.aria": "Add photo",
   "step.description.gallery.add.label": "Upload photo",
   "step.description.gallery.retryTooltip": "Retry upload",
