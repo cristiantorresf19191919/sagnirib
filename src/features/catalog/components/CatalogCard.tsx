@@ -258,39 +258,9 @@ export function CatalogCard({
               {t(locale, "catalog.card.audio")}
             </span>
           )}
-          <ActivitySignals listing={listing} locale={locale} />
         </div>
       </div>
     </Card>
-  );
-}
-
-interface ActivitySignalsProps {
-  listing: BiringaListing;
-  locale: SupportedLocale;
-}
-
-/**
- * Inline activity chips for the card meta row. Returns a fragment so the
- * parent extras slot keeps a consistent flow / wrap layout regardless of
- * which chips are present.
- *
- * The previous version emitted a redundant "Active now" caption — the
- * pulsing "AHORA" pill on the image already encodes live presence, and
- * a second line of text doubled the card height for live profiles only,
- * breaking grid alignment.
- */
-function ActivitySignals({ listing, locale }: Readonly<ActivitySignalsProps>) {
-  const replyMin = listing.reputation.replyMedianMinutes ?? null;
-  if (replyMin === null) return null;
-  return (
-    <span className="inline-flex items-center gap-1 rounded-full bg-[var(--color-brand-primary)]/10 px-2 py-0.5 text-[10px] font-semibold text-[var(--color-brand-primary)]">
-      <span
-        aria-hidden
-        className="inline-block h-1.5 w-1.5 rounded-full bg-[var(--color-brand-primary)]"
-      />
-      {t(locale, "catalog.card.respondsIn", { minutes: replyMin })}
-    </span>
   );
 }
 

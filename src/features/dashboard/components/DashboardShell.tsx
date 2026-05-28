@@ -1,13 +1,7 @@
 "use client";
 
 import { motion, type Variants } from "framer-motion";
-import {
-  Calendar,
-  Gift,
-  Inbox,
-  UserCircle,
-  type LucideIcon,
-} from "lucide-react";
+import { Gift, UserCircle, type LucideIcon } from "lucide-react";
 import { useState, type ReactNode } from "react";
 
 import { InstallAppPill } from "./InstallAppPill";
@@ -16,19 +10,14 @@ interface TabDef {
   id: string;
   label: string;
   icon: LucideIcon;
-  badge?: number;
   content: ReactNode;
 }
 
 interface DashboardShellProps {
   /** Display name shown in the welcome eyebrow. */
   greetingName: string;
-  /** Optional badge of unread / pending bookings shown beside the tab. */
-  pendingCount?: number;
   tabs: Readonly<{
-    inbox: ReactNode;
     profile: ReactNode;
-    agenda: ReactNode;
     referrals: ReactNode;
   }>;
 }
@@ -43,39 +32,23 @@ const REVEAL: Variants = {
 };
 
 /**
- * Three-tab seller dashboard shell — Solicitudes / Mi perfil / Agenda.
+ * Two-tab seller dashboard shell — Mi perfil / Invitar.
  *
  * Active tab tracked in component state (client-only). Tab content is
  * passed in as ReactNode so each tab can be a Server-Component subtree
  * with its own data fetch, while the tab strip + animations live in
- * this client wrapper. Switching tabs slides the panel in from the
- * right with a soft blur — mirrors the gallery vocabulary used
- * elsewhere on the site.
+ * this client wrapper.
  */
 export function DashboardShell({
   greetingName,
-  pendingCount = 0,
   tabs,
 }: Readonly<DashboardShellProps>) {
   const TABS: ReadonlyArray<TabDef> = [
-    {
-      id: "inbox",
-      label: "Solicitudes",
-      icon: Inbox,
-      badge: pendingCount > 0 ? pendingCount : undefined,
-      content: tabs.inbox,
-    },
     {
       id: "profile",
       label: "Mi perfil",
       icon: UserCircle,
       content: tabs.profile,
-    },
-    {
-      id: "agenda",
-      label: "Agenda",
-      icon: Calendar,
-      content: tabs.agenda,
     },
     {
       id: "referrals",
@@ -110,9 +83,8 @@ export function DashboardShell({
           .
         </h1>
         <p className="max-w-2xl font-[var(--font-serif)] text-[15px] leading-[1.55] text-[var(--color-text-muted)]">
-          Aquí gestionás las solicitudes que recibís, editás tu perfil y
-          ajustás tu agenda. Discreto, sin notificaciones invasivas — vos
-          decidís cuándo entrar.
+          Aquí editás tu perfil e invitás a otras modelos. Discreto, sin
+          notificaciones invasivas — vos decidís cuándo entrar.
         </p>
       </header>
 
@@ -145,18 +117,6 @@ export function DashboardShell({
             >
               <Icon className="h-4 w-4" aria-hidden />
               {tab.label}
-              {tab.badge !== undefined && (
-                <span
-                  aria-label={`${tab.badge} pendientes`}
-                  className={`inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-[10px] font-bold tabular-nums ${
-                    isActive
-                      ? "bg-[var(--color-surface)] text-[var(--color-brand-primary)]"
-                      : "bg-[var(--color-brand-highlight)] text-[var(--color-surface)]"
-                  }`}
-                >
-                  {tab.badge}
-                </span>
-              )}
             </button>
           );
         })}

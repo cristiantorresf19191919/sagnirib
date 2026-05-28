@@ -14,5 +14,4 @@ import "server-only";
 export const CACHE_TAGS = {
   listings: "biringa:listings",
   listing: (slug: string) => `biringa:listing:${slug}`,
-  bookingsForListing: (slug: string) => `biringa:bookings:${slug}`,
 } as const;
