@@ -52,14 +52,5 @@ service cloud.firestore {
         allow read, write: if false;
       }
     }
-
-    // bookings/{id} — buyer-side booking requests + seller responses
-    // (ADR-016). Same deny-all posture; the Server Actions in
-    // @/server/biringas (`requestBooking`, `respondToBooking`,
-    // `submitBuyerReview`) own every write after auth + audit, and
-    // the seller-dashboard inbox reads via the adapter.
-    match /bookings/{id} {
-      allow read, write: if false;
-    }
   }
 }
