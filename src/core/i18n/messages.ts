@@ -606,6 +606,7 @@ const es: MessageDict = {
   /* AuthBadge */
   "auth.badge.fallbackName": "Mi cuenta",
   "auth.badge.openAccount": "Abrir mi cuenta",
+  "auth.badge.menu.dashboard": "Dashboard",
   "auth.badge.signOut": "Cerrar sesión",
 
   /* SignInForm */
@@ -2899,6 +2900,7 @@ const en: MessageDict = {
   /* AuthBadge */
   "auth.badge.fallbackName": "My account",
   "auth.badge.openAccount": "Open my account",
+  "auth.badge.menu.dashboard": "Dashboard",
   "auth.badge.signOut": "Sign out",
 
   /* SignInForm */

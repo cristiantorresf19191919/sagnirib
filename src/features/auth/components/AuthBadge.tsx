@@ -2,7 +2,14 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { LogIn, LogOut, User as UserIcon } from "lucide-react";
+import { useCallback, useEffect, useId, useRef, useState } from "react";
+import {
+  ChevronDown,
+  LayoutDashboard,
+  LogIn,
+  LogOut,
+  User as UserIcon,
+} from "lucide-react";
 
 import { t } from "@/core/i18n/messages";
 import {
@@ -12,28 +19,80 @@ import {
 
 import { useAuthSession } from "../lib/use-auth-session";
 
+interface AuthBadgeProps {
+  /**
+   * Which auth state this instance is responsible for rendering — lets the
+   * header place each state in its own slot:
+   *
+   *   - "signin-slot"  → renders the anonymous "Sign in" link, sits before
+   *     the CTAs (where a visitor reaches for it). Null when authenticated.
+   *   - "account-menu" → renders the authenticated avatar + dropdown, sits
+   *     at the far right of the header. Null when anonymous.
+   *
+   * Both are mounted; only one ever renders because they key off opposite
+   * auth states.
+   */
+  placement: "signin-slot" | "account-menu";
+}
+
 /**
  * Header slot that switches on auth state:
  *
  *   - loading       → empty (avoid layout shift; rendered after hydration)
  *   - disabled      → empty (Firebase Web SDK env vars missing)
- *   - anonymous     → "Sign in" link → /ingresar
- *   - authenticated → user chip + sign-out icon button
+ *   - anonymous     → "Sign in" link → /ingresar         (placement="signin-slot")
+ *   - authenticated → avatar button + account dropdown    (placement="account-menu")
+ *
+ * The authenticated avatar lives at the far right of the header. Clicking it
+ * opens a menu — for now just "Dashboard" (→ /mi-cuenta) and sign-out — with
+ * room to grow as more account actions are added.
  *
  * Visual treatment matches the existing neutral nav links in the header.
  */
-export function AuthBadge() {
+export function AuthBadge({ placement }: AuthBadgeProps) {
   const router = useRouter();
   const locale = useActiveLocale();
   const ingresarHref = useLocalizedHref("/ingresar");
   const miCuentaHref = useLocalizedHref("/mi-cuenta");
   const { status, user, signOut } = useAuthSession();
 
+  const [open, setOpen] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const menuId = useId();
+
+  const close = useCallback(() => setOpen(false), []);
+
+  // Close on outside click + Escape so the menu behaves like a native popover.
+  useEffect(() => {
+    if (!open) return;
+
+    function onPointerDown(event: PointerEvent) {
+      if (!containerRef.current?.contains(event.target as Node)) {
+        close();
+      }
+    }
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        close();
+      }
+    }
+
+    document.addEventListener("pointerdown", onPointerDown);
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("pointerdown", onPointerDown);
+      document.removeEventListener("keydown", onKeyDown);
+    };
+  }, [open, close]);
+
   if (status === "loading" || status === "disabled") {
     return null;
   }
 
   if (status === "anonymous") {
+    if (placement !== "signin-slot") {
+      return null;
+    }
     return (
       <Link
         href={ingresarHref}
@@ -45,13 +104,18 @@ export function AuthBadge() {
     );
   }
 
-  // authenticated
+  // authenticated — only the far-right account-menu slot renders the avatar.
+  if (placement !== "account-menu") {
+    return null;
+  }
+
   const label =
     user?.displayName ??
     user?.email?.split("@")[0] ??
     t(locale, "auth.badge.fallbackName");
 
   async function onSignOut() {
+    close();
     try {
       await signOut();
       router.refresh();
@@ -61,29 +125,60 @@ export function AuthBadge() {
   }
 
   return (
-    <div className="inline-flex items-center gap-1">
-      {/* Authed user chip links to the dashboard — clicking the name is
-          the most natural way to reach "Mi cuenta". On mobile the label
-          collapses but the icon stays as a smaller round entry point. */}
-      <Link
-        href={miCuentaHref}
-        title={user?.email ?? undefined}
-        aria-label={t(locale, "auth.badge.openAccount")}
-        className="inline-flex h-11 items-center gap-1.5 rounded-full px-2.5 lg:px-3 text-sm font-medium text-[var(--color-foreground)] transition-colors duration-200 ease-[var(--ease-standard)] hover:bg-[var(--color-background-elevated)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-background)]"
-      >
-        <UserIcon className="h-4 w-4" aria-hidden />
-        <span className="hidden lg:inline max-w-[140px] truncate">
-          {label}
-        </span>
-      </Link>
+    <div ref={containerRef} className="relative inline-flex">
+      {/* Avatar trigger — far-right entry point to the account menu. */}
       <button
         type="button"
-        onClick={onSignOut}
-        aria-label={t(locale, "auth.badge.signOut")}
-        className="inline-flex h-11 w-11 items-center justify-center rounded-full text-[var(--color-text-muted)] transition-colors hover:text-[var(--color-foreground)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-background)]"
+        onClick={() => setOpen((value) => !value)}
+        title={user?.email ?? undefined}
+        aria-label={t(locale, "auth.badge.openAccount")}
+        aria-haspopup="menu"
+        aria-expanded={open}
+        aria-controls={open ? menuId : undefined}
+        className="inline-flex h-11 items-center gap-1.5 rounded-full px-2.5 lg:px-3 text-sm font-medium text-[var(--color-foreground)] transition-colors duration-200 ease-[var(--ease-standard)] hover:bg-[var(--color-background-elevated)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-background)]"
       >
-        <LogOut className="h-4 w-4" aria-hidden />
+        <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-[var(--color-brand-primary-soft)] text-[var(--color-brand-primary)]">
+          <UserIcon className="h-4 w-4" aria-hidden />
+        </span>
+        <span className="hidden max-w-[140px] truncate lg:inline">{label}</span>
+        <ChevronDown
+          className={`hidden h-4 w-4 text-[var(--color-text-muted)] transition-transform duration-200 ease-[var(--ease-standard)] lg:inline ${
+            open ? "rotate-180" : ""
+          }`}
+          aria-hidden
+        />
       </button>
+
+      {open && (
+        <div
+          id={menuId}
+          role="menu"
+          aria-label={t(locale, "auth.badge.openAccount")}
+          className="absolute right-0 top-[calc(100%+0.5rem)] z-40 min-w-[200px] overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-1.5 shadow-[var(--shadow-md)]"
+        >
+          <Link
+            href={miCuentaHref}
+            role="menuitem"
+            onClick={close}
+            className="flex h-11 items-center gap-2.5 rounded-xl px-3 text-sm font-medium text-[var(--color-foreground)] transition-colors hover:bg-[var(--color-background-elevated)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)] focus-visible:ring-inset"
+          >
+            <LayoutDashboard className="h-4 w-4 text-[var(--color-text-muted)]" aria-hidden />
+            {t(locale, "auth.badge.menu.dashboard")}
+          </Link>
+
+          <span aria-hidden className="my-1 block h-px bg-[var(--color-border)]" />
+
+          <button
+            type="button"
+            role="menuitem"
+            onClick={onSignOut}
+            className="flex h-11 w-full items-center gap-2.5 rounded-xl px-3 text-sm font-medium text-[var(--color-text-muted)] transition-colors hover:bg-[var(--color-background-elevated)] hover:text-[var(--color-foreground)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)] focus-visible:ring-inset"
+          >
+            <LogOut className="h-4 w-4" aria-hidden />
+            {t(locale, "auth.badge.signOut")}
+          </button>
+        </div>
+      )}
     </div>
   );
 }

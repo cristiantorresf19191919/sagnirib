@@ -33,8 +33,12 @@ interface HeaderProps {
  *
  * Reading the bar left → right tells the buyer journey:
  *
- *   LOGO  |  DISCOVERY              |  ACCOUNT       |  UTIL  |  CTAs
- *         |  Cómo funciona · Faves  |  Ingresar      |  Theme |  Publica · Explorar
+ *   LOGO  |  DISCOVERY              |  ACCOUNT   |  UTIL  |  CTAs              |  AVATAR
+ *         |  Cómo funciona · Faves  |  Ingresar  |  Theme |  Publica · Explorar |  ▾ menú
+ *
+ * The ACCOUNT slot only shows "Ingresar" for anonymous visitors. Once signed
+ * in, the account UI becomes the avatar dropdown pinned to the far-right edge
+ * (after the CTAs) so the user's identity + menu is the last thing on the bar.
  *
  * Why this order:
  *   1. Logo anchors brand identity at the left edge.
@@ -137,10 +141,11 @@ export async function Header({ hideCatalogCta = false }: HeaderProps) {
             className="mx-1.5 hidden h-6 w-px bg-[var(--color-border)] lg:block"
           />
 
-          {/* 2. ACCOUNT — surface sign-in right where the user reaches
-              for it (immediately before they want to publish or explore).
-              When signed-in this slot renders the user chip + sign-out. */}
-          <AuthBadge />
+          {/* 2. ACCOUNT (anonymous) — surface sign-in right where the user
+              reaches for it (immediately before they want to publish or
+              explore). When signed-in the avatar moves to the far right
+              (rendered after the CTAs); this slot renders nothing then. */}
+          <AuthBadge placement="signin-slot" />
 
           {/* 3. UTILITY — theme toggle + locale switcher. Lowest priority;
               sit flush with the CTAs so they don't draw eyes away from
@@ -190,6 +195,12 @@ export async function Header({ hideCatalogCta = false }: HeaderProps) {
               />
             </Link>
           )}
+
+          {/* 6. ACCOUNT (authenticated) — avatar at the far right edge.
+              Clicking it opens the account dropdown (Dashboard + sign-out).
+              Renders nothing when anonymous; the sign-in slot above handles
+              that case. */}
+          <AuthBadge placement="account-menu" />
         </nav>
       </Container>
     </header>
