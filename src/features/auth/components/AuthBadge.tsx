@@ -5,9 +5,11 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 import {
   ChevronDown,
+  CreditCard,
   LayoutDashboard,
   LogIn,
   LogOut,
+  Settings as SettingsIcon,
   User as UserIcon,
 } from "lucide-react";
 
@@ -43,9 +45,11 @@ interface AuthBadgeProps {
  *   - anonymous     → "Sign in" link → /ingresar         (placement="signin-slot")
  *   - authenticated → avatar button + account dropdown    (placement="account-menu")
  *
- * The authenticated avatar lives at the far right of the header. Clicking it
- * opens a menu — for now just "Dashboard" (→ /mi-cuenta) and sign-out — with
- * room to grow as more account actions are added.
+ * The authenticated avatar lives at the far right of the header and shows
+ * only the user's first name. Clicking it opens the account menu — Dashboard
+ * (→ /mi-cuenta), Settings, Billing and sign-out. All user-account actions
+ * live here; nothing account-related is left loose in the bar. Settings and
+ * Billing routes are placeholders until their pages ship.
  *
  * Visual treatment matches the existing neutral nav links in the header.
  */
@@ -54,6 +58,8 @@ export function AuthBadge({ placement }: AuthBadgeProps) {
   const locale = useActiveLocale();
   const ingresarHref = useLocalizedHref("/ingresar");
   const miCuentaHref = useLocalizedHref("/mi-cuenta");
+  const settingsHref = useLocalizedHref("/mi-cuenta/configuracion");
+  const billingHref = useLocalizedHref("/mi-cuenta/facturacion");
   const { status, user, signOut } = useAuthSession();
 
   const [open, setOpen] = useState(false);
@@ -109,10 +115,13 @@ export function AuthBadge({ placement }: AuthBadgeProps) {
     return null;
   }
 
-  const label =
+  // Show only the first name — "Cristian Torres" → "Cristian". For
+  // email-derived names there's no space, so the whole local part is used.
+  const fullName =
     user?.displayName ??
     user?.email?.split("@")[0] ??
     t(locale, "auth.badge.fallbackName");
+  const label = fullName.trim().split(/\s+/)[0];
 
   async function onSignOut() {
     close();
@@ -164,6 +173,26 @@ export function AuthBadge({ placement }: AuthBadgeProps) {
           >
             <LayoutDashboard className="h-4 w-4 text-[var(--color-text-muted)]" aria-hidden />
             {t(locale, "auth.badge.menu.dashboard")}
+          </Link>
+
+          <Link
+            href={settingsHref}
+            role="menuitem"
+            onClick={close}
+            className="flex h-11 items-center gap-2.5 rounded-xl px-3 text-sm font-medium text-[var(--color-foreground)] transition-colors hover:bg-[var(--color-background-elevated)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)] focus-visible:ring-inset"
+          >
+            <SettingsIcon className="h-4 w-4 text-[var(--color-text-muted)]" aria-hidden />
+            {t(locale, "auth.badge.menu.settings")}
+          </Link>
+
+          <Link
+            href={billingHref}
+            role="menuitem"
+            onClick={close}
+            className="flex h-11 items-center gap-2.5 rounded-xl px-3 text-sm font-medium text-[var(--color-foreground)] transition-colors hover:bg-[var(--color-background-elevated)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)] focus-visible:ring-inset"
+          >
+            <CreditCard className="h-4 w-4 text-[var(--color-text-muted)]" aria-hidden />
+            {t(locale, "auth.badge.menu.billing")}
           </Link>
 
           <span aria-hidden className="my-1 block h-px bg-[var(--color-border)]" />
