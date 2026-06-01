@@ -11,6 +11,29 @@ interface UsefulTipProps {
   children: ReactNode;
 }
 
+// Conversion metrics like "2.5×" / "2,5×" are the persuasive heart of a tip —
+// emphasise them in place rather than letting them sit in plain body text.
+// Purely presentational: it wraps the existing copy, it does not alter it.
+const METRIC_PATTERN = /(\d+(?:[.,]\d+)?\s*×)/;
+
+function emphasizeMetric(node: ReactNode): ReactNode {
+  if (typeof node !== "string") return node;
+  const parts = node.split(METRIC_PATTERN);
+  if (parts.length === 1) return node;
+  return parts.map((part, index) =>
+    METRIC_PATTERN.test(part) ? (
+      <strong
+        key={index}
+        className="font-bold text-[var(--color-brand-accent-strong)]"
+      >
+        {part}
+      </strong>
+    ) : (
+      part
+    ),
+  );
+}
+
 /**
  * Side-rail tip card — same role as the "Useful tip" panel in the
  * reference. Uses the elevated cream surface so it reads as advisory,
@@ -27,7 +50,7 @@ export function UsefulTip({ title, children }: UsefulTipProps) {
     <aside
       aria-label={resolvedTitle}
       style={{ "--step-i": 4 } as CSSProperties}
-      className="group/tip motion-step-rise relative flex flex-col gap-3 overflow-hidden rounded-[var(--radius-xl)] border border-[var(--color-border)] bg-[var(--color-background-elevated)] p-5 shadow-[var(--shadow-sm)] transition-[transform,box-shadow,border-color] duration-[240ms] ease-[var(--ease-standard)] hover:-translate-y-0.5 hover:border-[var(--color-brand-accent)]/40 hover:shadow-[var(--shadow-md)]"
+      className="group/tip motion-step-rise relative flex flex-col gap-3 overflow-hidden rounded-[var(--radius-xl)] border border-dashed border-[var(--color-border)] bg-[var(--color-surface-muted)] p-5 shadow-[var(--shadow-sm)] transition-[transform,box-shadow,border-color] duration-[240ms] ease-[var(--ease-standard)] hover:-translate-y-0.5 hover:border-[var(--color-brand-accent)]/40 hover:shadow-[var(--shadow-md)]"
     >
       {/* Gold accent hairline on top. */}
       <span
@@ -59,7 +82,7 @@ export function UsefulTip({ title, children }: UsefulTipProps) {
           </span>
         </div>
         <div className="text-[13px] leading-relaxed text-[var(--color-text-muted)]">
-          {children}
+          {emphasizeMetric(children)}
         </div>
       </div>
     </aside>

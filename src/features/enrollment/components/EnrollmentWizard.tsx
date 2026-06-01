@@ -6,6 +6,7 @@ import {
   ArrowRight,
   Loader2,
   PartyPopper,
+  Pencil,
   ShieldCheck,
 } from "lucide-react";
 import Link from "next/link";
@@ -108,6 +109,7 @@ export function EnrollmentWizard({ catalogs, personId }: EnrollmentWizardProps) 
   const [completed, setCompleted] = useState<ReadonlyArray<StepId>>([]);
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [submittedDraftId, setSubmittedDraftId] = useState<string | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [forceShowErrors, setForceShowErrors] = useState(false);
   const [direction, setDirection] = useState<1 | -1>(1);
@@ -258,6 +260,7 @@ export function EnrollmentWizard({ catalogs, personId }: EnrollmentWizardProps) 
       return;
     }
 
+    setSubmittedDraftId(result.data?.id ?? null);
     setSubmitted(true);
     setCompleted((prev) =>
       prev.includes("publish") ? prev : [...prev, "publish"],
@@ -265,7 +268,7 @@ export function EnrollmentWizard({ catalogs, personId }: EnrollmentWizardProps) 
   }
 
   if (submitted) {
-    return <SubmittedScreen draft={draft} />;
+    return <SubmittedScreen draft={draft} draftId={submittedDraftId} />;
   }
 
   return (
@@ -610,10 +613,20 @@ function ProgressRail({ current, draft, catalogs }: ProgressRailProps) {
   );
 }
 
-function SubmittedScreen({ draft }: { draft: EnrollmentDraft }) {
+function SubmittedScreen({
+  draft,
+  draftId,
+}: {
+  draft: EnrollmentDraft;
+  draftId: string | null;
+}) {
   const locale = useActiveLocale();
   const verifyHref = useLocalizedHref("/verificacion/enviar");
   const exploreHref = useLocalizedHref("/explorar");
+  // Hook must run unconditionally; the link only renders when we have an id.
+  const editHref = useLocalizedHref(
+    draftId ? `/mi-cuenta/borradores/${draftId}/editar` : "/mi-cuenta",
+  );
   const empty = t(locale, "publicar.rail.row.empty");
   const totals = calculateTotal(
     draft.publish.packageId,
@@ -762,6 +775,21 @@ function SubmittedScreen({ draft }: { draft: EnrollmentDraft }) {
           {t(locale, "publicar.submitted.cta.later")}
         </Link>
       </motion.div>
+
+      {/* Quiet tertiary action — fix a typo or tweak data before verifying,
+          without competing with the primary "verify identity" CTA. Only
+          shown once we have the created draft's id to link to. */}
+      {draftId ? (
+        <motion.div variants={item} className="relative">
+          <Link
+            href={editHref}
+            className="inline-flex items-center justify-center gap-1.5 rounded-full px-3 py-1.5 text-[13px] font-semibold text-[var(--color-text-muted)] underline-offset-4 transition-colors hover:text-[var(--color-brand-primary)] hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-background)]"
+          >
+            <Pencil className="h-3.5 w-3.5" aria-hidden />
+            {t(locale, "publicar.submitted.cta.edit")}
+          </Link>
+        </motion.div>
+      ) : null}
     </motion.div>
   );
 }

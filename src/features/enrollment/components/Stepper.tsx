@@ -2,7 +2,7 @@
 
 import type { CSSProperties } from "react";
 import { motion, useReducedMotion } from "framer-motion";
-import { Check } from "lucide-react";
+import { Check, ChevronRight } from "lucide-react";
 
 import { useActiveLocale } from "@/core/i18n/use-active-locale";
 import { t } from "@/core/i18n/messages";
@@ -65,10 +65,15 @@ export function Stepper({ steps, current, completed, onJump }: StepperProps) {
 
         // Active card is transparent — the shared highlight behind it paints
         // the surface, border and glow so they can travel between cards.
-        const baseCls = `group/step relative z-[1] flex h-full flex-col gap-4 overflow-hidden rounded-[var(--radius-xl)] border p-5 text-left transition-[transform,box-shadow] duration-[240ms] ease-[var(--ease-standard)] ${
+        // Pending (neither active nor done) cards are dimmed via container
+        // opacity rather than washed-out type, so their text stays legible
+        // (WCAG AA) while the muted state still reads as "not yet here".
+        const baseCls = `group/step relative z-[1] flex h-full flex-col gap-4 overflow-hidden rounded-[var(--radius-xl)] border p-5 text-left transition-[transform,box-shadow,opacity] duration-[240ms] ease-[var(--ease-standard)] ${
           isActive
             ? "border-transparent bg-transparent"
-            : "border-[var(--color-border)] bg-[var(--color-background-elevated)] shadow-[var(--shadow-sm)]"
+            : isDone
+              ? "border-[var(--color-border)] bg-[var(--color-background-elevated)] shadow-[var(--shadow-sm)]"
+              : "border-[var(--color-border)] bg-[var(--color-background-elevated)] opacity-[0.72] shadow-[var(--shadow-sm)]"
         }`;
         const interactiveCls = isClickable
           ? "cursor-pointer hover:-translate-y-0.5 hover:shadow-[var(--shadow-md)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-background)]"
@@ -76,7 +81,19 @@ export function Stepper({ steps, current, completed, onJump }: StepperProps) {
 
         const Inner = (
           <>
-            <span className="relative flex flex-col gap-1.5">
+            {/* Header row — badge sits next to the step label so the number
+                and its status read as one unit (no diagonal eye-zigzag). */}
+            <span className="relative flex items-center gap-3">
+              <span
+                aria-hidden
+                className={`inline-flex shrink-0 items-center justify-center rounded-[var(--radius-md)] font-bold transition-[background,color,transform] duration-[240ms] ease-[var(--ease-standard)] group-hover/step:scale-105 ${ringSize} ${ringTone}`}
+              >
+                {isDone && !isActive ? (
+                  <Check className="h-4 w-4" aria-hidden />
+                ) : (
+                  step.number
+                )}
+              </span>
               <span
                 className={`text-[10px] font-semibold uppercase tracking-[0.24em] ${
                   isActive
@@ -88,24 +105,13 @@ export function Stepper({ steps, current, completed, onJump }: StepperProps) {
                   number: String(step.number).padStart(2, "0"),
                 })}
               </span>
+            </span>
+            <span className="relative flex flex-col gap-1.5">
               <span className="text-lg font-semibold leading-tight tracking-tight text-[var(--color-foreground)]">
                 {step.title}
               </span>
               <span className="max-w-[18ch] text-[13px] leading-relaxed text-[var(--color-text-muted)]">
                 {step.description}
-              </span>
-            </span>
-            {/* Footer row — number hugs the bottom-right across the row. */}
-            <span className="relative mt-auto flex items-center justify-end">
-              <span
-                aria-hidden
-                className={`inline-flex items-center justify-center rounded-[var(--radius-md)] font-bold transition-[background,color,transform] duration-[240ms] ease-[var(--ease-standard)] group-hover/step:scale-105 ${ringSize} ${ringTone}`}
-              >
-                {isDone && !isActive ? (
-                  <Check className="h-4 w-4" aria-hidden />
-                ) : (
-                  step.number
-                )}
               </span>
             </span>
           </>
@@ -152,6 +158,18 @@ export function Stepper({ steps, current, completed, onJump }: StepperProps) {
               >
                 {Inner}
               </div>
+            )}
+
+            {/* Decorative connector — signals the left-to-right journey.
+                Only meaningful on lg where the four cards form one row; the
+                2-col and stacked layouts hide it. */}
+            {index < steps.length - 1 && (
+              <span
+                aria-hidden
+                className="pointer-events-none absolute right-0 top-1/2 hidden -translate-y-1/2 translate-x-1/2 text-[var(--color-text-subtle)] lg:block"
+              >
+                <ChevronRight className="h-4 w-4" aria-hidden />
+              </span>
             )}
           </li>
         );

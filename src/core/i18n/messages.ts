@@ -242,6 +242,7 @@ const es: MessageDict = {
     "necesitamos verificar tu identidad. Toma 5 minutos: documento (anverso + reverso) + selfie sosteniéndolo. Sin esto tu publicación no se aprueba.",
   "publicar.submitted.cta.verify": "Verificar identidad ahora",
   "publicar.submitted.cta.later": "Más tarde",
+  "publicar.submitted.cta.edit": "Editar publicación",
 
   /* Order summary (right rail when on publish step) */
   "publicar.order.kicker": "Resumen",
@@ -2408,6 +2409,7 @@ const en: MessageDict = {
     "we need to verify your identity. It takes 5 minutes: ID (front + back) + selfie holding it. Without this, your listing won't be approved.",
   "publicar.submitted.cta.verify": "Verify identity now",
   "publicar.submitted.cta.later": "Later",
+  "publicar.submitted.cta.edit": "Edit listing",
 
   /* Order summary */
   "publicar.order.kicker": "Summary",
