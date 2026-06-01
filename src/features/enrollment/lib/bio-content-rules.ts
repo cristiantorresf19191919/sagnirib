@@ -26,3 +26,20 @@ export function containsUrl(value: string): boolean {
     PLATFORM_HOSTNAME.test(value)
   );
 }
+
+// Phone-like runs: 7+ digits allowing the usual separators (spaces, dots,
+// dashes, parentheses) and an optional leading +country code. Catches the
+// shapes people sneak a number into a bio with — "+57 300 123 4567",
+// "3001234567", "300-123-4567" — while ignoring short numbers like ages or
+// prices. Used only for a soft, real-time warning (not a hard block) so the
+// modelo can fix it before human review instead of getting rejected.
+const PHONE_LIKE = /(?:\+?\d[\s().-]?){7,}\d/;
+
+export function containsPhone(value: string): boolean {
+  return PHONE_LIKE.test(value);
+}
+
+/** True if the text leaks off-platform contact (a URL or a phone number). */
+export function hasContactLeak(value: string): boolean {
+  return containsUrl(value) || containsPhone(value);
+}

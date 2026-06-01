@@ -4,6 +4,7 @@ import {
   AlertCircle,
   Film,
   ImagePlus,
+  Lightbulb,
   Loader2,
   Play,
   RotateCw,
@@ -14,7 +15,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { t } from "@/core/i18n/messages";
 import { useActiveLocale } from "@/core/i18n/use-active-locale";
 import type { EnrollmentCatalogs } from "../lib/catalogs";
-import { containsUrl } from "../lib/bio-content-rules";
+import { containsUrl, hasContactLeak } from "../lib/bio-content-rules";
 import type {
   DescriptionValues,
   GalleryItem,
@@ -27,7 +28,7 @@ import {
   UploadVideoError,
   VIDEO_LIMITS_CLIENT,
 } from "../lib/upload-video";
-import { ChipChoice, TextAreaField, ToggleSwitch } from "./FormField";
+import { CharCounter, ChipChoice, TextAreaField, ToggleSwitch } from "./FormField";
 import { SectionShell } from "./SectionShell";
 import { PROFILE_TOGGLES_ENABLED, PROFILE_VIDEOS_ENABLED } from "../lib/pricing";
 
@@ -256,16 +257,20 @@ export function StepDescription({
     fileInputRef.current?.click();
   }
 
-  function handleFilesSelected(event: React.ChangeEvent<HTMLInputElement>) {
-    const picked = event.target.files;
-    if (!picked || picked.length === 0) return;
-
+  // Shared ingest path for the file picker, drag&drop and paste. Validates
+  // MIME + size, caps at the remaining slots, and appends queued items.
+  function ingestFiles(picked: ReadonlyArray<File>) {
+    if (picked.length === 0) return;
     const remaining = galleryMax - values.gallery.length;
+    if (remaining <= 0) {
+      setGalleryError(`Se alcanzó el máximo de ${galleryMax} fotos.`);
+      return;
+    }
     const accepted: GalleryItem[] = [];
     const errors: string[] = [];
     let consumedSlots = 0;
 
-    for (const file of Array.from(picked)) {
+    for (const file of picked) {
       if (consumedSlots >= remaining) {
         errors.push(`Se alcanzó el máximo de ${galleryMax} fotos.`);
         break;
@@ -288,12 +293,81 @@ export function StepDescription({
       consumedSlots += 1;
     }
 
-    event.target.value = "";
-
     if (accepted.length > 0) {
       onChange({ ...values, gallery: [...values.gallery, ...accepted] });
     }
     setGalleryError(errors.length > 0 ? errors.join(" ") : null);
+  }
+
+  function handleFilesSelected(event: React.ChangeEvent<HTMLInputElement>) {
+    const picked = event.target.files;
+    event.target.value = "";
+    if (!picked || picked.length === 0) return;
+    ingestFiles(Array.from(picked));
+  }
+
+  // Keep a live ref to ingestFiles so the mount-once paste listener never
+  // closes over a stale gallery snapshot. Synced in an effect (not during
+  // render) so it doesn't trip the no-ref-writes-in-render rule.
+  const ingestRef = useRef(ingestFiles);
+  useEffect(() => {
+    ingestRef.current = ingestFiles;
+  });
+
+  // Paste-to-upload (⌘/Ctrl + V) anywhere on the step.
+  useEffect(() => {
+    function onPaste(event: ClipboardEvent) {
+      const files = event.clipboardData?.files;
+      if (!files || files.length === 0) return;
+      const images = Array.from(files).filter((f) =>
+        f.type.startsWith("image/"),
+      );
+      if (images.length > 0) ingestRef.current(images);
+    }
+    window.addEventListener("paste", onPaste);
+    return () => window.removeEventListener("paste", onPaste);
+  }, []);
+
+  // ----- Drag&drop + reorder ----------------------------------------------
+  const [dragActive, setDragActive] = useState(false);
+  const [reorderId, setReorderId] = useState<string | null>(null);
+
+  function onZoneDragOver(event: React.DragEvent) {
+    // Only react to external file drags — internal reorder uses a custom
+    // dataTransfer type so it never lights up the dropzone.
+    if (!event.dataTransfer.types.includes("Files")) return;
+    event.preventDefault();
+    setDragActive(true);
+  }
+  function onZoneDragLeave(event: React.DragEvent) {
+    if (event.currentTarget === event.target) setDragActive(false);
+  }
+  function onZoneDrop(event: React.DragEvent) {
+    if (!event.dataTransfer.types.includes("Files")) return;
+    event.preventDefault();
+    setDragActive(false);
+    const dropped = Array.from(event.dataTransfer.files);
+    if (dropped.length > 0) ingestFiles(dropped);
+  }
+
+  function reorderGallery(fromId: string, toId: string) {
+    if (!fromId || fromId === toId) return;
+    const arr = [...values.gallery];
+    const from = arr.findIndex((i) => i.id === fromId);
+    const to = arr.findIndex((i) => i.id === toId);
+    if (from < 0 || to < 0) return;
+    const [moved] = arr.splice(from, 1);
+    arr.splice(to, 0, moved);
+    onChange({ ...values, gallery: arr });
+  }
+
+  function setCover(id: string) {
+    const arr = [...values.gallery];
+    const idx = arr.findIndex((i) => i.id === id);
+    if (idx <= 0) return;
+    const [moved] = arr.splice(idx, 1);
+    arr.unshift(moved);
+    onChange({ ...values, gallery: arr });
   }
 
   function removeFile(item: GalleryItem) {
@@ -496,29 +570,73 @@ export function StepDescription({
         value={values.shortBio}
         onChange={(e) => update("shortBio", e.target.value)}
         onBlur={() => touch("shortBio")}
-        hint={t(locale, "step.description.shortBio.hint", {
-          count: values.shortBio.length,
-        })}
+        footer={<CharCounter count={values.shortBio.length} max={120} />}
+        warning={
+          hasContactLeak(values.shortBio)
+            ? t(locale, "step.description.contactLeak")
+            : undefined
+        }
         error={show("shortBio") ? errors.shortBio : undefined}
       />
-      <TextAreaField
-        label={t(locale, "step.description.bio.label")}
-        name="bio"
-        rows={6}
-        maxLength={1200}
-        placeholder={t(locale, "step.description.bio.placeholder")}
-        value={values.bio}
-        onChange={(e) => update("bio", e.target.value)}
-        onBlur={() => touch("bio")}
-        hint={t(locale, "step.description.bio.hint", {
-          count: values.bio.length,
-        })}
-        error={show("bio") ? errors.bio : undefined}
-      />
+
+      <div className="flex flex-col gap-2">
+        <TextAreaField
+          label={t(locale, "step.description.bio.label")}
+          name="bio"
+          rows={6}
+          maxLength={1200}
+          placeholder={t(locale, "step.description.bio.placeholder")}
+          value={values.bio}
+          onChange={(e) => update("bio", e.target.value)}
+          onBlur={() => touch("bio")}
+          footer={
+            <CharCounter count={values.bio.length} max={1200} min={60} />
+          }
+          warning={
+            hasContactLeak(values.bio)
+              ? t(locale, "step.description.contactLeak")
+              : undefined
+          }
+          error={show("bio") ? errors.bio : undefined}
+        />
+
+        {/* Quality nudge — once they've started but are still short, point
+            out that fuller bios convert better. Disappears past 200 chars. */}
+        {values.bio.trim().length > 0 && values.bio.trim().length < 200 && (
+          <p className="text-[11px] text-[var(--color-brand-accent-strong)]">
+            {t(locale, "step.description.bio.qualityNudge")}
+          </p>
+        )}
+
+        {/* Writing help — collapsible example lines. Native <details> so it
+            needs no client state and stays keyboard-accessible. */}
+        <details className="group/wh rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-background-elevated)] px-3 py-2">
+          <summary className="flex cursor-pointer list-none items-center gap-1.5 text-[12px] font-semibold text-[var(--color-brand-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-background)]">
+            <Lightbulb className="h-3.5 w-3.5" aria-hidden />
+            {t(locale, "step.description.writingHelp.label")}
+          </summary>
+          <div className="mt-2 flex flex-col gap-2">
+            <span className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[var(--color-text-subtle)]">
+              {t(locale, "step.description.writingHelp.intro")}
+            </span>
+            {(["item1", "item2", "item3"] as const).map((k) => (
+              <span
+                key={k}
+                className="text-[12px] italic leading-relaxed text-[var(--color-text-muted)]"
+              >
+                “{t(locale, `step.description.writingHelp.${k}`)}”
+              </span>
+            ))}
+          </div>
+        </details>
+      </div>
 
       <fieldset className="flex flex-col gap-2">
-        <legend className="text-[12px] font-semibold tracking-tight text-[var(--color-foreground)]">
+        <legend className="flex items-center gap-2 text-[12px] font-semibold tracking-tight text-[var(--color-foreground)]">
           {t(locale, "step.description.services.legend")}
+          {values.services.length > 0 && (
+            <SelectionCount count={values.services.length} />
+          )}
         </legend>
         <p className="text-[11px] text-[var(--color-text-subtle)]">
           {t(locale, "step.description.services.hint")}
@@ -527,6 +645,7 @@ export function StepDescription({
           {catalogs.services.map((service) => (
             <ChipChoice
               key={service}
+              multi
               label={service}
               active={values.services.includes(service)}
               onClick={() => toggleService(service)}
@@ -541,8 +660,11 @@ export function StepDescription({
       </fieldset>
 
       <fieldset className="flex flex-col gap-2">
-        <legend className="text-[12px] font-semibold tracking-tight text-[var(--color-foreground)]">
+        <legend className="flex items-center gap-2 text-[12px] font-semibold tracking-tight text-[var(--color-foreground)]">
           {t(locale, "step.description.places.legend")}
+          {values.meetingContexts.length > 0 && (
+            <SelectionCount count={values.meetingContexts.length} />
+          )}
         </legend>
         <p className="text-[11px] text-[var(--color-text-subtle)]">
           {t(locale, "step.description.places.hint")}
@@ -551,6 +673,7 @@ export function StepDescription({
           {catalogs.meetingContexts.map((place) => (
             <ChipChoice
               key={place}
+              multi
               label={place}
               active={values.meetingContexts.includes(place)}
               onClick={() => togglePlace(place)}
@@ -600,6 +723,17 @@ export function StepDescription({
         <p className="text-[11px] text-[var(--color-text-subtle)]">
           {t(locale, "step.description.gallery.helper")}
         </p>
+        {/* Conversion nudge while the gallery is thin; reorder hint once they
+            have a couple of photos to arrange. */}
+        {values.gallery.length < 3 ? (
+          <p className="text-[11px] font-medium text-[var(--color-brand-accent-strong)]">
+            {t(locale, "step.description.gallery.nudge")}
+          </p>
+        ) : (
+          <p className="text-[11px] text-[var(--color-text-subtle)]">
+            {t(locale, "step.description.gallery.reorderHint")}
+          </p>
+        )}
         <input
           ref={fileInputRef}
           type="file"
@@ -610,29 +744,67 @@ export function StepDescription({
           aria-hidden
           tabIndex={-1}
         />
-        <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 lg:grid-cols-6">
-          {values.gallery.map((item) => (
-            <GalleryCard
-              key={item.id}
-              item={item}
-              onRemove={() => removeFile(item)}
-              onRetry={() => retry(item)}
-            />
-          ))}
-          {values.gallery.length < galleryMax && (
-            <button
-              type="button"
-              onClick={openPicker}
-              className="flex aspect-[3/4] flex-col items-center justify-center gap-1.5 rounded-[var(--radius-md)] border border-dashed border-[var(--color-border)] bg-[var(--color-background-elevated)] text-[var(--color-text-muted)] transition-colors hover:border-[var(--color-brand-primary)] hover:text-[var(--color-brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-background)]"
-              aria-label={t(locale, "step.description.gallery.add.aria")}
-            >
-              <ImagePlus className="h-5 w-5" aria-hidden />
-              <span className="text-[11px] font-semibold uppercase tracking-[0.18em]">
-                {t(locale, "step.description.gallery.add.label")}
-              </span>
-            </button>
-          )}
+        <div
+          onDragOver={onZoneDragOver}
+          onDragLeave={onZoneDragLeave}
+          onDrop={onZoneDrop}
+          className={`relative rounded-[var(--radius-lg)] transition-colors ${
+            dragActive
+              ? "outline outline-2 outline-offset-4 outline-[var(--color-brand-primary)]"
+              : "outline-none"
+          }`}
+        >
+          <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 lg:grid-cols-6">
+            {values.gallery.map((item, index) => (
+              <GalleryCard
+                key={item.id}
+                item={item}
+                isCover={index === 0}
+                coverLabel={t(locale, "step.description.gallery.coverBadge")}
+                setCoverLabel={t(locale, "step.description.gallery.setCover")}
+                dragging={reorderId === item.id}
+                onRemove={() => removeFile(item)}
+                onRetry={() => retry(item)}
+                onSetCover={() => setCover(item.id)}
+                onReorderStart={() => setReorderId(item.id)}
+                onReorderEnd={() => setReorderId(null)}
+                onReorderDrop={(fromId) => {
+                  reorderGallery(fromId, item.id);
+                  setReorderId(null);
+                }}
+              />
+            ))}
+            {values.gallery.length < galleryMax && (
+              <button
+                type="button"
+                onClick={openPicker}
+                className="flex aspect-[3/4] flex-col items-center justify-center gap-1.5 rounded-[var(--radius-md)] border border-dashed border-[var(--color-border)] bg-[var(--color-background-elevated)] text-[var(--color-text-muted)] transition-colors hover:border-[var(--color-brand-primary)] hover:text-[var(--color-brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-background)]"
+                aria-label={t(locale, "step.description.gallery.add.aria")}
+              >
+                <ImagePlus className="h-5 w-5" aria-hidden />
+                <span className="text-[11px] font-semibold uppercase tracking-[0.18em]">
+                  {t(locale, "step.description.gallery.add.label")}
+                </span>
+              </button>
+            )}
+            {/* Ghost slots telegraph remaining capacity (up to a sane 8). */}
+            {Array.from({
+              length: Math.max(
+                0,
+                Math.min(galleryMax, 8) - values.gallery.length - 1,
+              ),
+            }).map((_, i) => (
+              <div
+                key={`ghost-${i}`}
+                aria-hidden
+                className="aspect-[3/4] rounded-[var(--radius-md)] border border-dashed border-[var(--color-border)]/70 bg-[var(--color-background-elevated)]/40"
+              />
+            ))}
+          </div>
         </div>
+        <p className="text-[11px] text-[var(--color-text-subtle)]">
+          {t(locale, "step.description.gallery.pasteHint")}
+        </p>
         {galleryError && (
           <p
             role="alert"
@@ -798,24 +970,88 @@ function formatDuration(seconds: number): string {
 
 interface GalleryCardProps {
   item: GalleryItem;
+  isCover: boolean;
+  coverLabel: string;
+  setCoverLabel: string;
+  dragging: boolean;
   onRemove: () => void;
   onRetry: () => void;
+  onSetCover: () => void;
+  onReorderStart: () => void;
+  onReorderEnd: () => void;
+  onReorderDrop: (fromId: string) => void;
 }
 
-function GalleryCard({ item, onRemove, onRetry }: GalleryCardProps) {
+const REORDER_MIME = "text/x-gallery-id";
+
+function GalleryCard({
+  item,
+  isCover,
+  coverLabel,
+  setCoverLabel,
+  dragging,
+  onRemove,
+  onRetry,
+  onSetCover,
+  onReorderStart,
+  onReorderEnd,
+  onReorderDrop,
+}: GalleryCardProps) {
   const isBusy = item.status === "compressing" || item.status === "uploading";
   const isError = item.status === "error";
 
   return (
-    <div className="group relative aspect-[3/4] overflow-hidden rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface-muted)]">
+    <div
+      draggable
+      onDragStart={(e) => {
+        e.dataTransfer.effectAllowed = "move";
+        e.dataTransfer.setData(REORDER_MIME, item.id);
+        onReorderStart();
+      }}
+      onDragEnd={onReorderEnd}
+      onDragOver={(e) => {
+        if (e.dataTransfer.types.includes(REORDER_MIME)) e.preventDefault();
+      }}
+      onDrop={(e) => {
+        const fromId = e.dataTransfer.getData(REORDER_MIME);
+        if (!fromId) return;
+        e.preventDefault();
+        e.stopPropagation();
+        onReorderDrop(fromId);
+      }}
+      className={`group relative aspect-[3/4] cursor-grab overflow-hidden rounded-[var(--radius-md)] border bg-[var(--color-surface-muted)] transition-[opacity,box-shadow,border-color] active:cursor-grabbing ${
+        isCover
+          ? "border-[var(--color-brand-primary)] shadow-[var(--shadow-glow-primary)]"
+          : "border-[var(--color-border)]"
+      } ${dragging ? "opacity-40 ring-2 ring-[var(--color-brand-primary)]" : ""}`}
+    >
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src={item.previewUrl}
         alt={item.name}
+        draggable={false}
         className={`absolute inset-0 h-full w-full object-cover transition-opacity ${
           isBusy || isError ? "opacity-50" : "opacity-100"
         }`}
       />
+
+      {/* Cover badge on the first photo. */}
+      {isCover && (
+        <span className="pointer-events-none absolute left-1.5 top-1.5 inline-flex items-center gap-1 rounded-full bg-[var(--color-brand-primary)] px-2 py-0.5 text-[9px] font-bold uppercase tracking-[0.12em] text-[var(--color-surface)] shadow-[var(--shadow-sm)]">
+          {coverLabel}
+        </span>
+      )}
+
+      {/* "Make cover" — appears on hover for non-cover, ready photos. */}
+      {!isCover && item.status === "ready" && (
+        <button
+          type="button"
+          onClick={onSetCover}
+          className="absolute inset-x-1.5 bottom-1.5 inline-flex items-center justify-center rounded-full bg-[var(--color-foreground)]/80 px-2 py-1 text-[10px] font-semibold text-[var(--color-surface)] opacity-0 transition-opacity group-hover:opacity-100 focus:opacity-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)]"
+        >
+          {setCoverLabel}
+        </button>
+      )}
 
       {isBusy && (
         <span
@@ -853,6 +1089,15 @@ function GalleryCard({ item, onRemove, onRetry }: GalleryCardProps) {
         <X className="h-3 w-3" aria-hidden />
       </button>
     </div>
+  );
+}
+
+/** Tiny count badge shown next to a multi-select legend. */
+function SelectionCount({ count }: { count: number }) {
+  return (
+    <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-[var(--color-brand-primary)] px-1.5 text-[10px] font-bold text-[var(--color-surface)]">
+      {count}
+    </span>
   );
 }
 

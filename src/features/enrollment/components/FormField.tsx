@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, Plus } from "lucide-react";
+import { AlertTriangle, Check, Plus } from "lucide-react";
 import type {
   InputHTMLAttributes,
   ReactNode,
@@ -12,28 +12,101 @@ interface BaseProps {
   label: string;
   hint?: string;
   error?: string;
+  /** Soft amber note shown when there's no hard error (e.g. a live
+   *  "looks like a phone number" nudge). Error always wins over warning. */
+  warning?: string;
+  /** Slot rendered directly under the control — used for live char counters. */
+  footer?: ReactNode;
   /** Use when grouping multi-controls (chips, radios) under a single label. */
   children?: ReactNode;
 }
 
-export function FieldShell({ label, hint, error, children }: BaseProps) {
+export function FieldShell({
+  label,
+  hint,
+  error,
+  warning,
+  footer,
+  children,
+}: BaseProps) {
   return (
     <label className="flex flex-col gap-2">
       <span className="text-[12px] font-semibold tracking-tight text-[var(--color-foreground)]">
         {label}
       </span>
       {children}
-      {error && (
+      {footer}
+      {error ? (
         <span role="alert" className="text-[11px] text-[var(--color-brand-highlight)]">
           {error}
         </span>
-      )}
+      ) : warning ? (
+        <span
+          role="status"
+          className="inline-flex items-center gap-1.5 text-[11px] text-[var(--color-brand-accent-strong)]"
+        >
+          <AlertTriangle className="h-3 w-3 shrink-0" aria-hidden />
+          {warning}
+        </span>
+      ) : null}
       {hint && (
         <span className="mt-1 text-[11px] italic leading-relaxed text-[var(--color-text-subtle)]">
           {hint}
         </span>
       )}
     </label>
+  );
+}
+
+interface CharCounterProps {
+  count: number;
+  max: number;
+  /** Optional minimum — while below it the bar fills toward the minimum and
+   *  the readout shows progress toward it instead of the max. */
+  min?: number;
+}
+
+/**
+ * Live character counter with a thin progress bar. Stays muted in the safe
+ * zone, turns amber near the limit and red once over. While a minimum applies
+ * and isn't met yet, it nudges toward the minimum so the user knows how much
+ * more to write. `aria-live` keeps screen readers informed without spam.
+ */
+export function CharCounter({ count, max, min }: CharCounterProps) {
+  const belowMin = min !== undefined && count < min;
+  const over = count > max;
+  const near = !over && count >= max * 0.9;
+
+  const pct = belowMin
+    ? Math.min(100, (count / (min || 1)) * 100)
+    : Math.min(100, (count / max) * 100);
+
+  const barTone = over
+    ? "bg-[var(--color-brand-highlight)]"
+    : belowMin || near
+      ? "bg-[var(--color-brand-accent-strong)]"
+      : "bg-[var(--color-brand-primary)]";
+  const textTone = over
+    ? "text-[var(--color-brand-highlight)]"
+    : belowMin || near
+      ? "text-[var(--color-brand-accent-strong)]"
+      : "text-[var(--color-text-subtle)]";
+
+  return (
+    <span className="flex items-center gap-2">
+      <span className="h-1 flex-1 overflow-hidden rounded-full bg-[var(--color-surface-muted)]">
+        <span
+          className={`block h-full rounded-full transition-[width] duration-200 ease-[var(--ease-standard)] ${barTone}`}
+          style={{ width: `${pct}%` }}
+        />
+      </span>
+      <span
+        aria-live="polite"
+        className={`shrink-0 text-[11px] tabular-nums ${textTone}`}
+      >
+        {belowMin ? `${count} / mín. ${min}` : `${count} / ${max}`}
+      </span>
+    </span>
   );
 }
 
@@ -103,18 +176,22 @@ export interface TextAreaFieldProps
   label: string;
   hint?: string;
   error?: string;
+  warning?: string;
+  footer?: ReactNode;
 }
 
 export function TextAreaField({
   label,
   hint,
   error,
+  warning,
+  footer,
   className = "",
   rows = 4,
   ...props
 }: TextAreaFieldProps) {
   return (
-    <FieldShell label={label} hint={hint} error={error}>
+    <FieldShell label={label} hint={hint} error={error} warning={warning} footer={footer}>
       <textarea
         rows={rows}
         className={`min-h-[112px] w-full rounded-[var(--radius-md)] border bg-[var(--color-surface)] px-4 py-3 text-sm leading-relaxed text-[var(--color-foreground)] placeholder:text-[var(--color-text-subtle)] transition-[border-color,box-shadow] duration-150 focus:border-[var(--color-brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)]/30 ${fieldBorder(error)} ${className}`.trim()}

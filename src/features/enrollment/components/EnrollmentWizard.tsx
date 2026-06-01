@@ -34,6 +34,7 @@ import {
   type PublishValues,
   type StepId,
 } from "../lib/types";
+import { LivePreviewCard } from "./LivePreviewCard";
 import { OrderSummary } from "./OrderSummary";
 import { StepAttributes } from "./StepAttributes";
 import {
@@ -544,7 +545,11 @@ function ProgressRail({ current, draft, catalogs }: ProgressRailProps) {
   ].filter((group) => group.items.length > 0);
 
   return (
-    <aside className="sticky top-24 flex flex-col gap-4 rounded-[var(--radius-xl)] border border-[var(--color-border)] bg-[var(--color-surface)] p-5 shadow-[var(--shadow-sm)]">
+    <aside className="sticky top-24 flex flex-col gap-4">
+      {/* Live catalog-style preview — "how visitors will see you". */}
+      <LivePreviewCard draft={draft} />
+
+      <div className="flex flex-col gap-4 rounded-[var(--radius-xl)] border border-[var(--color-border)] bg-[var(--color-surface)] p-5 shadow-[var(--shadow-sm)]">
       <span className="text-[10px] font-semibold uppercase tracking-[0.28em] text-[var(--color-text-muted)]">
         {t(locale, "publicar.rail.kicker")}
       </span>
@@ -609,6 +614,7 @@ function ProgressRail({ current, draft, catalogs }: ProgressRailProps) {
           step: t(locale, `publicar.steps.${current}.title`),
         })}
       </span>
+      </div>
     </aside>
   );
 }

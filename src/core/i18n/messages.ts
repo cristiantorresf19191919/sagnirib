@@ -34,6 +34,7 @@ const es: MessageDict = {
   "header.nav.how": "Cómo funciona",
   "header.nav.favorites": "Favoritas",
   "header.cta.publish": "Publica tu perfil",
+  "header.cta.profileInReview": "Perfil en revisión",
   "header.cta.explore": "Explorar",
   "header.signIn": "Ingresar",
   "header.signOut": "Cerrar sesión",
@@ -243,6 +244,19 @@ const es: MessageDict = {
   "publicar.submitted.cta.verify": "Verificar identidad ahora",
   "publicar.submitted.cta.later": "Más tarde",
   "publicar.submitted.cta.edit": "Editar publicación",
+  "bienvenida.metadata.title": "¡Bienvenido/a a Biringas!",
+  "bienvenida.metadata.description":
+    "Estamos preparando tu cuenta y tu perfil.",
+  "bienvenida.header": "¡Bienvenido/a!",
+  "bienvenida.line1": "Estamos configurando tu cuenta…",
+  "bienvenida.line2": "…y preparando tu perfil para brillar.",
+  "bienvenida.tip":
+    "Mientras tanto, un consejo: las descripciones honestas en primera persona convierten 2.5× más.",
+  "bienvenida.hint.label": "Siguiente paso:",
+  "bienvenida.hint.verify": "Verificar identidad",
+  "bienvenida.hint.publish": "Publicar tu perfil",
+  "bienvenida.ready": "¡Tu perfil está listo!",
+  "bienvenida.cta": "Ver mi perfil",
 
   /* Order summary (right rail when on publish step) */
   "publicar.order.kicker": "Resumen",
@@ -1113,6 +1127,8 @@ const es: MessageDict = {
     "Cada modelo es independiente: tiene su propia verificación de identidad y sus propias publicaciones. La verificación se pide cuando publiques.",
   "miCuenta.profiles.listKicker": "Tus perfiles ({count})",
   "miCuenta.profiles.publishAnother": "Publicar otro perfil",
+  "miCuenta.profiles.publishAnother.hint":
+    "Sumá otra modelo a tu cuenta — toma solo unos minutos.",
   "miCuenta.profiles.empty.title": "Empezá publicando tu primer perfil",
   "miCuenta.profiles.empty.body":
     "Cada perfil se publica y se verifica por separado. Vas a hacer la verificación de identidad en el mismo flujo.",
@@ -1172,10 +1188,19 @@ const es: MessageDict = {
   "editar.cancel": "Cancelar",
   "editar.save": "Guardar cambios",
   "editar.error.generic": "No se pudieron guardar los cambios. Intenta de nuevo.",
+  "editar.dirty": "Cambios sin guardar",
+  "editar.pristine": "Sin cambios todavía",
+  "editar.discardConfirm": "Tenés cambios sin guardar. ¿Salir y descartarlos?",
+  "editar.validationHint": "Revisá los campos marcados antes de guardar.",
+  "editar.preview.eyebrow": "Vista previa",
+  "editar.preview.live": "En vivo",
+  "editar.preview.caption": "Así se verá tu tarjeta en el catálogo.",
+  "editar.preview.namePlaceholder": "Tu nombre",
+  "editar.preview.photoNote": "Tus fotos se verifican aparte",
   "draft.back": "Volver al dashboard",
   "draft.unnamed": "Borrador sin nombre",
   "draft.subtitle":
-    "Esto es lo que enviaste. Mientras tu publicación está en revisión humana, no se puede editar — si necesitamos algo te avisamos antes de 24 horas.",
+    "Esto es lo que enviaste. Mientras está en revisión humana podés editarla cuando quieras — cada cambio se reenvía a la verificación. Si necesitamos algo te avisamos antes de 24 horas.",
 
   "draft.status.pending.title": "En revisión humana",
   "draft.status.pending.body":
@@ -1222,7 +1247,7 @@ const es: MessageDict = {
   "draft.field.faceVisible": "Rostro visible",
   "draft.field.paymentByCard": "Acepta tarjeta",
   "draft.field.availableNow": "Disponible ahora",
-  "draft.field.country": "País",
+  "draft.field.country": "Nacionalidad",
   "draft.field.ethnicity": "Etnia",
   "draft.field.hair": "Cabello",
   "draft.field.height": "Estatura",
@@ -1241,12 +1266,13 @@ const es: MessageDict = {
   "draft.field.billing": "Facturación",
   "draft.field.billing.monthly": "Mensual",
   "draft.field.billing.quarterly": "Trimestral",
-  "draft.field.addOns": "Add-ons",
+  "draft.field.addOns": "Adicionales",
+  "draft.field.addOns.empty": "Sin adicionales",
   "draft.value.yes": "Sí",
   "draft.value.no": "No",
 
   "draft.footer.pending":
-    "Mientras tu publicación está en revisión humana, no se puede editar. Si necesitamos algún cambio te avisamos por el canal de contacto que registraste — suele tardar menos de 24 horas hábiles.",
+    "Tu publicación está en revisión humana, pero podés editarla cuando quieras: cada cambio vuelve a la verificación y suele resolverse en menos de 24 horas hábiles. Si necesitamos algo, te escribimos por el canal de contacto que registraste.",
   "draft.footer.rejected.body":
     "Tu intento anterior no pasó la revisión. Podés editar este borrador y reenviarlo cuando estés lista.",
   "draft.footer.rejected.cta": "Volver al dashboard",
@@ -1775,6 +1801,28 @@ const es: MessageDict = {
   "step.publish.billing.quarterly.sublabel": "Hasta 20% de ahorro",
   "step.publish.pkg.recommended": "Recomendado",
   "step.publish.pkg.comingSoon": "Próximamente",
+  "step.publish.upcoming.title": "Lo que viene",
+  "step.publish.upcoming.subtitle":
+    "Publicás gratis hoy. Esto es lo que estamos construyendo para que destaques.",
+  "step.publish.upcoming.tag.live": "Disponible",
+  "step.publish.upcoming.verify.title": "Verificación humana de 2 capas",
+  "step.publish.upcoming.verify.body":
+    "Documento + selfie revisados por una persona. Cada badge es alguien real — sin bots ni catfish.",
+  "step.publish.upcoming.content.title": "Contenido exclusivo",
+  "step.publish.upcoming.content.body":
+    "Vendé galerías y videos premium desde tu perfil, con pago discreto y sin salir de Biringas.",
+  "step.publish.upcoming.dates.title": "Café virtual · citas por video",
+  "step.publish.upcoming.dates.body":
+    "Videollamadas verificadas: conexión real y segura antes de conocerse en persona.",
+  "step.publish.upcoming.pay.title": "Pago discreto e integrado",
+  "step.publish.upcoming.pay.body":
+    "Cobros anónimos, sin rastros que delaten tu actividad en tu extracto.",
+  "step.publish.upcoming.reviews.title": "Reseñas verificadas",
+  "step.publish.upcoming.reviews.body":
+    "Reputación construida sobre encuentros reales — las reseñas que importan.",
+  "step.publish.upcoming.boost.title": "Impulso inteligente",
+  "step.publish.upcoming.boost.body":
+    "Aparecés primero cuando más te buscan, según tu ciudad y los horarios de mayor demanda.",
   "step.publish.pkg.perMonth": "/ mes",
   "step.publish.pkg.quarterly":
     "{total} cada 3 meses · {pct}% de ahorro",
@@ -1805,6 +1853,19 @@ const es: MessageDict = {
     "Cuenta quién eres, qué disfrutas, cómo es la experiencia contigo. Sin información de contacto — la añadimos en el siguiente paso.",
   "step.description.bio.hint":
     "{count} / 1200 caracteres · evita números de teléfono y enlaces externos.",
+  "step.description.bio.minLabel": "mín. 60",
+  "step.description.bio.qualityNudge":
+    "Los perfiles con más de 200 caracteres reciben más contactos.",
+  "step.description.contactLeak":
+    "Parece que incluiste un teléfono o enlace. Quítalo — el contacto se agrega en el siguiente paso.",
+  "step.description.writingHelp.label": "¿Necesitas ideas? Ver ejemplos",
+  "step.description.writingHelp.intro": "Frases que funcionan — adáptalas a ti:",
+  "step.description.writingHelp.item1":
+    "Atención dedicada y sin prisas. Me encanta que te sientas en confianza desde el primer momento.",
+  "step.description.writingHelp.item2":
+    "Soy conversadora y cariñosa. Disfruto las citas relajadas, la buena música y una copa de vino.",
+  "step.description.writingHelp.item3":
+    "Discreción total. Cuido cada detalle para que la experiencia sea inolvidable.",
   "step.description.services.legend": "Servicios incluidos",
   "step.description.services.hint":
     "Selecciona los servicios que ofreces. Aparecen como chips en tu perfil y se conectan con los filtros del catálogo.",
@@ -1829,6 +1890,22 @@ const es: MessageDict = {
   "step.description.gallery.add.label": "Subir foto",
   "step.description.gallery.retryTooltip": "Reintentar subida",
   "step.description.gallery.removeTooltip": "Quitar {name}",
+  "step.description.gallery.nudge":
+    "Sube mínimo 3 fotos — los perfiles con galería reciben 3× más contactos.",
+  "step.description.gallery.dropActive": "Suelta para subir",
+  "step.description.gallery.pasteHint":
+    "Arrastra y suelta o pega (⌘/Ctrl + V) tus fotos.",
+  "step.description.gallery.reorderHint":
+    "Arrastra para reordenar · la primera es tu portada.",
+  "step.description.gallery.coverBadge": "Portada",
+  "step.description.gallery.setCover": "Hacer portada",
+  "publicar.preview.kicker": "Vista previa · cómo te verán",
+  "publicar.preview.namePlaceholder": "Tu nombre",
+  "publicar.preview.bioPlaceholder": "Tu descripción corta aparece aquí.",
+  "publicar.preview.noPhoto": "Sube tu foto de portada",
+  "publicar.preview.priceEmpty": "Tarifa por definir",
+  "publicar.preview.reviewBadge": "En revisión",
+  "publicar.preview.moreServices": "+{count}",
   "step.description.videos.title": "Videos cortos (opcional)",
   "step.description.videos.counter": "{count} / 2",
   "step.description.videos.uploading": "· {count} subiendo",
@@ -2200,6 +2277,7 @@ const en: MessageDict = {
   "header.nav.how": "How it works",
   "header.nav.favorites": "Favorites",
   "header.cta.publish": "Publish your profile",
+  "header.cta.profileInReview": "Profile in review",
   "header.cta.explore": "Explore",
   "header.signIn": "Sign in",
   "header.signOut": "Sign out",
@@ -2411,6 +2489,18 @@ const en: MessageDict = {
   "publicar.submitted.cta.verify": "Verify identity now",
   "publicar.submitted.cta.later": "Later",
   "publicar.submitted.cta.edit": "Edit listing",
+  "bienvenida.metadata.title": "Welcome to Biringas!",
+  "bienvenida.metadata.description": "We're setting up your account and profile.",
+  "bienvenida.header": "Welcome!",
+  "bienvenida.line1": "We're setting up your account…",
+  "bienvenida.line2": "…and getting your profile ready to shine.",
+  "bienvenida.tip":
+    "Meanwhile, a tip: honest first-person descriptions convert 2.5× more.",
+  "bienvenida.hint.label": "Next step:",
+  "bienvenida.hint.verify": "Verify identity",
+  "bienvenida.hint.publish": "Publish your profile",
+  "bienvenida.ready": "Your profile is ready!",
+  "bienvenida.cta": "View my profile",
 
   /* Order summary */
   "publicar.order.kicker": "Summary",
@@ -3273,6 +3363,8 @@ const en: MessageDict = {
     "Each model is independent: she has her own identity verification and her own listings. Verification is requested when she publishes.",
   "miCuenta.profiles.listKicker": "Your profiles ({count})",
   "miCuenta.profiles.publishAnother": "Publish another profile",
+  "miCuenta.profiles.publishAnother.hint":
+    "Add another model to your account — it only takes a few minutes.",
   "miCuenta.profiles.empty.title": "Publish your first profile",
   "miCuenta.profiles.empty.body":
     "Each profile is published and verified separately. You'll do the identity check inside the same flow.",
@@ -3332,10 +3424,19 @@ const en: MessageDict = {
   "editar.cancel": "Cancel",
   "editar.save": "Save changes",
   "editar.error.generic": "Couldn't save your changes. Try again.",
+  "editar.dirty": "Unsaved changes",
+  "editar.pristine": "No changes yet",
+  "editar.discardConfirm": "You have unsaved changes. Leave and discard them?",
+  "editar.validationHint": "Check the highlighted fields before saving.",
+  "editar.preview.eyebrow": "Preview",
+  "editar.preview.live": "Live",
+  "editar.preview.caption": "This is how your card will look in the catalog.",
+  "editar.preview.namePlaceholder": "Your name",
+  "editar.preview.photoNote": "Your photos are verified separately",
   "draft.back": "Back to the dashboard",
   "draft.unnamed": "Unnamed draft",
   "draft.subtitle":
-    "This is what you submitted. While your listing is under human review, it can't be edited — if we need anything, we'll let you know within 24 hours.",
+    "This is what you submitted. While it's under human review you can edit it anytime — each change is resent for verification. If we need anything, we'll let you know within 24 hours.",
 
   "draft.status.pending.title": "Under human review",
   "draft.status.pending.body":
@@ -3382,7 +3483,7 @@ const en: MessageDict = {
   "draft.field.faceVisible": "Face visible",
   "draft.field.paymentByCard": "Accepts card",
   "draft.field.availableNow": "Available now",
-  "draft.field.country": "Country",
+  "draft.field.country": "Nationality",
   "draft.field.ethnicity": "Ethnicity",
   "draft.field.hair": "Hair",
   "draft.field.height": "Height",
@@ -3402,11 +3503,12 @@ const en: MessageDict = {
   "draft.field.billing.monthly": "Monthly",
   "draft.field.billing.quarterly": "Quarterly",
   "draft.field.addOns": "Add-ons",
+  "draft.field.addOns.empty": "No add-ons",
   "draft.value.yes": "Yes",
   "draft.value.no": "No",
 
   "draft.footer.pending":
-    "While your listing is under human review, it can't be edited. If we need changes, we'll reach out through the contact channel you registered — it usually takes under 24 working hours.",
+    "Your listing is under human review, but you can edit it anytime: each change goes back through verification and usually clears in under 24 working hours. If we need anything, we'll reach out through the contact channel you registered.",
   "draft.footer.rejected.body":
     "Your previous attempt didn't pass review. You can edit this draft and resubmit when you're ready.",
   "draft.footer.rejected.cta": "Back to the dashboard",
@@ -3936,6 +4038,28 @@ const en: MessageDict = {
   "step.publish.billing.quarterly.sublabel": "Up to 20% off",
   "step.publish.pkg.recommended": "Recommended",
   "step.publish.pkg.comingSoon": "Coming soon",
+  "step.publish.upcoming.title": "What's coming",
+  "step.publish.upcoming.subtitle":
+    "You publish for free today. Here's what we're building so you stand out.",
+  "step.publish.upcoming.tag.live": "Available",
+  "step.publish.upcoming.verify.title": "Two-layer human verification",
+  "step.publish.upcoming.verify.body":
+    "ID + selfie reviewed by a person. Every badge is someone real — no bots, no catfish.",
+  "step.publish.upcoming.content.title": "Exclusive content",
+  "step.publish.upcoming.content.body":
+    "Sell premium galleries and videos from your profile, with discreet payment and without leaving Biringas.",
+  "step.publish.upcoming.dates.title": "Virtual coffee · video dates",
+  "step.publish.upcoming.dates.body":
+    "Verified video calls: a real, safe connection before meeting in person.",
+  "step.publish.upcoming.pay.title": "Discreet, integrated payments",
+  "step.publish.upcoming.pay.body":
+    "Anonymous payouts, with nothing on your statement that gives your activity away.",
+  "step.publish.upcoming.reviews.title": "Verified reviews",
+  "step.publish.upcoming.reviews.body":
+    "Reputation built on real meetings — the reviews that actually matter.",
+  "step.publish.upcoming.boost.title": "Smart visibility",
+  "step.publish.upcoming.boost.body":
+    "Show up first when demand peaks, based on your city and the busiest hours.",
   "step.publish.pkg.perMonth": "/ month",
   "step.publish.pkg.quarterly":
     "{total} every 3 months · {pct}% savings",
@@ -3966,6 +4090,19 @@ const en: MessageDict = {
     "Tell who you are, what you enjoy, what the experience with you is like. No contact info — we add that in the next step.",
   "step.description.bio.hint":
     "{count} / 1200 characters · avoid phone numbers and external links.",
+  "step.description.bio.minLabel": "min. 60",
+  "step.description.bio.qualityNudge":
+    "Profiles with more than 200 characters get more contacts.",
+  "step.description.contactLeak":
+    "Looks like a phone or link slipped in. Remove it — contact info is added in the next step.",
+  "step.description.writingHelp.label": "Need ideas? See examples",
+  "step.description.writingHelp.intro": "Lines that work — make them yours:",
+  "step.description.writingHelp.item1":
+    "Dedicated, unhurried attention. I love making you feel at ease from the very first moment.",
+  "step.description.writingHelp.item2":
+    "I'm chatty and affectionate. I enjoy relaxed dates, good music and a glass of wine.",
+  "step.description.writingHelp.item3":
+    "Total discretion. I take care of every detail to make the experience unforgettable.",
   "step.description.services.legend": "Included services",
   "step.description.services.hint":
     "Pick the services you offer. They appear as chips on your profile and connect with catalog filters.",
@@ -3990,6 +4127,22 @@ const en: MessageDict = {
   "step.description.gallery.add.label": "Upload photo",
   "step.description.gallery.retryTooltip": "Retry upload",
   "step.description.gallery.removeTooltip": "Remove {name}",
+  "step.description.gallery.nudge":
+    "Upload at least 3 photos — profiles with a gallery get 3× more contacts.",
+  "step.description.gallery.dropActive": "Drop to upload",
+  "step.description.gallery.pasteHint":
+    "Drag and drop or paste (⌘/Ctrl + V) your photos.",
+  "step.description.gallery.reorderHint":
+    "Drag to reorder · the first one is your cover.",
+  "step.description.gallery.coverBadge": "Cover",
+  "step.description.gallery.setCover": "Make cover",
+  "publicar.preview.kicker": "Preview · how you'll look",
+  "publicar.preview.namePlaceholder": "Your name",
+  "publicar.preview.bioPlaceholder": "Your short description appears here.",
+  "publicar.preview.noPhoto": "Add your cover photo",
+  "publicar.preview.priceEmpty": "Rate to be set",
+  "publicar.preview.reviewBadge": "In review",
+  "publicar.preview.moreServices": "+{count}",
   "step.description.videos.title": "Short videos (optional)",
   "step.description.videos.counter": "{count} / 2",
   "step.description.videos.uploading": "· {count} uploading",
