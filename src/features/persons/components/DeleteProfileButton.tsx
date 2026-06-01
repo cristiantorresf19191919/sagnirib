@@ -15,6 +15,12 @@ interface DeleteProfileButtonProps {
   personId: string;
   displayName: string;
   hasPublishedListing: boolean;
+  /**
+   * `corner` = subtle ghost icon for the card corner, set apart from the
+   * primary CTAs so a quick tap never lands on a destructive action.
+   * `row` (default) = the original bordered button.
+   */
+  variant?: "row" | "corner";
 }
 
 const OVERLAY: Variants = {
@@ -55,8 +61,14 @@ export function DeleteProfileButton({
   personId,
   displayName,
   hasPublishedListing,
+  variant = "row",
 }: Readonly<DeleteProfileButtonProps>) {
   const [open, setOpen] = useState(false);
+
+  const triggerClass =
+    variant === "corner"
+      ? "inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[var(--color-text-subtle)] transition-[background,color] duration-200 hover:bg-[var(--color-brand-highlight)]/10 hover:text-[var(--color-brand-highlight)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-highlight)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-background)]"
+      : "inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text-muted)] transition-[border-color,background,color,transform] duration-200 hover:-translate-y-[1px] hover:border-[var(--color-brand-highlight)]/55 hover:text-[var(--color-brand-highlight)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-highlight)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-background)]";
 
   return (
     <>
@@ -66,9 +78,9 @@ export function DeleteProfileButton({
         aria-label={t(locale, "miCuenta.profile.action.delete", {
           name: displayName,
         })}
-        className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text-muted)] transition-[border-color,background,color,transform] duration-200 hover:-translate-y-[1px] hover:border-[var(--color-brand-highlight)]/55 hover:text-[var(--color-brand-highlight)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-highlight)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-background)]"
+        className={triggerClass}
       >
-        <Trash2 className="h-4 w-4" aria-hidden />
+        <Trash2 className={variant === "corner" ? "h-3.5 w-3.5" : "h-4 w-4"} aria-hidden />
       </button>
 
       <AnimatePresence>

@@ -168,10 +168,15 @@ export default async function MiCuentaPage({
           className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-[520px] bg-[radial-gradient(circle_at_15%_5%,rgba(47,93,67,0.10),transparent_55%),radial-gradient(circle_at_85%_15%,rgba(229,162,58,0.10),transparent_55%)]"
         />
         <Container width="wide">
-          <PostPublishPrompt />
-          <DashboardShell
-            greetingName={greetingName}
-            tabs={{
+          {/* Constrained reading column — at full "wide" width the profile
+              rows stretched edge-to-edge, stranding the avatar far-left and
+              the CTAs far-right with a dead zone between. Capping the column
+              keeps name + actions in one comfortable glance. */}
+          <div className="mx-auto w-full max-w-[1080px]">
+            <PostPublishPrompt />
+            <DashboardShell
+              greetingName={greetingName}
+              tabs={{
               profile: (
                 <ProfileTab
                   locale={lang}
@@ -190,7 +195,8 @@ export default async function MiCuentaPage({
                 />
               ),
             }}
-          />
+            />
+          </div>
         </Container>
       </main>
       <Footer />
@@ -216,7 +222,7 @@ function DiagnosticPanel({ info }: Readonly<{ info: DiagnosticInfo }>) {
   return (
     <details className="rounded-[var(--radius-lg)] border border-dashed border-[var(--color-border)] bg-[var(--color-background-elevated)] p-3 text-[11px] text-[var(--color-text-muted)]">
       <summary className="cursor-pointer font-semibold text-[var(--color-foreground)]">
-        Detalles de tu cuenta (diagnóstico temporal)
+        Datos técnicos de la cuenta
       </summary>
       <dl className="mt-2 grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 font-mono">
         <dt>uid</dt>
