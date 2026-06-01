@@ -568,7 +568,8 @@ function AttributesCard({
       <Field label={t(locale, "draft.field.hair")} value={a.hair} />
       <Field label={t(locale, "draft.field.height")} value={a.height} />
       <Field label={t(locale, "draft.field.body")} value={a.body} />
-      <Field label={t(locale, "draft.field.breast")} value={a.breast} />
+      <Field label={t(locale, "draft.field.breastSize")} value={a.breastSize} />
+      <Field label={t(locale, "draft.field.breastType")} value={a.breastType} />
       {a.pubis ? <Field label={t(locale, "draft.field.pubis")} value={a.pubis} /> : null}
       <Field
         label={t(locale, "draft.field.languages")}

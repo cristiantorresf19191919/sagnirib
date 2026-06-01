@@ -20,8 +20,6 @@ import { personJsonLd } from "@/core/seo/structured-data";
 import { findBySlug, getListingReviews } from "@/server/biringas";
 import { CardStackGallery } from "@/features/biringas/components/CardStackGallery";
 import { VideoPlayer } from "@/features/biringas/components/VideoPlayer";
-import { AvailabilityStrip } from "@/features/biringas/components/AvailabilityStrip";
-import { BookingRequestModal } from "@/features/biringas/components/BookingRequestModal";
 import { ContactReveal } from "@/features/biringas/components/ContactReveal";
 import { PremiumContentGrid } from "@/features/biringas/components/PremiumContentGrid";
 import { readAccountTypeCookie } from "@/features/auth/lib/account-type-cookie";
@@ -109,7 +107,8 @@ export default async function ProfilePage({ params }: Readonly<ProfilePageProps>
     [t(lang, "profile.attributes.hair"), listing.attributes.hair ?? empty],
     [t(lang, "profile.attributes.height"), listing.attributes.height ?? empty],
     [t(lang, "profile.attributes.body"), listing.attributes.body ?? empty],
-    [t(lang, "profile.attributes.breast"), listing.attributes.breast ?? empty],
+    [t(lang, "profile.attributes.breastSize"), listing.attributes.breastSize ?? empty],
+    [t(lang, "profile.attributes.breastType"), listing.attributes.breastType ?? empty],
     [t(lang, "profile.attributes.country"), listing.attributes.country ?? empty],
   ];
   const languages = listing.attributes.languages ?? [];
@@ -385,22 +384,10 @@ export default async function ProfilePage({ params }: Readonly<ProfilePageProps>
                 </div>
 
                 <div className="mt-5 flex flex-col gap-3">
-                  <BookingRequestModal
-                    listingSlug={listing.slug}
-                    listingName={listing.name}
-                    defaultCity={listing.city}
-                  />
                   <ContactReveal
                     slug={listing.slug}
                     listingName={listing.name}
                     contactChannels={listing.contactChannels}
-                  />
-                </div>
-
-                <div className="mt-5">
-                  <AvailabilityStrip
-                    listingSlug={listing.slug}
-                    avgReplyMinutes={listing.reputation.replyMedianMinutes}
                   />
                 </div>
                 </Card>

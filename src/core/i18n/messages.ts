@@ -219,7 +219,8 @@ const es: MessageDict = {
   "publicar.validation.hair": "Selecciona tu tipo de cabello.",
   "publicar.validation.height": "Selecciona tu estatura.",
   "publicar.validation.body": "Selecciona tu tipo de cuerpo.",
-  "publicar.validation.breast": "Selecciona la opción de senos.",
+  "publicar.validation.breastSize": "Selecciona el tamaño de senos.",
+  "publicar.validation.breastType": "Selecciona el tipo de senos (naturales o siliconas).",
   "publicar.validation.adultConsent":
     "Confirma que eres mayor de 18 y tienes autorización sobre tus fotos.",
   "publicar.validation.acceptTerms": "Acepta los términos para publicar.",
@@ -550,7 +551,8 @@ const es: MessageDict = {
   "profile.attributes.hair": "Cabello",
   "profile.attributes.height": "Estatura",
   "profile.attributes.body": "Cuerpo",
-  "profile.attributes.breast": "Senos",
+  "profile.attributes.breastSize": "Tamaño de senos",
+  "profile.attributes.breastType": "Tipo de senos",
   "profile.attributes.country": "País",
   "profile.attributes.languages": "Idiomas",
   "profile.attributes.empty": "—",
@@ -1050,14 +1052,8 @@ const es: MessageDict = {
 
   "miCuenta.metadata.title": "Mi cuenta — Biringas",
   "miCuenta.metadata.description":
-    "Panel del modelo: solicitudes recibidas, edición de perfil y agenda semanal.",
+    "Panel del modelo: edición de perfil e invitaciones.",
   "miCuenta.fallbackName": "modelo",
-
-  /* Empty drafts state */
-  "miCuenta.empty.title": "Aún no publicaste ninguna modelo",
-  "miCuenta.empty.body":
-    "Cuando publiques una modelo verás aquí las solicitudes, podrás editar sus fotos y ajustar su agenda en cualquier momento.",
-  "miCuenta.empty.cta": "Publicar una modelo",
 
   /* Profile tab */
   "miCuenta.profile.single": "Tu perfil publicado:",
@@ -1076,12 +1072,6 @@ const es: MessageDict = {
   "miCuenta.draft.status.approved": "Aprobado",
   "miCuenta.draft.status.rejected": "Rechazado",
   "miCuenta.draft.status.inReview": "En revisión",
-
-  /* Agenda tab */
-  "miCuenta.agenda.headline.lead": "Disponibilidad pública que ven los visitantes en tu perfil",
-  "miCuenta.agenda.comingSoon.title": "Próximamente: edición manual.",
-  "miCuenta.agenda.comingSoon.body":
-    "Vas a poder fijar tus franjas reales con un par de toques. Por ahora la grilla se calcula a partir de tu historial de confirmaciones; si querés ocultar una franja específica, escribinos al soporte.",
 
   /* KYC status card */
   "miCuenta.kyc.approved.title": "Identidad verificada",
@@ -1236,7 +1226,8 @@ const es: MessageDict = {
   "draft.field.hair": "Cabello",
   "draft.field.height": "Estatura",
   "draft.field.body": "Cuerpo",
-  "draft.field.breast": "Senos",
+  "draft.field.breastSize": "Tamaño de senos",
+  "draft.field.breastType": "Tipo de senos",
   "draft.field.pubis": "Pubis",
   "draft.field.languages": "Idiomas",
   "draft.field.photosSent": "Fotos enviadas",
@@ -1548,51 +1539,6 @@ const es: MessageDict = {
    * D.2 · /p/[slug] deep components
    * ================================================================= */
 
-  /* BookingRequestModal */
-  "booking.cta": "Reservar encuentro",
-  "booking.modal.title": "Reservar con {name}",
-  "booking.modal.subtitle":
-    "Tu propuesta llega como solicitud; ella confirma fecha y detalles antes de cualquier pago.",
-  "booking.modal.close": "Cerrar",
-  "booking.modal.loading": "Cargando…",
-  "booking.field.date": "Fecha y momento",
-  "booking.field.date.help":
-    "Solo se muestran los días con espacio en su agenda.",
-  "booking.field.duration": "Duración",
-  "booking.field.duration.overnight": "24 horas (overnight)",
-  "booking.field.duration.hour.singular": "{n} hora",
-  "booking.field.duration.hour.plural": "{n} horas",
-  "booking.field.meetingType": "Tipo de encuentro",
-  "booking.meetingType.outcall.label": "A domicilio",
-  "booking.meetingType.outcall.help": "Ella va al lugar acordado",
-  "booking.meetingType.incall.label": "En su lugar",
-  "booking.meetingType.incall.help": "Tú vas al lugar de ella",
-  "booking.meetingType.videocall.label": "Videollamada",
-  "booking.meetingType.videocall.help": "100% remoto",
-  "booking.field.contact": "¿Cómo prefieres que te contacte?",
-  "booking.contact.whatsapp": "WhatsApp",
-  "booking.contact.telegram": "Telegram",
-  "booking.contact.platform": "Mensajería de Biringas",
-  "booking.field.message": "Mensaje para ella",
-  "booking.field.message.placeholder":
-    "Contexto del encuentro. Mínimo {min} caracteres.",
-  "booking.field.message.placeholderWithCity":
-    "Contexto del encuentro (ej: {city}, hotel céntrico). Mínimo {min} caracteres.",
-  "booking.privacy":
-    "Tu identidad y contacto se comparten solo con {name}.",
-  "booking.submit": "Enviar solicitud",
-  "booking.submitting": "Enviando…",
-  "booking.toast.title": "Solicitud enviada",
-  "booking.toast.body":
-    "{name} recibirá tu propuesta y confirmará pronto.",
-  "booking.error.disabled":
-    "El sistema de reservas estará disponible muy pronto.",
-  "booking.error.default": "No pudimos enviar la solicitud.",
-  "booking.anonymous.body":
-    "Para enviar una solicitud de reserva, ingresa con tu cuenta — tu identidad nunca se publica y solo se comparte con ella tras la confirmación.",
-  "booking.anonymous.cta": "Ingresar para reservar",
-  "booking.anonymous.later": "Más tarde",
-
   /* RateBiringaForm */
   "rate.success.title": "Gracias por opinar",
   "rate.success.body.lead": "Calificaste a {name} con",
@@ -1684,27 +1630,6 @@ const es: MessageDict = {
   "reviews.card.helpful": "Útil",
   "reviews.card.notHelpful": "No útil",
   "reviews.stars.aria": "Calificación {value} de 5",
-
-  /* AvailabilityStrip */
-  "availability.aria": "Disponibilidad semanal",
-  "availability.title": "Disponibilidad",
-  "availability.replies": "Responde en ~{min} min",
-  "availability.state.available": "Disponible",
-  "availability.state.ask": "Consultar",
-  "availability.state.busy": "Ocupada",
-  "availability.legend.aria": "Leyenda de disponibilidad",
-  "availability.disclaimer":
-    "Confirma siempre la disponibilidad antes de viajar — los horarios son orientativos.",
-  "availability.day.sun": "Dom",
-  "availability.day.mon": "Lun",
-  "availability.day.tue": "Mar",
-  "availability.day.wed": "Mié",
-  "availability.day.thu": "Jue",
-  "availability.day.fri": "Vie",
-  "availability.day.sat": "Sáb",
-  "availability.slot.morning": "Mañana",
-  "availability.slot.afternoon": "Tarde",
-  "availability.slot.evening": "Noche",
 
   /* ShareMenu */
   "share.cta": "Compartir",
@@ -1820,7 +1745,8 @@ const es: MessageDict = {
   "step.attributes.hair.label": "Cabello",
   "step.attributes.height.label": "Estatura",
   "step.attributes.body.label": "Cuerpo",
-  "step.attributes.breast.label": "Senos",
+  "step.attributes.breastSize.label": "Tamaño de senos",
+  "step.attributes.breastType.label": "Tipo de senos",
   "step.attributes.pubis.label": "Pubis",
   "step.attributes.pubis.hint":
     "Opcional para el catálogo público; usado solo en filtros de búsqueda.",
@@ -1951,7 +1877,8 @@ const es: MessageDict = {
   "filters.appearance.hair": "Pelo",
   "filters.appearance.height": "Estatura",
   "filters.appearance.body": "Cuerpo",
-  "filters.appearance.breast": "Pecho",
+  "filters.appearance.breastSize": "Tamaño de pecho",
+  "filters.appearance.breastType": "Tipo de pecho",
   "filters.appearance.pubis": "Pubis",
   "filters.section.clearAria": "Limpiar sección",
 
@@ -2026,40 +1953,6 @@ const es: MessageDict = {
   /* ---------- LuckyButton ---------- */
   "luckyButton.label": "Me siento con suerte",
   "luckyButton.aria": "Me siento con suerte — abrir un perfil aleatorio",
-
-  /* ---------- BookingDatePicker ---------- */
-  "bookingDatePicker.day.aria.label": "{day} {date} de {month}",
-  "bookingDatePicker.day.aria.unavailable": " — sin disponibilidad",
-  "bookingDatePicker.day.today": "Hoy",
-  "bookingDatePicker.day.aria.groupLabel": "Día propuesto",
-  "bookingDatePicker.slot.aria.groupLabel": "Momento del día",
-  "bookingDatePicker.slot.eyebrow": "Momento",
-  "bookingDatePicker.slot.morning": "Mañana",
-  "bookingDatePicker.slot.afternoon": "Tarde",
-  "bookingDatePicker.slot.evening": "Noche",
-  "bookingDatePicker.slot.byRequest": "por consulta",
-  "bookingDatePicker.slot.title.unavailable": "Sin disponibilidad para este momento",
-  "bookingDatePicker.slot.title.byRequest": "Disponible por consulta",
-  "bookingDatePicker.slot.title.available": "Disponible",
-  "bookingDatePicker.day.sun": "Dom",
-  "bookingDatePicker.day.mon": "Lun",
-  "bookingDatePicker.day.tue": "Mar",
-  "bookingDatePicker.day.wed": "Mié",
-  "bookingDatePicker.day.thu": "Jue",
-  "bookingDatePicker.day.fri": "Vie",
-  "bookingDatePicker.day.sat": "Sáb",
-  "bookingDatePicker.month.jan": "ene",
-  "bookingDatePicker.month.feb": "feb",
-  "bookingDatePicker.month.mar": "mar",
-  "bookingDatePicker.month.apr": "abr",
-  "bookingDatePicker.month.may": "may",
-  "bookingDatePicker.month.jun": "jun",
-  "bookingDatePicker.month.jul": "jul",
-  "bookingDatePicker.month.aug": "ago",
-  "bookingDatePicker.month.sep": "sep",
-  "bookingDatePicker.month.oct": "oct",
-  "bookingDatePicker.month.nov": "nov",
-  "bookingDatePicker.month.dec": "dic",
 
   /* ---------- VideoPlayer ---------- */
   "videoPlayer.unavailable.aria": "Video no disponible",
@@ -2143,41 +2036,6 @@ const es: MessageDict = {
   "compareDrawer.services.suffix": "en catálogo",
   "compareDrawer.score.outOf": "/5",
 
-  /* ---------- Dashboard · BookingInboxList ---------- */
-  "dashboard.inbox.status.pending": "Pendiente",
-  "dashboard.inbox.status.confirmed": "Confirmada",
-  "dashboard.inbox.status.declined": "Rechazada",
-  "dashboard.inbox.status.cancelled": "Cancelada",
-  "dashboard.inbox.status.completed": "Completada",
-  "dashboard.inbox.meeting.outcall": "A domicilio",
-  "dashboard.inbox.meeting.incall": "En su lugar",
-  "dashboard.inbox.meeting.videocall": "Videollamada",
-  "dashboard.inbox.contact.whatsapp": "WhatsApp",
-  "dashboard.inbox.contact.telegram": "Telegram",
-  "dashboard.inbox.contact.platform": "Mensajería Biringas",
-  "dashboard.inbox.empty.title": "Aún sin solicitudes",
-  "dashboard.inbox.empty.body":
-    "Cuando alguien envíe una propuesta a tu perfil, vas a verla aquí con todos los detalles antes de aceptar o rechazar.",
-  "dashboard.inbox.filter.aria": "Filtrar solicitudes",
-  "dashboard.inbox.filter.all": "Todas",
-  "dashboard.inbox.filter.pending": "Pendientes",
-  "dashboard.inbox.filter.confirmed": "Confirmadas",
-  "dashboard.inbox.filter.completed": "Completadas",
-  "dashboard.inbox.filter.declined": "Rechazadas",
-  "dashboard.inbox.noResults": "Sin resultados para este filtro.",
-  "dashboard.inbox.toast.confirmed": "Reserva confirmada",
-  "dashboard.inbox.toast.declined": "Reserva rechazada",
-  "dashboard.inbox.toast.completed": "Reserva marcada como completada",
-  "dashboard.inbox.toast.errorTitle": "No pudimos actualizar la reserva",
-  "dashboard.inbox.toast.errorBody": "Intentá de nuevo en un momento.",
-  "dashboard.inbox.received": "Recibida {when}",
-  "dashboard.inbox.idHidden": "ID solicitante oculto hasta confirmar",
-  "dashboard.inbox.duration": "{hours}h · {type}",
-  "dashboard.inbox.action.decline": "Rechazar",
-  "dashboard.inbox.action.confirm": "Confirmar",
-  "dashboard.inbox.action.confirming": "Confirmando…",
-  "dashboard.inbox.action.markCompleted": "Marcar como completada",
-
   /* ---------- Dashboard · ReferralCard ---------- */
   "dashboard.referral.eyebrow": "Programa de referidos",
   "dashboard.referral.title.lead": "Cada amigo que invitás vale",
@@ -2245,7 +2103,6 @@ const es: MessageDict = {
   "catalog.card.withAudio": "Con audio",
   "catalog.card.onlineNow": "En línea ahora",
   "catalog.card.activeNow": "Activa ahora",
-  "catalog.card.respondsIn": "Responde ~{minutes}min",
   "catalog.card.verifiedProfile": "Perfil verificado",
   "catalog.card.verified": "Verificada",
   "catalog.card.audio": "Audio",
@@ -2333,23 +2190,6 @@ const es: MessageDict = {
   "toast.dismiss": "Descartar notificación",
   "toast.region.aria": "Notificaciones",
 
-  /* ---------- Dashboard · inline rate buyer ---------- */
-  "dashboard.rateBuyer.label": "Calificar al cliente",
-  "dashboard.rateBuyer.scoreAria": "Calificación de 1 a 5 estrellas",
-  "dashboard.rateBuyer.stars.singular": "{value} estrella",
-  "dashboard.rateBuyer.stars.plural": "{value} estrellas",
-  "dashboard.rateBuyer.commentPlaceholder":
-    "Comentario privado (opcional). Lo lee sólo el equipo de moderación.",
-  "dashboard.rateBuyer.cancel": "Cancelar",
-  "dashboard.rateBuyer.submit": "Guardar",
-  "dashboard.rateBuyer.submitting": "Guardando…",
-  "dashboard.rateBuyer.toast.success": "Cliente calificado",
-  "dashboard.rateBuyer.rated": "Calificado · {value}/5",
-  "dashboard.rateBuyer.error.required": "Elige una calificación.",
-  "dashboard.rateBuyer.error.bookingDisabled":
-    "Las reseñas mutuas se activan cuando Firestore esté listo.",
-  "dashboard.rateBuyer.error.fallback":
-    "No pudimos guardar la calificación. Intentá de nuevo.",
 };
 
 const en: MessageDict = {
@@ -2544,7 +2384,8 @@ const en: MessageDict = {
   "publicar.validation.hair": "Pick your hair type.",
   "publicar.validation.height": "Pick your height.",
   "publicar.validation.body": "Pick your body type.",
-  "publicar.validation.breast": "Pick the breast option.",
+  "publicar.validation.breastSize": "Pick a breast size.",
+  "publicar.validation.breastType": "Pick a breast type (natural or implants).",
   "publicar.validation.adultConsent":
     "Confirm you are 18+ and have authorization over your photos.",
   "publicar.validation.acceptTerms": "Accept the terms to publish.",
@@ -2876,7 +2717,8 @@ const en: MessageDict = {
   "profile.attributes.hair": "Hair",
   "profile.attributes.height": "Height",
   "profile.attributes.body": "Body",
-  "profile.attributes.breast": "Breast",
+  "profile.attributes.breastSize": "Breast size",
+  "profile.attributes.breastType": "Breast type",
   "profile.attributes.country": "Country",
   "profile.attributes.languages": "Languages",
   "profile.attributes.empty": "—",
@@ -3367,14 +3209,8 @@ const en: MessageDict = {
 
   "miCuenta.metadata.title": "My account — Biringas",
   "miCuenta.metadata.description":
-    "Seller dashboard: incoming requests, profile editing and weekly availability.",
+    "Seller dashboard: profile editing and invitations.",
   "miCuenta.fallbackName": "companion",
-
-  /* Empty drafts state */
-  "miCuenta.empty.title": "You haven't published any model yet",
-  "miCuenta.empty.body":
-    "Once you publish a model, you'll see incoming requests here, edit her photos, and adjust her availability anytime.",
-  "miCuenta.empty.cta": "Publish a model",
 
   /* Profile tab */
   "miCuenta.profile.single": "Your published profile:",
@@ -3393,12 +3229,6 @@ const en: MessageDict = {
   "miCuenta.draft.status.approved": "Approved",
   "miCuenta.draft.status.rejected": "Rejected",
   "miCuenta.draft.status.inReview": "In review",
-
-  /* Agenda tab */
-  "miCuenta.agenda.headline.lead": "Public availability visitors see on your profile",
-  "miCuenta.agenda.comingSoon.title": "Coming soon: manual editing.",
-  "miCuenta.agenda.comingSoon.body":
-    "You'll be able to pin your actual slots in a couple of taps. For now the grid is calculated from your confirmation history; if you'd like to hide a specific slot, drop us a note in support.",
 
   /* KYC status card */
   "miCuenta.kyc.approved.title": "Identity verified",
@@ -3553,7 +3383,8 @@ const en: MessageDict = {
   "draft.field.hair": "Hair",
   "draft.field.height": "Height",
   "draft.field.body": "Body",
-  "draft.field.breast": "Breast",
+  "draft.field.breastSize": "Breast size",
+  "draft.field.breastType": "Breast type",
   "draft.field.pubis": "Pubic style",
   "draft.field.languages": "Languages",
   "draft.field.photosSent": "Photos uploaded",
@@ -3865,49 +3696,6 @@ const en: MessageDict = {
    * D.2 · /p/[slug] deep components
    * ================================================================= */
 
-  /* BookingRequestModal */
-  "booking.cta": "Book this encounter",
-  "booking.modal.title": "Book with {name}",
-  "booking.modal.subtitle":
-    "Your proposal arrives as a request; she confirms date and details before any payment.",
-  "booking.modal.close": "Close",
-  "booking.modal.loading": "Loading…",
-  "booking.field.date": "Date and time",
-  "booking.field.date.help": "Only days with availability in her agenda are shown.",
-  "booking.field.duration": "Duration",
-  "booking.field.duration.overnight": "24 hours (overnight)",
-  "booking.field.duration.hour.singular": "{n} hour",
-  "booking.field.duration.hour.plural": "{n} hours",
-  "booking.field.meetingType": "Type of encounter",
-  "booking.meetingType.outcall.label": "Outcall",
-  "booking.meetingType.outcall.help": "She comes to the agreed location",
-  "booking.meetingType.incall.label": "Incall",
-  "booking.meetingType.incall.help": "You go to her place",
-  "booking.meetingType.videocall.label": "Video call",
-  "booking.meetingType.videocall.help": "100% remote",
-  "booking.field.contact": "How would you like her to reach out?",
-  "booking.contact.whatsapp": "WhatsApp",
-  "booking.contact.telegram": "Telegram",
-  "booking.contact.platform": "Biringas messaging",
-  "booking.field.message": "Message for her",
-  "booking.field.message.placeholder":
-    "Context of the encounter. Minimum {min} characters.",
-  "booking.field.message.placeholderWithCity":
-    "Context of the encounter (e.g. {city}, downtown hotel). Minimum {min} characters.",
-  "booking.privacy":
-    "Your identity and contact info are only shared with {name}.",
-  "booking.submit": "Send request",
-  "booking.submitting": "Sending…",
-  "booking.toast.title": "Request sent",
-  "booking.toast.body":
-    "{name} will receive your proposal and confirm shortly.",
-  "booking.error.disabled":
-    "The booking system will be available very soon.",
-  "booking.error.default": "We couldn't send the request.",
-  "booking.anonymous.body":
-    "To send a booking request, sign in with your account — your identity is never published and is only shared with her after confirmation.",
-  "booking.anonymous.cta": "Sign in to book",
-  "booking.anonymous.later": "Later",
 
   /* RateBiringaForm */
   "rate.success.title": "Thanks for your feedback",
@@ -4000,27 +3788,6 @@ const en: MessageDict = {
   "reviews.card.helpful": "Helpful",
   "reviews.card.notHelpful": "Not helpful",
   "reviews.stars.aria": "Rating {value} out of 5",
-
-  /* AvailabilityStrip */
-  "availability.aria": "Weekly availability",
-  "availability.title": "Availability",
-  "availability.replies": "Replies in ~{min} min",
-  "availability.state.available": "Available",
-  "availability.state.ask": "Ask",
-  "availability.state.busy": "Busy",
-  "availability.legend.aria": "Availability legend",
-  "availability.disclaimer":
-    "Always confirm availability before traveling — schedules are indicative.",
-  "availability.day.sun": "Sun",
-  "availability.day.mon": "Mon",
-  "availability.day.tue": "Tue",
-  "availability.day.wed": "Wed",
-  "availability.day.thu": "Thu",
-  "availability.day.fri": "Fri",
-  "availability.day.sat": "Sat",
-  "availability.slot.morning": "Morning",
-  "availability.slot.afternoon": "Afternoon",
-  "availability.slot.evening": "Evening",
 
   /* ShareMenu */
   "share.cta": "Share",
@@ -4136,7 +3903,8 @@ const en: MessageDict = {
   "step.attributes.hair.label": "Hair",
   "step.attributes.height.label": "Height",
   "step.attributes.body.label": "Body",
-  "step.attributes.breast.label": "Breast",
+  "step.attributes.breastSize.label": "Breast size",
+  "step.attributes.breastType.label": "Breast type",
   "step.attributes.pubis.label": "Pubic style",
   "step.attributes.pubis.hint":
     "Optional for the public catalog; used only in search filters.",
@@ -4267,7 +4035,8 @@ const en: MessageDict = {
   "filters.appearance.hair": "Hair",
   "filters.appearance.height": "Height",
   "filters.appearance.body": "Body",
-  "filters.appearance.breast": "Breast",
+  "filters.appearance.breastSize": "Breast size",
+  "filters.appearance.breastType": "Breast type",
   "filters.appearance.pubis": "Pubic style",
   "filters.section.clearAria": "Clear section",
 
@@ -4342,40 +4111,6 @@ const en: MessageDict = {
   /* ---------- LuckyButton ---------- */
   "luckyButton.label": "I'm feeling lucky",
   "luckyButton.aria": "I'm feeling lucky - open a random profile",
-
-  /* ---------- BookingDatePicker ---------- */
-  "bookingDatePicker.day.aria.label": "{day} {date} {month}",
-  "bookingDatePicker.day.aria.unavailable": " - no availability",
-  "bookingDatePicker.day.today": "Today",
-  "bookingDatePicker.day.aria.groupLabel": "Proposed day",
-  "bookingDatePicker.slot.aria.groupLabel": "Time of day",
-  "bookingDatePicker.slot.eyebrow": "Time",
-  "bookingDatePicker.slot.morning": "Morning",
-  "bookingDatePicker.slot.afternoon": "Afternoon",
-  "bookingDatePicker.slot.evening": "Evening",
-  "bookingDatePicker.slot.byRequest": "by request",
-  "bookingDatePicker.slot.title.unavailable": "No availability for this time",
-  "bookingDatePicker.slot.title.byRequest": "Available by request",
-  "bookingDatePicker.slot.title.available": "Available",
-  "bookingDatePicker.day.sun": "Sun",
-  "bookingDatePicker.day.mon": "Mon",
-  "bookingDatePicker.day.tue": "Tue",
-  "bookingDatePicker.day.wed": "Wed",
-  "bookingDatePicker.day.thu": "Thu",
-  "bookingDatePicker.day.fri": "Fri",
-  "bookingDatePicker.day.sat": "Sat",
-  "bookingDatePicker.month.jan": "Jan",
-  "bookingDatePicker.month.feb": "Feb",
-  "bookingDatePicker.month.mar": "Mar",
-  "bookingDatePicker.month.apr": "Apr",
-  "bookingDatePicker.month.may": "May",
-  "bookingDatePicker.month.jun": "Jun",
-  "bookingDatePicker.month.jul": "Jul",
-  "bookingDatePicker.month.aug": "Aug",
-  "bookingDatePicker.month.sep": "Sep",
-  "bookingDatePicker.month.oct": "Oct",
-  "bookingDatePicker.month.nov": "Nov",
-  "bookingDatePicker.month.dec": "Dec",
 
   /* ---------- VideoPlayer ---------- */
   "videoPlayer.unavailable.aria": "Video unavailable",
@@ -4465,41 +4200,6 @@ const en: MessageDict = {
   "compareDrawer.services.suffix": "in catalog",
   "compareDrawer.score.outOf": "/5",
 
-  /* ---------- Dashboard . BookingInboxList ---------- */
-  "dashboard.inbox.status.pending": "Pending",
-  "dashboard.inbox.status.confirmed": "Confirmed",
-  "dashboard.inbox.status.declined": "Declined",
-  "dashboard.inbox.status.cancelled": "Cancelled",
-  "dashboard.inbox.status.completed": "Completed",
-  "dashboard.inbox.meeting.outcall": "At your place",
-  "dashboard.inbox.meeting.incall": "At her place",
-  "dashboard.inbox.meeting.videocall": "Video call",
-  "dashboard.inbox.contact.whatsapp": "WhatsApp",
-  "dashboard.inbox.contact.telegram": "Telegram",
-  "dashboard.inbox.contact.platform": "Biringas messaging",
-  "dashboard.inbox.empty.title": "No requests yet",
-  "dashboard.inbox.empty.body":
-    "When someone sends a proposal to your profile, you will see it here with every detail before accepting or declining.",
-  "dashboard.inbox.filter.aria": "Filter requests",
-  "dashboard.inbox.filter.all": "All",
-  "dashboard.inbox.filter.pending": "Pending",
-  "dashboard.inbox.filter.confirmed": "Confirmed",
-  "dashboard.inbox.filter.completed": "Completed",
-  "dashboard.inbox.filter.declined": "Declined",
-  "dashboard.inbox.noResults": "No results for this filter.",
-  "dashboard.inbox.toast.confirmed": "Booking confirmed",
-  "dashboard.inbox.toast.declined": "Booking declined",
-  "dashboard.inbox.toast.completed": "Booking marked as completed",
-  "dashboard.inbox.toast.errorTitle": "We couldn't update the booking",
-  "dashboard.inbox.toast.errorBody": "Try again in a moment.",
-  "dashboard.inbox.received": "Received {when}",
-  "dashboard.inbox.idHidden": "Requester ID hidden until confirmed",
-  "dashboard.inbox.duration": "{hours}h . {type}",
-  "dashboard.inbox.action.decline": "Decline",
-  "dashboard.inbox.action.confirm": "Confirm",
-  "dashboard.inbox.action.confirming": "Confirming...",
-  "dashboard.inbox.action.markCompleted": "Mark as completed",
-
   /* ---------- Dashboard . ReferralCard ---------- */
   "dashboard.referral.eyebrow": "Referral program",
   "dashboard.referral.title.lead": "Every friend you invite is worth",
@@ -4567,7 +4267,6 @@ const en: MessageDict = {
   "catalog.card.withAudio": "Audio included",
   "catalog.card.onlineNow": "Online now",
   "catalog.card.activeNow": "Active now",
-  "catalog.card.respondsIn": "Replies ~{minutes}min",
   "catalog.card.verifiedProfile": "Verified profile",
   "catalog.card.verified": "Verified",
   "catalog.card.audio": "Audio",
@@ -4655,23 +4354,6 @@ const en: MessageDict = {
   "toast.dismiss": "Dismiss notification",
   "toast.region.aria": "Notifications",
 
-  /* ---------- Dashboard · inline rate buyer ---------- */
-  "dashboard.rateBuyer.label": "Rate the client",
-  "dashboard.rateBuyer.scoreAria": "Rating from 1 to 5 stars",
-  "dashboard.rateBuyer.stars.singular": "{value} star",
-  "dashboard.rateBuyer.stars.plural": "{value} stars",
-  "dashboard.rateBuyer.commentPlaceholder":
-    "Private comment (optional). Read only by the moderation team.",
-  "dashboard.rateBuyer.cancel": "Cancel",
-  "dashboard.rateBuyer.submit": "Save",
-  "dashboard.rateBuyer.submitting": "Saving…",
-  "dashboard.rateBuyer.toast.success": "Client rated",
-  "dashboard.rateBuyer.rated": "Rated · {value}/5",
-  "dashboard.rateBuyer.error.required": "Pick a rating.",
-  "dashboard.rateBuyer.error.bookingDisabled":
-    "Mutual reviews go live once Firestore is ready.",
-  "dashboard.rateBuyer.error.fallback":
-    "We couldn't save the rating. Try again.",
 };
 
 const DICTIONARIES: Record<SupportedLocale, MessageDict> = {

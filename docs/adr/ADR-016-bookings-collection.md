@@ -1,8 +1,15 @@
 # ADR-016 · `bookings` collection
 
-- Status: accepted
+- Status: superseded by ADR-021 (2026-05-28)
 - Date: 2026-05-20
 - Extends: ADR-010 (Firebase data ownership), ADR-011 (`listing_drafts`)
+
+> **Superseded by ADR-021.** The booking / scheduling system documented
+> below has been removed from the MVP. The catalog now ships with only
+> the "reveal contact" affordance — the client sees the profile detail
+> and reaches out directly through the revealed phone / WhatsApp.
+> See `ADR-021-remove-bookings-mvp.md` for the rationale and the
+> code surfaces removed.
 
 ## Context
 

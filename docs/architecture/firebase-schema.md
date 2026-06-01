@@ -11,7 +11,6 @@ listings/{listingId}
 listings/{listingId}/reviews/{reviewId}
 listing_drafts/{draftId}                       # see ADR-011
 favorites/{uid}/items/{listingId}              # see ADR-013
-bookings/{bookingId}                           # see ADR-016
 persons/{personId}                             # see ADR-018 (supersedes ADR-014's verifications/{uid})
 users/{uid}                                    # see ADR-019 (account-type lock — publisher vs commentator)
 verifications/{uid}                            # KYC physical storage during ADR-018 Phase A. Logical view via `persons/{personId}.kyc`. Carries `documentType` + `documentNumber` (ADR-018 amendment) which enforce per-person uniqueness across accounts.
@@ -240,52 +239,6 @@ No composite indexes required. The read path is
 `favorites/{uid}/items.orderBy('addedAt', 'desc')`, satisfied by the
 implicit document-creation index.
 
-## Collection — `bookings/{bookingId}`
-
-Buyer-side booking requests + seller responses (ADR-016). Auto-id;
-written by `requestBookingRaw`, updated by `updateBookingStatusRaw` and
-`attachBuyerReviewRaw`.
-
-| Field              | Type              | Notes                                                   |
-| ------------------ | ----------------- | ------------------------------------------------------- |
-| `listingSlug`      | string            | Slug of the listing being requested. Equality-indexed.  |
-| `requesterUid`     | string            | Firebase Auth uid of the buyer.                          |
-| `proposedAt`       | Timestamp         | Buyer's proposed encounter datetime.                    |
-| `durationHours`    | number            | `1 \| 2 \| 3 \| 4 \| 8 \| 12 \| 24`.                    |
-| `meetingType`      | string            | `outcall \| incall \| videocall`.                       |
-| `contactPreference`| string            | `whatsapp \| telegram \| platform`.                     |
-| `message`          | string            | Freeform 12..1000 chars; trimmed server-side.           |
-| `submittedAt`      | Timestamp         | `serverTimestamp()` at write.                           |
-| `respondedAt`      | Timestamp \| null | Set the first time status leaves `pending`.             |
-| `status`           | string            | `pending \| confirmed \| declined \| cancelled \| completed`. |
-| `buyerReview`      | map \| null       | Seller-to-buyer mutual review. See below.               |
-
-`buyerReview` (optional, attached post-`completed`):
-
-```
-{
-  rating: 1..5 integer,
-  comment?: string,
-  submittedAt: Timestamp
-}
-```
-
-Reads:
-
-- **Inbox** (`listBookingsForListingsRaw`): one or more chunks of
-  `where('listingSlug', 'in', [...])` + `orderBy('submittedAt', 'desc')`.
-  Sellers with > 30 slugs see one chunk per 30; results merged in
-  memory.
-- **Reply median** (`computeReplyMedianMinutesForSlug`):
-  `where('listingSlug', '==', slug)` +
-  `orderBy('respondedAt', 'desc')` + `limit(20)`. The orderBy
-  naturally excludes pending bookings (Firestore skips `null` on
-  orderBy fields).
-
-Writes always go through the Server Action stack
-(`requestBooking`, `respondToBooking`, `submitBuyerReview`,
-`completeMockCheckout` for the plan side-effect).
-
 ## Collection — `persons/{personId}`
 
 Physical models that an account owner administers. One account owner
@@ -363,8 +316,6 @@ Required to satisfy the queries in `src/server/adapters/firebase/biringas/index.
 | `listings` | `verified ASC`, `availableNow ASC`, `updatedAt DESC`                | `listHeroMosaic` (live).               |
 | `listings` | `plan.activeUntil ASC`                                              | `listFeatured` (single-field, automatic). |
 | `listings` | `slug ASC`                                                          | `findBySlug` (single-field, automatic).|
-| `bookings` | `listingSlug ASC`, `submittedAt DESC`                               | `listBookingsForListingsRaw` (inbox).  |
-| `bookings` | `listingSlug ASC`, `respondedAt DESC`                               | `computeReplyMedianMinutesForSlug`.    |
 | `reviews` (group) | `verified ASC`, `date DESC`                                  | `listTestimonials` (home cross-listing feed). |
 | `persons`  | `ownerUid ASC`, `createdAt DESC`                                    | `listPersonsByOwner` (dashboard, ADR-018). |
 | `persons`  | `kyc.status ASC`, `kyc.submittedAt DESC`                            | admin-codebase KYC queue (future, ADR-018). |

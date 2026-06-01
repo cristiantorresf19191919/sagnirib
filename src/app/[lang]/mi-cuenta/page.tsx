@@ -1,7 +1,5 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { Plus, Sparkles } from "lucide-react";
 
 import type { SupportedLocale } from "@/core/branding/brand-config";
 import { isSupportedLocale } from "@/core/i18n/constants";
@@ -17,8 +15,6 @@ import {
   ACCOUNT_TYPE_COMMENTATOR,
   getMyAccountType,
 } from "@/server/users";
-import { AvailabilityStrip } from "@/features/biringas/components/AvailabilityStrip";
-import { BookingInboxList } from "@/features/dashboard/components/BookingInboxList";
 import { DashboardShell } from "@/features/dashboard/components/DashboardShell";
 import { ReferralCard } from "@/features/dashboard/components/ReferralCard";
 import { ProfileList } from "@/features/persons/components/ProfileList";
@@ -28,7 +24,6 @@ import {
   findBySlug,
   getMyReferralStats,
   listMyDrafts,
-  listMyIncomingBookings,
   type BiringaListing,
   type DraftSummary,
   type ReferralStats,
@@ -59,8 +54,8 @@ export async function generateMetadata({
  * `/mi-cuenta` — seller dashboard.
  *
  * Auth-gated. Anonymous users bounce to `/ingresar?next=/mi-cuenta`.
- * Authenticated users see four tabs (Solicitudes / Mi perfil /
- * Agenda / Referrals) backed by the owner-side barrel functions.
+ * Authenticated users see two tabs (Mi perfil / Invitar) backed by the
+ * owner-side barrel functions.
  */
 export default async function MiCuentaPage({
   params,
@@ -93,7 +88,7 @@ export default async function MiCuentaPage({
   // closes all three.
   const needsAccountTypeModal = accountType === null;
 
-  const [draftsResult, bookings, referralStats, persons] =
+  const [draftsResult, referralStats, persons] =
     await Promise.all([
       listMyDrafts().then(
         (value) => ({ value, error: null as string | null }),
@@ -105,10 +100,6 @@ export default async function MiCuentaPage({
           };
         },
       ),
-      listMyIncomingBookings().catch((err) => {
-        console.error("[mi-cuenta] listMyIncomingBookings failed", err);
-        return [];
-      }),
       getMyReferralStats().catch((err) => {
         console.error("[mi-cuenta] getMyReferralStats failed", err);
         return {
@@ -149,7 +140,6 @@ export default async function MiCuentaPage({
     ),
   );
 
-  const pendingCount = bookings.filter((b) => b.status === "pending").length;
   const greetingName =
     drafts[0]?.displayName ??
     session.email?.split("@")[0] ??
@@ -181,9 +171,7 @@ export default async function MiCuentaPage({
           <PostPublishPrompt />
           <DashboardShell
             greetingName={greetingName}
-            pendingCount={pendingCount}
             tabs={{
-              inbox: <BookingInboxList initialBookings={bookings} />,
               profile: (
                 <ProfileTab
                   locale={lang}
@@ -193,7 +181,6 @@ export default async function MiCuentaPage({
                   diagnostic={diagnostic}
                 />
               ),
-              agenda: <AgendaTab locale={lang} drafts={drafts} />,
               referrals: (
                 <ReferralCard
                   code={referralStats.code}
@@ -308,7 +295,7 @@ function ProfileTab({
         </div>
       ) : null}
       {persons.length > 0 && publishedBySlug.size > 0 ? (
-        <AvailabilityFooter
+        <PublishedProfilesFooter
           locale={locale}
           drafts={drafts}
           publishedBySlug={publishedBySlug}
@@ -320,14 +307,12 @@ function ProfileTab({
 }
 
 /**
- * Footer surface that surfaces the availability toggle for each
- * published listing. Pulled out of the per-card layout to keep the
- * unified profile card uncluttered — availability is a per-listing
- * setting, not a per-modelo header, and partners with many modelos
- * benefit from a single condensed availability column over identical
- * toggles inside each card.
+ * Compact roster of the publisher's profiles currently live in the
+ * catalog. Sits below the unified profile card so the seller has a
+ * quick scan of "qué tengo publicado" without scrolling through the
+ * full draft list.
  */
-function AvailabilityFooter({
+function PublishedProfilesFooter({
   locale,
   drafts,
   publishedBySlug,
@@ -363,61 +348,5 @@ function AvailabilityFooter({
   );
 }
 
-/* -------------------------------------------------------------------------- */
-/*  Agenda tab — synthesised availability + heads-up about live edit         */
-/* -------------------------------------------------------------------------- */
 
-function AgendaTab({ locale, drafts }: Readonly<TabProps>) {
-  if (drafts.length === 0) {
-    return <EmptyDraftsState locale={locale} />;
-  }
-  const first = drafts[0]!;
-  return (
-    <div className="flex flex-col gap-4">
-      <p className="text-sm leading-relaxed text-[var(--color-text-muted)]">
-        {t(locale, "miCuenta.agenda.headline.lead")}{" "}
-        <span className="font-semibold text-[var(--color-foreground)]">
-          {first.displayName}
-        </span>
-        :
-      </p>
-      <AvailabilityStrip listingSlug={first.preferredSlug} />
-      <div className="rounded-[var(--radius-lg)] border border-dashed border-[var(--color-border)] bg-[var(--color-background-elevated)] p-4 text-xs text-[var(--color-text-muted)]">
-        <p className="font-semibold text-[var(--color-foreground)]">
-          {t(locale, "miCuenta.agenda.comingSoon.title")}
-        </p>
-        <p className="mt-1 leading-relaxed">
-          {t(locale, "miCuenta.agenda.comingSoon.body")}
-        </p>
-      </div>
-    </div>
-  );
-}
 
-/* -------------------------------------------------------------------------- */
-
-function EmptyDraftsState({ locale }: Readonly<{ locale: SupportedLocale }>) {
-  return (
-    <div className="flex flex-col items-center gap-4 rounded-[var(--radius-2xl)] border border-dashed border-[var(--color-border)] bg-[var(--color-surface)]/60 p-10 text-center">
-      <span
-        aria-hidden
-        className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-[var(--color-brand-primary)]/10 text-[var(--color-brand-primary)] ring-1 ring-[var(--color-brand-primary)]/20"
-      >
-        <Sparkles className="h-6 w-6" aria-hidden />
-      </span>
-      <h2 className="font-[var(--font-display)] text-[clamp(20px,2.4vw,26px)] font-[370] leading-[1.1] tracking-[-0.02em] text-[var(--color-foreground)]">
-        {t(locale, "miCuenta.empty.title")}
-      </h2>
-      <p className="max-w-md text-sm leading-relaxed text-[var(--color-text-muted)]">
-        {t(locale, "miCuenta.empty.body")}
-      </p>
-      <Link
-        href={localizedHref(locale, "/publicar")}
-        className="inline-flex h-11 items-center gap-2 rounded-full bg-[var(--color-brand-primary)] px-5 text-sm font-semibold text-[var(--color-surface)] shadow-[var(--shadow-glow-primary)] transition-[background,transform] duration-200 hover:-translate-y-[1px] hover:bg-[var(--color-brand-primary-strong)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-background)]"
-      >
-        <Plus className="h-4 w-4" aria-hidden />
-        {t(locale, "miCuenta.empty.cta")}
-      </Link>
-    </div>
-  );
-}

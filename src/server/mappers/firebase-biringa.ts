@@ -89,7 +89,8 @@ function asAttributes(value: unknown): BiringaAttributes {
     hair: typeof r.hair === "string" ? r.hair : undefined,
     height: typeof r.height === "string" ? r.height : undefined,
     body: typeof r.body === "string" ? r.body : undefined,
-    breast: typeof r.breast === "string" ? r.breast : undefined,
+    breastSize: typeof r.breastSize === "string" ? r.breastSize : undefined,
+    breastType: typeof r.breastType === "string" ? r.breastType : undefined,
     pubis: typeof r.pubis === "string" ? r.pubis : undefined,
     country: typeof r.country === "string" ? r.country : undefined,
     languages: Array.isArray(r.languages)
@@ -132,11 +133,6 @@ function asReputation(
     totalViews: asNumber(r.totalViews ?? 0, "reputation.totalViews"),
     daysFeatured: asNumber(r.daysFeatured ?? 0, "reputation.daysFeatured"),
     reviewCount: asNumber(r.reviewCount ?? 0, "reputation.reviewCount"),
-    replyMedianMinutes:
-      typeof r.replyMedianMinutes === "number" &&
-      Number.isFinite(r.replyMedianMinutes)
-        ? r.replyMedianMinutes
-        : undefined,
   };
 }
 

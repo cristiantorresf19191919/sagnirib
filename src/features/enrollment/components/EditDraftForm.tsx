@@ -93,7 +93,8 @@ export function EditDraftForm({
       !attributes.hair ||
       !attributes.height ||
       !attributes.body ||
-      !attributes.breast
+      !attributes.breastSize ||
+      !attributes.breastType
     ) {
       return false;
     }
