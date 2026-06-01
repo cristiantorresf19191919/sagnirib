@@ -94,8 +94,9 @@ const inputClsWithLeftIcon = `${inputCls} pl-10`;
  * `users/{uid}.accountType = 'publisher'` (ADR-019) from the
  * `biringas:account-type` cookie that `/registrarse` already set.
  *
- * After signup the publisher lands on `/mi-cuenta` (their dashboard).
- * From there, modelo-level work happens:
+ * After signup the publisher lands on `/bienvenida` (the celebratory
+ * onboarding screen) which then carries them to `/mi-cuenta` (their
+ * dashboard). From there, modelo-level work happens:
  *
  *   - Creating a `persons/{personId}` doc — partner can have 1 or N
  *     modelos (ADR-018).
@@ -239,7 +240,7 @@ export function PublisherSignUpWizard() {
   /**
    * Google OAuth shortcut on step 1. Google auth itself proves
    * email+identity, so we skip OTP and password and complete the
-   * signup immediately. Lands on `/mi-cuenta`.
+   * signup immediately. Lands on `/bienvenida`.
    *
    * ADR-019 refusal: this is a SIGNUP surface, not a login surface.
    * `signInWithGoogle` will happily authenticate an existing Google
@@ -265,7 +266,7 @@ export function PublisherSignUpWizard() {
         setSubmitting(false);
         return;
       }
-      router.push(localizedHref(locale, "/mi-cuenta"));
+      router.push(localizedHref(locale, "/bienvenida"));
       router.refresh();
     } catch (err) {
       const code =
@@ -314,7 +315,7 @@ export function PublisherSignUpWizard() {
         t(locale, "rbac.form.toast.success.title"),
         t(locale, "rbac.form.toast.success.body"),
       );
-      router.push(localizedHref(locale, "/mi-cuenta"));
+      router.push(localizedHref(locale, "/bienvenida"));
       router.refresh();
     } catch (err) {
       const code =

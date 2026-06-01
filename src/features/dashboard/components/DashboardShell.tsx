@@ -77,12 +77,12 @@ export function DashboardShell({
         </span>
         <h1 className="font-[var(--font-display)] text-[clamp(28px,3.4vw,38px)] font-[370] leading-[1.05] tracking-[-0.025em] text-[var(--color-foreground)]">
           Hola,{" "}
-          <span className="italic font-[340] text-[var(--color-brand-primary)]">
+          <span className="bg-gradient-to-r from-[var(--color-brand-primary)] to-[var(--color-brand-accent-strong)] bg-clip-text font-[340] italic text-transparent">
             {greetingName}
           </span>
           .
         </h1>
-        <p className="max-w-2xl font-[var(--font-serif)] text-[15px] leading-[1.55] text-[var(--color-text-muted)]">
+        <p className="max-w-2xl font-[var(--font-serif)] text-[15px] leading-[1.6] text-[var(--color-text-muted)]">
           Aquí editás tu perfil e invitás a otras modelos. Discreto, sin
           notificaciones invasivas — vos decidís cuándo entrar.
         </p>

@@ -52,11 +52,6 @@ export function UsefulTip({ title, children }: UsefulTipProps) {
       style={{ "--step-i": 4 } as CSSProperties}
       className="group/tip motion-step-rise relative flex flex-col gap-3 overflow-hidden rounded-[var(--radius-xl)] border border-dashed border-[var(--color-border)] bg-[var(--color-surface-muted)] p-5 shadow-[var(--shadow-sm)] transition-[transform,box-shadow,border-color] duration-[240ms] ease-[var(--ease-standard)] hover:-translate-y-0.5 hover:border-[var(--color-brand-accent)]/40 hover:shadow-[var(--shadow-md)]"
     >
-      {/* Gold accent hairline on top. */}
-      <span
-        aria-hidden
-        className="pointer-events-none absolute inset-x-0 top-0 h-[3px] bg-gradient-to-r from-[var(--color-brand-accent)] via-[var(--color-gold)] to-transparent opacity-70"
-      />
       {/* Soft halo behind the bulb — the warm focal glow of the card. */}
       <span
         aria-hidden
