@@ -20,6 +20,7 @@ import {
   THEME_COOKIE,
 } from "@/shared/layout/theme-cookie";
 import "@/styles/globals.css";
+import "@/shared/layout/mobile-nav.css";
 
 import { Providers } from "./providers";
 

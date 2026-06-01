@@ -1,0 +1,343 @@
+/* ═══════════════════════════════════════════════════════════════
+   Animated mobile nav — full-screen drawer + hamburger.
+   Ported from the portable kit and RE-SKINNED to Biringas tokens:
+   every `--amh-*` maps to a `--color-*` design token, so the drawer
+   themes correctly across all Biringas moods (light/dark/desire/…).
+   Namespaced `.amh-*` to avoid collisions.
+   ═══════════════════════════════════════════════════════════════ */
+
+:root {
+  /* Brand → Biringas forest + gold */
+  --amh-accent: var(--color-brand-primary);
+  --amh-accent-2: var(--color-brand-primary-strong);
+  --amh-accent-soft: color-mix(in srgb, var(--color-brand-primary) 14%, transparent);
+  --amh-accent-glow: color-mix(in srgb, var(--color-brand-primary) 30%, transparent);
+  --amh-icon-fg: var(--color-brand-primary);
+
+  /* Surfaces — follow the active theme */
+  --amh-overlay-bg: var(--color-background);
+  --amh-bar-border: var(--color-border);
+  --amh-text: var(--color-foreground);
+  --amh-text-dim: var(--color-text-muted);
+  --amh-text-faint: var(--color-text-subtle);
+  --amh-divider: var(--color-border);
+  --amh-surface-1: var(--color-background-elevated);
+  --amh-surface-hover: color-mix(in srgb, var(--color-brand-primary) 6%, transparent);
+
+  /* Decorative orbs — forest / gold / rosé at low alpha */
+  --amh-orb-1: color-mix(in srgb, var(--color-brand-primary) 18%, transparent);
+  --amh-orb-2: color-mix(in srgb, var(--color-gold) 16%, transparent);
+  --amh-orb-3: color-mix(in srgb, var(--color-brand-highlight) 12%, transparent);
+
+  --amh-cta-shadow: color-mix(in srgb, var(--color-brand-primary) 32%, transparent);
+}
+
+/* ── Hamburger (lives inside the Biringas header bar) ── */
+.amh-toggle {
+  display: inline-flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 5px;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 8px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  z-index: 10001;
+  -webkit-tap-highlight-color: transparent;
+}
+.amh-hamburgerLine {
+  width: 20px;
+  height: 2px;
+  background: var(--amh-accent);
+  border-radius: 1px;
+  transition: transform 0.3s ease, opacity 0.2s ease;
+  transform-origin: center;
+  will-change: transform;
+  backface-visibility: hidden;
+}
+.amh-toggle--active .amh-hamburgerLine:nth-child(1) {
+  transform: rotate(45deg) translate(6px, 6px);
+}
+.amh-toggle--active .amh-hamburgerLine:nth-child(2) {
+  opacity: 0;
+  transform: scaleX(0);
+}
+.amh-toggle--active .amh-hamburgerLine:nth-child(3) {
+  transform: rotate(-45deg) translate(6px, -6px);
+}
+
+/* ═══════════════ Full-screen overlay ═══════════════ */
+.amh-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  overflow: hidden;
+  background:
+    radial-gradient(ellipse 80% 50% at 20% 20%, var(--amh-orb-1) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 70% at 80% 80%, var(--amh-orb-2) 0%, transparent 55%),
+    radial-gradient(ellipse 50% 50% at 50% 50%, var(--amh-orb-3) 0%, transparent 50%),
+    var(--amh-overlay-bg);
+}
+
+.amh-orbField {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+.amh-orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(60px);
+  will-change: transform;
+}
+.amh-orb1 {
+  width: 280px;
+  height: 280px;
+  top: -5%;
+  left: -10%;
+  background: var(--amh-orb-1);
+}
+.amh-orb2 {
+  width: 220px;
+  height: 220px;
+  bottom: 10%;
+  right: -15%;
+  background: var(--amh-orb-2);
+}
+.amh-orb3 {
+  width: 160px;
+  height: 160px;
+  top: 45%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--amh-orb-3);
+}
+
+.amh-content {
+  position: relative;
+  height: 100vh;
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  padding: 1rem;
+  z-index: 1;
+}
+
+.amh-closeButton {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--amh-surface-1);
+  border: 1px solid var(--amh-divider);
+  border-radius: 50%;
+  color: var(--amh-text-dim);
+  font-size: 1.1rem;
+  cursor: pointer;
+  z-index: 10002;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.amh-headerRow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.25rem 2rem 0.75rem;
+  margin-bottom: 0.25rem;
+}
+.amh-headerTitle {
+  color: var(--amh-text);
+  font-size: 1.2rem;
+  font-weight: 700;
+  margin: 0;
+  letter-spacing: -0.02em;
+}
+
+.amh-navScroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 0 0.25rem;
+  -webkit-overflow-scrolling: touch;
+}
+.amh-nav {
+  display: flex;
+  flex-direction: column;
+}
+.amh-navItem {
+  border-bottom: 1px solid var(--amh-divider);
+}
+.amh-navItem:last-of-type {
+  border-bottom: none;
+}
+.amh-navLink {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.95rem 0.5rem;
+  background: transparent;
+  border: none;
+  text-decoration: none;
+  color: var(--amh-text);
+  transition: background-color 0.15s ease, transform 0.1s ease;
+  width: 100%;
+  -webkit-tap-highlight-color: transparent;
+}
+.amh-navLink--button {
+  text-align: left;
+  cursor: pointer;
+  font: inherit;
+}
+.amh-navLink:hover {
+  background: var(--amh-surface-hover);
+}
+.amh-navLink:active {
+  transform: scale(0.99);
+}
+.amh-navContent {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+}
+.amh-navIcon {
+  width: 38px;
+  height: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--amh-accent-soft);
+  border-radius: 10px;
+  color: var(--amh-icon-fg);
+  font-size: 1.05rem;
+  flex-shrink: 0;
+  transition: background-color 0.2s ease, box-shadow 0.2s ease;
+}
+.amh-navLink:hover .amh-navIcon {
+  box-shadow: 0 0 12px var(--amh-accent-glow);
+}
+.amh-navText {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+.amh-navTitle {
+  font-weight: 600;
+  font-size: 0.98rem;
+  color: var(--amh-text);
+  line-height: 1.3;
+}
+.amh-navDesc {
+  font-size: 0.76rem;
+  color: var(--amh-text-dim);
+  font-weight: 400;
+  line-height: 1.3;
+}
+.amh-arrow {
+  display: inline-flex;
+  font-size: 0.9rem;
+  color: var(--amh-text-faint);
+  transition: transform 0.2s ease, color 0.2s ease;
+}
+.amh-navLink:hover .amh-arrow {
+  transform: translateX(3px);
+  color: var(--amh-accent);
+}
+
+.amh-stickyBottom {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+}
+.amh-ctaSection {
+  padding: 0.6rem 0.5rem 0.25rem;
+}
+.amh-ctaButton {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  width: 100%;
+  padding: 0.95rem 1.5rem;
+  background: linear-gradient(135deg, var(--amh-accent) 0%, var(--amh-accent-2) 100%);
+  color: var(--color-surface);
+  border: none;
+  border-radius: var(--radius-full, 999px);
+  font-size: 0.95rem;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  overflow: hidden;
+  transition: transform 0.15s ease, box-shadow 0.2s ease;
+  box-shadow: 0 4px 24px var(--amh-cta-shadow);
+  -webkit-tap-highlight-color: transparent;
+}
+.amh-ctaButton:hover {
+  box-shadow: 0 8px 32px var(--amh-cta-shadow);
+}
+.amh-ctaButton:active {
+  transform: scale(0.97);
+}
+.amh-ctaButton > svg {
+  position: relative;
+  z-index: 1;
+}
+.amh-ctaShine {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 35%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.25), transparent);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.amh-footer {
+  padding: 0.85rem 0.5rem;
+  padding-bottom: max(0.85rem, env(safe-area-inset-bottom));
+  border-top: 1px solid var(--amh-divider);
+}
+.amh-footerTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+.amh-footerBrand {
+  color: var(--amh-text-dim);
+  font-size: 0.72rem;
+  font-weight: 500;
+  margin: 0;
+  letter-spacing: 0.02em;
+}
+.amh-footerControls {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.amh-footerTagline {
+  color: var(--amh-text-faint);
+  font-size: 0.66rem;
+  margin: 0.4rem 0 0;
+}
+
+body[data-mobile-menu-open] {
+  overflow: hidden;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .amh-orb,
+  .amh-ctaShine {
+    animation: none !important;
+  }
+}

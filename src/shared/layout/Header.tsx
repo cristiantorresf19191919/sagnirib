@@ -18,6 +18,7 @@ import {
 } from "@/server/users";
 
 import { HeaderBackdrop } from "./HeaderBackdrop";
+import { MobileNav } from "./MobileNav";
 import { ThemeToggle } from "./ThemeToggle";
 
 interface HeaderProps {
@@ -106,10 +107,18 @@ export async function Header({ hideCatalogCta = false }: HeaderProps) {
       >
         <Logo size="md" />
 
+        {/* Mobile (< lg): hamburger → full-screen animated drawer. */}
+        <MobileNav
+          locale={locale}
+          hidePublishCta={hidePublishCta}
+          hideCatalogCta={hideCatalogCta}
+          className="lg:hidden"
+        />
+
         <nav
           data-testid="header-nav"
           aria-label={t(locale, "header.aria.mainNav")}
-          className="flex min-w-0 items-center gap-0.5 lg:gap-1"
+          className="hidden min-w-0 items-center gap-0.5 lg:flex lg:gap-1"
         >
           {/* 1. DISCOVERY — How (learn) + Favorites (engage with what
               already resonated). Both collapse labels on mobile. */}
