@@ -628,6 +628,51 @@ const es: MessageDict = {
   "auth.badge.menu.billing": "Facturación",
   "auth.badge.signOut": "Cerrar sesión",
 
+  /* Account · Configuración + Facturación (example pages) */
+  "account.back": "Volver al dashboard",
+  "account.preview.badge": "Vista previa",
+  "account.preview.note":
+    "Esta pantalla es un ejemplo. Pronto vas a poder gestionarla desde acá.",
+  "account.config.metadata.title": "Configuración — {brand}",
+  "account.config.metadata.description":
+    "Ajustá tu cuenta, notificaciones y preferencias.",
+  "account.config.title": "Configuración",
+  "account.config.subtitle":
+    "Ajustá tu cuenta, notificaciones y preferencias de privacidad.",
+  "account.config.account.title": "Cuenta",
+  "account.config.account.email": "Correo electrónico",
+  "account.config.account.language": "Idioma",
+  "account.config.account.type": "Tipo de cuenta",
+  "account.config.account.type.value": "Modelo",
+  "account.config.notifications.title": "Notificaciones",
+  "account.config.notifications.reviews": "Avisos de revisión",
+  "account.config.notifications.reviews.hint":
+    "Te avisamos cuando tu publicación pasa la verificación.",
+  "account.config.notifications.tips": "Consejos y novedades",
+  "account.config.notifications.tips.hint":
+    "Buenas prácticas para destacar. Nunca spam.",
+  "account.config.security.title": "Seguridad",
+  "account.config.security.password": "Contraseña",
+  "account.config.security.password.action": "Cambiar contraseña",
+  "account.config.security.sessions": "Sesiones activas",
+  "account.config.security.sessions.action": "Cerrar otras sesiones",
+  "account.billing.metadata.title": "Facturación — {brand}",
+  "account.billing.metadata.description":
+    "Tu plan, método de pago e historial de facturas.",
+  "account.billing.title": "Facturación",
+  "account.billing.subtitle": "Tu plan, método de pago e historial de facturas.",
+  "account.billing.plan.title": "Plan actual",
+  "account.billing.plan.name": "Lanzamiento gratuito",
+  "account.billing.plan.desc":
+    "Publicás sin costo durante el lanzamiento. Te avisamos antes de activar cobros.",
+  "account.billing.plan.badge": "Gratis",
+  "account.billing.method.title": "Método de pago",
+  "account.billing.method.empty": "Todavía no agregaste un método de pago.",
+  "account.billing.method.action": "Agregar método de pago",
+  "account.billing.history.title": "Historial de facturas",
+  "account.billing.history.empty":
+    "No hay facturas todavía. Aparecerán acá cuando activemos los cobros.",
+
   /* SignInForm */
   "auth.signin.toast.title": "Sesión iniciada",
   "auth.signin.toast.email": "Bienvenida de vuelta.",
@@ -1837,7 +1882,9 @@ const es: MessageDict = {
   "step.publish.terms.adult":
     "Confirmo que soy mayor de 18 años y tengo autorización sobre cada foto que subo.",
   "step.publish.terms.terms":
-    "Acepto los Términos de Publicación y la Política de Privacidad. Mi número privado no aparece en mi perfil público.",
+    "Acepto los {terms} y la {privacy}. Mi número privado no aparece en mi perfil público.",
+  "step.publish.terms.termsLink": "Términos de Publicación",
+  "step.publish.terms.privacyLink": "Política de Privacidad",
 
   /* StepDescription */
   "step.description.eyebrow": "Tu historia",
@@ -2872,6 +2919,51 @@ const en: MessageDict = {
   "auth.badge.menu.settings": "Settings",
   "auth.badge.menu.billing": "Billing",
   "auth.badge.signOut": "Sign out",
+
+  /* Account · Settings + Billing (example pages) */
+  "account.back": "Back to the dashboard",
+  "account.preview.badge": "Preview",
+  "account.preview.note":
+    "This screen is an example. You'll be able to manage it from here soon.",
+  "account.config.metadata.title": "Settings — {brand}",
+  "account.config.metadata.description":
+    "Manage your account, notifications and preferences.",
+  "account.config.title": "Settings",
+  "account.config.subtitle":
+    "Manage your account, notifications and privacy preferences.",
+  "account.config.account.title": "Account",
+  "account.config.account.email": "Email",
+  "account.config.account.language": "Language",
+  "account.config.account.type": "Account type",
+  "account.config.account.type.value": "Model",
+  "account.config.notifications.title": "Notifications",
+  "account.config.notifications.reviews": "Review alerts",
+  "account.config.notifications.reviews.hint":
+    "We let you know when your listing clears verification.",
+  "account.config.notifications.tips": "Tips & updates",
+  "account.config.notifications.tips.hint":
+    "Best practices to stand out. Never spam.",
+  "account.config.security.title": "Security",
+  "account.config.security.password": "Password",
+  "account.config.security.password.action": "Change password",
+  "account.config.security.sessions": "Active sessions",
+  "account.config.security.sessions.action": "Sign out other sessions",
+  "account.billing.metadata.title": "Billing — {brand}",
+  "account.billing.metadata.description":
+    "Your plan, payment method and invoice history.",
+  "account.billing.title": "Billing",
+  "account.billing.subtitle": "Your plan, payment method and invoice history.",
+  "account.billing.plan.title": "Current plan",
+  "account.billing.plan.name": "Free launch",
+  "account.billing.plan.desc":
+    "You publish free during launch. We'll let you know before enabling charges.",
+  "account.billing.plan.badge": "Free",
+  "account.billing.method.title": "Payment method",
+  "account.billing.method.empty": "You haven't added a payment method yet.",
+  "account.billing.method.action": "Add payment method",
+  "account.billing.history.title": "Invoice history",
+  "account.billing.history.empty":
+    "No invoices yet. They'll show up here once we enable charges.",
 
   /* SignInForm */
   "auth.signin.toast.title": "Signed in",
@@ -4074,7 +4166,9 @@ const en: MessageDict = {
   "step.publish.terms.adult":
     "I confirm I am 18+ and have authorization over every photo I upload.",
   "step.publish.terms.terms":
-    "I accept the Publishing Terms and Privacy Policy. My private number does not appear on my public profile.",
+    "I accept the {terms} and {privacy}. My private number does not appear on my public profile.",
+  "step.publish.terms.termsLink": "Publishing Terms",
+  "step.publish.terms.privacyLink": "Privacy Policy",
 
   /* StepDescription */
   "step.description.eyebrow": "Your story",
