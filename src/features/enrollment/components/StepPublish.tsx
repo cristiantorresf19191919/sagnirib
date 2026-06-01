@@ -1,5 +1,6 @@
 "use client";
 
+import type { CSSProperties } from "react";
 import { Check, Gift, Sparkles, TrendingUp } from "lucide-react";
 
 import type { SupportedLocale } from "@/core/branding/brand-config";
@@ -69,10 +70,11 @@ export function StepPublish({ values, onChange, forceShowErrors, submitError }: 
         />
       )}
 
-      <div className="grid gap-4 lg:grid-cols-3">
-        {PACKAGES.map((pkg) => (
+      <div className="grid items-start gap-4 lg:grid-cols-3">
+        {PACKAGES.map((pkg, index) => (
           <PackageCard
             key={pkg.id}
+            index={index}
             locale={locale}
             packageId={pkg.id}
             selected={PLANS_ENABLED && values.packageId === pkg.id}
@@ -229,6 +231,7 @@ function BillingToggle({ locale, billing, onChange }: BillingToggleProps) {
 }
 
 interface PackageCardProps {
+  index: number;
   locale: SupportedLocale;
   packageId: PackageId;
   selected: boolean;
@@ -238,6 +241,7 @@ interface PackageCardProps {
 }
 
 function PackageCard({
+  index,
   locale,
   packageId,
   selected,
@@ -251,11 +255,14 @@ function PackageCard({
   const total = Math.round(pkg.monthlyCop * months * (1 - discount));
   const monthly = Math.round(total / months);
 
-  const tone = disabled
-    ? "border-[var(--color-border)] bg-[var(--color-surface-muted)] opacity-60"
-    : selected
-      ? "border-[var(--color-brand-primary)] bg-[var(--color-surface)] shadow-[var(--shadow-md)]"
-      : "border-[var(--color-border)] bg-[var(--color-surface)] hover:border-[var(--color-brand-primary-soft)]";
+  // Hero card = the chosen plan, or the recommended one while plans are
+  // still informational (coming-soon) — so "Destacada" stays the standout
+  // even though nothing is selectable yet. No dull opacity: the cards read
+  // as premium previews, not greyed-out placeholders.
+  const highlighted = selected || (disabled && pkg.recommended);
+  const tone = highlighted
+    ? "border-[var(--color-brand-primary)]/45 bg-[var(--color-surface)] shadow-[var(--shadow-md)] lg:-translate-y-1"
+    : "border-[var(--color-border)] bg-[var(--color-surface)] shadow-[var(--shadow-sm)]";
 
   return (
     <button
@@ -264,29 +271,38 @@ function PackageCard({
       aria-pressed={selected}
       aria-disabled={disabled || undefined}
       disabled={disabled}
-      className={`relative flex flex-col gap-4 rounded-[var(--radius-xl)] border p-5 text-left transition-[border-color,background,box-shadow,transform] duration-200 ease-[var(--ease-standard)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-background)] ${disabled ? "cursor-not-allowed" : ""} ${tone}`}
+      style={{ "--step-i": index } as CSSProperties}
+      className={`motion-step-rise group/pkg relative flex h-full flex-col gap-4 overflow-hidden rounded-[var(--radius-xl)] border p-5 text-left transition-[border-color,box-shadow,transform] duration-200 ease-[var(--ease-standard)] hover:-translate-y-1 hover:shadow-[var(--shadow-lg)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-background)] ${disabled ? "cursor-not-allowed" : ""} ${tone}`}
     >
-      {disabled && (
-        <span className="absolute -top-3 right-5 inline-flex items-center gap-1 rounded-full bg-[var(--color-foreground)]/85 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.22em] text-[var(--color-surface)] shadow-[var(--shadow-sm)]">
+      {/* Gold → forest hairline marks the hero card. */}
+      {highlighted && (
+        <span
+          aria-hidden
+          className="pointer-events-none absolute inset-x-0 top-0 h-[3px] bg-gradient-to-r from-[var(--color-brand-primary)] via-[var(--color-gold)] to-transparent"
+        />
+      )}
+      {disabled ? (
+        <span className="absolute right-5 top-4 inline-flex items-center gap-1 rounded-full bg-[var(--color-foreground)]/85 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.22em] text-[var(--color-surface)] shadow-[var(--shadow-sm)]">
           {t(locale, "step.publish.pkg.comingSoon")}
         </span>
+      ) : (
+        <span
+          aria-hidden
+          className={`absolute right-4 top-4 inline-flex h-6 w-6 items-center justify-center rounded-full border-2 transition-colors ${
+            selected
+              ? "border-[var(--color-brand-primary)] bg-[var(--color-brand-primary)] text-[var(--color-surface)]"
+              : "border-[var(--color-border)] bg-[var(--color-surface)]"
+          }`}
+        >
+          {selected && <Check className="h-3.5 w-3.5" aria-hidden />}
+        </span>
       )}
-      {pkg.recommended && !disabled && (
+      {pkg.recommended && (
         <span className="absolute -top-3 left-5 inline-flex items-center gap-1 rounded-full bg-[var(--color-brand-primary)] px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.22em] text-[var(--color-surface)] shadow-[var(--shadow-sm)]">
           <Sparkles className="h-3 w-3" aria-hidden />
           {t(locale, "step.publish.pkg.recommended")}
         </span>
       )}
-      <span
-        aria-hidden
-        className={`absolute right-4 top-4 inline-flex h-6 w-6 items-center justify-center rounded-full border-2 transition-colors ${
-          selected
-            ? "border-[var(--color-brand-primary)] bg-[var(--color-brand-primary)] text-[var(--color-surface)]"
-            : "border-[var(--color-border)] bg-[var(--color-surface)]"
-        }`}
-      >
-        {selected && <Check className="h-3.5 w-3.5" aria-hidden />}
-      </span>
 
       <div className="flex flex-col gap-1">
         <span className="text-[10px] font-semibold uppercase tracking-[0.28em] text-[var(--color-brand-primary)]">

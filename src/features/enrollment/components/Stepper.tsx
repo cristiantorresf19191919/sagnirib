@@ -1,6 +1,7 @@
 "use client";
 
 import type { CSSProperties } from "react";
+import { motion, useReducedMotion } from "framer-motion";
 import { Check } from "lucide-react";
 
 import { useActiveLocale } from "@/core/i18n/use-active-locale";
@@ -25,15 +26,23 @@ interface StepperProps {
 }
 
 /**
- * Card-style stepper inspired by the reference image. Active card is
- * outlined in brand primary, the numeral sits in a coloured tile in the
- * bottom-right corner, completed steps swap the numeral for a check.
+ * Card-style stepper. The active state is a single shared element
+ * (`layoutId="stepper-active"`): when the step changes, framer-motion glides
+ * the white highlight — its forest border, glow and gold hairline — from the
+ * old card to the new one, so progress reads as one continuous motion rather
+ * than two cards blinking. Completed cards swap their numeral for a check.
  *
- * On mobile the cards collapse into a single horizontal scroll row so the
- * user always sees their position without overflowing the viewport.
+ * The highlight lives at the `<li>` level (not inside the `overflow-hidden`
+ * card) so the slide is never clipped; the active `<li>` is raised with `z-10`
+ * so the travelling highlight always passes over its neighbours.
+ *
+ * Restrained palette by design — forest + cream + a single gold hairline.
+ * Honors `prefers-reduced-motion`: the highlight snaps instead of sliding.
  */
 export function Stepper({ steps, current, completed, onJump }: StepperProps) {
   const locale = useActiveLocale();
+  const reduced = useReducedMotion();
+
   return (
     <ol
       role="list"
@@ -44,11 +53,7 @@ export function Stepper({ steps, current, completed, onJump }: StepperProps) {
         const isActive = step.id === current;
         const isDone = completed.includes(step.id);
         const isClickable = Boolean(onJump) && (isDone || isActive);
-        const tone = isActive
-          ? "border-[var(--color-brand-primary)] bg-[var(--color-surface)] shadow-[var(--shadow-glow-primary)]"
-          : isDone
-            ? "border-[var(--color-brand-primary-soft)] bg-[var(--color-surface)] shadow-[var(--shadow-sm)]"
-            : "border-[var(--color-border)] bg-[var(--color-background-elevated)] shadow-[var(--shadow-sm)]";
+
         const ringTone = isActive
           ? "bg-[var(--color-brand-primary)] text-[var(--color-surface)] shadow-[var(--shadow-glow-primary)]"
           : isDone
@@ -58,29 +63,19 @@ export function Stepper({ steps, current, completed, onJump }: StepperProps) {
         // Active pill is a touch larger so the eye lands on the live step.
         const ringSize = isActive ? "h-10 w-10 text-base" : "h-9 w-9 text-sm";
 
-        const baseCls = `group/step relative flex h-full flex-col gap-4 overflow-hidden rounded-[var(--radius-xl)] border p-5 text-left transition-[border-color,background,box-shadow,transform] duration-[240ms] ease-[var(--ease-standard)] hover:-translate-y-0.5 hover:shadow-[var(--shadow-md)] ${tone}`;
+        // Active card is transparent — the shared highlight behind it paints
+        // the surface, border and glow so they can travel between cards.
+        const baseCls = `group/step relative z-[1] flex h-full flex-col gap-4 overflow-hidden rounded-[var(--radius-xl)] border p-5 text-left transition-[transform,box-shadow] duration-[240ms] ease-[var(--ease-standard)] ${
+          isActive
+            ? "border-transparent bg-transparent"
+            : "border-[var(--color-border)] bg-[var(--color-background-elevated)] shadow-[var(--shadow-sm)]"
+        }`;
         const interactiveCls = isClickable
-          ? "cursor-pointer hover:-translate-y-1 hover:border-[var(--color-brand-primary)] hover:shadow-[var(--shadow-lg)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-background)]"
+          ? "cursor-pointer hover:-translate-y-0.5 hover:shadow-[var(--shadow-md)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-background)]"
           : "cursor-default";
 
         const Inner = (
           <>
-            {/* Active-card top accent: brand → gold hairline that "draws"
-                in from the left when the card becomes active — gives the
-                step change a crisp visual cue without extra copy. */}
-            <span
-              aria-hidden
-              className={`pointer-events-none absolute inset-x-0 top-0 h-[3px] origin-left bg-gradient-to-r from-[var(--color-brand-primary)] via-[var(--color-gold)] to-transparent transition-transform duration-[400ms] ease-[var(--ease-standard)] ${
-                isActive ? "scale-x-100" : "scale-x-0"
-              }`}
-            />
-
-            {/* Hover sheen — same vocabulary as the header CTAs. */}
-            <span
-              aria-hidden
-              className="pointer-events-none absolute inset-y-0 -left-1/3 block w-1/3 bg-gradient-to-r from-transparent via-[var(--color-gold)]/35 to-transparent opacity-0 group-hover/step:opacity-100 motion-safe:group-hover/step:motion-shimmer-sweep"
-            />
-
             <span className="relative flex flex-col gap-1.5">
               <span
                 className={`text-[10px] font-semibold uppercase tracking-[0.24em] ${
@@ -93,26 +88,18 @@ export function Stepper({ steps, current, completed, onJump }: StepperProps) {
                   number: String(step.number).padStart(2, "0"),
                 })}
               </span>
-              <span
-                className={`text-lg font-semibold leading-tight tracking-tight ${
-                  isActive
-                    ? "text-[var(--color-foreground)]"
-                    : "text-[var(--color-foreground)]/90"
-                }`}
-              >
+              <span className="text-lg font-semibold leading-tight tracking-tight text-[var(--color-foreground)]">
                 {step.title}
               </span>
               <span className="max-w-[18ch] text-[13px] leading-relaxed text-[var(--color-text-muted)]">
                 {step.description}
               </span>
             </span>
-            {/* Footer row — number sits in flow (mt-auto) so the card hugs
-                its copy instead of leaving a tall empty gap, while numbers
-                still align to the bottom across the row. */}
+            {/* Footer row — number hugs the bottom-right across the row. */}
             <span className="relative mt-auto flex items-center justify-end">
               <span
                 aria-hidden
-                className={`inline-flex items-center justify-center rounded-[var(--radius-md)] font-bold transition-all duration-[240ms] ease-[var(--ease-standard)] group-hover/step:scale-105 ${ringSize} ${ringTone}`}
+                className={`inline-flex items-center justify-center rounded-[var(--radius-md)] font-bold transition-[background,color,transform] duration-[240ms] ease-[var(--ease-standard)] group-hover/step:scale-105 ${ringSize} ${ringTone}`}
               >
                 {isDone && !isActive ? (
                   <Check className="h-4 w-4" aria-hidden />
@@ -127,9 +114,28 @@ export function Stepper({ steps, current, completed, onJump }: StepperProps) {
         return (
           <li
             key={step.id}
-            className="relative motion-step-rise"
+            className={`relative motion-step-rise ${isActive ? "z-10" : ""}`}
             style={{ "--step-i": index } as CSSProperties}
           >
+            {/* Shared, gliding highlight — only ever one in the DOM. */}
+            {isActive && (
+              <motion.span
+                layoutId="stepper-active"
+                aria-hidden
+                className="pointer-events-none absolute inset-0 overflow-hidden rounded-[var(--radius-xl)] border border-[var(--color-brand-primary)] bg-[var(--color-surface)] shadow-[var(--shadow-glow-primary)]"
+                transition={
+                  reduced
+                    ? { duration: 0 }
+                    : { type: "spring", stiffness: 360, damping: 32 }
+                }
+              >
+                <span
+                  aria-hidden
+                  className="absolute inset-x-0 top-0 h-[3px] bg-gradient-to-r from-[var(--color-brand-primary)] via-[var(--color-gold)] to-transparent"
+                />
+              </motion.span>
+            )}
+
             {isClickable ? (
               <button
                 type="button"

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 
-import { formatThousands } from "@/features/biringas/format";
+import { formatPhoneCo, formatThousands } from "@/features/biringas/format";
 import { t } from "@/core/i18n/messages";
 import { useActiveLocale } from "@/core/i18n/use-active-locale";
 
@@ -245,8 +245,8 @@ export function StepDetails({ values, catalogs, onChange, forceShowErrors, ownSl
           inputMode="tel"
           required
           placeholder={t(locale, "step.details.field.phone.placeholder")}
-          value={values.phone}
-          onChange={(e) => update("phone", e.target.value)}
+          value={formatPhoneCo(values.phone)}
+          onChange={(e) => update("phone", e.target.value.replace(/\D/g, "").slice(0, 10))}
           onBlur={() => touch("phone")}
           hint={t(locale, "step.details.field.phone.hint")}
           error={show("phone") ? errors.phone : undefined}

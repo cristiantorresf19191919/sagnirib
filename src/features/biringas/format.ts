@@ -26,6 +26,18 @@ export function formatThousands(value: number): string {
   return THOUSANDS_FORMATTER.format(value);
 }
 
+/**
+ * Groups a raw Colombian mobile number into readable triads:
+ * `3237992985 → "323 799 2985"` (3-3-4). Strips non-digits and caps at the
+ * 10-digit national length. Used by the phone input, which stores raw digits
+ * in state and displays the grouped value.
+ */
+export function formatPhoneCo(raw: string): string {
+  const digits = raw.replace(/\D/g, "").slice(0, 10);
+  const parts = [digits.slice(0, 3), digits.slice(3, 6), digits.slice(6, 10)];
+  return parts.filter(Boolean).join(" ");
+}
+
 export function formatPricePerHour(value: number): string {
   return `${formatPriceCop(value)} / hora`;
 }

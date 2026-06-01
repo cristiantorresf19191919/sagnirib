@@ -1,7 +1,13 @@
 "use client";
 
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
-import { ArrowLeft, ArrowRight, Loader2, PartyPopper } from "lucide-react";
+import {
+  ArrowLeft,
+  ArrowRight,
+  Loader2,
+  PartyPopper,
+  ShieldCheck,
+} from "lucide-react";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 
@@ -378,7 +384,7 @@ export function EnrollmentWizard({ catalogs, personId }: EnrollmentWizardProps) 
               billing={draft.publish.billing}
             />
           ) : (
-            <ProgressRail current={current} draft={draft} />
+            <ProgressRail current={current} draft={draft} catalogs={catalogs} />
           )}
         </div>
       </div>
@@ -457,12 +463,25 @@ function NavBar({
 interface ProgressRailProps {
   current: StepId;
   draft: EnrollmentDraft;
+  catalogs: EnrollmentCatalogs;
 }
 
-function ProgressRail({ current, draft }: ProgressRailProps) {
+/** Maps catalog ids (e.g. "mujeres") to their display labels ("Mujeres"). */
+function labelsFor<T extends { id: string; label: string }>(
+  catalog: ReadonlyArray<T>,
+  ids: ReadonlyArray<string>,
+): ReadonlyArray<string> {
+  const map = new Map(catalog.map((c) => [c.id, c.label]));
+  return ids.map((id) => map.get(id) ?? id);
+}
+
+function ProgressRail({ current, draft, catalogs }: ProgressRailProps) {
   const locale = useActiveLocale();
+  const reduced = useReducedMotion();
   const empty = t(locale, "publicar.rail.row.empty");
-  const summary: ReadonlyArray<{ label: string; value: string }> = [
+
+  // Single-value rows stay as a compact key → value list.
+  const rows: ReadonlyArray<{ label: string; value: string }> = [
     {
       label: t(locale, "publicar.rail.row.name"),
       value: draft.details.displayName || empty,
@@ -482,15 +501,6 @@ function ProgressRail({ current, draft }: ProgressRailProps) {
         : empty,
     },
     {
-      label: t(locale, "publicar.rail.row.services"),
-      value:
-        draft.description.services.length > 0
-          ? t(locale, "publicar.rail.row.servicesCount", {
-              count: draft.description.services.length,
-            })
-          : empty,
-    },
-    {
       label: t(locale, "publicar.rail.row.gallery"),
       value:
         draft.description.gallery.length > 0
@@ -501,13 +511,38 @@ function ProgressRail({ current, draft }: ProgressRailProps) {
     },
   ];
 
+  // Multi-select selections render as live chips so the user sees exactly
+  // what they've picked so far, not just a count.
+  const chipGroups: ReadonlyArray<{ key: string; label: string; items: ReadonlyArray<string> }> = [
+    {
+      key: "attention",
+      label: t(locale, "step.details.attention.legend"),
+      items: labelsFor(catalogs.attention, draft.details.attention),
+    },
+    {
+      key: "contact",
+      label: t(locale, "step.details.contact.legend"),
+      items: labelsFor(catalogs.contact, draft.details.contactChannels),
+    },
+    {
+      key: "services",
+      label: t(locale, "step.description.services.legend"),
+      items: draft.description.services,
+    },
+    {
+      key: "places",
+      label: t(locale, "step.description.places.legend"),
+      items: draft.description.meetingContexts,
+    },
+  ].filter((group) => group.items.length > 0);
+
   return (
     <aside className="sticky top-24 flex flex-col gap-4 rounded-[var(--radius-xl)] border border-[var(--color-border)] bg-[var(--color-surface)] p-5 shadow-[var(--shadow-sm)]">
       <span className="text-[10px] font-semibold uppercase tracking-[0.28em] text-[var(--color-text-muted)]">
         {t(locale, "publicar.rail.kicker")}
       </span>
       <ul className="flex flex-col gap-2.5">
-        {summary.map((row) => (
+        {rows.map((row) => (
           <li
             key={row.label}
             className="flex items-baseline justify-between gap-3 text-[12px]"
@@ -519,6 +554,40 @@ function ProgressRail({ current, draft }: ProgressRailProps) {
           </li>
         ))}
       </ul>
+
+      {chipGroups.length > 0 && (
+        <div className="flex flex-col gap-3 border-t border-[var(--color-border)] pt-3">
+          {chipGroups.map((group) => (
+            <div key={group.key} className="flex flex-col gap-1.5">
+              <span className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--color-text-subtle)]">
+                {group.label}
+              </span>
+              <motion.ul layout className="flex flex-wrap gap-1.5">
+                <AnimatePresence initial={false}>
+                  {group.items.map((item) => (
+                    <motion.li
+                      key={item}
+                      layout
+                      initial={reduced ? false : { opacity: 0, scale: 0.85 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={reduced ? { opacity: 0 } : { opacity: 0, scale: 0.85 }}
+                      transition={
+                        reduced
+                          ? { duration: 0 }
+                          : { duration: 0.2, ease: [0.22, 1, 0.36, 1] }
+                      }
+                      className="inline-flex items-center rounded-full bg-[var(--color-brand-primary)]/8 px-2.5 py-1 text-[11px] font-medium text-[var(--color-foreground)] ring-1 ring-[var(--color-brand-primary)]/15"
+                    >
+                      {item}
+                    </motion.li>
+                  ))}
+                </AnimatePresence>
+              </motion.ul>
+            </div>
+          ))}
+        </div>
+      )}
+
       <p className="rounded-[var(--radius-md)] bg-[var(--color-background-elevated)] p-3 text-[11px] leading-relaxed text-[var(--color-text-muted)]">
         {t(locale, "publicar.rail.note")}
       </p>
@@ -539,75 +608,148 @@ function SubmittedScreen({ draft }: { draft: EnrollmentDraft }) {
     draft.publish.addOnIds,
     draft.publish.billing,
   );
+  const reduced = useReducedMotion();
+  const cells: ReadonlyArray<{ label: string; value: string; mono?: boolean }> = [
+    {
+      label: PLANS_ENABLED
+        ? t(locale, "publicar.submitted.plan")
+        : t(locale, "publicar.submitted.mode"),
+      value: PLANS_ENABLED
+        ? draft.publish.packageId
+        : t(locale, "publicar.submitted.freeLaunch"),
+    },
+    {
+      label: t(locale, "publicar.submitted.photosSent"),
+      value: String(
+        draft.description.gallery.filter((g) => g.uploadedPath).length,
+      ),
+    },
+    {
+      label: t(locale, "publicar.submitted.total"),
+      value: PLANS_ENABLED
+        ? formatCop(totals.totalCop)
+        : t(locale, "publicar.submitted.totalFree"),
+    },
+    {
+      label: t(locale, "publicar.submitted.urlSoon"),
+      value: `/p/${draft.details.preferredSlug || empty}`,
+      mono: true,
+    },
+  ];
+
+  const container = {
+    hidden: {},
+    show: { transition: { staggerChildren: 0.06, delayChildren: 0.05 } },
+  };
+  const item = reduced
+    ? { hidden: { opacity: 1 }, show: { opacity: 1 } }
+    : {
+        hidden: { opacity: 0, y: 8 },
+        show: {
+          opacity: 1,
+          y: 0,
+          transition: { duration: 0.32, ease: [0.22, 1, 0.36, 1] as const },
+        },
+      };
+
   return (
-    <div className="mx-auto flex max-w-xl flex-col items-center gap-5 rounded-[var(--radius-2xl)] border border-[var(--color-border)] bg-[var(--color-surface)] p-10 text-center shadow-[var(--shadow-md)]">
-      <span className="inline-flex h-14 w-14 items-center justify-center rounded-full bg-[var(--color-brand-primary)]/12 text-[var(--color-brand-primary)]">
-        <PartyPopper className="h-6 w-6" aria-hidden />
-      </span>
-      <h2 className="text-2xl font-semibold leading-tight tracking-tight text-[var(--color-foreground)]">
+    <motion.div
+      variants={container}
+      initial="hidden"
+      animate="show"
+      className="relative mx-auto flex max-w-xl flex-col items-center gap-5 overflow-hidden rounded-[var(--radius-2xl)] border border-[var(--color-border)] bg-[var(--color-surface)] p-8 text-center shadow-[var(--shadow-md)] sm:p-10"
+    >
+      {/* Soft brand wash behind the success header. */}
+      <span
+        aria-hidden
+        className="pointer-events-none absolute inset-x-0 top-0 h-40 bg-[radial-gradient(circle_at_50%_-20%,rgba(47,93,67,0.12),transparent_70%)]"
+      />
+
+      <motion.span
+        variants={item}
+        className="relative inline-flex h-16 w-16 items-center justify-center rounded-full bg-[var(--color-brand-primary)]/12 text-[var(--color-brand-primary)] ring-1 ring-[var(--color-brand-primary)]/25"
+      >
+        {!reduced && (
+          <motion.span
+            aria-hidden
+            className="absolute inset-0 rounded-full ring-2 ring-[var(--color-brand-primary)]/30"
+            initial={{ scale: 0.8, opacity: 0.6 }}
+            animate={{ scale: 1.35, opacity: 0 }}
+            transition={{ duration: 1.4, ease: "easeOut", repeat: Infinity, repeatDelay: 0.6 }}
+          />
+        )}
+        <PartyPopper className="relative h-7 w-7" aria-hidden />
+      </motion.span>
+
+      <motion.h2
+        variants={item}
+        className="relative text-2xl font-semibold leading-tight tracking-tight text-[var(--color-foreground)]"
+      >
         {t(locale, "publicar.submitted.title")}
-      </h2>
-      <p className="text-sm leading-relaxed text-[var(--color-text-muted)]">
+      </motion.h2>
+      <motion.p
+        variants={item}
+        className="relative max-w-md text-sm leading-relaxed text-[var(--color-text-muted)]"
+      >
         {t(locale, "publicar.submitted.description")}
-      </p>
-      <dl className="grid w-full grid-cols-2 gap-3 rounded-[var(--radius-md)] bg-[var(--color-background-elevated)] p-4 text-left text-[12px]">
-        <div className="flex flex-col">
-          <dt className="text-[var(--color-text-subtle)]">
-            {PLANS_ENABLED
-              ? t(locale, "publicar.submitted.plan")
-              : t(locale, "publicar.submitted.mode")}
-          </dt>
-          <dd className="font-semibold capitalize text-[var(--color-foreground)]">
-            {PLANS_ENABLED
-              ? draft.publish.packageId
-              : t(locale, "publicar.submitted.freeLaunch")}
-          </dd>
-        </div>
-        <div className="flex flex-col">
-          <dt className="text-[var(--color-text-subtle)]">
-            {t(locale, "publicar.submitted.photosSent")}
-          </dt>
-          <dd className="font-semibold text-[var(--color-foreground)]">
-            {draft.description.gallery.filter((g) => g.uploadedPath).length}
-          </dd>
-        </div>
-        <div className="flex flex-col">
-          <dt className="text-[var(--color-text-subtle)]">
-            {t(locale, "publicar.submitted.total")}
-          </dt>
-          <dd className="font-semibold text-[var(--color-foreground)]">
-            {PLANS_ENABLED
-              ? formatCop(totals.totalCop)
-              : t(locale, "publicar.submitted.totalFree")}
-          </dd>
-        </div>
-        <div className="flex flex-col">
-          <dt className="text-[var(--color-text-subtle)]">
-            {t(locale, "publicar.submitted.urlSoon")}
-          </dt>
-          <dd className="truncate font-mono text-[12px] text-[var(--color-foreground)]">
-            /p/{draft.details.preferredSlug || empty}
-          </dd>
-        </div>
-      </dl>
-      <p className="rounded-[var(--radius-md)] border border-[var(--color-brand-primary)]/30 bg-[var(--color-brand-primary)]/8 p-3 text-[12px] leading-relaxed text-[var(--color-foreground)]">
-        <strong>{t(locale, "publicar.submitted.verifyBanner.lead")}</strong>{" "}
-        {t(locale, "publicar.submitted.verifyBanner.body")}
-      </p>
-      <div className="flex flex-col gap-2 sm:flex-row">
+      </motion.p>
+
+      <motion.dl
+        variants={item}
+        className="relative grid w-full grid-cols-2 overflow-hidden rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-background-elevated)] text-left text-[12px]"
+      >
+        {cells.map((cell, i) => (
+          <div
+            key={cell.label}
+            className={`flex flex-col gap-1 p-4 ${
+              i % 2 === 0 ? "border-r border-[var(--color-border)]" : ""
+            } ${i < 2 ? "border-b border-[var(--color-border)]" : ""}`}
+          >
+            <dt className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--color-text-subtle)]">
+              {cell.label}
+            </dt>
+            <dd
+              className={`truncate font-semibold text-[var(--color-foreground)] ${
+                cell.mono ? "font-mono text-[11px]" : "capitalize"
+              }`}
+            >
+              {cell.value}
+            </dd>
+          </div>
+        ))}
+      </motion.dl>
+
+      <motion.div
+        variants={item}
+        className="relative flex w-full items-start gap-3 rounded-[var(--radius-md)] border border-[var(--color-brand-primary)]/30 bg-[var(--color-brand-primary)]/8 p-3.5 text-left text-[12px] leading-relaxed text-[var(--color-foreground)]"
+      >
+        <span
+          aria-hidden
+          className="mt-0.5 inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[var(--color-brand-primary)]/15 text-[var(--color-brand-primary)]"
+        >
+          <ShieldCheck className="h-4 w-4" aria-hidden />
+        </span>
+        <span>
+          <strong>{t(locale, "publicar.submitted.verifyBanner.lead")}</strong>{" "}
+          {t(locale, "publicar.submitted.verifyBanner.body")}
+        </span>
+      </motion.div>
+
+      <motion.div variants={item} className="relative flex w-full flex-col gap-2 sm:flex-row">
         <Link
           href={verifyHref}
-          className="inline-flex h-12 items-center justify-center rounded-full bg-[var(--color-brand-primary)] px-6 text-sm font-semibold text-[var(--color-surface)] shadow-[var(--shadow-glow-primary)] transition-colors hover:bg-[var(--color-brand-primary-strong)]"
+          className="inline-flex h-12 flex-1 items-center justify-center gap-2 rounded-full bg-[var(--color-brand-primary)] px-6 text-sm font-semibold text-[var(--color-surface)] shadow-[var(--shadow-glow-primary)] transition-[background,transform] duration-200 hover:-translate-y-[1px] hover:bg-[var(--color-brand-primary-strong)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-background)]"
         >
+          <ShieldCheck className="h-4 w-4" aria-hidden />
           {t(locale, "publicar.submitted.cta.verify")}
         </Link>
         <Link
           href={exploreHref}
-          className="inline-flex h-12 items-center justify-center rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] px-6 text-sm font-semibold text-[var(--color-text-muted)] transition-colors hover:border-[var(--color-brand-primary-soft)] hover:text-[var(--color-foreground)]"
+          className="inline-flex h-12 flex-1 items-center justify-center rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] px-6 text-sm font-semibold text-[var(--color-text-muted)] transition-colors hover:border-[var(--color-brand-primary-soft)] hover:text-[var(--color-foreground)]"
         >
           {t(locale, "publicar.submitted.cta.later")}
         </Link>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   );
 }
