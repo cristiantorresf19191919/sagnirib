@@ -480,34 +480,38 @@ function ProgressRail({ current, draft, catalogs }: ProgressRailProps) {
   const reduced = useReducedMotion();
   const empty = t(locale, "publicar.rail.row.empty");
 
-  // Single-value rows stay as a compact key → value list.
-  const rows: ReadonlyArray<{ label: string; value: string }> = [
+  // Single-value rows stay as a compact key → value list. `empty` drives a
+  // muted treatment so an unfilled field reads as "pending", not broken — and
+  // the gallery shows a friendly "0 fotos" count instead of a bare dash.
+  const rows: ReadonlyArray<{ label: string; value: string; empty: boolean }> = [
     {
       label: t(locale, "publicar.rail.row.name"),
       value: draft.details.displayName || empty,
+      empty: !draft.details.displayName,
     },
     {
       label: t(locale, "publicar.rail.row.city"),
       value: draft.details.city || empty,
+      empty: !draft.details.city,
     },
     {
       label: t(locale, "publicar.rail.row.category"),
       value: draft.details.category || empty,
+      empty: !draft.details.category,
     },
     {
       label: t(locale, "publicar.rail.row.rate"),
       value: draft.details.pricePerHour
         ? formatCop(Number(draft.details.pricePerHour))
         : empty,
+      empty: !draft.details.pricePerHour,
     },
     {
       label: t(locale, "publicar.rail.row.gallery"),
-      value:
-        draft.description.gallery.length > 0
-          ? t(locale, "publicar.rail.row.galleryCount", {
-              count: draft.description.gallery.length,
-            })
-          : empty,
+      value: t(locale, "publicar.rail.row.galleryCount", {
+        count: draft.description.gallery.length,
+      }),
+      empty: draft.description.gallery.length === 0,
     },
   ];
 
@@ -548,7 +552,13 @@ function ProgressRail({ current, draft, catalogs }: ProgressRailProps) {
             className="flex items-baseline justify-between gap-3 text-[12px]"
           >
             <span className="text-[var(--color-text-subtle)]">{row.label}</span>
-            <span className="text-right font-semibold text-[var(--color-foreground)]">
+            <span
+              className={`text-right ${
+                row.empty
+                  ? "font-normal text-[var(--color-text-subtle)]"
+                  : "font-semibold text-[var(--color-foreground)]"
+              }`}
+            >
               {row.value}
             </span>
           </li>
@@ -592,7 +602,9 @@ function ProgressRail({ current, draft, catalogs }: ProgressRailProps) {
         {t(locale, "publicar.rail.note")}
       </p>
       <span className="text-[10px] uppercase tracking-[0.2em] text-[var(--color-text-subtle)]">
-        {t(locale, "publicar.rail.currentStep", { step: current })}
+        {t(locale, "publicar.rail.currentStep", {
+          step: t(locale, `publicar.steps.${current}.title`),
+        })}
       </span>
     </aside>
   );

@@ -28,7 +28,7 @@ export function FieldShell({ label, hint, error, children }: BaseProps) {
         </span>
       )}
       {hint && (
-        <span className="text-[11px] text-[var(--color-text-subtle)]">
+        <span className="mt-1 text-[11px] italic leading-relaxed text-[var(--color-text-subtle)]">
           {hint}
         </span>
       )}
@@ -155,8 +155,10 @@ interface ChipChoiceProps {
 
 /** Soft pill used in chip rows (services, attention, etc). */
 export function ChipChoice({ label, active, onClick }: ChipChoiceProps) {
+  // Selected state matches PillToggle (solid forest fill + white text) so
+  // every selectable chip/pill across the app shares one "selected" language.
   const tone = active
-    ? "bg-[var(--color-brand-primary)]/10 border-[var(--color-brand-primary)] text-[var(--color-brand-primary)] font-semibold"
+    ? "bg-[var(--color-brand-primary)] border-[var(--color-brand-primary)] text-[var(--color-surface)] font-semibold shadow-[var(--shadow-sm)]"
     : "bg-[var(--color-surface)] border-[var(--color-border)] text-[var(--color-text-muted)] hover:text-[var(--color-foreground)] hover:border-[var(--color-brand-primary-soft)]";
   return (
     <button
