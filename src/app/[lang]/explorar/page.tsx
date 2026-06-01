@@ -8,6 +8,7 @@ import { buildPageMetadata } from "@/core/seo/build-page-metadata";
 import { RecentlyViewedStrip } from "@/features/biringas/components/RecentlyViewedStrip";
 import { CatalogGrid } from "@/features/catalog/components/CatalogGrid";
 import { CategoryBar } from "@/features/catalog/components/CategoryBar";
+import { MobileViewDefault } from "@/features/catalog/components/MobileViewDefault";
 import { OnboardingQuiz } from "@/features/catalog/components/OnboardingQuiz";
 import { QuickPresets } from "@/features/catalog/components/QuickPresets";
 import { SaveSearchButton } from "@/features/catalog/components/SaveSearchButton";
@@ -57,6 +58,10 @@ export default async function ExplorarPage({
   const searchParamsResolved = await searchParams;
   const filters = parseFilters(searchParamsResolved);
   const view = parseView(searchParamsResolved);
+  // On phones, default to the 1-up "spotlight" layout when the visitor hasn't
+  // explicitly chosen a view. Resolved client-side (viewport-based) so it also
+  // applies in responsive devtools; an explicit `?view=` always wins.
+  const hasExplicitView = searchParamsResolved.view !== undefined;
 
   // Compose a short label for the "guardar búsqueda" pill — only shows
   // when the user has applied at least one real filter. Pure read; no
@@ -82,6 +87,7 @@ export default async function ExplorarPage({
   return (
     <>
       <Header hideCatalogCta />
+      <MobileViewDefault hasExplicitView={hasExplicitView} />
       <main className="relative flex flex-col overflow-hidden bg-[var(--color-background)]">
         {/* Decorative editorial ornaments — top-right diamond + leaf
             foliage + dot grid + sparkle, matching the reference. Sits at
