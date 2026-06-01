@@ -27,6 +27,7 @@ import { isSupportedLocale } from "@/core/i18n/constants";
 import { localizedHref } from "@/core/i18n/href";
 import { t } from "@/core/i18n/messages";
 import { buildPageMetadata } from "@/core/seo/build-page-metadata";
+import { formatPhoneCo } from "@/features/biringas/format";
 import { getSession } from "@/server/auth";
 import {
   ATTENTION_CATALOG,
@@ -316,17 +317,41 @@ function SectionCard({
   icon: Icon,
   title,
   children,
+  tone = "default",
 }: Readonly<{
   icon: typeof Eye;
   title: string;
   children: React.ReactNode;
+  /**
+   * `private` gives the card a warm tint, an accent-toned icon and a faint
+   * lock watermark so users can tell at a glance which data the public never
+   * sees — no need to read the label first.
+   */
+  tone?: "default" | "private";
 }>) {
+  const isPrivate = tone === "private";
   return (
-    <section className="flex flex-col gap-4 rounded-[var(--radius-2xl)] border border-[var(--color-border)] bg-[var(--color-surface)] p-5 shadow-[var(--shadow-sm)]">
-      <header className="flex items-center gap-2.5">
+    <section
+      className={`relative flex flex-col gap-4 overflow-hidden rounded-[var(--radius-2xl)] border p-5 shadow-[var(--shadow-sm)] ${
+        isPrivate
+          ? "border-[var(--color-brand-accent)]/35 bg-[var(--color-brand-accent)]/[0.06]"
+          : "border-[var(--color-border)] bg-[var(--color-surface)]"
+      }`}
+    >
+      {isPrivate ? (
+        <Lock
+          aria-hidden
+          className="pointer-events-none absolute -bottom-5 -right-4 h-32 w-32 text-[var(--color-brand-accent)]/[0.07]"
+        />
+      ) : null}
+      <header className="relative flex items-center gap-2.5">
         <span
           aria-hidden
-          className="inline-flex h-8 w-8 items-center justify-center rounded-xl bg-[var(--color-brand-primary)]/10 text-[var(--color-brand-primary)] ring-1 ring-[var(--color-brand-primary)]/20"
+          className={`inline-flex h-8 w-8 items-center justify-center rounded-xl ring-1 ${
+            isPrivate
+              ? "bg-[var(--color-brand-accent)]/15 text-[var(--color-brand-accent-strong)] ring-[var(--color-brand-accent)]/35"
+              : "bg-[var(--color-brand-primary)]/10 text-[var(--color-brand-primary)] ring-[var(--color-brand-primary)]/20"
+          }`}
         >
           <Icon className="h-4 w-4" aria-hidden />
         </span>
@@ -334,7 +359,7 @@ function SectionCard({
           {title}
         </h2>
       </header>
-      <dl className="grid grid-cols-1 gap-x-6 gap-y-3 text-sm sm:grid-cols-2">
+      <dl className="relative grid grid-cols-1 gap-x-6 gap-y-3 text-sm sm:grid-cols-2">
         {children}
       </dl>
     </section>
@@ -366,9 +391,14 @@ function Field({
   );
 }
 
-function ChipList({ items }: Readonly<{ items: ReadonlyArray<string> }>) {
+function ChipList({
+  items,
+  emptyLabel,
+}: Readonly<{ items: ReadonlyArray<string>; emptyLabel?: string }>) {
   if (items.length === 0) {
-    return <span className="text-[var(--color-text-subtle)]">—</span>;
+    return (
+      <span className="text-[var(--color-text-subtle)]">{emptyLabel ?? "—"}</span>
+    );
   }
   return (
     <ul className="flex flex-wrap gap-1.5">
@@ -470,14 +500,14 @@ function PrivateDataCard({
 }: Readonly<{ locale: SupportedLocale; draft: ListingDraftRecord }>) {
   const d = draft.payload.details;
   return (
-    <SectionCard icon={Lock} title={t(locale, "draft.section.private")}>
+    <SectionCard icon={Lock} title={t(locale, "draft.section.private")} tone="private">
       <Field
         label={t(locale, "draft.field.phone")}
         value={
           d.phone ? (
             <span className="inline-flex items-center gap-1.5">
               <Phone className="h-3.5 w-3.5 text-[var(--color-text-muted)]" aria-hidden />
-              {d.phone}
+              {formatPhoneCo(d.phone)}
             </span>
           ) : (
             ""
@@ -648,7 +678,12 @@ function PlanCard({
       <Field
         label={t(locale, "draft.field.addOns")}
         span={2}
-        value={<ChipList items={[...p.addOnIds]} />}
+        value={
+          <ChipList
+            items={[...p.addOnIds]}
+            emptyLabel={t(locale, "draft.field.addOns.empty")}
+          />
+        }
       />
     </SectionCard>
   );
