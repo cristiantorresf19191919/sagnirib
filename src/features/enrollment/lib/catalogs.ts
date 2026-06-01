@@ -25,7 +25,8 @@ export interface AppearanceCatalogs {
   hair: ReadonlyArray<string>;
   height: ReadonlyArray<string>;
   body: ReadonlyArray<string>;
-  breast: ReadonlyArray<string>;
+  breastSize: ReadonlyArray<string>;
+  breastType: ReadonlyArray<string>;
   pubis: ReadonlyArray<string>;
 }
 

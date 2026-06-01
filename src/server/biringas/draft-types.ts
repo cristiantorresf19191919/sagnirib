@@ -97,7 +97,8 @@ export interface ListingDraftPayloadAttributes {
   hair: string;
   height: string;
   body: string;
-  breast: string;
+  breastSize: string;
+  breastType: string;
   country: string;
   pubis?: string;
   languages: ReadonlyArray<string>;

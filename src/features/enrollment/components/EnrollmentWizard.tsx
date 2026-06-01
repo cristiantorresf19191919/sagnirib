@@ -183,7 +183,8 @@ export function EnrollmentWizard({ catalogs, personId }: EnrollmentWizardProps) 
       if (!a.hair) return v("publicar.validation.hair");
       if (!a.height) return v("publicar.validation.height");
       if (!a.body) return v("publicar.validation.body");
-      if (!a.breast) return v("publicar.validation.breast");
+      if (!a.breastSize) return v("publicar.validation.breastSize");
+      if (!a.breastType) return v("publicar.validation.breastType");
       return null;
     }
     if (current === "publish") {

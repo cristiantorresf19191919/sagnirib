@@ -51,7 +51,8 @@ export interface BiringaAttributes {
   hair?: string;
   height?: string;
   body?: string;
-  breast?: string;
+  breastSize?: string;
+  breastType?: string;
   pubis?: string;
   country?: string;
   languages?: ReadonlyArray<string>;

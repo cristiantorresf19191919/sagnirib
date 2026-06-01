@@ -102,7 +102,8 @@ export interface AttributesValues {
   hair: string;
   height: string;
   body: string;
-  breast: string;
+  breastSize: string;
+  breastType: string;
   pubis: string;
   country: string;
   languages: ReadonlyArray<string>;
@@ -142,7 +143,8 @@ export const INITIAL_DRAFT: EnrollmentDraft = {
     hair: "",
     height: "",
     body: "",
-    breast: "",
+    breastSize: "",
+    breastType: "",
     pubis: "",
     country: "",
     languages: [],
