@@ -13,7 +13,6 @@ import { FadeIn } from "@/shared/motion/FadeIn";
 import { type CatalogView } from "../lib/parse-filters";
 import { CatalogCard } from "./CatalogCard";
 import { ResultsToolbar } from "./ResultsToolbar";
-import { HistoriasTopTile } from "./SpecialTiles";
 import { ViewSwitcher } from "./ViewSwitcher";
 
 interface CatalogGridProps {
@@ -60,8 +59,6 @@ export async function CatalogGrid({
     console.error("[explorar] cityMeta listAll failed", err);
     return { data: [], meta };
   });
-  const showSpecialTiles = view !== "list";
-
   return (
     <section
       data-testid="catalog-grid"
@@ -107,24 +104,11 @@ export async function CatalogGrid({
             aria-label={t(locale, "explorar.grid.aria.list")}
             className={GRID_CLASS[view]}
           >
-            {showSpecialTiles && (
-              <CardReveal
-                index={0}
-                data-testid="catalog-tile-stories-top"
-              >
-                <HistoriasTopTile
-                  href={`${localizedHref(locale, "/explorar")}?reviews=1`}
-                />
-              </CardReveal>
-            )}
             {data.map((listing, index) => {
-              // Account for the leading special tile so the staircase keeps
-              // its row rhythm even when the catalog renders the tile.
-              const cascadeIndex = index + (showSpecialTiles ? 1 : 0);
               return (
                 <CardReveal
                   key={listing.id}
-                  index={cascadeIndex}
+                  index={index}
                   data-testid={`catalog-card-${listing.slug}`}
                 >
                   <CatalogCard
