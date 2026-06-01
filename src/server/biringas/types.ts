@@ -67,14 +67,6 @@ export interface BiringaReputation {
   daysFeatured: number;
   /** Public review count — drives the "Con experiencias" content filter. */
   reviewCount: number;
-  /**
-   * Median minutes between a booking submission and the owner's first
-   * response (`pending → confirmed | declined`). Recomputed and persisted
-   * by `respondToBooking`. Absent when the owner has not yet responded
-   * to any booking — surfaces SHOULD hide the "Responde ~Xmin" chip
-   * rather than synthesise a value.
-   */
-  replyMedianMinutes?: number;
 }
 
 export interface BiringaListing {

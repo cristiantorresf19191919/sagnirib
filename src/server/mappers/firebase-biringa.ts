@@ -133,11 +133,6 @@ function asReputation(
     totalViews: asNumber(r.totalViews ?? 0, "reputation.totalViews"),
     daysFeatured: asNumber(r.daysFeatured ?? 0, "reputation.daysFeatured"),
     reviewCount: asNumber(r.reviewCount ?? 0, "reputation.reviewCount"),
-    replyMedianMinutes:
-      typeof r.replyMedianMinutes === "number" &&
-      Number.isFinite(r.replyMedianMinutes)
-        ? r.replyMedianMinutes
-        : undefined,
   };
 }
 
