@@ -4,12 +4,16 @@ import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import {
   Check,
   Cherry,
+  Droplet,
   Flame,
+  Flower,
   Flower2,
+  Gem,
   Heart,
   Leaf,
   Moon,
   MoonStar,
+  Sparkle,
   Sparkles,
   Sun,
   Sunrise,
@@ -81,22 +85,28 @@ const THEME_NAME: Record<Theme, string> = {
   // Light moods
   light: "Claro",
   amour: "Amour",
+  scarlet: "Escarlata",
+  rose: "Rosa",
   bloom: "Bloom",
+  lavender: "Lavanda",
   aurora: "Aurora",
   jade: "Jade",
-  lavender: "Lavanda",
   // Dark moods
   dark: "Oscuro",
-  desire: "Deseo",
   ember: "Ember",
+  crimson: "Carmesí",
+  fuchsia: "Fucsia",
+  desire: "Deseo",
   noir: "Noir",
 };
 
 /** Dark-mode themes — drive the menu's light→dark grouping + divider. */
 const DARK_THEMES: ReadonlySet<Theme> = new Set([
   "dark",
-  "desire",
   "ember",
+  "crimson",
+  "fuchsia",
+  "desire",
   "noir",
 ]);
 
@@ -108,13 +118,17 @@ const DARK_THEMES: ReadonlySet<Theme> = new Set([
 const ACCENT: Record<Theme, string> = {
   light: "#2F5D43",
   amour: "#9A1F35",
+  scarlet: "#D11A2A",
+  rose: "#C81E6B",
   bloom: "#6E2A82",
+  lavender: "#5B3FB0",
   aurora: "#1F5C9E",
   jade: "#0F7A63",
-  lavender: "#5B3FB0",
   dark: "#88BDA1",
-  desire: "#EFC3E4",
   ember: "#F4828B",
+  crimson: "#FF4D5E",
+  fuchsia: "#FF5FB0",
+  desire: "#EFC3E4",
   noir: "#8FB3FF",
 };
 
@@ -123,13 +137,17 @@ const ACCENT: Record<Theme, string> = {
 const HALO: Record<Theme, string> = {
   light: "rgba(47,93,67,0)",
   amour: "rgba(154,31,53,0.30)",
+  scarlet: "rgba(209,26,42,0.34)",
+  rose: "rgba(200,30,107,0.34)",
   bloom: "rgba(110,42,130,0.32)",
+  lavender: "rgba(91,63,176,0.30)",
   aurora: "rgba(31,92,158,0.30)",
   jade: "rgba(15,122,99,0.30)",
-  lavender: "rgba(91,63,176,0.30)",
   dark: "rgba(136,189,161,0)",
-  desire: "rgba(239,195,228,0.42)",
   ember: "rgba(244,130,139,0.40)",
+  crimson: "rgba(255,77,94,0.42)",
+  fuchsia: "rgba(255,95,176,0.42)",
+  desire: "rgba(239,195,228,0.42)",
   noir: "rgba(143,179,255,0.38)",
 };
 
@@ -139,19 +157,27 @@ const RING: Record<Theme, string | null> = {
   light: null,
   amour:
     "conic-gradient(from 0deg, rgba(154,31,53,0) 0deg, rgba(154,31,53,0.5) 80deg, rgba(209,65,134,0.45) 160deg, rgba(201,145,97,0.5) 240deg, rgba(154,31,53,0) 360deg)",
+  scarlet:
+    "conic-gradient(from 0deg, rgba(209,26,42,0) 0deg, rgba(209,26,42,0.6) 80deg, rgba(229,64,122,0.5) 160deg, rgba(201,145,97,0.5) 240deg, rgba(209,26,42,0) 360deg)",
+  rose:
+    "conic-gradient(from 0deg, rgba(200,30,107,0) 0deg, rgba(200,30,107,0.6) 80deg, rgba(229,64,122,0.5) 160deg, rgba(201,145,97,0.5) 240deg, rgba(200,30,107,0) 360deg)",
   bloom:
     "conic-gradient(from 0deg, rgba(110,42,130,0) 0deg, rgba(110,42,130,0.45) 80deg, rgba(209,65,134,0.4) 160deg, rgba(217,146,94,0.45) 240deg, rgba(110,42,130,0) 360deg)",
+  lavender:
+    "conic-gradient(from 0deg, rgba(91,63,176,0) 0deg, rgba(91,63,176,0.5) 80deg, rgba(192,71,158,0.45) 160deg, rgba(201,145,97,0.5) 240deg, rgba(91,63,176,0) 360deg)",
   aurora:
     "conic-gradient(from 0deg, rgba(31,92,158,0) 0deg, rgba(31,92,158,0.5) 80deg, rgba(61,134,214,0.45) 160deg, rgba(201,145,97,0.5) 240deg, rgba(31,92,158,0) 360deg)",
   jade:
     "conic-gradient(from 0deg, rgba(15,122,99,0) 0deg, rgba(15,122,99,0.5) 80deg, rgba(32,165,135,0.45) 160deg, rgba(201,145,97,0.5) 240deg, rgba(15,122,99,0) 360deg)",
-  lavender:
-    "conic-gradient(from 0deg, rgba(91,63,176,0) 0deg, rgba(91,63,176,0.5) 80deg, rgba(192,71,158,0.45) 160deg, rgba(201,145,97,0.5) 240deg, rgba(91,63,176,0) 360deg)",
   dark: null,
-  desire:
-    "conic-gradient(from 0deg, rgba(239,195,228,0) 0deg, rgba(239,195,228,0.65) 80deg, rgba(255,107,170,0.5) 160deg, rgba(239,199,133,0.55) 240deg, rgba(239,195,228,0) 360deg)",
   ember:
     "conic-gradient(from 0deg, rgba(244,130,139,0) 0deg, rgba(244,130,139,0.65) 80deg, rgba(255,90,122,0.55) 160deg, rgba(240,172,122,0.55) 240deg, rgba(244,130,139,0) 360deg)",
+  crimson:
+    "conic-gradient(from 0deg, rgba(255,77,94,0) 0deg, rgba(255,77,94,0.7) 80deg, rgba(255,90,122,0.55) 160deg, rgba(240,172,122,0.55) 240deg, rgba(255,77,94,0) 360deg)",
+  fuchsia:
+    "conic-gradient(from 0deg, rgba(255,95,176,0) 0deg, rgba(255,95,176,0.7) 80deg, rgba(255,138,208,0.55) 160deg, rgba(240,172,122,0.5) 240deg, rgba(255,95,176,0) 360deg)",
+  desire:
+    "conic-gradient(from 0deg, rgba(239,195,228,0) 0deg, rgba(239,195,228,0.65) 80deg, rgba(255,107,170,0.5) 160deg, rgba(239,199,133,0.55) 240deg, rgba(239,195,228,0) 360deg)",
   noir:
     "conic-gradient(from 0deg, rgba(143,179,255,0) 0deg, rgba(143,179,255,0.65) 80deg, rgba(102,232,255,0.55) 160deg, rgba(226,198,133,0.5) 240deg, rgba(143,179,255,0) 360deg)",
 };
@@ -162,14 +188,18 @@ const ICON: Record<Theme, typeof Sun> = {
   // Light moods
   light: Sun,
   amour: Cherry,
+  scarlet: Gem,
+  rose: Flower,
   bloom: Sparkles,
+  lavender: Flower2,
   aurora: Sunrise,
   jade: Leaf,
-  lavender: Flower2,
   // Dark moods
   dark: Moon,
-  desire: Flame,
   ember: Heart,
+  crimson: Droplet,
+  fuchsia: Sparkle,
+  desire: Flame,
   noir: MoonStar,
 };
 
@@ -374,7 +404,7 @@ export function ThemeToggle() {
               reduceMotion ? { opacity: 0 } : { opacity: 0, y: -4, scale: 0.98 }
             }
             transition={reduceMotion ? { duration: 0.12 } : SPRING}
-            className="absolute right-0 top-[calc(100%+8px)] z-50 w-52 origin-top-right rounded-[var(--radius-xl)] border border-[var(--color-border)] bg-[var(--color-surface)] p-1.5 shadow-[var(--shadow-lg)]"
+            className="absolute right-0 top-[calc(100%+8px)] z-50 max-h-[min(70vh,560px)] w-52 origin-top-right overflow-y-auto overscroll-contain rounded-[var(--radius-xl)] border border-[var(--color-border)] bg-[var(--color-surface)] p-1.5 shadow-[var(--shadow-lg)]"
           >
             <ul className="flex flex-col gap-0.5">
               {THEMES.map((t, index) => {

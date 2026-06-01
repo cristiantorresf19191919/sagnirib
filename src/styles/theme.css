@@ -639,3 +639,217 @@ html[data-theme="lavender"] {
   --shadow-glow-secondary: 0 14px 36px -18px rgba(133, 118, 168, 0.45);
   --shadow-glow-accent: 0 14px 36px -18px rgba(201, 145, 97, 0.50);
 }
+
+/*
+ * "Scarlet" theme — LIGHT — flipped via `data-theme="scarlet"` on <html>.
+ *
+ * Strong red — a vivid scarlet primary on crisp blush paper. Bolder and
+ * brighter than Amour's muted wine; the confident, high-energy red.
+ */
+html[data-theme="scarlet"] {
+  --color-background: #FCF0EF;
+  --color-background-elevated: #FFF7F6;
+  --color-surface: #FFFFFF;
+  --color-surface-muted: #F4DEDC;
+  --color-border: #EDC9C6;
+
+  --color-brand-primary: #D11A2A;
+  --color-brand-primary-strong: #E8243A;
+  --color-brand-primary-soft: #F1B8BC;
+
+  --color-brand-secondary: #B06A6E;
+  --color-brand-secondary-strong: #8E4C50;
+
+  --color-brand-accent: #C99161;
+  --color-brand-accent-strong: #A77544;
+
+  --color-brand-highlight: #E5407A;
+  --color-brand-warn: #C99161;
+
+  --color-foreground: #2E0C0E;
+  --color-text-muted: #6F4F50;
+  --color-text-subtle: #A48A8B;
+
+  --color-cream: #F6E2E0;
+  --color-cream-deep: #EFD2CF;
+  --color-cream-soft: #FCEFED;
+  --color-ink: #2E0C0E;
+  --color-ink-soft: #5C2D2F;
+  --color-forest: #D11A2A;
+  --color-forest-deep: #B11423;
+  --color-gold: #BF8856;
+  --color-gold-deep: #936038;
+  --color-line: rgba(46, 12, 14, 0.14);
+  --color-line-soft: rgba(46, 12, 14, 0.06);
+
+  --shadow-sm: 0 1px 2px rgba(160, 20, 30, 0.10);
+  --shadow-md: 0 10px 28px -12px rgba(160, 20, 30, 0.22);
+  --shadow-lg: 0 26px 56px -20px rgba(160, 20, 30, 0.28);
+  --shadow-glow-primary:
+    0 16px 40px -18px rgba(209, 26, 42, 0.55),
+    0 0 0 1px rgba(209, 26, 42, 0.07);
+  --shadow-glow-secondary: 0 14px 36px -18px rgba(176, 106, 110, 0.45);
+  --shadow-glow-accent: 0 14px 36px -18px rgba(201, 145, 97, 0.50);
+}
+
+/*
+ * "Crimson" theme — DARK — flipped via `data-theme="crimson"` on <html>.
+ *
+ * Strong red — luminous scarlet CTAs over near-black oxblood velvet. The
+ * dark counterpart to Scarlet: same boldness, dramatic depth.
+ *
+ * brand-primary is LIGHT so `text-[var(--color-surface)]` (near-black)
+ * stays dark-on-light on filled buttons.
+ */
+html[data-theme="crimson"] {
+  --color-background: #1A0407;
+  --color-background-elevated: #260910;
+  --color-surface: #310D15;
+  --color-surface-muted: #421722;
+  --color-border: #65232F;
+
+  --color-brand-primary: #FF4D5E;
+  --color-brand-primary-strong: #FF6B79;
+  --color-brand-primary-soft: #7A2530;
+
+  --color-brand-secondary: #C99AA0;
+  --color-brand-secondary-strong: #DBB4B8;
+
+  --color-brand-accent: #F0AC7A;
+  --color-brand-accent-strong: #F8C195;
+
+  --color-brand-highlight: #FF5A7A;
+  --color-brand-warn: #F0AC7A;
+
+  --color-foreground: #FCE4E6;
+  --color-text-muted: #D8AAB0;
+  --color-text-subtle: #9C7479;
+
+  --color-cream: #260910;
+  --color-cream-deep: #1A0407;
+  --color-cream-soft: #310D15;
+  --color-ink: #FCE4E6;
+  --color-ink-soft: #E0B6BB;
+  --color-forest: #FF4D5E;
+  --color-forest-deep: #FF6B79;
+  --color-gold: #F0AC7A;
+  --color-gold-deep: #CF8A57;
+  --color-line: rgba(252, 228, 230, 0.13);
+  --color-line-soft: rgba(252, 228, 230, 0.06);
+
+  --shadow-sm: 0 1px 2px rgba(12, 1, 3, 0.65);
+  --shadow-md: 0 10px 28px -12px rgba(12, 1, 3, 0.75);
+  --shadow-lg: 0 26px 56px -20px rgba(12, 1, 3, 0.85);
+  --shadow-glow-primary:
+    0 16px 40px -18px rgba(255, 77, 94, 0.65),
+    0 0 0 1px rgba(255, 77, 94, 0.10);
+  --shadow-glow-secondary: 0 14px 36px -18px rgba(201, 154, 160, 0.45);
+  --shadow-glow-accent: 0 14px 36px -18px rgba(240, 172, 122, 0.55);
+}
+
+/*
+ * "Rose" theme — LIGHT — flipped via `data-theme="rose"` on <html>.
+ *
+ * Pink — a punchy magenta-pink primary on pale rose paper. Playful and
+ * feminine; the light pink mood.
+ */
+html[data-theme="rose"] {
+  --color-background: #FDF0F6;
+  --color-background-elevated: #FFF7FB;
+  --color-surface: #FFFFFF;
+  --color-surface-muted: #F6DEEB;
+  --color-border: #EFC8DC;
+
+  --color-brand-primary: #C81E6B;
+  --color-brand-primary-strong: #E02E7E;
+  --color-brand-primary-soft: #F2B6D2;
+
+  --color-brand-secondary: #B06A8E;
+  --color-brand-secondary-strong: #8E4C6E;
+
+  --color-brand-accent: #C99161;
+  --color-brand-accent-strong: #A77544;
+
+  --color-brand-highlight: #E5407A;
+  --color-brand-warn: #C99161;
+
+  --color-foreground: #2E0C1E;
+  --color-text-muted: #6F4F60;
+  --color-text-subtle: #A48A98;
+
+  --color-cream: #F6E2EE;
+  --color-cream-deep: #EFD2E2;
+  --color-cream-soft: #FCEFF6;
+  --color-ink: #2E0C1E;
+  --color-ink-soft: #5C2D45;
+  --color-forest: #C81E6B;
+  --color-forest-deep: #A91659;
+  --color-gold: #BF8856;
+  --color-gold-deep: #936038;
+  --color-line: rgba(46, 12, 30, 0.14);
+  --color-line-soft: rgba(46, 12, 30, 0.06);
+
+  --shadow-sm: 0 1px 2px rgba(160, 20, 90, 0.10);
+  --shadow-md: 0 10px 28px -12px rgba(160, 20, 90, 0.22);
+  --shadow-lg: 0 26px 56px -20px rgba(160, 20, 90, 0.28);
+  --shadow-glow-primary:
+    0 16px 40px -18px rgba(200, 30, 107, 0.52),
+    0 0 0 1px rgba(200, 30, 107, 0.07);
+  --shadow-glow-secondary: 0 14px 36px -18px rgba(176, 106, 142, 0.45);
+  --shadow-glow-accent: 0 14px 36px -18px rgba(201, 145, 97, 0.50);
+}
+
+/*
+ * "Fuchsia" theme — DARK — flipped via `data-theme="fuchsia"` on <html>.
+ *
+ * Pink — electric fuchsia CTAs over deep aubergine. The dark counterpart to
+ * Rose: neon, nocturnal, glamorous.
+ *
+ * brand-primary is LIGHT so `text-[var(--color-surface)]` (deep aubergine)
+ * stays dark-on-light on filled buttons.
+ */
+html[data-theme="fuchsia"] {
+  --color-background: #1C0414;
+  --color-background-elevated: #2A0820;
+  --color-surface: #36102B;
+  --color-surface-muted: #481A3A;
+  --color-border: #6B2954;
+
+  --color-brand-primary: #FF5FB0;
+  --color-brand-primary-strong: #FF7FC2;
+  --color-brand-primary-soft: #802F60;
+
+  --color-brand-secondary: #C99AB8;
+  --color-brand-secondary-strong: #DBB4CE;
+
+  --color-brand-accent: #F0AC7A;
+  --color-brand-accent-strong: #F8C195;
+
+  --color-brand-highlight: #FF8AD0;
+  --color-brand-warn: #F0AC7A;
+
+  --color-foreground: #FCE4F2;
+  --color-text-muted: #D8AAC9;
+  --color-text-subtle: #9C7490;
+
+  --color-cream: #2A0820;
+  --color-cream-deep: #1C0414;
+  --color-cream-soft: #36102B;
+  --color-ink: #FCE4F2;
+  --color-ink-soft: #E0B6D4;
+  --color-forest: #FF5FB0;
+  --color-forest-deep: #FF7FC2;
+  --color-gold: #F0AC7A;
+  --color-gold-deep: #CF8A57;
+  --color-line: rgba(252, 228, 242, 0.13);
+  --color-line-soft: rgba(252, 228, 242, 0.06);
+
+  --shadow-sm: 0 1px 2px rgba(14, 1, 10, 0.65);
+  --shadow-md: 0 10px 28px -12px rgba(14, 1, 10, 0.75);
+  --shadow-lg: 0 26px 56px -20px rgba(14, 1, 10, 0.85);
+  --shadow-glow-primary:
+    0 16px 40px -18px rgba(255, 95, 176, 0.65),
+    0 0 0 1px rgba(255, 95, 176, 0.10);
+  --shadow-glow-secondary: 0 14px 36px -18px rgba(201, 154, 184, 0.45);
+  --shadow-glow-accent: 0 14px 36px -18px rgba(240, 172, 122, 0.55);
+}

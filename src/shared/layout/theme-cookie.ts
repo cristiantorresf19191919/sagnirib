@@ -24,26 +24,34 @@ export type Theme =
   // Light moods
   | "light"
   | "amour"
+  | "scarlet"
+  | "rose"
   | "bloom"
+  | "lavender"
   | "aurora"
   | "jade"
-  | "lavender"
   // Dark moods
   | "dark"
-  | "desire"
   | "ember"
+  | "crimson"
+  | "fuchsia"
+  | "desire"
   | "noir";
 
 export const VALID_THEMES: ReadonlySet<Theme> = new Set([
   "light",
   "amour",
+  "scarlet",
+  "rose",
   "bloom",
+  "lavender",
   "aurora",
   "jade",
-  "lavender",
   "dark",
-  "desire",
   "ember",
+  "crimson",
+  "fuchsia",
+  "desire",
   "noir",
 ]);
 
