@@ -1,7 +1,7 @@
 "use client";
 
 import type { CSSProperties } from "react";
-import { motion, useReducedMotion } from "framer-motion";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { Check, ChevronRight } from "lucide-react";
 
 import { useActiveLocale } from "@/core/i18n/use-active-locale";
@@ -42,6 +42,11 @@ interface StepperProps {
 export function Stepper({ steps, current, completed, onJump }: StepperProps) {
   const locale = useActiveLocale();
   const reduced = useReducedMotion();
+
+  // Snappy pop for the number→check swap; instant under reduced motion.
+  const badgeSpring = reduced
+    ? { duration: 0 }
+    : ({ type: "spring", stiffness: 520, damping: 24 } as const);
 
   return (
     <ol
@@ -86,13 +91,37 @@ export function Stepper({ steps, current, completed, onJump }: StepperProps) {
             <span className="relative flex items-center gap-3">
               <span
                 aria-hidden
-                className={`inline-flex shrink-0 items-center justify-center rounded-[var(--radius-md)] font-bold transition-[background,color,transform] duration-[240ms] ease-[var(--ease-standard)] group-hover/step:scale-105 ${ringSize} ${ringTone}`}
+                className={`inline-flex shrink-0 items-center justify-center overflow-hidden rounded-[var(--radius-md)] font-bold transition-[background,color,transform] duration-[240ms] ease-[var(--ease-standard)] group-hover/step:scale-105 ${ringSize} ${ringTone}`}
               >
-                {isDone && !isActive ? (
-                  <Check className="h-4 w-4" aria-hidden />
-                ) : (
-                  step.number
-                )}
+                {/* Number → check is a small spring pop on completion, not a
+                    hard swap — the only motion that fires mid-form, and only
+                    on the step you just finished. `initial={false}` keeps the
+                    badges static on first paint (the card entrance covers that). */}
+                <AnimatePresence mode="popLayout" initial={false}>
+                  {isDone && !isActive ? (
+                    <motion.span
+                      key="check"
+                      className="inline-flex"
+                      initial={reduced ? false : { scale: 0.3, opacity: 0, rotate: -40 }}
+                      animate={{ scale: 1, opacity: 1, rotate: 0 }}
+                      exit={reduced ? { opacity: 0 } : { scale: 0.3, opacity: 0 }}
+                      transition={badgeSpring}
+                    >
+                      <Check className="h-4 w-4" aria-hidden />
+                    </motion.span>
+                  ) : (
+                    <motion.span
+                      key="num"
+                      className="inline-flex"
+                      initial={reduced ? false : { scale: 0.5, opacity: 0 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      exit={reduced ? { opacity: 0 } : { scale: 0.5, opacity: 0 }}
+                      transition={badgeSpring}
+                    >
+                      {step.number}
+                    </motion.span>
+                  )}
+                </AnimatePresence>
               </span>
               <span
                 className={`text-[10px] font-semibold uppercase tracking-[0.24em] ${
@@ -128,18 +157,13 @@ export function Stepper({ steps, current, completed, onJump }: StepperProps) {
               <motion.span
                 layoutId="stepper-active"
                 aria-hidden
-                className="pointer-events-none absolute inset-0 overflow-hidden rounded-[var(--radius-xl)] border border-[var(--color-brand-primary)] bg-[var(--color-surface)] shadow-[var(--shadow-glow-primary)]"
+                className="pointer-events-none absolute inset-0 overflow-hidden rounded-[var(--radius-xl)] border border-[var(--color-brand-primary)] bg-[var(--color-surface)] shadow-[var(--shadow-sm)]"
                 transition={
                   reduced
                     ? { duration: 0 }
-                    : { type: "spring", stiffness: 360, damping: 32 }
+                    : { type: "spring", stiffness: 300, damping: 30, mass: 0.9 }
                 }
-              >
-                <span
-                  aria-hidden
-                  className="absolute inset-x-0 top-0 h-[3px] bg-gradient-to-r from-[var(--color-brand-primary)] via-[var(--color-gold)] to-transparent"
-                />
-              </motion.span>
+              />
             )}
 
             {isClickable ? (
@@ -166,7 +190,11 @@ export function Stepper({ steps, current, completed, onJump }: StepperProps) {
             {index < steps.length - 1 && (
               <span
                 aria-hidden
-                className="pointer-events-none absolute right-0 top-1/2 hidden -translate-y-1/2 translate-x-1/2 text-[var(--color-text-subtle)] lg:block"
+                className={`pointer-events-none absolute right-0 top-1/2 hidden -translate-y-1/2 translate-x-1/2 transition-colors duration-300 ease-[var(--ease-standard)] lg:block ${
+                  isDone
+                    ? "text-[var(--color-brand-primary)]/60"
+                    : "text-[var(--color-text-subtle)]"
+                }`}
               >
                 <ChevronRight className="h-4 w-4" aria-hidden />
               </span>

@@ -1,9 +1,22 @@
 "use client";
 
-import type { CSSProperties } from "react";
-import { Check, Gift, Sparkles, TrendingUp } from "lucide-react";
+import { Fragment, type CSSProperties } from "react";
+import Link from "next/link";
+import {
+  Check,
+  Coffee,
+  Gift,
+  Lock,
+  ShieldCheck,
+  Sparkles,
+  Star,
+  TrendingUp,
+  Wallet,
+  type LucideIcon,
+} from "lucide-react";
 
 import type { SupportedLocale } from "@/core/branding/brand-config";
+import { localizedHref } from "@/core/i18n/href";
 import { t } from "@/core/i18n/messages";
 import { useActiveLocale } from "@/core/i18n/use-active-locale";
 
@@ -60,60 +73,65 @@ export function StepPublish({ values, onChange, forceShowErrors, submitError }: 
           : t(locale, "step.publish.description.free")
       }
     >
-      {!PLANS_ENABLED && <FreeLaunchBanner locale={locale} />}
-
-      {PLANS_ENABLED && (
-        <BillingToggle
-          locale={locale}
-          billing={values.billing}
-          onChange={(v) => update("billing", v)}
-        />
-      )}
-
-      <div className="grid items-start gap-4 lg:grid-cols-3">
-        {PACKAGES.map((pkg, index) => (
-          <PackageCard
-            key={pkg.id}
-            index={index}
+      {/* During the free launch we don't tease prices at all — the step
+          becomes a marketing showcase of what makes Biringas different and
+          what's coming. The full pricing UI (packages + add-ons) below is
+          preserved verbatim for when PLANS_ENABLED flips on. */}
+      {PLANS_ENABLED ? (
+        <>
+          <BillingToggle
             locale={locale}
-            packageId={pkg.id}
-            selected={PLANS_ENABLED && values.packageId === pkg.id}
             billing={values.billing}
-            onSelect={selectPackage}
-            disabled={!PLANS_ENABLED}
+            onChange={(v) => update("billing", v)}
           />
-        ))}
-      </div>
 
-      <div className="flex flex-col gap-3">
-        <div className="flex items-center justify-between">
-          <span className="text-[12px] font-semibold tracking-tight text-[var(--color-foreground)]">
-            {t(locale, "step.publish.addons.title")}
-          </span>
-          <span className="inline-flex items-center gap-1 text-[11px] text-[var(--color-text-subtle)]">
-            <TrendingUp className="h-3 w-3" aria-hidden />
-            {PLANS_ENABLED
-              ? t(locale, "step.publish.addons.hint.enabled")
-              : t(locale, "step.publish.addons.hint.disabled")}
-          </span>
-        </div>
-        <div className="grid gap-3 md:grid-cols-2">
-          {ADD_ONS.map((addOn) => (
-            <AddOnCard
-              key={addOn.id}
-              locale={locale}
-              id={addOn.id}
-              name={addOn.name}
-              description={addOn.description}
-              priceLabel={`${formatCop(addOn.priceCop)} ${addOn.unit}`.trim()}
-              family={addOn.family}
-              selected={PLANS_ENABLED && values.addOnIds.includes(addOn.id)}
-              onToggle={toggleAddOn}
-              disabled={!PLANS_ENABLED}
-            />
-          ))}
-        </div>
-      </div>
+          <div className="grid items-start gap-4 lg:grid-cols-3">
+            {PACKAGES.map((pkg, index) => (
+              <PackageCard
+                key={pkg.id}
+                index={index}
+                locale={locale}
+                packageId={pkg.id}
+                selected={values.packageId === pkg.id}
+                billing={values.billing}
+                onSelect={selectPackage}
+              />
+            ))}
+          </div>
+
+          <div className="flex flex-col gap-3">
+            <div className="flex items-center justify-between">
+              <span className="text-[12px] font-semibold tracking-tight text-[var(--color-foreground)]">
+                {t(locale, "step.publish.addons.title")}
+              </span>
+              <span className="inline-flex items-center gap-1 text-[11px] text-[var(--color-text-subtle)]">
+                <TrendingUp className="h-3 w-3" aria-hidden />
+                {t(locale, "step.publish.addons.hint.enabled")}
+              </span>
+            </div>
+            <div className="grid gap-3 md:grid-cols-2">
+              {ADD_ONS.map((addOn) => (
+                <AddOnCard
+                  key={addOn.id}
+                  locale={locale}
+                  id={addOn.id}
+                  name={addOn.name}
+                  description={addOn.description}
+                  priceLabel={`${formatCop(addOn.priceCop)} ${addOn.unit}`.trim()}
+                  family={addOn.family}
+                  selected={values.addOnIds.includes(addOn.id)}
+                  onToggle={toggleAddOn}
+                />
+              ))}
+            </div>
+          </div>
+        </>
+      ) : (
+        <>
+          <FreeLaunchBanner locale={locale} />
+          <UpcomingDifferentials locale={locale} />
+        </>
+      )}
 
       <fieldset className="flex flex-col gap-3 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-background-elevated)] p-4">
         <legend className="px-2 text-[11px] font-semibold uppercase tracking-[0.22em] text-[var(--color-text-muted)]">
@@ -135,7 +153,7 @@ export function StepPublish({ values, onChange, forceShowErrors, submitError }: 
           <CheckLine
             checked={values.acceptsTerms}
             onChange={(v) => update("acceptsTerms", v)}
-            label={t(locale, "step.publish.terms.terms")}
+            label={<TermsConsentLabel locale={locale} />}
           />
           {forceShowErrors && !values.acceptsTerms && (
             <p role="alert" className="pl-8 text-[11px] text-[var(--color-brand-highlight)]">
@@ -178,6 +196,102 @@ function FreeLaunchBanner({ locale }: { locale: SupportedLocale }) {
         </span>
       </div>
     </div>
+  );
+}
+
+/** One "what's coming" differentiator — icon + live/soon tag + copy. */
+interface Differentiator {
+  /** i18n key suffix under `step.publish.upcoming.<key>.{title,body}`. */
+  key: "verify" | "content" | "dates" | "pay" | "reviews" | "boost";
+  icon: LucideIcon;
+  /** Already live during the launch vs a roadmap teaser. */
+  live?: boolean;
+}
+
+const DIFFERENTIATORS: ReadonlyArray<Differentiator> = [
+  { key: "verify", icon: ShieldCheck, live: true },
+  { key: "content", icon: Lock },
+  { key: "dates", icon: Coffee },
+  { key: "pay", icon: Wallet },
+  { key: "reviews", icon: Star },
+  { key: "boost", icon: TrendingUp },
+];
+
+/**
+ * Free-launch marketing showcase — replaces the priced plan cards while
+ * `PLANS_ENABLED` is off. Sells what makes Biringas different (safe human
+ * verification, exclusive content, virtual dates…) without quoting a single
+ * price, framing the roadmap as "Próximamente" so nothing over-commits.
+ */
+function UpcomingDifferentials({ locale }: { locale: SupportedLocale }) {
+  return (
+    <section className="flex flex-col gap-4">
+      <div className="flex flex-col gap-1">
+        <span className="inline-flex items-center gap-2 text-[12px] font-semibold tracking-tight text-[var(--color-foreground)]">
+          <Sparkles className="h-4 w-4 text-[var(--color-brand-primary)]" aria-hidden />
+          {t(locale, "step.publish.upcoming.title")}
+        </span>
+        <p className="text-[13px] leading-relaxed text-[var(--color-text-muted)]">
+          {t(locale, "step.publish.upcoming.subtitle")}
+        </p>
+      </div>
+
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        {DIFFERENTIATORS.map((diff, index) => {
+          const Icon = diff.icon;
+          return (
+            <article
+              key={diff.key}
+              style={{ "--step-i": index } as CSSProperties}
+              className="motion-step-rise group/diff relative flex flex-col gap-3 overflow-hidden rounded-[var(--radius-xl)] border border-[var(--color-border)] bg-[var(--color-surface)] p-5 shadow-[var(--shadow-sm)] transition-[transform,box-shadow,border-color] duration-200 ease-[var(--ease-standard)] hover:-translate-y-1 hover:border-[var(--color-brand-primary-soft)] hover:shadow-[var(--shadow-md)]"
+            >
+              {/* Soft brand wash in the corner — warms on hover. */}
+              <span
+                aria-hidden
+                className="pointer-events-none absolute -right-8 -top-8 h-24 w-24 rounded-full bg-[var(--color-brand-primary)]/8 blur-2xl transition-opacity duration-300 ease-[var(--ease-standard)] group-hover/diff:opacity-80"
+              />
+
+              <div className="relative flex items-center justify-between">
+                <span
+                  aria-hidden
+                  className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-[var(--color-brand-primary)]/12 text-[var(--color-brand-primary)] ring-1 ring-[var(--color-brand-primary)]/20"
+                >
+                  <Icon className="h-5 w-5" aria-hidden />
+                </span>
+                <span
+                  className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] ring-1 ${
+                    diff.live
+                      ? "bg-[var(--color-brand-primary)]/12 text-[var(--color-brand-primary)] ring-[var(--color-brand-primary)]/25"
+                      : "bg-[var(--color-brand-accent)]/15 text-[var(--color-brand-accent-strong)] ring-[var(--color-brand-accent)]/30"
+                  }`}
+                >
+                  {diff.live ? (
+                    <>
+                      <span aria-hidden className="relative flex h-1.5 w-1.5">
+                        <span className="absolute inline-flex h-full w-full rounded-full bg-current opacity-60 motion-safe:animate-ping" />
+                        <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-current" />
+                      </span>
+                      {t(locale, "step.publish.upcoming.tag.live")}
+                    </>
+                  ) : (
+                    t(locale, "step.publish.pkg.comingSoon")
+                  )}
+                </span>
+              </div>
+
+              <div className="relative flex flex-col gap-1.5">
+                <h3 className="text-[15px] font-semibold leading-tight tracking-tight text-[var(--color-foreground)]">
+                  {t(locale, `step.publish.upcoming.${diff.key}.title`)}
+                </h3>
+                <p className="text-[13px] leading-relaxed text-[var(--color-text-muted)]">
+                  {t(locale, `step.publish.upcoming.${diff.key}.body`)}
+                </p>
+              </div>
+            </article>
+          );
+        })}
+      </div>
+    </section>
   );
 }
 
@@ -445,6 +559,55 @@ interface CheckLineProps {
   checked: boolean;
   onChange: (next: boolean) => void;
   label: React.ReactNode;
+}
+
+/**
+ * Consent label with the two legal phrases rendered as real links to the
+ * (existing) `/legal/terminos` + `/legal/privacidad` pages. The sentence lives
+ * in i18n as a template with `{terms}` / `{privacy}` placeholders so each
+ * locale can position the links naturally. Links open in a new tab and stop
+ * propagation so tapping them reads the policy instead of toggling the box.
+ */
+function TermsConsentLabel({ locale }: { locale: SupportedLocale }) {
+  const template = t(locale, "step.publish.terms.terms");
+  const linkCls =
+    "font-semibold text-[var(--color-brand-primary)] underline decoration-[var(--color-brand-primary)]/40 underline-offset-2 transition-colors hover:text-[var(--color-brand-primary-strong)] hover:decoration-[var(--color-brand-primary)]";
+  const links: Record<string, { href: string; label: string }> = {
+    "{terms}": {
+      href: localizedHref(locale, "/legal/terminos"),
+      label: t(locale, "step.publish.terms.termsLink"),
+    },
+    "{privacy}": {
+      href: localizedHref(locale, "/legal/privacidad"),
+      label: t(locale, "step.publish.terms.privacyLink"),
+    },
+  };
+  return (
+    <>
+      {template.split(/(\{terms\}|\{privacy\})/).map((part, i) => {
+        const link = links[part];
+        if (link) {
+          return (
+            <Link
+              // biome-ignore lint/suspicious/noArrayIndexKey: template parts are positionally stable.
+              key={i}
+              href={link.href}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={linkCls}
+              onClick={(e) => e.stopPropagation()}
+            >
+              {link.label}
+            </Link>
+          );
+        }
+        return (
+          // biome-ignore lint/suspicious/noArrayIndexKey: template parts are positionally stable.
+          <Fragment key={i}>{part}</Fragment>
+        );
+      })}
+    </>
+  );
 }
 
 function CheckLine({ checked, onChange, label }: CheckLineProps) {
