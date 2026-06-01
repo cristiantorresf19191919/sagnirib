@@ -14,6 +14,7 @@ import {
   Loader2,
   Lock,
   MapPin,
+  Pencil,
   Phone,
   ShieldAlert,
   ShieldCheck,
@@ -123,7 +124,20 @@ function HeaderSection({
           {t(locale, "draft.subtitle")}
         </p>
       </div>
-      <StatusPill locale={locale} status={draft.status} />
+      <div className="flex flex-col items-start gap-3 sm:items-end">
+        <StatusPill locale={locale} status={draft.status} />
+        {/* Edit a draft still in review — the page above already shows the
+            current selections; this CTA opens the granular editor. */}
+        {draft.status === "pending_review" && (
+          <Link
+            href={localizedHref(locale, `/mi-cuenta/borradores/${draft.id}/editar`)}
+            className="inline-flex h-10 items-center justify-center gap-1.5 rounded-full bg-[var(--color-brand-primary)] px-4 text-xs font-semibold text-[var(--color-surface)] shadow-[var(--shadow-glow-primary)] transition-[background,transform] duration-200 hover:-translate-y-[1px] hover:bg-[var(--color-brand-primary-strong)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-background)]"
+          >
+            <Pencil className="h-3.5 w-3.5" aria-hidden />
+            {t(locale, "miCuenta.profile.action.editListing")}
+          </Link>
+        )}
+      </div>
     </header>
   );
 }

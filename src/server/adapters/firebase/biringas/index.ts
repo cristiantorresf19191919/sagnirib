@@ -246,6 +246,7 @@ export { getPrivateContactRaw } from "./private-contact";
 export { submitReviewRaw } from "./submit-review";
 export {
   createListingDraftRaw,
+  updateListingDraftRaw,
   findActiveDraftBySlug,
   cancelDraftRaw,
 } from "./create-draft";

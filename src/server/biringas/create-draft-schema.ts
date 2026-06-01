@@ -66,7 +66,7 @@ export const createListingDraftSchema: ActionInputSchema<CreateListingDraftInput
   },
 };
 
-function parseDetails(raw: unknown): ListingDraftPayloadDetails {
+export function parseDetails(raw: unknown): ListingDraftPayloadDetails {
   if (!raw || typeof raw !== "object") {
     throw new Error("createListingDraft: payload.details must be an object");
   }
@@ -324,7 +324,7 @@ function expectStagingPhotoArray(
   return out;
 }
 
-function parseAttributes(raw: unknown): ListingDraftPayloadAttributes {
+export function parseAttributes(raw: unknown): ListingDraftPayloadAttributes {
   if (!raw || typeof raw !== "object") {
     throw new Error("createListingDraft: payload.attributes must be an object");
   }
@@ -417,7 +417,7 @@ function parsePublish(raw: unknown): ListingDraftPayloadPublish {
 
 // ---------- primitive expecters --------------------------------------------
 
-function expectString(
+export function expectString(
   value: unknown,
   field: string,
   min: number,
@@ -457,7 +457,7 @@ function expectInt(
   return value;
 }
 
-function expectBool(value: unknown, field: string): boolean {
+export function expectBool(value: unknown, field: string): boolean {
   if (typeof value !== "boolean") {
     throw new Error(`createListingDraft: ${field} must be a boolean`);
   }
@@ -477,7 +477,7 @@ function expectEnum<T extends string>(
   return value as T;
 }
 
-function expectStringArray(
+export function expectStringArray(
   value: unknown,
   field: string,
   min: number,

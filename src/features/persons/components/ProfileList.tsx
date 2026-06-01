@@ -122,7 +122,20 @@ function ProfileCard({
           <ListingLine locale={locale} draft={draft} listing={listing} />
         </div>
       </div>
-      <div className="flex shrink-0 items-center gap-2 self-stretch sm:self-start">
+      <div className="flex shrink-0 flex-wrap items-center justify-end gap-2 self-stretch sm:self-start">
+        {/* Edit CTA for a draft still in review — shown regardless of the
+            KYC-gated primary action so a mistaken publish is always
+            recoverable without starting over. Photos + descriptions stay
+            locked (enforced server-side); everything else is editable. */}
+        {draft?.status === "pending_review" && (
+          <ActionLink
+            href={localizedHref(
+              locale,
+              `/mi-cuenta/borradores/${draft.id}/editar`,
+            )}
+            label={t(locale, "miCuenta.profile.action.editListing")}
+          />
+        )}
         <ContextualAction
           locale={locale}
           person={person}

@@ -12,6 +12,20 @@ export function formatPriceCop(value: number): string {
   return COP_FORMATTER.format(value);
 }
 
+const THOUSANDS_FORMATTER = new Intl.NumberFormat("es-CO", {
+  maximumFractionDigits: 0,
+});
+
+/**
+ * Groups a raw integer with Colombian thousand separators (dots):
+ * `200000 → "200.000"`. Used by numeric inputs that store raw digits in
+ * state but display the grouped value. Returns "" for non-finite input.
+ */
+export function formatThousands(value: number): string {
+  if (!Number.isFinite(value)) return "";
+  return THOUSANDS_FORMATTER.format(value);
+}
+
 export function formatPricePerHour(value: number): string {
   return `${formatPriceCop(value)} / hora`;
 }

@@ -141,6 +141,59 @@ export async function cancelDraftRaw(
 }
 
 /**
+ * Owner-side edit of a `pending_review` draft. Overwrites the whole
+ * `payload` map with the barrel-merged payload (the barrel preserves the
+ * locked fields — gallery/videos/shortBio/bio/publish — so the only changes
+ * here are the editable ones). The owner + status checks run INSIDE the
+ * transaction to defend against the (impossible-in-practice) race where the
+ * barrel's pre-read saw a different state; the doc must still belong to
+ * `ownerUid` and be `pending_review` at write time.
+ */
+export async function updateListingDraftRaw(input: {
+  ownerUid: string;
+  draftId: string;
+  payload: ListingDraftPayload;
+}): Promise<void> {
+  const db = getDb();
+  const ref = db.collection("listing_drafts").doc(input.draftId);
+  try {
+    await db.runTransaction(async (tx) => {
+      const snap = await tx.get(ref);
+      if (!snap.exists) {
+        const err = new Error("updateListingDraft: draft not found");
+        (err as { kind?: string }).kind = "not-found";
+        throw err;
+      }
+      const data = snap.data() as { ownerUid?: unknown; status?: unknown };
+      if (data.ownerUid !== input.ownerUid) {
+        const err = new Error(
+          "updateListingDraft: caller is not the owner of this draft",
+        );
+        (err as { kind?: string }).kind = "permission-denied";
+        throw err;
+      }
+      if (data.status !== "pending_review") {
+        const err = new Error(
+          "updateListingDraft: only drafts in review can be edited",
+        );
+        (err as { kind?: string }).kind = "invalid-argument";
+        throw err;
+      }
+      tx.set(
+        ref,
+        {
+          payload: serializePayload(input.payload),
+          updatedAt: FieldValue.serverTimestamp(),
+        },
+        { merge: true },
+      );
+    });
+  } catch (err) {
+    throw wrapFirestoreError("updateListingDraft", err);
+  }
+}
+
+/**
  * Firestore tolerates plain JS values inside maps, but readonly arrays from
  * TS need to be made writable so the SDK does not complain. Otherwise the
  * payload is stored as-is — domain shape is the contract.

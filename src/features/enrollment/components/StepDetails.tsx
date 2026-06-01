@@ -2,11 +2,14 @@
 
 import { useState } from "react";
 
+import { formatThousands } from "@/features/biringas/format";
 import { t } from "@/core/i18n/messages";
 import { useActiveLocale } from "@/core/i18n/use-active-locale";
 
 import type { EnrollmentCatalogs } from "../lib/catalogs";
+import { slugifyTitle } from "../lib/slugify";
 import type { DetailsValues } from "../lib/types";
+import { useSlugAvailability } from "../lib/use-slug-availability";
 import {
   ChipChoice,
   PillToggle,
@@ -20,13 +23,22 @@ interface StepDetailsProps {
   catalogs: Pick<EnrollmentCatalogs, "cities" | "attention" | "contact">;
   onChange: (next: DetailsValues) => void;
   forceShowErrors: boolean;
+  /**
+   * The slug this draft already owns (edit flow). When the derived slug
+   * equals it, the live uniqueness check reports "available" instead of a
+   * false self-collision. Omitted in the create flow.
+   */
+  ownSlug?: string;
 }
 
 const CATEGORY_IDS = ["prepagos", "masajes", "videollamadas"] as const;
 
-export function StepDetails({ values, catalogs, onChange, forceShowErrors }: StepDetailsProps) {
+export function StepDetails({ values, catalogs, onChange, forceShowErrors, ownSlug }: StepDetailsProps) {
   const locale = useActiveLocale();
   const [touched, setTouched] = useState<ReadonlySet<string>>(new Set());
+
+  // Live, debounced uniqueness check on the slug derived from the title.
+  const availability = useSlugAvailability(values.preferredSlug, ownSlug);
 
   function touch(name: string) {
     setTouched((prev) => new Set([...prev, name]));
@@ -75,6 +87,38 @@ export function StepDetails({ values, catalogs, onChange, forceShowErrors }: Ste
       values.contactChannels.length === 0 ? v("publicar.validation.contactChannels") : undefined,
   };
 
+  // Inline status shown under the derived URL — colours come from tokens.
+  const availabilityView = (() => {
+    switch (availability.state) {
+      case "checking":
+        return {
+          text: v("step.details.field.title.availability.checking"),
+          tone: "text-[var(--color-text-subtle)]",
+        };
+      case "available":
+        return {
+          text: v("step.details.field.title.availability.available"),
+          tone: "text-[var(--color-brand-primary)]",
+        };
+      case "taken":
+        return {
+          text: v(
+            availability.reason === "published"
+              ? "step.details.field.title.availability.takenPublished"
+              : "step.details.field.title.availability.takenDraft",
+          ),
+          tone: "text-[var(--color-brand-highlight)]",
+        };
+      case "error":
+        return {
+          text: v("step.details.field.title.availability.error"),
+          tone: "text-[var(--color-text-subtle)]",
+        };
+      default:
+        return null;
+    }
+  })();
+
   return (
     <SectionShell
       eyebrow={t(locale, "step.details.eyebrow")}
@@ -82,18 +126,46 @@ export function StepDetails({ values, catalogs, onChange, forceShowErrors }: Ste
       description={t(locale, "step.details.description")}
     >
       <div className="grid gap-5 md:grid-cols-2">
-        <TextField
-          label={t(locale, "step.details.field.displayName")}
-          name="displayName"
-          required
-          maxLength={40}
-          placeholder={t(locale, "step.details.field.displayName.placeholder")}
-          value={values.displayName}
-          onChange={(e) => update("displayName", e.target.value)}
-          onBlur={() => touch("displayName")}
-          hint={t(locale, "step.details.field.displayName.hint")}
-          error={show("displayName") ? errors.displayName : undefined}
-        />
+        {/* Título — single public field. Replaces the old "Nombre artístico"
+            + "URL preferida" pair: the slug is derived live from the title and
+            its uniqueness is checked against Firebase with a debounce. */}
+        <div className="flex flex-col gap-1.5 md:col-span-2">
+          <TextField
+            label={t(locale, "step.details.field.title")}
+            name="title"
+            required
+            maxLength={60}
+            placeholder={t(locale, "step.details.field.title.placeholder")}
+            value={values.displayName}
+            onChange={(e) =>
+              onChange({
+                ...values,
+                displayName: e.target.value,
+                preferredSlug: slugifyTitle(e.target.value),
+              })
+            }
+            onBlur={() => touch("displayName")}
+            hint={t(locale, "step.details.field.title.hint")}
+            error={show("displayName") ? errors.displayName : undefined}
+          />
+          {values.preferredSlug && (
+            <p className="flex flex-wrap items-center gap-x-2 text-[11px]">
+              <span className="font-mono text-[var(--color-text-muted)]">
+                biringas.co/p/{values.preferredSlug}
+              </span>
+              {availabilityView && (
+                <span
+                  role="status"
+                  aria-live="polite"
+                  className={`font-semibold ${availabilityView.tone}`}
+                >
+                  · {availabilityView.text}
+                </span>
+              )}
+            </p>
+          )}
+        </div>
+
         <TextField
           label={t(locale, "step.details.field.age")}
           name="age"
@@ -151,39 +223,19 @@ export function StepDetails({ values, catalogs, onChange, forceShowErrors }: Ste
           ))}
         </SelectField>
 
+        {/* Tarifa — stores raw digits in state, displays grouped with
+            Colombian thousand separators (200000 → 200.000). */}
         <TextField
           label={t(locale, "step.details.field.price")}
           name="pricePerHour"
-          type="number"
           inputMode="numeric"
-          min={0}
-          step={10000}
           required
           placeholder={t(locale, "step.details.field.price.placeholder")}
-          value={values.pricePerHour}
-          onChange={(e) => update("pricePerHour", e.target.value)}
+          value={values.pricePerHour ? formatThousands(Number(values.pricePerHour)) : ""}
+          onChange={(e) => update("pricePerHour", e.target.value.replace(/\D/g, ""))}
           onBlur={() => touch("pricePerHour")}
           hint={t(locale, "step.details.field.price.hint")}
           error={show("pricePerHour") ? errors.pricePerHour : undefined}
-        />
-        <TextField
-          label={t(locale, "step.details.field.slug")}
-          name="preferredSlug"
-          required
-          placeholder={t(locale, "step.details.field.slug.placeholder")}
-          value={values.preferredSlug}
-          onChange={(e) =>
-            update(
-              "preferredSlug",
-              e.target.value
-                .toLowerCase()
-                .replace(/[^a-z0-9-]+/g, "-")
-                .replace(/-{2,}/g, "-"),
-            )
-          }
-          onBlur={() => touch("preferredSlug")}
-          hint={t(locale, "step.details.field.slug.hint")}
-          error={show("preferredSlug") ? errors.preferredSlug : undefined}
         />
 
         <TextField

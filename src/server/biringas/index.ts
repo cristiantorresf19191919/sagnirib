@@ -17,7 +17,9 @@ import { copyStagedToDraftForOwner } from "@/server/storage";
 
 import { CACHE_TAGS } from "./cache-tags";
 import { createListingDraftSchema } from "./create-draft-schema";
-import type { CreateListingDraftInput } from "./draft-types";
+import { updateListingDraftSchema } from "./update-draft-schema";
+import type { UpdateListingDraftInput } from "./update-draft-schema";
+import type { CreateListingDraftInput, ListingDraftPayload } from "./draft-types";
 import type {
   BookingRequestInput,
 } from "./booking-types";
@@ -107,6 +109,7 @@ const setListingReplyMedianMinutesRaw =
 const setListingPlanRaw = adapter.setListingPlanRaw;
 const listDraftsByOwnerRaw = adapter.listDraftsByOwnerRaw;
 const getDraftByIdForOwnerRaw = adapter.getDraftByIdForOwnerRaw;
+const updateListingDraftRaw = adapter.updateListingDraftRaw;
 const getReferralStatsRaw = adapter.getReferralStatsRaw;
 const redeemReferralRaw = adapter.redeemReferralRaw;
 const createCheckoutSessionRaw = adapter.createCheckoutSessionRaw;
@@ -175,6 +178,7 @@ export type {
 } from "./draft-types";
 export type { BiringaVideo } from "./types";
 export { DRAFT_LIMITS } from "./draft-types";
+export type { UpdateListingDraftInput } from "./update-draft-schema";
 
 /**
  * Returns the private contact channel of a listing.
@@ -409,6 +413,38 @@ export async function recordListingView(
  * Returns the new draft id so the action layer can surface a confirmation
  * code in the UI if desired.
  */
+/**
+ * Slug availability — single source of truth for "is this profile URL free?".
+ * Checks the published catalog first, then the active (non-rejected) draft
+ * queue. Pure read; callers that expose it publicly wrap it with auth.
+ */
+async function slugAvailability(
+  rawSlug: string,
+): Promise<{ available: boolean; reason?: "published" | "draft" }> {
+  const slug = (rawSlug ?? "").trim().toLowerCase();
+  if (!slug) return { available: false };
+  if (await adapter.findBySlug(slug)) {
+    return { available: false, reason: "published" };
+  }
+  if (await findActiveDraftBySlug(slug)) {
+    return { available: false, reason: "draft" };
+  }
+  return { available: true };
+}
+
+/**
+ * Auth-guarded public surface for the publish wizard's live (debounced)
+ * title/slug uniqueness check. Reachable by direct POST via the
+ * `checkListingTitleAvailability` Server Action, so it requires a session to
+ * prevent anonymous slug enumeration. Read-only — no audit log.
+ */
+export async function checkSlugAvailability(
+  slug: string,
+): Promise<{ available: boolean; reason?: "published" | "draft" }> {
+  await requireAuth();
+  return slugAvailability(slug);
+}
+
 export async function createListingDraft(
   rawInput: unknown,
 ): Promise<{ id: string }> {
@@ -474,20 +510,15 @@ export async function createListingDraft(
     resolvedPersonId = minted.id;
   }
 
-  // Slug uniqueness — published catalog first, then the draft queue.
+  // Slug uniqueness — published catalog first, then the draft queue. Shares
+  // `slugAvailability` with the live wizard check so the rule is defined once.
   const slug = input.payload.details.preferredSlug;
-  const slugTakenByListing = await adapter.findBySlug(slug);
-  if (slugTakenByListing) {
+  const availability = await slugAvailability(slug);
+  if (!availability.available) {
     const err = new Error(
-      `createListingDraft: slug "${slug}" is already taken by a published profile`,
-    );
-    (err as { kind?: string }).kind = "invalid-argument";
-    throw err;
-  }
-  const slugTakenByDraft = await findActiveDraftBySlug(slug);
-  if (slugTakenByDraft) {
-    const err = new Error(
-      `createListingDraft: slug "${slug}" is already in another draft awaiting review`,
+      availability.reason === "published"
+        ? `createListingDraft: slug "${slug}" is already taken by a published profile`
+        : `createListingDraft: slug "${slug}" is already in another draft awaiting review`,
     );
     (err as { kind?: string }).kind = "invalid-argument";
     throw err;
@@ -643,6 +674,99 @@ export async function getMyDraft(
     resource: `draft:${draftId}`,
   });
   return record;
+}
+
+/**
+ * Owner-side edit of a `pending_review` draft (ADR-011). Mutation contract:
+ * validate → requirePublisher → ownership + status gate → slug uniqueness
+ * (only when the title-derived slug changed) → merge editable fields onto the
+ * stored payload → adapter → audit → revalidate.
+ *
+ * Photos and free-text descriptions (gallery/videos/shortBio/bio) plus the
+ * publish/billing block are intentionally immutable here — editing them means
+ * starting a fresh publish. `updateListingDraftSchema` does not accept those
+ * fields, and the merge below copies them from the stored draft verbatim.
+ */
+export async function updateListingDraft(
+  rawInput: unknown,
+): Promise<{ id: string }> {
+  const input: UpdateListingDraftInput = validateActionInput(
+    updateListingDraftSchema,
+    rawInput,
+  );
+  const user = await requirePublisher();
+
+  const existing = await getDraftByIdForOwnerRaw(user.uid, input.draftId);
+  if (!existing) {
+    const err = new Error("updateListingDraft: draft not found");
+    (err as { kind?: string }).kind = "not-found";
+    throw err;
+  }
+  if (existing.status !== "pending_review") {
+    const err = new Error(
+      "updateListingDraft: only drafts in review can be edited",
+    );
+    (err as { kind?: string }).kind = "invalid-argument";
+    throw err;
+  }
+
+  // Slug uniqueness — only re-check when the title-derived slug actually
+  // changed. The draft itself still claims the old slug, so an unchanged
+  // slug would always "collide with itself"; skipping avoids that.
+  const nextSlug = input.details.preferredSlug;
+  const slugChanged = nextSlug !== existing.payload.details.preferredSlug;
+  if (slugChanged) {
+    const availability = await slugAvailability(nextSlug);
+    if (!availability.available) {
+      const err = new Error(
+        availability.reason === "published"
+          ? `updateListingDraft: slug "${nextSlug}" is already taken by a published profile`
+          : `updateListingDraft: slug "${nextSlug}" is already in another draft awaiting review`,
+      );
+      (err as { kind?: string }).kind = "invalid-argument";
+      throw err;
+    }
+  }
+
+  // Merge editable fields onto the stored payload. Locked fields
+  // (gallery, videos, shortBio, bio, publish) are copied verbatim.
+  const mergedPayload: ListingDraftPayload = {
+    details: input.details,
+    description: {
+      ...existing.payload.description,
+      services: input.services,
+      meetingContexts: input.meetingContexts,
+      faceVisible: input.faceVisible,
+      paymentByCard: input.paymentByCard,
+    },
+    attributes: input.attributes,
+    publish: existing.payload.publish,
+  };
+
+  await updateListingDraftRaw({
+    ownerUid: user.uid,
+    draftId: input.draftId,
+    payload: mergedPayload,
+  });
+
+  await auditLog({
+    event: "biringa.draft.updated",
+    actorId: user.uid,
+    resource: `draft:${input.draftId}`,
+    metadata: {
+      personId: existing.personId ?? null,
+      preferredSlug: nextSlug,
+      slugChanged,
+      city: input.details.city,
+      category: input.details.category,
+    },
+  });
+
+  // Drafts aren't tag-cached, but a published listing later derived from this
+  // draft shares the catalog tag — invalidate it for read-your-own-writes.
+  updateTag(CACHE_TAGS.listings);
+
+  return { id: input.draftId };
 }
 
 /**

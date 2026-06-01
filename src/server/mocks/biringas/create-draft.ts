@@ -112,6 +112,35 @@ export async function listDraftsByOwnerRaw(
 }
 
 /**
+ * Mock parity for `updateListingDraftRaw`. Overwrites the stored draft's
+ * payload (the barrel already merged the locked fields back in) and mirrors
+ * the firebase adapter's owner + status guards.
+ */
+export async function updateListingDraftRaw(input: {
+  ownerUid: string;
+  draftId: string;
+  payload: CreateListingDraftRawInput["payload"];
+}): Promise<void> {
+  const idx = DRAFTS.findIndex(
+    (d) => d.id === input.draftId && d.ownerUid === input.ownerUid,
+  );
+  if (idx === -1) {
+    const err = new Error("updateListingDraft: draft not found");
+    (err as { kind?: string }).kind = "not-found";
+    throw err;
+  }
+  const found = DRAFTS[idx]!;
+  if (found.status !== "pending_review") {
+    const err = new Error(
+      "updateListingDraft: only drafts in review can be edited",
+    );
+    (err as { kind?: string }).kind = "invalid-argument";
+    throw err;
+  }
+  DRAFTS[idx] = { ...found, payload: input.payload };
+}
+
+/**
  * Returns the full draft record for `(ownerUid, draftId)` or `null` when
  * it does not exist or belongs to someone else. The ownership filter
  * here is the safety boundary — barrel code passes the

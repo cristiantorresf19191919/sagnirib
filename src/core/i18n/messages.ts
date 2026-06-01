@@ -189,7 +189,7 @@ const es: MessageDict = {
   "publicar.rail.currentStep": "Paso actual: {step}",
 
   /* Validation messages */
-  "publicar.validation.displayName": "Cuéntanos tu nombre artístico.",
+  "publicar.validation.displayName": "Cuéntanos el título de tu perfil.",
   "publicar.validation.age": "La edad mínima permitida es 18.",
   "publicar.validation.city": "Selecciona la ciudad principal.",
   "publicar.validation.category": "Selecciona una categoría.",
@@ -1138,6 +1138,7 @@ const es: MessageDict = {
   "miCuenta.profile.action.publish": "Publicar este perfil",
   "miCuenta.profile.action.viewDetails": "Ver detalles",
   "miCuenta.profile.action.editResend": "Editar y reenviar",
+  "miCuenta.profile.action.editListing": "Editar publicación",
   "miCuenta.profile.action.viewListing": "Ver mi publicación",
   "miCuenta.profile.action.viewVerification": "Ver verificación enviada",
   "miCuenta.profile.action.delete": "Eliminar el perfil {name}",
@@ -1163,6 +1164,23 @@ const es: MessageDict = {
   /* Draft detail page */
   "draft.metadata.title": "Detalle del borrador — Biringas",
   "draft.metadata.description": "Vista en revisión de un borrador del catálogo.",
+  "editar.metadata.title": "Editar publicación — Biringas",
+  "editar.metadata.description": "Edita los datos de tu publicación en revisión.",
+  "editar.back": "Volver al detalle",
+  "editar.title": "Editar tu publicación",
+  "editar.subtitle":
+    "Ajusta los datos de tu perfil en revisión. Los cambios se reenvían para revisión humana.",
+  "editar.disclaimer":
+    "Puedes editar todos los datos menos las fotos y los textos (descripción corta y «Sobre ti»). Para cambiar fotos o descripción debes crear una publicación nueva.",
+  "editar.section.offer.eyebrow": "TU OFERTA",
+  "editar.section.offer.title": "Servicios y lugar de encuentro",
+  "editar.section.offer.description":
+    "Aparecen como chips en tu perfil y se conectan con los filtros del catálogo.",
+  "editar.toggle.faceVisible": "Muestro el rostro en mis fotos",
+  "editar.toggle.paymentByCard": "Acepto pago con tarjeta",
+  "editar.cancel": "Cancelar",
+  "editar.save": "Guardar cambios",
+  "editar.error.generic": "No se pudieron guardar los cambios. Intenta de nuevo.",
   "draft.back": "Volver al dashboard",
   "draft.unnamed": "Borrador sin nombre",
   "draft.subtitle":
@@ -1761,13 +1779,25 @@ const es: MessageDict = {
   "step.details.category.masajes": "Masajes",
   "step.details.category.videollamadas": "Videollamadas",
   "step.details.field.price": "Tarifa por hora (COP)",
-  "step.details.field.price.placeholder": "200000",
+  "step.details.field.price.placeholder": "200.000",
   "step.details.field.price.hint":
     "Esta es la referencia pública. Puedes ofrecer paquetes en tu descripción.",
   "step.details.field.slug": "URL preferida",
   "step.details.field.slug.placeholder": "alma-medellin",
   "step.details.field.slug.hint":
     "Aparecerá como biringas.co/p/tu-url. Sin espacios, solo letras y guiones.",
+  "step.details.field.title": "Título",
+  "step.details.field.title.placeholder": "Ej. Alma en Medellín",
+  "step.details.field.title.hint":
+    "Es el nombre que verán los visitantes y define tu URL única (biringas.co/p/...). Lo verificamos en tiempo real.",
+  "step.details.field.title.availability.checking": "Verificando disponibilidad…",
+  "step.details.field.title.availability.available": "Disponible",
+  "step.details.field.title.availability.takenPublished":
+    "Ya hay un perfil publicado con ese título. Elige otro.",
+  "step.details.field.title.availability.takenDraft":
+    "Otro borrador en revisión ya usa ese título. Elige otro.",
+  "step.details.field.title.availability.error":
+    "No se pudo verificar. Intenta de nuevo.",
   "step.details.field.phone": "Teléfono privado",
   "step.details.field.phone.placeholder": "+57 300 000 0000",
   "step.details.field.phone.hint":
@@ -2483,7 +2513,7 @@ const en: MessageDict = {
   "publicar.rail.currentStep": "Current step: {step}",
 
   /* Validation messages */
-  "publicar.validation.displayName": "Tell us your stage name.",
+  "publicar.validation.displayName": "Tell us your profile title.",
   "publicar.validation.age": "Minimum age allowed is 18.",
   "publicar.validation.city": "Pick your main city.",
   "publicar.validation.category": "Pick a category.",
@@ -3425,6 +3455,7 @@ const en: MessageDict = {
   "miCuenta.profile.action.publish": "Publish this profile",
   "miCuenta.profile.action.viewDetails": "View details",
   "miCuenta.profile.action.editResend": "Edit and resend",
+  "miCuenta.profile.action.editListing": "Edit listing",
   "miCuenta.profile.action.viewListing": "View my listing",
   "miCuenta.profile.action.viewVerification": "View submitted verification",
   "miCuenta.profile.action.delete": "Delete {name}'s profile",
@@ -3450,6 +3481,23 @@ const en: MessageDict = {
   /* Draft detail page */
   "draft.metadata.title": "Draft detail — Biringas",
   "draft.metadata.description": "Read-only view of a catalog draft under review.",
+  "editar.metadata.title": "Edit listing — Biringas",
+  "editar.metadata.description": "Edit the details of your listing under review.",
+  "editar.back": "Back to detail",
+  "editar.title": "Edit your listing",
+  "editar.subtitle":
+    "Adjust the details of your profile under review. Changes are resubmitted for human review.",
+  "editar.disclaimer":
+    "You can edit everything except photos and the text fields (short description and “About you”). To change photos or the description you must create a new listing.",
+  "editar.section.offer.eyebrow": "YOUR OFFER",
+  "editar.section.offer.title": "Services and meeting place",
+  "editar.section.offer.description":
+    "They show as chips on your profile and connect with the catalog filters.",
+  "editar.toggle.faceVisible": "I show my face in my photos",
+  "editar.toggle.paymentByCard": "I accept card payment",
+  "editar.cancel": "Cancel",
+  "editar.save": "Save changes",
+  "editar.error.generic": "Couldn't save your changes. Try again.",
   "draft.back": "Back to the dashboard",
   "draft.unnamed": "Unnamed draft",
   "draft.subtitle":
@@ -4046,13 +4094,25 @@ const en: MessageDict = {
   "step.details.category.masajes": "Massage",
   "step.details.category.videollamadas": "Video calls",
   "step.details.field.price": "Hourly rate (COP)",
-  "step.details.field.price.placeholder": "200000",
+  "step.details.field.price.placeholder": "200.000",
   "step.details.field.price.hint":
     "This is the public reference. You can offer packages in your description.",
   "step.details.field.slug": "Preferred URL",
   "step.details.field.slug.placeholder": "alma-medellin",
   "step.details.field.slug.hint":
     "Shows as biringas.co/p/your-url. No spaces, only letters and dashes.",
+  "step.details.field.title": "Title",
+  "step.details.field.title.placeholder": "e.g. Alma in Medellín",
+  "step.details.field.title.hint":
+    "It's the name visitors see and it defines your unique URL (biringas.co/p/...). We check it in real time.",
+  "step.details.field.title.availability.checking": "Checking availability…",
+  "step.details.field.title.availability.available": "Available",
+  "step.details.field.title.availability.takenPublished":
+    "A published profile already uses that title. Pick another.",
+  "step.details.field.title.availability.takenDraft":
+    "Another draft under review already uses that title. Pick another.",
+  "step.details.field.title.availability.error":
+    "Couldn't verify. Try again.",
   "step.details.field.phone": "Private phone",
   "step.details.field.phone.placeholder": "+57 300 000 0000",
   "step.details.field.phone.hint":
