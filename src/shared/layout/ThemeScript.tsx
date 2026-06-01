@@ -13,9 +13,10 @@ import Script from "next/script";
  *      click writes one).
  *   3. `prefers-color-scheme` media query — last-resort signal.
  *
- * Seven valid themes: `light` (default), `dark`, `desire` (dark violet),
- * `bloom` (light violet), `ember` (dark passion red), `amour` (light
- * passion red), `noir` (dark sapphire).
+ * Ten valid themes. Light: `amour` (default — passion red), `light`,
+ * `bloom` (violet), `aurora` (sky blue), `jade` (mint), `lavender`. Dark:
+ * `dark`, `desire` (violet), `ember` (passion red), `noir` (sapphire).
+ * First visit always lands on `amour` regardless of OS color scheme.
  *
  * Wrapped in `next/script` with `strategy="beforeInteractive"` so Next
  * hoists it into `<head>` *outside* the React reconciler. A raw
@@ -27,7 +28,7 @@ import Script from "next/script";
  * injected by Next directly, runs before hydration, and is never
  * re-rendered.
  */
-const SCRIPT = `(function(){try{var ok={light:1,dark:1,desire:1,bloom:1,ember:1,amour:1,noir:1};var current=document.documentElement.getAttribute('data-theme');if(current&&ok[current])return;var s=localStorage.getItem('biringas:theme');var t=ok[s]?s:(window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');document.documentElement.setAttribute('data-theme',t);}catch(e){}})();`;
+const SCRIPT = `(function(){try{var ok={light:1,dark:1,desire:1,bloom:1,ember:1,amour:1,noir:1,aurora:1,jade:1,lavender:1};var current=document.documentElement.getAttribute('data-theme');if(current&&ok[current])return;var s=localStorage.getItem('biringas:theme');var t=ok[s]?s:'amour';document.documentElement.setAttribute('data-theme',t);}catch(e){}})();`;
 
 export function ThemeScript() {
   return (

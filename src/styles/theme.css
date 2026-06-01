@@ -482,3 +482,160 @@ html[data-theme="noir"] {
   --shadow-glow-secondary: 0 14px 36px -18px rgba(156, 170, 202, 0.45);
   --shadow-glow-accent: 0 14px 36px -18px rgba(226, 198, 133, 0.55);
 }
+
+/*
+ * "Aurora" theme — LIGHT — flipped via `data-theme="aurora"` on <html>.
+ *
+ * Dawn sky — airy porcelain-blue paper with a deep marine-blue primary and
+ * a warm gold accent. The light, optimistic counterpart to noir's midnight.
+ */
+html[data-theme="aurora"] {
+  --color-background: #EEF4FB;
+  --color-background-elevated: #F7FBFF;
+  --color-surface: #FFFFFF;
+  --color-surface-muted: #DEE9F5;
+  --color-border: #CBDBEE;
+
+  --color-brand-primary: #1F5C9E;
+  --color-brand-primary-strong: #2A6FB8;
+  --color-brand-primary-soft: #B6CFEA;
+
+  --color-brand-secondary: #6E89AC;
+  --color-brand-secondary-strong: #4F6F90;
+
+  --color-brand-accent: #C99161;
+  --color-brand-accent-strong: #A77544;
+
+  --color-brand-highlight: #3D86D6;
+  --color-brand-warn: #C99161;
+
+  --color-foreground: #0E2438;
+  --color-text-muted: #52616F;
+  --color-text-subtle: #8B99A8;
+
+  --color-cream: #E3ECF5;
+  --color-cream-deep: #D2DEEC;
+  --color-cream-soft: #F1F6FC;
+  --color-ink: #0E2438;
+  --color-ink-soft: #2F4456;
+  --color-forest: #1F5C9E;
+  --color-forest-deep: #184B82;
+  --color-gold: #BF8856;
+  --color-gold-deep: #936038;
+  --color-line: rgba(14, 36, 56, 0.14);
+  --color-line-soft: rgba(14, 36, 56, 0.06);
+
+  --shadow-sm: 0 1px 2px rgba(18, 52, 90, 0.09);
+  --shadow-md: 0 10px 28px -12px rgba(18, 52, 90, 0.20);
+  --shadow-lg: 0 26px 56px -20px rgba(18, 52, 90, 0.26);
+  --shadow-glow-primary:
+    0 16px 40px -18px rgba(31, 92, 158, 0.50),
+    0 0 0 1px rgba(31, 92, 158, 0.06);
+  --shadow-glow-secondary: 0 14px 36px -18px rgba(110, 137, 172, 0.45);
+  --shadow-glow-accent: 0 14px 36px -18px rgba(201, 145, 97, 0.50);
+}
+
+/*
+ * "Jade" theme — LIGHT — flipped via `data-theme="jade"` on <html>.
+ *
+ * Fresh mint — pale seafoam paper with a deep emerald-teal primary and a
+ * soft coral highlight. Clean and restorative; the brighter, cooler sibling
+ * of the default forest light theme.
+ */
+html[data-theme="jade"] {
+  --color-background: #ECF6F2;
+  --color-background-elevated: #F6FCFA;
+  --color-surface: #FFFFFF;
+  --color-surface-muted: #DBEDE6;
+  --color-border: #C6E0D6;
+
+  --color-brand-primary: #0F7A63;
+  --color-brand-primary-strong: #149178;
+  --color-brand-primary-soft: #A7D6C8;
+
+  --color-brand-secondary: #6E9C8E;
+  --color-brand-secondary-strong: #4D7E6F;
+
+  --color-brand-accent: #C99161;
+  --color-brand-accent-strong: #A77544;
+
+  --color-brand-highlight: #E0735B;
+  --color-brand-warn: #C99161;
+
+  --color-foreground: #0C2C24;
+  --color-text-muted: #53706A;
+  --color-text-subtle: #84A79A;
+
+  --color-cream: #E1F0EB;
+  --color-cream-deep: #CFE4DC;
+  --color-cream-soft: #EEF8F5;
+  --color-ink: #0C2C24;
+  --color-ink-soft: #2F5A4E;
+  --color-forest: #0F7A63;
+  --color-forest-deep: #0B6552;
+  --color-gold: #BF8856;
+  --color-gold-deep: #936038;
+  --color-line: rgba(12, 44, 36, 0.14);
+  --color-line-soft: rgba(12, 44, 36, 0.06);
+
+  --shadow-sm: 0 1px 2px rgba(12, 60, 50, 0.09);
+  --shadow-md: 0 10px 28px -12px rgba(12, 60, 50, 0.20);
+  --shadow-lg: 0 26px 56px -20px rgba(12, 60, 50, 0.26);
+  --shadow-glow-primary:
+    0 16px 40px -18px rgba(15, 122, 99, 0.50),
+    0 0 0 1px rgba(15, 122, 99, 0.06);
+  --shadow-glow-secondary: 0 14px 36px -18px rgba(110, 156, 142, 0.45);
+  --shadow-glow-accent: 0 14px 36px -18px rgba(201, 145, 97, 0.50);
+}
+
+/*
+ * "Lavender" theme — LIGHT — flipped via `data-theme="lavender"` on <html>.
+ *
+ * Soft lilac — pale lavender paper with a rich blue-violet primary and a
+ * magenta highlight. Romantic and modern; a lighter, cooler take than bloom.
+ */
+html[data-theme="lavender"] {
+  --color-background: #F4F1FB;
+  --color-background-elevated: #FBF9FF;
+  --color-surface: #FFFFFF;
+  --color-surface-muted: #E7E0F2;
+  --color-border: #D6CCEA;
+
+  --color-brand-primary: #5B3FB0;
+  --color-brand-primary-strong: #6E4FC8;
+  --color-brand-primary-soft: #CDBFE9;
+
+  --color-brand-secondary: #8576A8;
+  --color-brand-secondary-strong: #645484;
+
+  --color-brand-accent: #C99161;
+  --color-brand-accent-strong: #A77544;
+
+  --color-brand-highlight: #C0479E;
+  --color-brand-warn: #C99161;
+
+  --color-foreground: #1B1030;
+  --color-text-muted: #5E5374;
+  --color-text-subtle: #948CA7;
+
+  --color-cream: #EBE4F3;
+  --color-cream-deep: #DDD2EA;
+  --color-cream-soft: #F5F0FB;
+  --color-ink: #1B1030;
+  --color-ink-soft: #3D2F5F;
+  --color-forest: #5B3FB0;
+  --color-forest-deep: #4B3398;
+  --color-gold: #BF8856;
+  --color-gold-deep: #936038;
+  --color-line: rgba(27, 16, 48, 0.14);
+  --color-line-soft: rgba(27, 16, 48, 0.06);
+
+  --shadow-sm: 0 1px 2px rgba(40, 22, 80, 0.09);
+  --shadow-md: 0 10px 28px -12px rgba(40, 22, 80, 0.20);
+  --shadow-lg: 0 26px 56px -20px rgba(40, 22, 80, 0.26);
+  --shadow-glow-primary:
+    0 16px 40px -18px rgba(91, 63, 176, 0.50),
+    0 0 0 1px rgba(91, 63, 176, 0.06);
+  --shadow-glow-secondary: 0 14px 36px -18px rgba(133, 118, 168, 0.45);
+  --shadow-glow-accent: 0 14px 36px -18px rgba(201, 145, 97, 0.50);
+}

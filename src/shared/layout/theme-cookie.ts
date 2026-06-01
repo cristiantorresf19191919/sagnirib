@@ -21,25 +21,33 @@
 export const THEME_COOKIE = "biringas:theme";
 
 export type Theme =
+  // Light moods
   | "light"
+  | "amour"
+  | "bloom"
+  | "aurora"
+  | "jade"
+  | "lavender"
+  // Dark moods
   | "dark"
   | "desire"
-  | "bloom"
   | "ember"
-  | "amour"
   | "noir";
 
 export const VALID_THEMES: ReadonlySet<Theme> = new Set([
   "light",
+  "amour",
+  "bloom",
+  "aurora",
+  "jade",
+  "lavender",
   "dark",
   "desire",
-  "bloom",
   "ember",
-  "amour",
   "noir",
 ]);
 
-export const DEFAULT_THEME: Theme = "light";
+export const DEFAULT_THEME: Theme = "amour";
 
 export function isValidTheme(value: string | undefined | null): value is Theme {
   return !!value && VALID_THEMES.has(value as Theme);
