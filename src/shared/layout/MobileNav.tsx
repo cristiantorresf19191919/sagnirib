@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   ArrowUpRight,
+  Clock,
   Compass,
   Heart,
   HelpCircle,
@@ -26,6 +27,11 @@ interface MobileNavProps {
   locale: SupportedLocale;
   hidePublishCta?: boolean;
   hideCatalogCta?: boolean;
+  /**
+   * When set, the publisher has a listing in human review: the publish
+   * affordance becomes a "Perfil en revisión" link to this href instead.
+   */
+  reviewHref?: string | null;
   className?: string;
 }
 
@@ -42,6 +48,7 @@ export function MobileNav({
   locale,
   hidePublishCta = false,
   hideCatalogCta = false,
+  reviewHref = null,
   className = "",
 }: MobileNavProps) {
   const [open, setOpen] = useState(false);
@@ -77,16 +84,25 @@ export function MobileNav({
       icon: <Compass className="h-[18px] w-[18px]" aria-hidden />,
       href: localizedHref(locale, "/explorar"),
     },
-    ...(hidePublishCta
-      ? []
-      : [
+    ...(reviewHref
+      ? [
           {
-            id: "publish",
-            label: t(locale, "header.cta.publish"),
-            icon: <Plus className="h-[18px] w-[18px]" aria-hidden />,
-            href: localizedHref(locale, "/publicar"),
+            id: "profile-in-review",
+            label: t(locale, "header.cta.profileInReview"),
+            icon: <Clock className="h-[18px] w-[18px]" aria-hidden />,
+            href: reviewHref,
           } satisfies MobileNavItem,
-        ]),
+        ]
+      : hidePublishCta
+        ? []
+        : [
+            {
+              id: "publish",
+              label: t(locale, "header.cta.publish"),
+              icon: <Plus className="h-[18px] w-[18px]" aria-hidden />,
+              href: localizedHref(locale, "/publicar"),
+            } satisfies MobileNavItem,
+          ]),
     authed
       ? {
           id: "account",
@@ -112,19 +128,25 @@ export function MobileNav({
       : []),
   ];
 
-  const cta: MobileCta | undefined = !hidePublishCta
+  const cta: MobileCta | undefined = reviewHref
     ? {
-        label: t(locale, "header.cta.publish"),
-        icon: <Plus className="h-4 w-4" aria-hidden />,
-        href: localizedHref(locale, "/publicar"),
+        label: t(locale, "header.cta.profileInReview"),
+        icon: <Clock className="h-4 w-4" aria-hidden />,
+        href: reviewHref,
       }
-    : !hideCatalogCta
+    : !hidePublishCta
       ? {
-          label: t(locale, "header.cta.explore"),
-          icon: <ArrowUpRight className="h-4 w-4" aria-hidden />,
-          href: localizedHref(locale, "/explorar"),
+          label: t(locale, "header.cta.publish"),
+          icon: <Plus className="h-4 w-4" aria-hidden />,
+          href: localizedHref(locale, "/publicar"),
         }
-      : undefined;
+      : !hideCatalogCta
+        ? {
+            label: t(locale, "header.cta.explore"),
+            icon: <ArrowUpRight className="h-4 w-4" aria-hidden />,
+            href: localizedHref(locale, "/explorar"),
+          }
+        : undefined;
 
   const openLabel = locale === "en" ? "Open menu" : "Abrir menú";
   const closeLabel = locale === "en" ? "Close menu" : "Cerrar menú";
