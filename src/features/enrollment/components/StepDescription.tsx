@@ -300,10 +300,13 @@ export function StepDescription({
   }
 
   function handleFilesSelected(event: React.ChangeEvent<HTMLInputElement>) {
-    const picked = event.target.files;
+    // Snapshot the FileList into an array BEFORE resetting the input — the
+    // input's `.files` is live, so clearing `value` first would empty the
+    // list we're about to read (the bug that made picked uploads no-op).
+    const files = event.target.files ? Array.from(event.target.files) : [];
     event.target.value = "";
-    if (!picked || picked.length === 0) return;
-    ingestFiles(Array.from(picked));
+    if (files.length === 0) return;
+    ingestFiles(files);
   }
 
   // Keep a live ref to ingestFiles so the mount-once paste listener never
