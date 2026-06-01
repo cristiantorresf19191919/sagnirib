@@ -1,5 +1,6 @@
 "use client";
 
+import { Check, Plus } from "lucide-react";
 import type {
   InputHTMLAttributes,
   ReactNode,
@@ -151,10 +152,16 @@ interface ChipChoiceProps {
   label: string;
   active: boolean;
   onClick: () => void;
+  /**
+   * Multi-select affordance. When true the chip carries a leading icon — a
+   * faint `+` when unselected, a `✓` when selected — so the user can predict
+   * that several options can be picked (vs the icon-less single-select chips).
+   */
+  multi?: boolean;
 }
 
 /** Soft pill used in chip rows (services, attention, etc). */
-export function ChipChoice({ label, active, onClick }: ChipChoiceProps) {
+export function ChipChoice({ label, active, onClick, multi = false }: ChipChoiceProps) {
   // Selected state matches PillToggle (solid forest fill + white text) so
   // every selectable chip/pill across the app shares one "selected" language.
   const tone = active
@@ -165,8 +172,14 @@ export function ChipChoice({ label, active, onClick }: ChipChoiceProps) {
       type="button"
       onClick={onClick}
       aria-pressed={active}
-      className={`inline-flex h-9 items-center rounded-full border px-3.5 text-xs font-medium transition-[background,border-color,color] duration-150 ease-[var(--ease-standard)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-background)] ${tone}`}
+      className={`inline-flex h-9 items-center gap-1.5 rounded-full border px-3.5 text-xs font-medium transition-[background,border-color,color] duration-150 ease-[var(--ease-standard)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-background)] ${tone}`}
     >
+      {multi &&
+        (active ? (
+          <Check className="h-3.5 w-3.5" aria-hidden />
+        ) : (
+          <Plus className="h-3.5 w-3.5 opacity-60" aria-hidden />
+        ))}
       {label}
     </button>
   );

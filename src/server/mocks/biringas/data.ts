@@ -1367,7 +1367,7 @@ export const APPEARANCE_CATALOG = {
   country: ["Colombianas", "Venezolanas", "Otras"],
   ethnicity: ["Morenas", "Piel blanca", "Trigueñas"],
   hair: ["Pelinegras", "Rubias", "Pelirrojas"],
-  height: ["Altas", "Bajitas"],
+  height: ["Altas", "Medianas", "Bajitas"],
   body: ["Delgadas", "Cuerpos Fitness", "Gorditas"],
   breastSize: ["Pequeños", "Medianos", "Grandes"],
   breastType: ["Naturales", "Con siliconas"],

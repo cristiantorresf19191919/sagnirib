@@ -22,17 +22,6 @@ interface StepAttributesProps {
 
 type AppearanceKey = keyof AppearanceCatalogs;
 
-const APPEARANCE_FIELDS: ReadonlyArray<AppearanceKey> = [
-  "country",
-  "ethnicity",
-  "hair",
-  "height",
-  "body",
-  "breastSize",
-  "breastType",
-  "pubis",
-];
-
 const REQUIRED_FIELDS: ReadonlySet<AppearanceKey> = new Set([
   "country",
   "ethnicity",
@@ -76,46 +65,74 @@ export function StepAttributes({ values, catalogs, onChange, forceShowErrors }: 
 
   const v = (key: string) => t(locale, key);
 
+  /** Renders one single-select appearance field (legend + chips + error). */
+  function field(key: AppearanceKey) {
+    const fieldError =
+      REQUIRED_FIELDS.has(key) && !values[key]
+        ? v(`publicar.validation.${key}`)
+        : undefined;
+
+    return (
+      <fieldset key={key} className="flex flex-col gap-2">
+        <legend className="text-[12px] font-semibold tracking-tight text-[var(--color-foreground)]">
+          {t(locale, `step.attributes.${key}.label`)}
+        </legend>
+        {FIELDS_WITH_HINT.has(key) && (
+          <p className="text-[11px] text-[var(--color-text-subtle)]">
+            {t(locale, `step.attributes.${key}.hint`)}
+          </p>
+        )}
+        <div className="mt-1 flex flex-wrap gap-2">
+          {catalogs.appearance[key].map((option) => (
+            <ChipChoice
+              key={option}
+              label={option}
+              active={values[key] === option}
+              onClick={() => setSingle(key, option)}
+            />
+          ))}
+        </div>
+        {show(key) && fieldError && (
+          <p role="alert" className="text-[11px] text-[var(--color-brand-highlight)]">
+            {fieldError}
+          </p>
+        )}
+      </fieldset>
+    );
+  }
+
   return (
     <SectionShell
       eyebrow={t(locale, "step.attributes.eyebrow")}
       title={t(locale, "step.attributes.title")}
       description={t(locale, "step.attributes.description")}
     >
-      {APPEARANCE_FIELDS.map((key) => {
-        const fieldError =
-          REQUIRED_FIELDS.has(key) && !values[key]
-            ? v(`publicar.validation.${key}`)
-            : undefined;
+      {/* Nationality leads full-width — it's the primary catalog filter. */}
+      {field("country")}
 
-        return (
-          <fieldset key={key} className="flex flex-col gap-2">
-            <legend className="text-[12px] font-semibold tracking-tight text-[var(--color-foreground)]">
-              {t(locale, `step.attributes.${key}.label`)}
-            </legend>
-            {FIELDS_WITH_HINT.has(key) && (
-              <p className="text-[11px] text-[var(--color-text-subtle)]">
-                {t(locale, `step.attributes.${key}.hint`)}
-              </p>
-            )}
-            <div className="mt-1 flex flex-wrap gap-2">
-              {catalogs.appearance[key].map((option) => (
-                <ChipChoice
-                  key={option}
-                  label={option}
-                  active={values[key] === option}
-                  onClick={() => setSingle(key, option)}
-                />
-              ))}
-            </div>
-            {show(key) && fieldError && (
-              <p role="alert" className="text-[11px] text-[var(--color-brand-highlight)]">
-                {fieldError}
-              </p>
-            )}
-          </fieldset>
-        );
-      })}
+      {/* Short single-select fields pair into two columns on desktop so the
+          step stays mostly above the fold instead of one tall column. The
+          source order lands the logical pairs together: Etnia·Cabello,
+          Estatura·Cuerpo, Tamaño·Tipo de senos. */}
+      <div className="grid grid-cols-1 gap-x-6 gap-y-5 sm:grid-cols-2">
+        {field("ethnicity")}
+        {field("hair")}
+        {field("height")}
+        {field("body")}
+        {field("breastSize")}
+        {field("breastType")}
+      </div>
+
+      {/* Optional section — a labelled divider gives permission to skip the
+          rest of the step. Everything below is non-required. */}
+      <div className="flex items-center gap-3 pt-1">
+        <span className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[var(--color-text-subtle)]">
+          {t(locale, "step.attributes.optional.heading")}
+        </span>
+        <span aria-hidden className="h-px flex-1 bg-[var(--color-border)]" />
+      </div>
+
+      {field("pubis")}
 
       <fieldset className="flex flex-col gap-2">
         <legend className="text-[12px] font-semibold tracking-tight text-[var(--color-foreground)]">
@@ -128,6 +145,7 @@ export function StepAttributes({ values, catalogs, onChange, forceShowErrors }: 
           {catalogs.languages.map((lang) => (
             <ChipChoice
               key={lang}
+              multi
               label={lang}
               active={values.languages.includes(lang)}
               onClick={() => toggleLanguage(lang)}

@@ -1737,11 +1737,12 @@ const es: MessageDict = {
 
   /* StepAttributes */
   "step.attributes.eyebrow": "Características",
-  "step.attributes.title": "Cómo te describirás físicamente",
+  "step.attributes.title": "Cómo te describirías físicamente",
   "step.attributes.description":
     "Estos datos se muestran como bloque de Características en tu perfil público y alimentan los filtros del catálogo. Elige la opción que más se acerque.",
-  "step.attributes.country.label": "País",
-  "step.attributes.country.hint": "Tu nacionalidad — aparece como filtro.",
+  "step.attributes.optional.heading": "Información opcional",
+  "step.attributes.country.label": "Nacionalidad",
+  "step.attributes.country.hint": "Aparece como filtro del catálogo.",
   "step.attributes.ethnicity.label": "Etnia",
   "step.attributes.hair.label": "Cabello",
   "step.attributes.height.label": "Estatura",
@@ -1753,7 +1754,7 @@ const es: MessageDict = {
     "Opcional para el catálogo público; usado solo en filtros de búsqueda.",
   "step.attributes.languages.legend": "Idiomas",
   "step.attributes.languages.hint":
-    "Selecciona los idiomas en los que puedes atender. Opcional.",
+    "Selecciona uno o varios idiomas en los que puedes atender. Opcional.",
 
   /* StepPublish */
   "step.publish.eyebrow": "Publicar",
@@ -3896,12 +3897,13 @@ const en: MessageDict = {
 
   /* StepAttributes */
   "step.attributes.eyebrow": "Attributes",
-  "step.attributes.title": "How you'll describe yourself physically",
+  "step.attributes.title": "How you'd describe yourself physically",
   "step.attributes.description":
     "This data appears as the Attributes block on your public profile and feeds the catalog filters. Pick the closest option.",
-  "step.attributes.country.label": "Country",
+  "step.attributes.optional.heading": "Optional information",
+  "step.attributes.country.label": "Nationality",
   "step.attributes.country.hint":
-    "Your nationality — appears as a filter.",
+    "Appears as a catalog filter.",
   "step.attributes.ethnicity.label": "Ethnicity",
   "step.attributes.hair.label": "Hair",
   "step.attributes.height.label": "Height",
@@ -3913,7 +3915,7 @@ const en: MessageDict = {
     "Optional for the public catalog; used only in search filters.",
   "step.attributes.languages.legend": "Languages",
   "step.attributes.languages.hint":
-    "Pick the languages you can attend in. Optional.",
+    "Pick one or more languages you can attend in. Optional.",
 
   /* StepPublish */
   "step.publish.eyebrow": "Publish",
