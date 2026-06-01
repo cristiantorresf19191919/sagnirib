@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Clock } from "lucide-react";
 
 import { isSupportedLocale } from "@/core/i18n/constants";
 import { localizedHref } from "@/core/i18n/href";
@@ -79,9 +79,13 @@ export default async function EditarBorradorPage({ params }: PageProps) {
   return (
     <>
       <Header hideCatalogCta />
-      <main className="bg-[var(--color-background)] pb-20 pt-8 sm:pt-10">
+      <main className="relative isolate bg-[var(--color-background)] pb-20 pt-8 sm:pt-10">
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-[420px] bg-[radial-gradient(circle_at_15%_5%,rgba(47,93,67,0.10),transparent_55%),radial-gradient(circle_at_85%_15%,rgba(229,162,58,0.10),transparent_55%)]"
+        />
         <Container width="wide" className="flex flex-col gap-8">
-          <header className="flex flex-col gap-2">
+          <header className="flex flex-col gap-3">
             <Link
               href={localizedHref(lang, `/mi-cuenta/borradores/${id}`)}
               className="inline-flex w-fit items-center gap-1.5 text-[12px] font-semibold uppercase tracking-[0.22em] text-[var(--color-brand-primary)] transition-colors hover:text-[var(--color-brand-primary-strong)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-background)]"
@@ -89,12 +93,20 @@ export default async function EditarBorradorPage({ params }: PageProps) {
               <ArrowLeft className="h-3.5 w-3.5" aria-hidden />
               {t(lang, "editar.back")}
             </Link>
-            <h1 className="text-3xl font-bold leading-[1.05] tracking-tight text-[var(--color-foreground)] sm:text-4xl">
-              {t(lang, "editar.title")}
-            </h1>
-            <p className="max-w-2xl text-sm leading-relaxed text-[var(--color-text-muted)] sm:text-base">
-              {t(lang, "editar.subtitle")}
-            </p>
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between sm:gap-6">
+              <div className="flex flex-col gap-2">
+                <h1 className="text-3xl font-bold leading-[1.05] tracking-tight text-[var(--color-foreground)] sm:text-4xl">
+                  {t(lang, "editar.title")}
+                </h1>
+                <p className="max-w-2xl text-sm leading-relaxed text-[var(--color-text-muted)] sm:text-base">
+                  {t(lang, "editar.subtitle")}
+                </p>
+              </div>
+              <span className="inline-flex w-fit shrink-0 items-center gap-1.5 rounded-full border border-[var(--color-brand-accent)]/45 bg-[var(--color-brand-accent)]/15 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--color-brand-accent-strong)]">
+                <Clock className="h-3 w-3" aria-hidden />
+                {t(lang, "draft.pill.pending")}
+              </span>
+            </div>
           </header>
 
           <EditDraftForm
