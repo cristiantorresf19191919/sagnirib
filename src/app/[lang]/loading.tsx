@@ -1,7 +1,11 @@
+import { cookies } from "next/headers";
+
 import { readLocale } from "@/core/i18n/locale";
 import { t } from "@/core/i18n/messages";
 import { Container } from "@/shared/design-system/components/Container";
+import { AUTH_HINT_COOKIE } from "@/shared/layout/auth-hint";
 import { LoadingTips } from "@/shared/layout/LoadingTips";
+import { RouteSpinner } from "@/shared/layout/RouteSpinner";
 
 const SKELETON_CARDS = Array.from({ length: 8 });
 
@@ -16,6 +20,21 @@ const SKELETON_CARDS = Array.from({ length: 8 });
  */
 export default async function Loading() {
   const locale = await readLocale();
+
+  // Signed-in users navigating the app get a calm brand spinner instead of
+  // the public catalog skeleton + safety tips (which only fit the catalog and
+  // first-time visitors). The `bg_auth` hint is a non-sensitive, instant
+  // signal — no token verification in the loading fallback. Anonymous
+  // visitors keep the catalog skeleton with rotating safety tips.
+  const jar = await cookies();
+  if (jar.get(AUTH_HINT_COOKIE)?.value === "1") {
+    return (
+      <main className="flex flex-col" data-testid="route-loading">
+        <RouteSpinner label={t(locale, "loading.session")} />
+      </main>
+    );
+  }
+
   return (
     <main className="flex flex-col" data-testid="catalog-loading">
       <section className="relative pb-12 pt-24 sm:pt-32">

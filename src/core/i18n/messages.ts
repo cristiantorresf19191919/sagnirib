@@ -2187,6 +2187,7 @@ const es: MessageDict = {
 
   /* ---------- Loading + toast primitives ---------- */
   "loading.catalog": "Cargando catálogo…",
+  "loading.session": "Cargando…",
   "toast.dismiss": "Descartar notificación",
   "toast.region.aria": "Notificaciones",
 
@@ -4351,6 +4352,7 @@ const en: MessageDict = {
 
   /* ---------- Loading + toast primitives ---------- */
   "loading.catalog": "Loading catalog…",
+  "loading.session": "Loading…",
   "toast.dismiss": "Dismiss notification",
   "toast.region.aria": "Notifications",
 

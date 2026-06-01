@@ -4,6 +4,7 @@ import { cookies } from "next/headers";
 import { getAuth } from "firebase-admin/auth";
 
 import { AuthError } from "@/server/auth/types";
+import { AUTH_HINT_COOKIE } from "@/shared/layout/auth-hint";
 import { getApp } from "../app";
 import { SESSION_COOKIE_NAME } from "./verify-session";
 
@@ -53,6 +54,15 @@ export async function createSession(idToken: string): Promise<void> {
     sameSite: "lax",
     path: "/",
   });
+  // Non-sensitive, client-readable hint so instant UI (route loading
+  // fallbacks) can branch logged-in vs anonymous without the httpOnly cookie.
+  jar.set(AUTH_HINT_COOKIE, "1", {
+    maxAge: SESSION_TTL_MS / 1000,
+    httpOnly: false,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    path: "/",
+  });
 }
 
 /**
@@ -64,6 +74,7 @@ export async function destroySession(): Promise<void> {
   const jar = await cookies();
   const cookie = jar.get(SESSION_COOKIE_NAME)?.value;
   jar.delete(SESSION_COOKIE_NAME);
+  jar.delete(AUTH_HINT_COOKIE);
 
   if (!cookie) return;
 
