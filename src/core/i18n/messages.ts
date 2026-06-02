@@ -135,8 +135,17 @@ const es: MessageDict = {
   "publicar.back": "Volver al catálogo",
   "publicar.title": "Publica tu perfil en Biringas",
   "publicar.subtitle":
-    "Tres pasos. Diez minutos. Tu perfil sale al catálogo después de una verificación rápida — y empieza a recibir contactos esa misma semana.",
+    "Cuatro pasos. Diez minutos. Tu perfil sale al catálogo después de una verificación humana rápida — y empieza a recibir contactos esa misma semana.",
+  "publicar.subtitle.pre":
+    "Cuatro pasos. Diez minutos. Tu perfil sale al catálogo después de una ",
+  "publicar.subtitle.post":
+    " rápida — y empieza a recibir contactos esa misma semana.",
   "publicar.badge.verification": "Verificación humana",
+
+  /* Progreso global (orbe líquido flotante) */
+  "publicar.progress.aria": "Progreso del perfil: {percent}% completo",
+  "publicar.progress.jump":
+    "Progreso del perfil: {percent}% completo. Ir al inicio del formulario.",
 
   /* Stepper */
   "publicar.stepper.aria": "Progreso de publicación",
@@ -451,6 +460,9 @@ const es: MessageDict = {
 
   /* Toolbar */
   "explorar.toolbar.cityAll": "Toda Colombia",
+  "explorar.toolbar.cityAllInDept": "Todas las ciudades",
+  "explorar.toolbar.departmentAll": "Todo el país",
+  "explorar.toolbar.localityAll": "Toda la ciudad",
   "explorar.toolbar.count":
     "{shown} {totalSuffix} {brand}",
   "explorar.toolbar.totalSuffix": "de {total}",
@@ -1766,8 +1778,13 @@ const es: MessageDict = {
   "step.details.field.age.placeholder": "18+",
   "step.details.field.age.hint":
     "Solo aceptamos perfiles mayores de 18.",
+  "step.details.field.department": "Departamento",
+  "step.details.field.department.placeholder": "Selecciona un departamento",
   "step.details.field.city": "Ciudad principal",
   "step.details.field.city.placeholder": "Selecciona una ciudad",
+  "step.details.field.city.placeholderNoDept": "Elige primero un departamento",
+  "step.details.field.locality": "Localidad / zona (opcional)",
+  "step.details.field.locality.placeholder": "Selecciona una localidad",
   "step.details.field.category": "Categoría",
   "step.details.field.category.placeholder": "Selecciona una categoría",
   "step.details.field.category.hint":
@@ -1818,8 +1835,9 @@ const es: MessageDict = {
   "step.attributes.hair.label": "Cabello",
   "step.attributes.height.label": "Estatura",
   "step.attributes.body.label": "Cuerpo",
-  "step.attributes.breastSize.label": "Tamaño de senos",
-  "step.attributes.breastType.label": "Tipo de senos",
+  "step.attributes.breasts.legend": "Senos",
+  "step.attributes.breastSize.label": "Tamaño",
+  "step.attributes.breastType.label": "Tipo",
   "step.attributes.pubis.label": "Pubis",
   "step.attributes.pubis.hint":
     "Opcional para el catálogo público; usado solo en filtros de búsqueda.",
@@ -1885,6 +1903,20 @@ const es: MessageDict = {
     "Acepto los {terms} y la {privacy}. Mi número privado no aparece en mi perfil público.",
   "step.publish.terms.termsLink": "Términos de Publicación",
   "step.publish.terms.privacyLink": "Política de Privacidad",
+  "step.publish.dataTreatment.title":
+    "¿Cómo vamos a tratar los datos de este formulario?",
+  "step.publish.dataTreatment.b1":
+    "Los datos que proporciones en esta página no serán públicos a menos que tú lo elijas. Tu email nunca será público.",
+  "step.publish.dataTreatment.b2":
+    "Con tus datos podemos enviarte emails de gestión para el correcto uso del servicio prestado.",
+  "step.publish.dataTreatment.b3":
+    "No solemos enviar boletines informativos. En el caso de que lo hagamos, sería para comentarte alguna mejora o cambio importante.",
+  "step.publish.dataTreatment.b4":
+    "En ningún caso te enviaremos boletines publicitarios de terceros.",
+  "step.publish.dataTreatment.b5":
+    "Nunca cederemos tus datos a terceros, excepto si hay una investigación judicial, tal y como marca la ley LLSI.",
+  "step.publish.dataTreatment.b6":
+    "Una vez borrado tu perfil, tenemos que mantener esos datos por un periodo de 12 meses, por si hay una investigación, tal y como indica la ley LLSI.",
 
   /* StepDescription */
   "step.description.eyebrow": "Tu historia",
@@ -2424,8 +2456,17 @@ const en: MessageDict = {
   "publicar.back": "Back to the catalog",
   "publicar.title": "Publish your profile on Biringas",
   "publicar.subtitle":
-    "Three steps. Ten minutes. Your profile goes live in the catalog after a quick verification — and starts receiving contacts the same week.",
+    "Four steps. Ten minutes. Your profile goes live in the catalog after a quick human verification — and starts receiving contacts the same week.",
+  "publicar.subtitle.pre":
+    "Four steps. Ten minutes. Your profile goes live in the catalog after a quick ",
+  "publicar.subtitle.post":
+    " — and starts receiving contacts the same week.",
   "publicar.badge.verification": "Human verification",
+
+  /* Global progress (floating liquid orb) */
+  "publicar.progress.aria": "Profile progress: {percent}% complete",
+  "publicar.progress.jump":
+    "Profile progress: {percent}% complete. Go to the top of the form.",
 
   /* Stepper */
   "publicar.stepper.aria": "Publication progress",
@@ -2743,6 +2784,9 @@ const en: MessageDict = {
 
   /* Toolbar */
   "explorar.toolbar.cityAll": "All of Colombia",
+  "explorar.toolbar.cityAllInDept": "All cities",
+  "explorar.toolbar.departmentAll": "Whole country",
+  "explorar.toolbar.localityAll": "Whole city",
   "explorar.toolbar.count":
     "{shown} {totalSuffix} {brand}",
   "explorar.toolbar.totalSuffix": "of {total}",
@@ -4049,8 +4093,13 @@ const en: MessageDict = {
   "step.details.field.age": "Age",
   "step.details.field.age.placeholder": "18+",
   "step.details.field.age.hint": "We only accept profiles 18+.",
+  "step.details.field.department": "Department",
+  "step.details.field.department.placeholder": "Select a department",
   "step.details.field.city": "Main city",
   "step.details.field.city.placeholder": "Pick a city",
+  "step.details.field.city.placeholderNoDept": "Choose a department first",
+  "step.details.field.locality": "Locality / zone (optional)",
+  "step.details.field.locality.placeholder": "Select a locality",
   "step.details.field.category": "Category",
   "step.details.field.category.placeholder": "Pick a category",
   "step.details.field.category.hint":
@@ -4102,8 +4151,9 @@ const en: MessageDict = {
   "step.attributes.hair.label": "Hair",
   "step.attributes.height.label": "Height",
   "step.attributes.body.label": "Body",
-  "step.attributes.breastSize.label": "Breast size",
-  "step.attributes.breastType.label": "Breast type",
+  "step.attributes.breasts.legend": "Breasts",
+  "step.attributes.breastSize.label": "Size",
+  "step.attributes.breastType.label": "Type",
   "step.attributes.pubis.label": "Pubic style",
   "step.attributes.pubis.hint":
     "Optional for the public catalog; used only in search filters.",
@@ -4169,6 +4219,19 @@ const en: MessageDict = {
     "I accept the {terms} and {privacy}. My private number does not appear on my public profile.",
   "step.publish.terms.termsLink": "Publishing Terms",
   "step.publish.terms.privacyLink": "Privacy Policy",
+  "step.publish.dataTreatment.title": "How will we handle the data in this form?",
+  "step.publish.dataTreatment.b1":
+    "The data you provide on this page will not be public unless you choose so. Your email will never be public.",
+  "step.publish.dataTreatment.b2":
+    "We may use your data to send you management emails for the correct use of the service provided.",
+  "step.publish.dataTreatment.b3":
+    "We don't usually send newsletters. If we do, it would be to tell you about an improvement or important change.",
+  "step.publish.dataTreatment.b4":
+    "Under no circumstances will we send you third-party advertising newsletters.",
+  "step.publish.dataTreatment.b5":
+    "We will never share your data with third parties, except in the event of a judicial investigation, as required by the LLSI law.",
+  "step.publish.dataTreatment.b6":
+    "Once your profile is deleted, we must retain that data for a period of 12 months, in case of an investigation, as indicated by the LLSI law.",
 
   /* StepDescription */
   "step.description.eyebrow": "Your story",
