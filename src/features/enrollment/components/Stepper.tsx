@@ -2,7 +2,7 @@
 
 import type { CSSProperties } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
-import { Check, ChevronRight } from "lucide-react";
+import { Check } from "lucide-react";
 
 import { useActiveLocale } from "@/core/i18n/use-active-locale";
 import { t } from "@/core/i18n/messages";
@@ -23,30 +23,77 @@ interface StepperProps {
   completed: ReadonlyArray<StepId>;
   /** When provided, the user can jump to any visited step. */
   onJump?: (id: StepId) => void;
+  /** Per-step completion fraction (0–1). The active step's ring fills with its
+   *  own value, so the red border completes as the user fills that step. */
+  stepProgress?: Record<StepId, number>;
 }
 
+// Draw-on easing for the ring/line — the "enter" curve from the UI-animation
+// guide (cubic-bezier(0.22, 1, 0.36, 1)): a confident start that settles
+// softly, so completion reads as arrival rather than a mechanical tick.
+const DRAW_EASE = [0.22, 1, 0.36, 1] as const;
+
+// How far the ring is drawn per state. The active step shows a short forest
+// arc starting at 12 o'clock ("in progress / you are here"); finishing the
+// step tweens that arc the rest of the way around to a full circle.
+const RING_ACTIVE = 0.3;
+
 /**
- * Card-style stepper. The active state is a single shared element
- * (`layoutId="stepper-active"`): when the step changes, framer-motion glides
- * the white highlight — its forest border, glow and gold hairline — from the
- * old card to the new one, so progress reads as one continuous motion rather
- * than two cards blinking. Completed cards swap their numeral for a check.
+ * Card-style stepper. Three layered motions, all functional and all gated on
+ * `prefers-reduced-motion`:
  *
- * The highlight lives at the `<li>` level (not inside the `overflow-hidden`
- * card) so the slide is never clipped; the active `<li>` is raised with `z-10`
- * so the travelling highlight always passes over its neighbours.
+ * 1. **Shared gliding highlight** (`layoutId="stepper-active"`): when the step
+ *    changes, framer-motion glides the white highlight — its forest border and
+ *    soft shadow — from the old card to the new one, so progress reads as one
+ *    continuous motion rather than two cards blinking. The highlight lives at
+ *    the `<li>` level (not inside the `overflow-hidden` card) so the slide is
+ *    never clipped, and the active `<li>` is raised with `z-10`.
  *
- * Restrained palette by design — forest + cream + a single gold hairline.
- * Honors `prefers-reduced-motion`: the highlight snaps instead of sliding.
+ * 2. **Progress ring** around each badge (a thin donut, ~2.5px): pending shows
+ *    only a faint track; the active step draws a short forest arc; completing
+ *    the step tweens that arc to a full circle (`pathLength` 0.3 → 1) as the
+ *    numeral pops into a check. Present at every breakpoint, so per-step
+ *    completion is communicated even when the connecting rail is hidden.
+ *
+ * 3. **Connecting rail** between cards (replaces the old `>` chevron): a 2px
+ *    line bridging the grid gap, aligned to the ring centres. Its forest fill
+ *    grows left→right (`scaleX`) the moment the left step is done. Only the
+ *    `lg` 4-in-a-row layout shows it; stacked / 2-col layouts hide it.
+ *
+ * `initial={false}` everywhere keeps the badges, rings and rails static on
+ * first paint (the card entrance covers that) — resuming a saved draft doesn't
+ * fire a burst of animations; motion only plays as you advance.
+ *
+ * Restrained palette by design — forest + cream + a single faint track.
  */
-export function Stepper({ steps, current, completed, onJump }: StepperProps) {
+export function Stepper({
+  steps,
+  current,
+  completed,
+  onJump,
+  stepProgress,
+}: StepperProps) {
   const locale = useActiveLocale();
   const reduced = useReducedMotion();
+
+  // The next step pulses an invitation once the current step is fully filled,
+  // nudging the user toward "Siguiente" without a hard prompt.
+  const currentIndex = steps.findIndex((s) => s.id === current);
+  const currentFull = (stepProgress?.[current] ?? 0) >= 1;
 
   // Snappy pop for the number→check swap; instant under reduced motion.
   const badgeSpring = reduced
     ? { duration: 0 }
     : ({ type: "spring", stiffness: 520, damping: 24 } as const);
+
+  // Smooth draw for ring + rail. Tween (not spring) so the stroke arrives
+  // without an overshoot wobble; snaps when reduced motion is requested.
+  const drawTransition = reduced
+    ? { duration: 0 }
+    : ({ duration: 0.6, ease: DRAW_EASE } as const);
+  const railTransition = reduced
+    ? { duration: 0 }
+    : ({ duration: 0.5, ease: DRAW_EASE } as const);
 
   return (
     <ol
@@ -59,14 +106,26 @@ export function Stepper({ steps, current, completed, onJump }: StepperProps) {
         const isDone = completed.includes(step.id);
         const isClickable = Boolean(onJump) && (isDone || isActive);
 
-        const ringTone = isActive
+        // Inner disc (the number/check). The ring around it carries progress;
+        // the disc carries the live/done/pending state via fill + glow.
+        const discTone = isActive
           ? "bg-[var(--color-brand-primary)] text-[var(--color-surface)] shadow-[var(--shadow-glow-primary)]"
           : isDone
             ? "bg-[var(--color-brand-primary-soft)] text-[var(--color-foreground)]"
             : "bg-[var(--color-surface-muted)] text-[var(--color-text-muted)] group-hover/step:bg-[var(--color-brand-primary-soft)] group-hover/step:text-[var(--color-foreground)]";
 
-        // Active pill is a touch larger so the eye lands on the live step.
-        const ringSize = isActive ? "h-10 w-10 text-base" : "h-9 w-9 text-sm";
+        // Ring fill target: full when done; while active it tracks THIS step's
+        // own field completion (floored so the arc is always visible), so the
+        // red border literally completes as the user fills the step; none when
+        // pending. The tween between values is the "completion" motion.
+        const activeRing = stepProgress
+          ? Math.max(0.06, stepProgress[step.id] ?? 0)
+          : RING_ACTIVE;
+        const ringProgress = isDone ? 1 : isActive ? activeRing : 0;
+
+        // Invite the next step once the current one is full (and still pending).
+        const invite =
+          index === currentIndex + 1 && currentFull && !isDone && !isActive;
 
         // Active card is transparent — the shared highlight behind it paints
         // the surface, border and glow so they can travel between cards.
@@ -89,39 +148,75 @@ export function Stepper({ steps, current, completed, onJump }: StepperProps) {
             {/* Header row — badge sits next to the step label so the number
                 and its status read as one unit (no diagonal eye-zigzag). */}
             <span className="relative flex items-center gap-3">
+              {/* Ring + disc. Fixed 44px box at every state so the ring
+                  centres align across the row — that alignment is what lets
+                  the connecting rail read as one continuous track. */}
               <span
                 aria-hidden
-                className={`inline-flex shrink-0 items-center justify-center overflow-hidden rounded-[var(--radius-md)] font-bold transition-[background,color,transform] duration-[240ms] ease-[var(--ease-standard)] group-hover/step:scale-105 ${ringSize} ${ringTone}`}
+                className="relative inline-flex h-11 w-11 shrink-0 items-center justify-center"
               >
-                {/* Number → check is a small spring pop on completion, not a
-                    hard swap — the only motion that fires mid-form, and only
-                    on the step you just finished. `initial={false}` keeps the
-                    badges static on first paint (the card entrance covers that). */}
-                <AnimatePresence mode="popLayout" initial={false}>
-                  {isDone && !isActive ? (
-                    <motion.span
-                      key="check"
-                      className="inline-flex"
-                      initial={reduced ? false : { scale: 0.3, opacity: 0, rotate: -40 }}
-                      animate={{ scale: 1, opacity: 1, rotate: 0 }}
-                      exit={reduced ? { opacity: 0 } : { scale: 0.3, opacity: 0 }}
-                      transition={badgeSpring}
-                    >
-                      <Check className="h-4 w-4" aria-hidden />
-                    </motion.span>
-                  ) : (
-                    <motion.span
-                      key="num"
-                      className="inline-flex"
-                      initial={reduced ? false : { scale: 0.5, opacity: 0 }}
-                      animate={{ scale: 1, opacity: 1 }}
-                      exit={reduced ? { opacity: 0 } : { scale: 0.5, opacity: 0 }}
-                      transition={badgeSpring}
-                    >
-                      {step.number}
-                    </motion.span>
-                  )}
-                </AnimatePresence>
+                {/* Progress ring. Rotated -90° so the arc starts at 12
+                    o'clock. Track is always present; the forest stroke draws
+                    via pathLength. round caps keep the leading edge soft. */}
+                <svg
+                  viewBox="0 0 44 44"
+                  className="absolute inset-0 h-full w-full -rotate-90"
+                  fill="none"
+                >
+                  <circle
+                    cx="22"
+                    cy="22"
+                    r="18"
+                    strokeWidth="2.5"
+                    className="stroke-[var(--color-border)]"
+                  />
+                  <motion.circle
+                    cx="22"
+                    cy="22"
+                    r="18"
+                    strokeWidth="2.5"
+                    strokeLinecap="round"
+                    className="stroke-[var(--color-brand-primary)]"
+                    initial={false}
+                    animate={{ pathLength: ringProgress }}
+                    transition={drawTransition}
+                  />
+                </svg>
+
+                {/* Inner disc — number → check. The swap is a small spring
+                    pop on completion, the only motion that fires mid-form and
+                    only on the step you just finished. */}
+                <span
+                  className={`relative inline-flex h-8 w-8 items-center justify-center overflow-hidden rounded-full text-sm font-bold transition-[background,color,transform] duration-[240ms] ease-[var(--ease-standard)] group-hover/step:scale-105 ${discTone}`}
+                >
+                  <AnimatePresence mode="popLayout" initial={false}>
+                    {isDone && !isActive ? (
+                      <motion.span
+                        key="check"
+                        className="inline-flex"
+                        initial={
+                          reduced ? false : { scale: 0.3, opacity: 0, rotate: -40 }
+                        }
+                        animate={{ scale: 1, opacity: 1, rotate: 0 }}
+                        exit={reduced ? { opacity: 0 } : { scale: 0.3, opacity: 0 }}
+                        transition={badgeSpring}
+                      >
+                        <Check className="h-4 w-4" aria-hidden />
+                      </motion.span>
+                    ) : (
+                      <motion.span
+                        key="num"
+                        className="inline-flex"
+                        initial={reduced ? false : { scale: 0.5, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        exit={reduced ? { opacity: 0 } : { scale: 0.5, opacity: 0 }}
+                        transition={badgeSpring}
+                      >
+                        {step.number}
+                      </motion.span>
+                    )}
+                  </AnimatePresence>
+                </span>
               </span>
               <span
                 className={`text-[10px] font-semibold uppercase tracking-[0.24em] ${
@@ -149,15 +244,19 @@ export function Stepper({ steps, current, completed, onJump }: StepperProps) {
         return (
           <li
             key={step.id}
-            className={`relative motion-step-rise ${isActive ? "z-10" : ""}`}
+            className={`relative motion-step-rise transition-[top] duration-[240ms] ease-[var(--ease-standard)] ${
+              isActive ? "z-10 -top-1" : "top-0"
+            }`}
             style={{ "--step-i": index } as CSSProperties}
           >
-            {/* Shared, gliding highlight — only ever one in the DOM. */}
+            {/* Shared, gliding highlight — only ever one in the DOM. The richer
+                glow shadow (vs the flat cards) lifts the active step toward the
+                user, reinforcing the -4px rise on the <li>. */}
             {isActive && (
               <motion.span
                 layoutId="stepper-active"
                 aria-hidden
-                className="pointer-events-none absolute inset-0 overflow-hidden rounded-[var(--radius-xl)] border border-[var(--color-brand-primary)] bg-[var(--color-surface)] shadow-[var(--shadow-sm)]"
+                className="pointer-events-none absolute inset-0 overflow-hidden rounded-[var(--radius-xl)] border border-[var(--color-brand-primary)] bg-[var(--color-surface)] shadow-[var(--shadow-glow-primary)]"
                 transition={
                   reduced
                     ? { duration: 0 }
@@ -170,33 +269,37 @@ export function Stepper({ steps, current, completed, onJump }: StepperProps) {
               <button
                 type="button"
                 onClick={() => onJump?.(step.id)}
-                className={`${baseCls} ${interactiveCls} w-full`}
+                className={`${baseCls} ${interactiveCls} ${invite ? "step-invite" : ""} w-full`}
                 aria-current={isActive ? "step" : undefined}
               >
                 {Inner}
               </button>
             ) : (
               <div
-                className={`${baseCls} ${interactiveCls}`}
+                className={`${baseCls} ${interactiveCls} ${invite ? "step-invite" : ""}`}
                 aria-current={isActive ? "step" : undefined}
               >
                 {Inner}
               </div>
             )}
 
-            {/* Decorative connector — signals the left-to-right journey.
-                Only meaningful on lg where the four cards form one row; the
-                2-col and stacked layouts hide it. */}
+            {/* Connecting rail — bridges the grid gap between cards, aligned to
+                the ring centres (43px from the card top: 1px border + 20px
+                padding + half the 44px ring box). The forest fill grows
+                left→right once this step is done. Only meaningful on lg where
+                the four cards form one row; stacked / 2-col layouts hide it. */}
             {index < steps.length - 1 && (
               <span
                 aria-hidden
-                className={`pointer-events-none absolute right-0 top-1/2 hidden -translate-y-1/2 translate-x-1/2 transition-colors duration-300 ease-[var(--ease-standard)] lg:block ${
-                  isDone
-                    ? "text-[var(--color-brand-primary)]/60"
-                    : "text-[var(--color-text-subtle)]"
-                }`}
+                className="pointer-events-none absolute left-full top-[43px] hidden w-4 -translate-y-1/2 lg:block"
               >
-                <ChevronRight className="h-4 w-4" aria-hidden />
+                <span className="block h-[2px] w-full rounded-full bg-[var(--color-border)]" />
+                <motion.span
+                  className="absolute inset-0 block h-[2px] origin-left rounded-full bg-[var(--color-brand-primary)]"
+                  initial={false}
+                  animate={{ scaleX: isDone ? 1 : 0 }}
+                  transition={railTransition}
+                />
               </span>
             )}
           </li>
