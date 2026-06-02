@@ -1,93 +1,144 @@
-"use client";
-
-import { motion, useReducedMotion } from "framer-motion";
-
 /**
- * Minimal, elegant brand spinner for signed-in route transitions.
+ * Brand "liquid" loader for route transitions.
  *
- * One idea, done cleanly: a thin track ring with a single gradient arc
- * sweeping over it, and the Biringas sparkle breathing softly in the centre.
- * No orbits, morphs or wobble — quiet motion that reads as "loading" without
- * demanding attention.
+ * A thick broken gradient ring (forest → gold) with rounded, blob-like ends
+ * and two detached droplets in the gap — a soft glow aura sits behind it, and
+ * a faint inner arc counter-rotates for depth.
  *
- * Colour comes from tokens (the SVG gradient reads CSS vars through the
- * cascade). Honors `prefers-reduced-motion`: the arc holds at the top and the
- * mark sits still — a calm static indicator.
+ * Why this is a Server Component with **CSS** rotation, not framer-motion:
+ * it renders inside `loading.tsx`, the Suspense fallback shown *while* the
+ * destination route is loading and hydrating. A JS/framer-motion animation
+ * can't start until that client code hydrates — which is exactly the work the
+ * user is waiting on — so the spinner would sit frozen on its SSR markup. A
+ * CSS animation runs on the compositor straight from the streamed HTML, with
+ * zero dependency on hydration, so the spin is live the instant the fallback
+ * paints.
+ *
+ * Rotation lives on wrapping `<div>`s (HTML transform-origin defaults to the
+ * element centre) rather than on the SVG shape, whose rotation relies on
+ * `transform-box`/`transform-origin` that older engines honour inconsistently.
+ *
+ * The glow is an `feGaussianBlur` of the *same* shape, so its colour always
+ * tracks the gradient and everything stays tokenised. The spin utilities are
+ * gated by the global `prefers-reduced-motion` block in globals.css — under
+ * reduced motion the rings hold still as a calm static indicator.
  */
 
-// 4-point sparkle (concave diamond) centred in a 56×56 viewBox.
-const SPARKLE_PATH =
-  "M28 14 C29.3 23.2 32.8 26.7 42 28 C32.8 29.3 29.3 32.8 28 42 C26.7 32.8 23.2 29.3 14 28 C23.2 26.7 26.7 23.2 28 14 Z";
+// Main ring: r = 20 → circumference ≈ 125.7. ~62% drawn, the rest is the gap
+// where the two droplets live. Rounded caps give the liquid blob ends.
+const MAIN_DASH = "78 48";
+// Inner accent arc: r = 12 → circumference ≈ 75.4. A short ~22% sweep.
+const INNER_DASH = "16 60";
 
-// r = 22 → circumference ≈ 138. Show ~22% as the moving arc.
-const ARC_DASH = "30 108";
+interface RouteSpinnerProps {
+  label: string;
+  /** `md` (default) = 80px for inline route fallbacks; `lg` = 240px (3×) for
+   *  the centred, full-screen account loading experience. */
+  size?: "md" | "lg";
+}
 
-export function RouteSpinner({ label }: { label: string }) {
-  const reduced = useReducedMotion();
-
+export function RouteSpinner({ label, size = "md" }: RouteSpinnerProps) {
+  const isLg = size === "lg";
   return (
     <div
       data-testid="route-spinner"
-      className="flex min-h-[60vh] flex-col items-center justify-center gap-6"
+      className={`flex flex-col items-center justify-center ${
+        isLg ? "gap-8" : "min-h-[60vh] gap-6"
+      }`}
     >
-      <div className="relative h-16 w-16">
-        <svg
-          viewBox="0 0 56 56"
-          fill="none"
-          aria-hidden
-          className="absolute inset-0 h-full w-full"
-        >
-          <defs>
-            <linearGradient id="route-spinner-arc" x1="0" y1="0" x2="1" y2="1">
-              <stop offset="0" stopColor="var(--color-brand-primary)" />
-              <stop offset="1" stopColor="var(--color-gold)" />
-            </linearGradient>
-          </defs>
+      <div className={`relative ${isLg ? "h-60 w-60" : "h-20 w-20"}`}>
+        {/* Outer liquid ring + droplets + glow, spun as one rigid unit. */}
+        <div className="route-spinner-outer absolute inset-0 will-change-transform">
+          <svg
+            viewBox="0 0 56 56"
+            fill="none"
+            aria-hidden
+            className="h-full w-full"
+          >
+            <defs>
+              <linearGradient
+                id="route-spinner-grad"
+                x1="0"
+                y1="0"
+                x2="1"
+                y2="1"
+              >
+                <stop offset="0" stopColor="var(--color-brand-primary)" />
+                <stop offset="0.55" stopColor="var(--color-gold)" />
+                <stop
+                  offset="1"
+                  stopColor="var(--color-brand-primary-strong)"
+                />
+              </linearGradient>
+              {/* Generous region so the blur halo is never clipped. */}
+              <filter
+                id="route-spinner-glow"
+                x="-50%"
+                y="-50%"
+                width="200%"
+                height="200%"
+              >
+                <feGaussianBlur stdDeviation="2.4" />
+              </filter>
 
-          {/* Faint track. */}
-          <circle
-            cx="28"
-            cy="28"
-            r="22"
-            stroke="var(--color-border)"
-            strokeWidth="2"
-          />
+              {/* The shape, defined once so the glow can re-use it. */}
+              <g id="route-spinner-shape">
+                <circle
+                  cx="28"
+                  cy="28"
+                  r="20"
+                  stroke="url(#route-spinner-grad)"
+                  strokeWidth="4"
+                  strokeLinecap="round"
+                  strokeDasharray={MAIN_DASH}
+                />
+                {/* Two droplets riding in the ring's gap. */}
+                <circle cx="20" cy="9.5" r="2.4" fill="var(--color-gold)" />
+                <circle
+                  cx="38.5"
+                  cy="11"
+                  r="1.9"
+                  fill="var(--color-brand-primary)"
+                />
+              </g>
+            </defs>
 
-          {/* Single gradient arc — one smooth rotation. */}
-          <motion.circle
-            cx="28"
-            cy="28"
-            r="22"
-            stroke="url(#route-spinner-arc)"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeDasharray={ARC_DASH}
-            style={{ transformBox: "fill-box", transformOrigin: "center" }}
-            initial={reduced ? { rotate: -90 } : undefined}
-            animate={reduced ? undefined : { rotate: 360 }}
-            transition={
-              reduced
-                ? undefined
-                : { duration: 1.2, repeat: Number.POSITIVE_INFINITY, ease: "linear" }
-            }
-          />
+            {/* Glow aura, then the crisp shape on top. */}
+            <use
+              href="#route-spinner-shape"
+              filter="url(#route-spinner-glow)"
+              opacity="0.55"
+            />
+            <use href="#route-spinner-shape" />
+          </svg>
+        </div>
 
-          {/* Centre sparkle — a soft, slow breath. Nothing else moves. */}
-          <motion.path
-            d={SPARKLE_PATH}
-            fill="var(--color-brand-primary)"
-            style={{ transformBox: "fill-box", transformOrigin: "center" }}
-            animate={reduced ? undefined : { scale: [1, 1.1, 1], opacity: [0.85, 1, 0.85] }}
-            transition={
-              reduced
-                ? undefined
-                : { duration: 2.4, repeat: Number.POSITIVE_INFINITY, ease: "easeInOut" }
-            }
-          />
-        </svg>
+        {/* Faint inner arc — counter-rotates for a subtle liquid-flux depth. */}
+        <div className="route-spinner-inner absolute inset-0 will-change-transform">
+          <svg
+            viewBox="0 0 56 56"
+            fill="none"
+            aria-hidden
+            className="h-full w-full"
+          >
+            <circle
+              cx="28"
+              cy="28"
+              r="12"
+              stroke="var(--color-brand-primary-soft)"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeDasharray={INNER_DASH}
+            />
+          </svg>
+        </div>
       </div>
 
-      <span className="text-[11px] font-semibold uppercase tracking-[0.24em] text-[var(--color-text-muted)]">
+      <span
+        className={`font-semibold uppercase tracking-[0.24em] text-[var(--color-text-muted)] ${
+          isLg ? "text-[13px]" : "text-[11px]"
+        }`}
+      >
         {label}
       </span>
     </div>

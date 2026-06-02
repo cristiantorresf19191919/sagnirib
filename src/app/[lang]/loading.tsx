@@ -3,9 +3,9 @@ import { cookies } from "next/headers";
 import { readLocale } from "@/core/i18n/locale";
 import { t } from "@/core/i18n/messages";
 import { Container } from "@/shared/design-system/components/Container";
+import { AccountLoadingScreen } from "@/shared/layout/AccountLoadingScreen";
 import { AUTH_HINT_COOKIE } from "@/shared/layout/auth-hint";
 import { LoadingTips } from "@/shared/layout/LoadingTips";
-import { RouteSpinner } from "@/shared/layout/RouteSpinner";
 
 const SKELETON_CARDS = Array.from({ length: 8 });
 
@@ -30,7 +30,7 @@ export default async function Loading() {
   if (jar.get(AUTH_HINT_COOKIE)?.value === "1") {
     return (
       <main className="flex flex-col" data-testid="route-loading">
-        <RouteSpinner label={t(locale, "loading.session")} />
+        <AccountLoadingScreen locale={locale} />
       </main>
     );
   }
