@@ -346,6 +346,9 @@ function deserializePayload(raw: unknown): ListingDraftPayload {
       displayName: String(details.displayName ?? ""),
       age: Number(details.age ?? 0),
       city: String(details.city ?? ""),
+      ...(typeof details.locality === "string" && details.locality.length > 0
+        ? { locality: details.locality }
+        : {}),
       category:
         details.category === "prepagos" ||
         details.category === "masajes" ||

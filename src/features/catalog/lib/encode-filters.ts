@@ -26,7 +26,9 @@ export function encodeFilters(filters: ListingsFilters): URLSearchParams {
   const out = new URLSearchParams();
   if (filters.category) out.set("category", filters.category);
   if (filters.sex) out.set("sex", filters.sex);
+  if (filters.department) out.set("department", filters.department);
   if (filters.city) out.set("city", filters.city);
+  if (filters.locality) out.set("locality", filters.locality);
   if (filters.search) out.set("q", filters.search);
   if (filters.priceMin !== undefined)
     out.set("priceMin", String(filters.priceMin));
@@ -62,7 +64,7 @@ export function encodeFilters(filters: ListingsFilters): URLSearchParams {
  */
 export function withFilter(
   base: ListingsFilters,
-  key: "category" | "city" | "sex",
+  key: "category" | "city" | "sex" | "department" | "locality",
   value: string | undefined,
   view?: CatalogView,
 ): string {
@@ -73,8 +75,19 @@ export function withFilter(
       // the union type from server-only territory.
       next.category = value as ListingsFilters["category"];
       break;
+    case "department":
+      // Changing department invalidates the chosen city/locality.
+      next.department = value;
+      next.city = undefined;
+      next.locality = undefined;
+      break;
     case "city":
+      // Changing city invalidates the chosen locality.
       next.city = value;
+      next.locality = undefined;
+      break;
+    case "locality":
+      next.locality = value;
       break;
     case "sex":
       next.sex = value as ListingsFilters["sex"];

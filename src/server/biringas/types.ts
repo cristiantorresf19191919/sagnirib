@@ -168,7 +168,11 @@ export interface BiringaListing {
 export interface ListingsFilters {
   category?: Category;
   sex?: Sex;
+  /** Department name. Filters to listings whose city belongs to it (derived). */
+  department?: string;
   city?: string;
+  /** Locality/zone within the city (matches the listing's `neighborhood`). */
+  locality?: string;
   search?: string;
   priceMin?: number;
   priceMax?: number;

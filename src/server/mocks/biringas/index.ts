@@ -1,5 +1,6 @@
 import "server-only";
 
+import { getDepartmentForCity } from "./colombia-locations";
 import {
   APPEARANCE_CATALOG,
   ATTENTION_CATALOG,
@@ -36,9 +37,21 @@ function applyFilters(
   if (filters.sex) {
     results = results.filter((ad) => ad.sex === filters.sex);
   }
+  if (filters.department) {
+    // Department isn't stored — derive it from each listing's city.
+    results = results.filter(
+      (ad) => getDepartmentForCity(ad.city) === filters.department,
+    );
+  }
   if (filters.city) {
     const needle = filters.city.toLowerCase();
     results = results.filter((ad) => ad.city.toLowerCase() === needle);
+  }
+  if (filters.locality) {
+    const needle = filters.locality.toLowerCase();
+    results = results.filter(
+      (ad) => (ad.neighborhood ?? "").toLowerCase() === needle,
+    );
   }
   if (filters.search) {
     const needle = filters.search.toLowerCase();

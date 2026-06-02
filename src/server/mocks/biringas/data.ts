@@ -1,5 +1,6 @@
 import "server-only";
 
+import { ALL_CITIES } from "./colombia-locations";
 import type {
   AttentionTarget,
   BiringaListing,
@@ -1294,13 +1295,9 @@ export const BIRINGA_LISTINGS: ReadonlyArray<BiringaListing> = [
   ...EXTRA_DESCRIPTORS.map(fastSeed),
 ].map(build);
 
-export const SUPPORTED_CITIES: ReadonlyArray<string> = [
-  "Bogotá",
-  "Medellín",
-  "Cali",
-  "Barranquilla",
-  "Cartagena",
-];
+// Every principal city, derived from the hardcoded Colombia taxonomy so there
+// is one source of truth for the catalog selects and the publish wizard.
+export const SUPPORTED_CITIES: ReadonlyArray<string> = ALL_CITIES;
 
 export const CATEGORIES: ReadonlyArray<{ id: Category; label: string }> = [
   { id: "prepagos", label: "Prepagos" },

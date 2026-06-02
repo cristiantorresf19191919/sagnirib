@@ -25,6 +25,8 @@ export interface ListingDraftPayloadDetails {
   displayName: string;
   age: number;
   city: string;
+  /** Optional locality/zone within the city. Department is derived from city. */
+  locality?: string;
   category: "prepagos" | "masajes" | "videollamadas";
   phone: string;
   preferredSlug: string;
@@ -184,6 +186,7 @@ export const DRAFT_LIMITS = {
   preferredSlugMax: 80,
   phoneMax: 32,
   cityMax: 80,
+  localityMax: 80,
   ageMin: 18,
   ageMax: 99,
   pricePerHourMin: 1,

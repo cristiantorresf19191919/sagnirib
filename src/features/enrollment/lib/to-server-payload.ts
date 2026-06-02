@@ -1,5 +1,6 @@
 import type { CreateListingDraftInput } from "@/server/biringas";
 
+import { sanitizeBioText } from "./bio-content-rules";
 import { MVP_LOCKED_PACKAGE_ID, PLANS_ENABLED } from "./pricing";
 import type { EnrollmentDraft } from "./types";
 
@@ -29,6 +30,8 @@ export function toServerPayload(
         displayName: draft.details.displayName.trim(),
         age: Number(draft.details.age),
         city: draft.details.city.trim(),
+        // Optional zone; collapse "" → undefined so Firestore stays clean.
+        locality: draft.details.locality.trim() || undefined,
         // The wizard exposes "" as a sentinel for "not selected"; the
         // server schema rejects that. Validation in the wizard prevents
         // submission with empty category, so this cast is safe at call
@@ -44,8 +47,9 @@ export function toServerPayload(
         contactChannels: [...draft.details.contactChannels],
       },
       description: {
-        shortBio: draft.description.shortBio.trim(),
-        bio: draft.description.bio.trim(),
+        // Sanitised (links stripped) as a last line of defense before save.
+        shortBio: sanitizeBioText(draft.description.shortBio),
+        bio: sanitizeBioText(draft.description.bio),
         services: [...draft.description.services],
         meetingContexts: [...draft.description.meetingContexts],
         faceVisible: draft.description.faceVisible,

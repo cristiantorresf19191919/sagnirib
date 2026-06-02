@@ -35,6 +35,7 @@ export function draftPayloadToEditValues(
       displayName: d.displayName,
       age: d.age ? String(d.age) : "",
       city: d.city,
+      locality: d.locality ?? "",
       category: d.category,
       phone: d.phone,
       preferredSlug: d.preferredSlug,

@@ -20,7 +20,7 @@ import { SectionShell } from "./SectionShell";
 
 interface StepDetailsProps {
   values: DetailsValues;
-  catalogs: Pick<EnrollmentCatalogs, "cities" | "attention" | "contact">;
+  catalogs: Pick<EnrollmentCatalogs, "locations" | "attention" | "contact">;
   onChange: (next: DetailsValues) => void;
   forceShowErrors: boolean;
   /**
@@ -51,6 +51,22 @@ export function StepDetails({ values, catalogs, onChange, forceShowErrors, ownSl
   function update<K extends keyof DetailsValues>(key: K, value: DetailsValues[K]) {
     onChange({ ...values, [key]: value });
   }
+
+  function patch(changes: Partial<DetailsValues>) {
+    onChange({ ...values, ...changes });
+  }
+
+  // Location cascade (Department → City → Locality). The department is local
+  // UI state only — derived from the stored city, never persisted.
+  const initialDepartment =
+    catalogs.locations.find((d) =>
+      d.cities.some((c) => c.name === values.city),
+    )?.name ?? "";
+  const [department, setDepartment] = useState(initialDepartment);
+  const departmentCities =
+    catalogs.locations.find((d) => d.name === department)?.cities ?? [];
+  const cityLocalities =
+    departmentCities.find((c) => c.name === values.city)?.localities ?? [];
 
   function toggleAttention(id: DetailsValues["attention"][number]) {
     const has = values.attention.includes(id);
@@ -182,24 +198,67 @@ export function StepDetails({ values, catalogs, onChange, forceShowErrors, ownSl
           error={show("age") ? errors.age : undefined}
         />
 
+        {/* Location cascade — Departamento → Ciudad → Localidad. The
+            department only narrows the city list; it is derived from the city
+            and never stored (the listing keeps just city + optional locality). */}
+        <SelectField
+          label={t(locale, "step.details.field.department")}
+          name="department"
+          required
+          value={department}
+          onChange={(e) => {
+            setDepartment(e.target.value);
+            patch({ city: "", locality: "" });
+          }}
+        >
+          <option value="">
+            {t(locale, "step.details.field.department.placeholder")}
+          </option>
+          {catalogs.locations.map((d) => (
+            <option key={d.name} value={d.name}>
+              {d.name}
+            </option>
+          ))}
+        </SelectField>
+
         <SelectField
           label={t(locale, "step.details.field.city")}
           name="city"
           required
           value={values.city}
-          onChange={(e) => update("city", e.target.value)}
+          onChange={(e) => patch({ city: e.target.value, locality: "" })}
           onBlur={() => touch("city")}
           error={show("city") ? errors.city : undefined}
         >
           <option value="">
-            {t(locale, "step.details.field.city.placeholder")}
+            {department
+              ? t(locale, "step.details.field.city.placeholder")
+              : t(locale, "step.details.field.city.placeholderNoDept")}
           </option>
-          {catalogs.cities.map((city) => (
-            <option key={city} value={city}>
-              {city}
+          {departmentCities.map((c) => (
+            <option key={c.name} value={c.name}>
+              {c.name}
             </option>
           ))}
         </SelectField>
+
+        {cityLocalities.length > 0 && (
+          <SelectField
+            label={t(locale, "step.details.field.locality")}
+            name="locality"
+            value={values.locality}
+            onChange={(e) => update("locality", e.target.value)}
+          >
+            <option value="">
+              {t(locale, "step.details.field.locality.placeholder")}
+            </option>
+            {cityLocalities.map((loc) => (
+              <option key={loc} value={loc}>
+                {loc}
+              </option>
+            ))}
+          </SelectField>
+        )}
 
         <SelectField
           label={t(locale, "step.details.field.category")}
