@@ -9,6 +9,7 @@ import { localizedHref } from "@/core/i18n/href";
 import { t } from "@/core/i18n/messages";
 import { buildPageMetadata } from "@/core/seo/build-page-metadata";
 import { getSession } from "@/server/auth";
+import { ACCOUNT_TYPE_COMMENTATOR, getMyAccountType } from "@/server/users";
 import { Footer } from "@/shared/layout/Footer";
 import { Header } from "@/shared/layout/Header";
 
@@ -50,6 +51,14 @@ export default async function FacturacionPage({
   if (!session) {
     const next = localizedHref(lang, "/mi-cuenta/facturacion");
     redirect(`${localizedHref(lang, "/ingresar")}?next=${encodeURIComponent(next)}`);
+  }
+
+  // ADR-019 — billing is a publisher-only surface. Commentators never pay, so
+  // read the authoritative `users/{uid}.accountType` (NOT the role claim) and
+  // bounce them to their own dashboard, mirroring the `/mi-cuenta` guard.
+  const accountType = await getMyAccountType().catch(() => null);
+  if (accountType === ACCOUNT_TYPE_COMMENTATOR) {
+    redirect(localizedHref(lang, "/mi-cuenta/comentarios"));
   }
 
   return (

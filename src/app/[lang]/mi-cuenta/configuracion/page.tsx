@@ -17,7 +17,12 @@ import { localizedHref } from "@/core/i18n/href";
 import { LOCALE_LABELS } from "@/core/i18n/messages";
 import { t } from "@/core/i18n/messages";
 import { buildPageMetadata } from "@/core/seo/build-page-metadata";
-import { getSession, Role } from "@/server/auth";
+import { getSession } from "@/server/auth";
+import {
+  ACCOUNT_TYPE_COMMENTATOR,
+  ACCOUNT_TYPE_PUBLISHER,
+  getMyAccountType,
+} from "@/server/users";
 import { Footer } from "@/shared/layout/Footer";
 import { Header } from "@/shared/layout/Header";
 
@@ -63,12 +68,21 @@ export default async function ConfiguracionPage({
     redirect(`${localizedHref(lang, "/ingresar")}?next=${encodeURIComponent(next)}`);
   }
 
-  // Account type follows the real role claim, not a hardcoded label.
-  // Model ↔ Commentator are mutually exclusive (ADR-019); a user without
-  // the Model role (commentators and plain authenticated users) is a
-  // "Cliente". The review/tips notifications below are publisher-only copy,
-  // so they render exclusively for models.
-  const isModel = session.roles.includes(Role.Model);
+  // ADR-019 — account type follows the authoritative `users/{uid}.accountType`,
+  // NOT the session role claim. A stale `Role.Model` custom claim must not
+  // surface the publisher-only "Modelo" label + review/tips notifications to a
+  // commentator. Commentators have their own surface; bounce them there exactly
+  // like `/mi-cuenta` does (the cookie-/claim-first read was the path through
+  // which a flipped claim could leak the publisher view).
+  const accountType = await getMyAccountType().catch(() => null);
+  if (accountType === ACCOUNT_TYPE_COMMENTATOR) {
+    redirect(localizedHref(lang, "/mi-cuenta/comentarios"));
+  }
+
+  // After the guard above only publishers (or undetermined accounts) reach
+  // here. The review/tips notifications block is publisher-only copy, so it
+  // renders exclusively for confirmed publishers.
+  const isModel = accountType === ACCOUNT_TYPE_PUBLISHER;
 
   return (
     <>
