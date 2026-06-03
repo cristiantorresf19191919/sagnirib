@@ -14,6 +14,7 @@ import {
 } from "./data";
 import type {
   BiringaListing,
+  CatalogStats,
   ListingsFilters,
   PaginatedListings,
 } from "./types";
@@ -256,6 +257,20 @@ export async function listCities(): Promise<ReadonlyArray<string>> {
   return SUPPORTED_CITIES;
 }
 
+/**
+ * Aggregate catalog counters (verified listings + distinct active cities).
+ * Mirrors the Firestore adapter's `count()`-based implementation; here we
+ * derive both numbers from the in-memory catalog in a single pass.
+ */
+export async function getCatalogStats(): Promise<CatalogStats> {
+  const verified = BIRINGA_LISTINGS.filter((ad) => ad.verified);
+  const cities = new Set(verified.map((ad) => ad.city));
+  return {
+    verifiedCount: verified.length,
+    activeCityCount: cities.size,
+  };
+}
+
 export async function listServiceCatalog(): Promise<ReadonlyArray<string>> {
   return SERVICE_CATALOG;
 }
@@ -283,6 +298,7 @@ export type {
   BiringaAttributes,
   BiringaListing,
   BiringaReputation,
+  CatalogStats,
   Category,
   ContactChannel,
   ListingsFilters,

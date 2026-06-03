@@ -5,7 +5,7 @@ import type { SupportedLocale } from "@/core/branding/brand-config";
 import { localizedHref } from "@/core/i18n/href";
 import { readLocale } from "@/core/i18n/locale";
 import { t } from "@/core/i18n/messages";
-import { listHeroMosaic } from "@/server/biringas";
+import { getCatalogStats, listHeroMosaic } from "@/server/biringas";
 import { CountUp } from "@/shared/motion/CountUp";
 import { UnderlineSweep } from "@/shared/motion/UnderlineSweep";
 
@@ -122,7 +122,8 @@ const MOSAIC_TOTAL_TILES = MOSAIC_COL_C_END;
  *   - Three-line headline: "Encuentra a / *tu Biringa* / ideal."
  *     — italic gold with a swept gold underline on the middle line,
  *     forest-colored period flourish on the last.
- *   - Stats one-liner with two strong numbers (247 verificadas, 6 ciudades)
+ *   - Stats one-liner with two strong numbers (verified count + active
+ *     cities, both derived from the real catalog at request time)
  *     and an italic Fraunces phrase "Sin algoritmos turbios."
  *   - Spacer (desktop) → pushes chips + search + trust to the lower half.
  *   - Four text-only chips. First chip is the active/highlight action.
@@ -160,6 +161,21 @@ export async function EditorialHero({
   const colA = mosaic.slice(MOSAIC_COL_A_START, MOSAIC_COL_A_END);
   const colB = mosaic.slice(MOSAIC_COL_B_START, MOSAIC_COL_B_END);
   const colC = mosaic.slice(MOSAIC_COL_C_START, MOSAIC_COL_C_END);
+
+  // Stats one-liner — both numbers come from the catalog's aggregate counters
+  // (provider-side `count()`), so the hero never advertises a figure the
+  // listing grid can't back up, and the cost stays O(cities) regardless of
+  // catalog size. Degrade to 0/0 on failure so the copy + CTA still render
+  // (same posture as the mosaic above).
+  const stats = await getCatalogStats().catch((err) => {
+    console.error("[home] hero getCatalogStats failed", err);
+    return { verifiedCount: 0, activeCityCount: 0 };
+  });
+  const { verifiedCount, activeCityCount } = stats;
+  const citiesKey =
+    activeCityCount === 1
+      ? "editorialHero.stats.citiesOne"
+      : "editorialHero.stats.cities";
 
   return (
     <section
@@ -347,11 +363,11 @@ export async function EditorialHero({
               style={{ animationDelay: "0.25s" }}
             >
               <strong className="font-semibold tabular-nums text-[var(--color-ink)]">
-                <CountUp to={247} duration={1.6} />
+                <CountUp to={verifiedCount} duration={1.6} />
               </strong>{" "}
               {t(locale, "editorialHero.stats.verifiedSuffix")}{" "}
-              <strong className="font-semibold text-[var(--color-ink)]">
-                {t(locale, "editorialHero.stats.cities")}
+              <strong className="font-semibold tabular-nums text-[var(--color-ink)]">
+                {t(locale, citiesKey, { count: String(activeCityCount) })}
               </strong>
               {"."}
             </p>

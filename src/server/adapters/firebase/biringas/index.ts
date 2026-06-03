@@ -4,11 +4,13 @@ import { unstable_cache } from "next/cache";
 
 import type {
   BiringaListing,
+  CatalogStats,
   ListingsFilters,
   PaginatedListings,
 } from "@/server/biringas/types";
 
 import { CACHE_TAGS } from "@/server/biringas/cache-tags";
+import { SUPPORTED_CITIES } from "@/server/mocks/biringas/data";
 import { getDb } from "@/server/adapters/firebase/client";
 import { wrapFirestoreError } from "@/server/adapters/firebase/errors";
 import { mapListing } from "@/server/mappers/firebase-biringa";
@@ -233,6 +235,50 @@ export async function findBySlug(
       revalidate: 60,
     },
   )();
+}
+
+/**
+ * Aggregate catalog counters for the home hero one-liner.
+ *
+ * Scalable by construction — uses Firestore `count()` aggregations, never a
+ * full collection read:
+ *   - verifiedCount: one `count()` over `verified == true`.
+ *   - activeCityCount: one `count()` per supported city (`verified == true &&
+ *     city == X`), counting only the cities that come back non-empty. The
+ *     fan-out is bounded by `SUPPORTED_CITIES.length` (single digits) and the
+ *     queries are equality-only, so Firestore serves them by merging the
+ *     auto-provisioned single-field indexes — no composite index required.
+ *
+ * Distinct-value aggregation has no native Firestore primitive; iterating the
+ * known supported-city set is the canonical way to derive "cities with at
+ * least one verified listing" (see ./catalogs.ts note on `listActiveCities`).
+ */
+async function getCatalogStatsUncached(): Promise<CatalogStats> {
+  const db = getDb();
+  try {
+    const verifiedQuery = db
+      .collection("listings")
+      .where("verified", "==", true);
+    const [verifiedSnap, ...citySnaps] = await Promise.all([
+      verifiedQuery.count().get(),
+      ...SUPPORTED_CITIES.map((city) =>
+        verifiedQuery.where("city", "==", city).count().get(),
+      ),
+    ]);
+    return {
+      verifiedCount: verifiedSnap.data().count,
+      activeCityCount: citySnaps.filter((s) => s.data().count > 0).length,
+    };
+  } catch (err) {
+    throw wrapFirestoreError("getCatalogStats", err);
+  }
+}
+
+export async function getCatalogStats(): Promise<CatalogStats> {
+  return unstable_cache(getCatalogStatsUncached, ["getCatalogStats"], {
+    tags: [CACHE_TAGS.listings],
+    revalidate: 300,
+  })();
 }
 
 export {
