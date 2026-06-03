@@ -21,7 +21,8 @@ import { findBySlug, getListingReviews } from "@/server/biringas";
 import { CardStackGallery } from "@/features/biringas/components/CardStackGallery";
 import { VideoPlayer } from "@/features/biringas/components/VideoPlayer";
 import { ContactReveal } from "@/features/biringas/components/ContactReveal";
-import { PremiumContentGrid } from "@/features/biringas/components/PremiumContentGrid";
+// Hidden — see note at usage below. Restore when subscription backend exists.
+// import { PremiumContentGrid } from "@/features/biringas/components/PremiumContentGrid";
 import { readAccountTypeCookie } from "@/features/auth/lib/account-type-cookie";
 import { RateBiringaForm } from "@/features/biringas/components/RateBiringaForm";
 import { RecentlyViewedStrip } from "@/features/biringas/components/RecentlyViewedStrip";
@@ -476,8 +477,12 @@ export default async function ProfilePage({ params }: Readonly<ProfilePageProps>
         {/* Locked-content tease — OnlyFans-style premium grid. Sits before
             the similar-profiles strip so the upsell moment lands after
             the user has read the bio + reviews but before they bounce
-            to another profile. */}
-        <PremiumContentGrid listing={listing} />
+            to another profile.
+
+            HIDDEN: mock-only upsell with no real paywall/subscription flow
+            wired yet. Re-enable by restoring <PremiumContentGrid /> once the
+            subscription backend exists. Component + i18n copy kept intact. */}
+        {/* <PremiumContentGrid listing={listing} /> */}
 
         <SimilarProfiles slug={listing.slug} />
         <RecentlyViewedStrip />

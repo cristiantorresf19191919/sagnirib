@@ -50,6 +50,7 @@ export type {
   BiringaAttributes,
   BiringaListing,
   BiringaReputation,
+  CatalogStats,
   Category,
   ContactChannel,
   ListingsFilters,
@@ -102,6 +103,7 @@ export const listAll = adapter.listAll;
 export const listFeatured = adapter.listFeatured;
 export const listHeroMosaic = adapter.listHeroMosaic;
 export const findBySlug = adapter.findBySlug;
+export const getCatalogStats = adapter.getCatalogStats;
 export const listCities = adapter.listCities;
 export const listServiceCatalog = adapter.listServiceCatalog;
 export const listMeetingContextCatalog = adapter.listMeetingContextCatalog;

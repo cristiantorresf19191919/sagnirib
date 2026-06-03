@@ -133,6 +133,18 @@ export async function Footer() {
                   />
                 </Link>
               </li>
+              <li>
+                <Link
+                  href={localizedHref(locale, "/legal/control-parental")}
+                  className="group/legal inline-flex items-center gap-1 text-[var(--color-text-muted)] transition-colors hover:text-[var(--color-brand-primary)]"
+                >
+                  {t(locale, "footer.link.parental")}
+                  <ArrowUpRight
+                    className="h-3 w-3 opacity-0 transition-[opacity,transform] duration-200 ease-[var(--ease-standard)] group-hover/legal:translate-x-0.5 group-hover/legal:-translate-y-0.5 group-hover/legal:opacity-100"
+                    aria-hidden
+                  />
+                </Link>
+              </li>
             </ul>
           </div>
 

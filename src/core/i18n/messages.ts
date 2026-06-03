@@ -54,6 +54,7 @@ const es: MessageDict = {
   "footer.link.terms": "Términos y condiciones",
   "footer.link.privacy": "Política de privacidad",
   "footer.link.legalNotice": "Aviso legal",
+  "footer.link.parental": "Control parental",
   "footer.access.adults": "Sólo mayores de 18 años",
   "footer.access.country": "Servicio limitado a Colombia",
   "footer.badge.verified": "Perfiles verificados",
@@ -655,7 +656,8 @@ const es: MessageDict = {
   "account.config.account.email": "Correo electrónico",
   "account.config.account.language": "Idioma",
   "account.config.account.type": "Tipo de cuenta",
-  "account.config.account.type.value": "Modelo",
+  "account.config.account.type.model": "Modelo",
+  "account.config.account.type.commentator": "Cliente",
   "account.config.notifications.title": "Notificaciones",
   "account.config.notifications.reviews": "Avisos de revisión",
   "account.config.notifications.reviews.hint":
@@ -1448,6 +1450,9 @@ const es: MessageDict = {
   "legal.avisoLegal.metadata.title": "Aviso legal — {brand}",
   "legal.avisoLegal.metadata.description":
     "Identificación del titular del servicio, propiedad intelectual, mecanismos de reporte y régimen aplicable. Documento en revisión legal.",
+  "legal.controlParental.metadata.title": "Control parental — {brand}",
+  "legal.controlParental.metadata.description":
+    "Biringas es un sitio para adultos, etiquetado RTA. Cómo activar el control parental y los filtros para proteger a menores del acceso a contenido restringido.",
   "legal.jurisdictionalNotice":
     "Este documento se rige por la legislación colombiana y se publica en español como única versión auténtica.",
 
@@ -2064,7 +2069,8 @@ const es: MessageDict = {
   "editorialHero.headline.highlight": "tu Biringa",
   "editorialHero.headline.line3": "ideal",
   "editorialHero.stats.verifiedSuffix": "acompañantes verificadas, activas hoy en",
-  "editorialHero.stats.cities": "6 ciudades",
+  "editorialHero.stats.cities": "{count} ciudades",
+  "editorialHero.stats.citiesOne": "{count} ciudad",
   "editorialHero.search.aria": "Buscar Biringas",
   "editorialHero.search.cityLabel": "Ciudad",
   "editorialHero.search.queryLabel": "Buscar",
@@ -2376,6 +2382,7 @@ const en: MessageDict = {
   "footer.link.terms": "Terms & conditions",
   "footer.link.privacy": "Privacy policy",
   "footer.link.legalNotice": "Legal notice",
+  "footer.link.parental": "Parental controls",
   "footer.access.adults": "Adults only (18+)",
   "footer.access.country": "Service limited to Colombia",
   "footer.badge.verified": "Verified profiles",
@@ -2979,7 +2986,8 @@ const en: MessageDict = {
   "account.config.account.email": "Email",
   "account.config.account.language": "Language",
   "account.config.account.type": "Account type",
-  "account.config.account.type.value": "Model",
+  "account.config.account.type.model": "Model",
+  "account.config.account.type.commentator": "Client",
   "account.config.notifications.title": "Notifications",
   "account.config.notifications.reviews": "Review alerts",
   "account.config.notifications.reviews.hint":
@@ -3762,6 +3770,9 @@ const en: MessageDict = {
   "legal.avisoLegal.metadata.title": "Legal notice — {brand}",
   "legal.avisoLegal.metadata.description":
     "Service operator identification, intellectual property, reporting channels and applicable regime. Document under legal review.",
+  "legal.controlParental.metadata.title": "Parental controls — {brand}",
+  "legal.controlParental.metadata.description":
+    "Biringas is an adults-only, RTA-labelled site. How to enable parental controls and filters to keep minors away from age-restricted content.",
   "legal.jurisdictionalNotice":
     "This document is governed by Colombian law and published in Spanish as its sole authentic version.",
 
@@ -4379,7 +4390,8 @@ const en: MessageDict = {
   "editorialHero.headline.highlight": "perfect Biringa",
   "editorialHero.headline.line3": "today",
   "editorialHero.stats.verifiedSuffix": "verified companions live today across",
-  "editorialHero.stats.cities": "6 cities",
+  "editorialHero.stats.cities": "{count} cities",
+  "editorialHero.stats.citiesOne": "{count} city",
   "editorialHero.search.aria": "Search Biringas",
   "editorialHero.search.cityLabel": "City",
   "editorialHero.search.queryLabel": "Search",

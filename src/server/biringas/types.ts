@@ -205,3 +205,20 @@ export interface PaginatedListings {
     totalPages: number;
   };
 }
+
+/**
+ * Aggregate counters for the public catalog. Powers the home hero's
+ * trust one-liner ("N acompañantes verificadas, activas hoy en M
+ * ciudades") and any future surface that needs headline numbers without
+ * loading the listings themselves.
+ *
+ * Both fields are computed provider-side via cheap aggregation (Firestore
+ * `count()` per the schema's existing indexes) — never by paging the full
+ * catalog into memory at the call site.
+ */
+export interface CatalogStats {
+  /** Listings with `verified: true`. */
+  verifiedCount: number;
+  /** Distinct cities that currently have at least one verified listing. */
+  activeCityCount: number;
+}

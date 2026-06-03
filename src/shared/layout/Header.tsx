@@ -249,7 +249,10 @@ export async function Header({ hideCatalogCta = false }: HeaderProps) {
               Clicking it opens the account dropdown (Dashboard + sign-out).
               Renders nothing when anonymous; the sign-in slot above handles
               that case. */}
-          <AuthBadge placement="account-menu" />
+          <AuthBadge
+            placement="account-menu"
+            isCommentator={accountType === ACCOUNT_TYPE_COMMENTATOR}
+          />
         </nav>
       </Container>
     </header>

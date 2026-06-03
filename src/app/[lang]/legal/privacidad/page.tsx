@@ -13,7 +13,7 @@ import {
 import { Footer } from "@/shared/layout/Footer";
 import { Header } from "@/shared/layout/Header";
 
-const LAST_UPDATED = "19 de mayo de 2026";
+const LAST_UPDATED = "2 de junio de 2026";
 
 /**
  * Privacy Policy draft modelled on the Colombian data-protection regime:
@@ -82,7 +82,45 @@ export default async function PrivacidadPage({
           </p>
         </LegalSection>
 
-        <LegalSection id="datos" title="2. Datos que recogemos">
+        <LegalSection id="tipologia" title="2. Tipos de usuario y datos que tratamos de cada uno">
+          <p>
+            Para ser transparentes sobre qué información manejamos, distinguimos
+            cuatro tipos de usuario. El tratamiento de tus datos depende de cómo
+            uses la Plataforma:
+          </p>
+          <LegalList>
+            <li>
+              <strong>Visitante.</strong> Navega y explora perfiles sin crear
+              cuenta. No exigimos registro para mirar. De los visitantes solo
+              tratamos el reconocimiento de mayoría de edad y cookies esenciales
+              y analíticas agregadas, sin identificar a la persona.
+            </li>
+            <li>
+              <strong>Publicador (modelo).</strong> Crea una cuenta para
+              publicar y administrar uno o más perfiles. De este usuario
+              tratamos datos de identificación y contacto, datos de
+              verificación de identidad y edad, y los datos del perfil que
+              decide publicar.
+            </li>
+            <li>
+              <strong>Comentador (cliente).</strong> Crea una cuenta para
+              guardar favoritos, comentar o solicitar contacto, pero no publica
+              perfiles. De este usuario tratamos un seudónimo o nombre público,
+              un correo electrónico y, opcionalmente, un número de teléfono.
+            </li>
+            <li>
+              <strong>Partner (cuenta con varias personas).</strong> Es una
+              cuenta de publicador que administra los perfiles de dos o más
+              personas. Cada persona representada tiene su propio proceso de
+              verificación de identidad (verificación por persona) y debe haber
+              consentido individualmente la publicación de sus datos e imágenes.
+              La cuenta partner es responsable de contar con esa autorización
+              para cada persona que publica.
+            </li>
+          </LegalList>
+        </LegalSection>
+
+        <LegalSection id="datos" title="3. Datos que recogemos">
           <p>
             Recopilamos únicamente los datos necesarios para operar la
             Plataforma con seguridad y prestar las funcionalidades que el
@@ -124,7 +162,56 @@ export default async function PrivacidadPage({
           </p>
         </LegalSection>
 
-        <LegalSection id="finalidades" title="3. Finalidades del tratamiento">
+        <LegalSection id="publico-privado" title="4. Datos públicos y datos privados">
+          <p>
+            Cuando publicas un perfil, una parte de tus datos se hace pública —
+            esa es justamente la finalidad del perfil — y otra parte permanece
+            siempre privada. Queremos que tengas total claridad sobre la
+            diferencia:
+          </p>
+          <p>
+            <strong>Datos públicos</strong> (visibles para cualquier persona que
+            visite tu perfil, porque tú decides publicarlos):
+          </p>
+          <LegalList>
+            <li>Ciudad, zona o barrio que indiques.</li>
+            <li>Categoría del perfil.</li>
+            <li>El título y la descripción que escribas.</li>
+            <li>Las fotografías y los videos que subas al perfil.</li>
+            <li>Idiomas, servicios ofrecidos y disponibilidad.</li>
+            <li>
+              Las formas de contacto que <em>elijas</em> mostrar (por ejemplo,
+              un número visible o un canal de mensajería).
+            </li>
+          </LegalList>
+          <p>
+            <strong>Datos privados</strong> (nunca se publican ni se muestran a
+            otros usuarios; los usamos solo para operar la cuenta y cumplir la
+            ley):
+          </p>
+          <LegalList>
+            <li>Tu correo electrónico.</li>
+            <li>
+              Tu número privado: si lo marcas como privado,{" "}
+              <strong>no aparece en tu perfil público</strong> y los contactos
+              llegan a través de los canales internos de la Plataforma.
+            </li>
+            <li>Tu documento de identidad y tu selfie de verificación.</li>
+            <li>Tu fecha de nacimiento o edad exacta (dato interno).</li>
+            <li>Tu dirección IP, hora de conexión y registros de actividad.</li>
+            <li>Tus credenciales de acceso (contraseña).</li>
+            <li>
+              Cualquier forma de contacto que <em>no</em> hayas marcado como
+              visible.
+            </li>
+          </LegalList>
+          <p>
+            En resumen: tú controlas qué se muestra. Si no quieres que un dato
+            sea público, no lo marques como visible al publicar tu perfil.
+          </p>
+        </LegalSection>
+
+        <LegalSection id="finalidades" title="5. Finalidades del tratamiento">
           <p>
             Tus datos personales son tratados exclusivamente para las
             siguientes finalidades:
@@ -159,7 +246,7 @@ export default async function PrivacidadPage({
           </LegalList>
         </LegalSection>
 
-        <LegalSection id="base-legal" title="4. Base legal">
+        <LegalSection id="base-legal" title="6. Base legal">
           <p>
             El tratamiento se ampara en (a) tu consentimiento previo,
             expreso e informado al momento del registro y de la
@@ -171,7 +258,7 @@ export default async function PrivacidadPage({
           </p>
         </LegalSection>
 
-        <LegalSection id="encargados" title="5. Encargados y terceros">
+        <LegalSection id="encargados" title="7. Encargados y terceros">
           <p>
             Para operar la Plataforma utilizamos servicios de terceros que
             actúan en condición de encargados del tratamiento, sujetos a
@@ -202,7 +289,7 @@ export default async function PrivacidadPage({
           </p>
         </LegalSection>
 
-        <LegalSection id="conservacion" title="6. Conservación de la información">
+        <LegalSection id="conservacion" title="8. Conservación de la información">
           <p>
             Conservamos los datos personales el tiempo estrictamente
             necesario para cumplir las finalidades autorizadas o, en su
@@ -230,7 +317,7 @@ export default async function PrivacidadPage({
           </LegalList>
         </LegalSection>
 
-        <LegalSection id="derechos" title="7. Derechos del titular (Habeas Data)">
+        <LegalSection id="derechos" title="9. Derechos del titular (Habeas Data)">
           <p>
             Como titular de tus datos personales tienes los derechos
             consagrados en el artículo 8 de la Ley 1581 de 2012, entre
@@ -270,7 +357,7 @@ export default async function PrivacidadPage({
           </p>
         </LegalSection>
 
-        <LegalSection id="seguridad" title="8. Medidas de seguridad">
+        <LegalSection id="seguridad" title="10. Medidas de seguridad">
           <p>
             Aplicamos medidas técnicas, humanas y administrativas
             razonables para proteger tus datos frente a accesos no
@@ -288,7 +375,7 @@ export default async function PrivacidadPage({
           </p>
         </LegalSection>
 
-        <LegalSection id="cookies" title="9. Cookies y tecnologías similares">
+        <LegalSection id="cookies" title="11. Cookies y tecnologías similares">
           <p>
             La Plataforma utiliza cookies estrictamente necesarias para el
             funcionamiento del servicio (sesión, mayoría de edad, preferencias
@@ -303,7 +390,7 @@ export default async function PrivacidadPage({
           </p>
         </LegalSection>
 
-        <LegalSection id="cambios" title="10. Cambios a esta política">
+        <LegalSection id="cambios" title="12. Cambios a esta política">
           <p>
             Esta política podrá actualizarse cuando cambie la regulación
             aplicable o se introduzcan nuevas funcionalidades en la
@@ -313,7 +400,7 @@ export default async function PrivacidadPage({
           </p>
         </LegalSection>
 
-        <LegalSection id="contacto" title="11. Canales de contacto">
+        <LegalSection id="contacto" title="13. Canales de contacto">
           <p>
             Para consultas, reclamos o ejercicio de derechos de protección
             de datos, escríbenos a través del canal oficial publicado en

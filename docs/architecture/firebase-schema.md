@@ -316,6 +316,7 @@ Required to satisfy the queries in `src/server/adapters/firebase/biringas/index.
 | `listings` | `verified ASC`, `availableNow ASC`, `updatedAt DESC`                | `listHeroMosaic` (live).               |
 | `listings` | `plan.activeUntil ASC`                                              | `listFeatured` (single-field, automatic). |
 | `listings` | `slug ASC`                                                          | `findBySlug` (single-field, automatic).|
+| `listings` | — (equality-only `count()`)                                        | `getCatalogStats` — `verified ==` and `verified == && city ==`; equality-only aggregations merge single-field indexes, no composite index. |
 | `reviews` (group) | `verified ASC`, `date DESC`                                  | `listTestimonials` (home cross-listing feed). |
 | `persons`  | `ownerUid ASC`, `createdAt DESC`                                    | `listPersonsByOwner` (dashboard, ADR-018). |
 | `persons`  | `kyc.status ASC`, `kyc.submittedAt DESC`                            | admin-codebase KYC queue (future, ADR-018). |

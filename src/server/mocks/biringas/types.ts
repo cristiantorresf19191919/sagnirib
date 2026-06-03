@@ -9,6 +9,7 @@ export type {
   BiringaAttributes,
   BiringaListing,
   BiringaReputation,
+  CatalogStats,
   Category,
   ContactChannel,
   ListingsFilters,

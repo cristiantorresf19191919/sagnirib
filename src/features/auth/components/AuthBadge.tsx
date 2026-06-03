@@ -35,6 +35,14 @@ interface AuthBadgeProps {
    * auth states.
    */
   placement: "signin-slot" | "account-menu";
+  /**
+   * True when the signed-in account is a commentator (ADR-019). Commentators
+   * can't publish and never pay, so the Settings/Billing menu items — both
+   * publisher-only surfaces that bounce them away — are hidden. Resolved
+   * server-side in the Header from `users/{uid}.accountType`, NOT the role
+   * claim. Irrelevant for the anonymous signin-slot, which renders no menu.
+   */
+  isCommentator?: boolean;
 }
 
 /**
@@ -53,7 +61,7 @@ interface AuthBadgeProps {
  *
  * Visual treatment matches the existing neutral nav links in the header.
  */
-export function AuthBadge({ placement }: AuthBadgeProps) {
+export function AuthBadge({ placement, isCommentator = false }: AuthBadgeProps) {
   const router = useRouter();
   const locale = useActiveLocale();
   const ingresarHref = useLocalizedHref("/ingresar");
@@ -175,25 +183,32 @@ export function AuthBadge({ placement }: AuthBadgeProps) {
             {t(locale, "auth.badge.menu.dashboard")}
           </Link>
 
-          <Link
-            href={settingsHref}
-            role="menuitem"
-            onClick={close}
-            className="flex h-11 items-center gap-2.5 rounded-xl px-3 text-sm font-medium text-[var(--color-foreground)] transition-colors hover:bg-[var(--color-background-elevated)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)] focus-visible:ring-inset"
-          >
-            <SettingsIcon className="h-4 w-4 text-[var(--color-text-muted)]" aria-hidden />
-            {t(locale, "auth.badge.menu.settings")}
-          </Link>
+          {/* Settings + Billing are publisher-only surfaces (ADR-019); both
+              redirect commentators to their own dashboard, so hide the menu
+              entries for them rather than offering a link that bounces. */}
+          {!isCommentator ? (
+            <>
+              <Link
+                href={settingsHref}
+                role="menuitem"
+                onClick={close}
+                className="flex h-11 items-center gap-2.5 rounded-xl px-3 text-sm font-medium text-[var(--color-foreground)] transition-colors hover:bg-[var(--color-background-elevated)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)] focus-visible:ring-inset"
+              >
+                <SettingsIcon className="h-4 w-4 text-[var(--color-text-muted)]" aria-hidden />
+                {t(locale, "auth.badge.menu.settings")}
+              </Link>
 
-          <Link
-            href={billingHref}
-            role="menuitem"
-            onClick={close}
-            className="flex h-11 items-center gap-2.5 rounded-xl px-3 text-sm font-medium text-[var(--color-foreground)] transition-colors hover:bg-[var(--color-background-elevated)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)] focus-visible:ring-inset"
-          >
-            <CreditCard className="h-4 w-4 text-[var(--color-text-muted)]" aria-hidden />
-            {t(locale, "auth.badge.menu.billing")}
-          </Link>
+              <Link
+                href={billingHref}
+                role="menuitem"
+                onClick={close}
+                className="flex h-11 items-center gap-2.5 rounded-xl px-3 text-sm font-medium text-[var(--color-foreground)] transition-colors hover:bg-[var(--color-background-elevated)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)] focus-visible:ring-inset"
+              >
+                <CreditCard className="h-4 w-4 text-[var(--color-text-muted)]" aria-hidden />
+                {t(locale, "auth.badge.menu.billing")}
+              </Link>
+            </>
+          ) : null}
 
           <span aria-hidden className="my-1 block h-px bg-[var(--color-border)]" />
 
