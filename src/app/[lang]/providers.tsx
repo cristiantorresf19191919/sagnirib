@@ -1,7 +1,6 @@
 import { MotionConfig } from "framer-motion";
 
 import { FavoritesProvider } from "@/features/favorites/store/use-favorites";
-import { SafeCheckinWatcher } from "@/features/safety/components/SafeCheckinWatcher";
 import { Toaster } from "@/shared/ui/toast";
 
 /**
@@ -10,10 +9,10 @@ import { Toaster } from "@/shared/ui/toast";
  *
  *  - `Toaster` — global notification stack; any client component can
  *    push via `import { toast } from "@/shared/ui/toast"`.
- *  - `SafeCheckinWatcher` — polls localStorage every 15s while the
- *    tab is visible; surfaces a countdown banner while armed and an
- *    alert modal when a deadline crosses. Pure client-side; no
- *    network traffic at any point.
+ *
+ * Safe Check-in (`SafeCheckinWatcher`) is intentionally NOT mounted for the
+ * MVP. The feature lives under `src/features/safety/`; re-add the import +
+ * `<SafeCheckinWatcher />` below to bring it back.
  *
  * `initialFavorites` is supplied by the Server Component layout (ADR-013).
  * The provider merges it with localStorage on first paint so signed-in
@@ -36,7 +35,6 @@ export function Providers({
       <FavoritesProvider initialFavorites={initialFavorites}>
         {children}
         <Toaster />
-        <SafeCheckinWatcher />
       </FavoritesProvider>
     </MotionConfig>
   );
