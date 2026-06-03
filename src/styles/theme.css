@@ -484,6 +484,66 @@ html[data-theme="noir"] {
 }
 
 /*
+ * "Onyx" theme — DARK — flipped via `data-theme="onyx"` on <html>.
+ *
+ * True black + charcoal grey with a pure light (platinum/white) accent — a
+ * monochrome, gallery-grade dark mode. No hue: surfaces step from near-black
+ * up through graphite, and the brand-primary is near-white so CTAs read as
+ * crisp platinum pills with dark text. A faint warm champagne stands in for
+ * the gold leaf accent, and a soft signal-red carries errors/urgency so the
+ * monochrome calm is only broken when it must be.
+ *
+ * Same surface-vs-primary inversion as the other dark themes: brand-primary is
+ * LIGHT so `text-[var(--color-surface)]` (near-black) stays dark-on-light on
+ * the buttons.
+ */
+html[data-theme="onyx"] {
+  --color-background: #0A0A0B;
+  --color-background-elevated: #141416;
+  --color-surface: #1A1A1D;
+  --color-surface-muted: #26262B;
+  --color-border: #36363C;
+
+  --color-brand-primary: #F5F5F7;
+  --color-brand-primary-strong: #FFFFFF;
+  --color-brand-primary-soft: #4D4D55;
+
+  --color-brand-secondary: #BFBFC6;
+  --color-brand-secondary-strong: #DCDCE2;
+
+  --color-brand-accent: #D9D2C4;
+  --color-brand-accent-strong: #EDE7DA;
+
+  --color-brand-highlight: #F2918C;
+  --color-brand-warn: #E0C58A;
+
+  --color-foreground: #F4F4F6;
+  --color-text-muted: #A6A6AE;
+  --color-text-subtle: #6E6E77;
+
+  --color-cream: #141416;
+  --color-cream-deep: #0A0A0B;
+  --color-cream-soft: #1A1A1D;
+  --color-ink: #F4F4F6;
+  --color-ink-soft: #C9C9D0;
+  --color-forest: #F5F5F7;
+  --color-forest-deep: #FFFFFF;
+  --color-gold: #D9D2C4;
+  --color-gold-deep: #B9B2A2;
+  --color-line: rgba(244, 244, 246, 0.10);
+  --color-line-soft: rgba(244, 244, 246, 0.05);
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.7);
+  --shadow-md: 0 10px 28px -12px rgba(0, 0, 0, 0.8);
+  --shadow-lg: 0 26px 56px -20px rgba(0, 0, 0, 0.9);
+  --shadow-glow-primary:
+    0 16px 40px -18px rgba(245, 245, 247, 0.22),
+    0 0 0 1px rgba(245, 245, 247, 0.08);
+  --shadow-glow-secondary: 0 14px 36px -18px rgba(191, 191, 198, 0.30);
+  --shadow-glow-accent: 0 14px 36px -18px rgba(217, 210, 196, 0.35);
+}
+
+/*
  * "Aurora" theme — LIGHT — flipped via `data-theme="aurora"` on <html>.
  *
  * Dawn sky — airy porcelain-blue paper with a deep marine-blue primary and

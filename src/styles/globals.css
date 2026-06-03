@@ -938,3 +938,26 @@ label.chip-animated:has(input:checked) .chip-check {
     animation: none !important;
   }
 }
+
+/* ──────────────────────────────────────────────────────────────────────────
+ * Radial theme reveal (View Transitions API).
+ *
+ * The theme picker recolors the whole UI with a circular wipe that grows from
+ * the swatch the user picked. We drive the geometry from JS via
+ * `document.startViewTransition` + `documentElement.animate(...)` on the
+ * `::view-transition-new(root)` pseudo, so here we only need to neutralise the
+ * browser's default cross-fade and stack the new snapshot on top of the old.
+ * Browsers without the API fall back to an instant theme swap — no animation,
+ * no breakage. Reduced-motion callers skip the transition entirely in JS.
+ * ────────────────────────────────────────────────────────────────────────── */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+::view-transition-old(root) {
+  z-index: 0;
+}
+::view-transition-new(root) {
+  z-index: 1;
+}

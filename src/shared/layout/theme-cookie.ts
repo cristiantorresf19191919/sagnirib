@@ -36,7 +36,8 @@ export type Theme =
   | "crimson"
   | "fuchsia"
   | "desire"
-  | "noir";
+  | "noir"
+  | "onyx";
 
 export const VALID_THEMES: ReadonlySet<Theme> = new Set([
   "light",
@@ -53,6 +54,7 @@ export const VALID_THEMES: ReadonlySet<Theme> = new Set([
   "fuchsia",
   "desire",
   "noir",
+  "onyx",
 ]);
 
 export const DEFAULT_THEME: Theme = "amour";

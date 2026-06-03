@@ -28,7 +28,7 @@ import Script from "next/script";
  * injected by Next directly, runs before hydration, and is never
  * re-rendered.
  */
-const SCRIPT = `(function(){try{var ok={light:1,dark:1,desire:1,bloom:1,ember:1,amour:1,noir:1,aurora:1,jade:1,lavender:1,scarlet:1,rose:1,crimson:1,fuchsia:1};var current=document.documentElement.getAttribute('data-theme');if(current&&ok[current])return;var s=localStorage.getItem('biringas:theme');var t=ok[s]?s:'amour';document.documentElement.setAttribute('data-theme',t);}catch(e){}})();`;
+const SCRIPT = `(function(){try{var ok={light:1,dark:1,desire:1,bloom:1,ember:1,amour:1,noir:1,aurora:1,jade:1,lavender:1,scarlet:1,rose:1,crimson:1,fuchsia:1,onyx:1};var current=document.documentElement.getAttribute('data-theme');if(current&&ok[current])return;var s=localStorage.getItem('biringas:theme');var t=ok[s]?s:'amour';document.documentElement.setAttribute('data-theme',t);}catch(e){}})();`;
 
 export function ThemeScript() {
   return (
