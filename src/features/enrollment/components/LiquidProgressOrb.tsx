@@ -89,7 +89,7 @@ export function LiquidProgressOrb({ fraction, ariaLabel }: LiquidProgressOrbProp
       role="img"
       aria-label={ariaLabel}
       data-testid="liquid-progress-orb"
-      className="relative h-[5.5rem] w-[5.5rem] shrink-0"
+      className="relative h-[4.5rem] w-[4.5rem] shrink-0"
     >
       <svg viewBox="0 0 100 100" className="h-full w-full overflow-visible" aria-hidden>
         <defs>

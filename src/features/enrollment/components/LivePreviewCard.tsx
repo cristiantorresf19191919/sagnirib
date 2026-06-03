@@ -1,5 +1,6 @@
 "use client";
 
+import { AnimatePresence, motion } from "framer-motion";
 import { ImagePlus, ShieldCheck } from "lucide-react";
 
 import { t } from "@/core/i18n/messages";
@@ -51,21 +52,33 @@ export function LivePreviewCard({ draft }: LivePreviewCardProps) {
       <article className="overflow-hidden rounded-[var(--radius-xl)] border border-[var(--color-border)] bg-[var(--color-surface)] shadow-[var(--shadow-md)]">
         {/* Cover */}
         <div className="relative aspect-[4/5] w-full bg-[var(--color-surface-muted)]">
-          {cover ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={cover}
-              alt=""
-              className="absolute inset-0 h-full w-full object-cover"
-            />
-          ) : (
-            <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-[var(--color-text-subtle)]">
-              <ImagePlus className="h-6 w-6" aria-hidden />
-              <span className="px-4 text-center text-[11px] font-medium">
-                {t(locale, "publicar.preview.noPhoto")}
-              </span>
-            </div>
-          )}
+          <AnimatePresence mode="popLayout" initial={false}>
+            {cover ? (
+              <motion.img
+                key={cover}
+                src={cover}
+                alt=""
+                initial={{ opacity: 0, scale: 1.04 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+                className="absolute inset-0 h-full w-full object-cover"
+              />
+            ) : (
+              <motion.div
+                key="empty"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-[var(--color-text-subtle)]"
+              >
+                <ImagePlus className="h-6 w-6" aria-hidden />
+                <span className="px-4 text-center text-[11px] font-medium">
+                  {t(locale, "publicar.preview.noPhoto")}
+                </span>
+              </motion.div>
+            )}
+          </AnimatePresence>
 
           {/* Review badge — every profile passes human review. */}
           <span className="absolute left-2 top-2 inline-flex items-center gap-1 rounded-full bg-[var(--color-foreground)]/75 px-2 py-0.5 text-[9px] font-bold uppercase tracking-[0.12em] text-[var(--color-surface)] backdrop-blur">

@@ -60,6 +60,7 @@ export function EditorialHeroMosaicColumn({
       className={`group/reel relative h-full overflow-hidden [transform:translateZ(0)] [contain:layout_paint] [backface-visibility:hidden] ${interactive ? "" : "pointer-events-none"}`}
     >
       <div
+        data-reel-track
         className={`flex flex-col will-change-transform [transform:translateZ(0)] [backface-visibility:hidden] ${reelClass} group-hover/reel:[animation-play-state:paused]`}
         style={{ ["--reel-duration" as string]: `${durationSeconds}s` }}
       >

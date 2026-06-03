@@ -1,13 +1,15 @@
 "use client";
 
+import { AnimatePresence, motion } from "framer-motion";
 import {
   AlertCircle,
   Film,
   ImagePlus,
-  Lightbulb,
   Loader2,
+  Lightbulb,
   Play,
   RotateCw,
+  Star,
   X,
 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -64,6 +66,10 @@ const ACCEPT_ATTR = "image/jpeg,image/png,image/webp,image/heic,image/heif";
  *  ceiling that still covers DSLR shots. Post-compression every photo lands
  *  under STORAGE_LIMITS.photoMaxBytes (~4MB) on the server. */
 const MAX_SOURCE_BYTES = 40 * 1024 * 1024;
+/** Hard cap on how many photos the gallery accepts in the wizard. The plan
+ *  may allow more, but the curated "1 cover + up to 4 supporting" layout is
+ *  built around five, so we clamp here regardless of `galleryMax`. */
+const GALLERY_DISPLAY_MAX = 5;
 
 interface StepDescriptionProps {
   values: DescriptionValues;
@@ -87,6 +93,7 @@ export function StepDescription({
   forceShowErrors,
 }: StepDescriptionProps) {
   const locale = useActiveLocale();
+  const effectiveMax = Math.min(galleryMax, GALLERY_DISPLAY_MAX);
   const [touched, setTouched] = useState<ReadonlySet<string>>(new Set());
 
   function touch(name: string) {
@@ -239,20 +246,21 @@ export function StepDescription({
     }
   }, [values.gallery, startUpload]);
 
-  // Best-effort cleanup of blob URLs and in-flight requests on unmount.
-  useEffect(() => {
-    return () => {
-      for (const controller of inFlight.current.values()) controller.abort();
-      for (const item of galleryRef.current) {
-        if (item.previewUrl.startsWith("blob:")) {
-          URL.revokeObjectURL(item.previewUrl);
-        }
-      }
-    };
-  }, []);
+  // NOTE: We deliberately do NOT revoke blob URLs or abort uploads when this
+  // step unmounts. The wizard swaps steps via `AnimatePresence mode="wait"`,
+  // so StepDescription unmounts every time the user navigates to another step
+  // (e.g. step 4 → step 2). The gallery itself lives in the parent wizard's
+  // draft state and outlives this component, so revoking the preview blobs on
+  // unmount left the persisted items pointing at dead URLs — the photos
+  // vanished here AND in the live preview card the moment you stepped away and
+  // came back. Blobs are revoked only on explicit removal (`removeFile` /
+  // `removeVideo`); leaving an in-flight upload running across a step switch is
+  // also desirable — it finishes in the background and the parent state
+  // updates to "ready", so returning to the step shows the completed photo.
+  // The browser reclaims any still-open object URLs on full page navigation.
 
   function openPicker() {
-    if (values.gallery.length >= galleryMax) return;
+    if (values.gallery.length >= effectiveMax) return;
     setGalleryError(null);
     fileInputRef.current?.click();
   }
@@ -261,9 +269,9 @@ export function StepDescription({
   // MIME + size, caps at the remaining slots, and appends queued items.
   function ingestFiles(picked: ReadonlyArray<File>) {
     if (picked.length === 0) return;
-    const remaining = galleryMax - values.gallery.length;
+    const remaining = effectiveMax - values.gallery.length;
     if (remaining <= 0) {
-      setGalleryError(`Se alcanzó el máximo de ${galleryMax} fotos.`);
+      setGalleryError(`Se alcanzó el máximo de ${effectiveMax} fotos.`);
       return;
     }
     const accepted: GalleryItem[] = [];
@@ -272,7 +280,7 @@ export function StepDescription({
 
     for (const file of picked) {
       if (consumedSlots >= remaining) {
-        errors.push(`Se alcanzó el máximo de ${galleryMax} fotos.`);
+        errors.push(`Se alcanzó el máximo de ${effectiveMax} fotos.`);
         break;
       }
       if (!ACCEPTED_SOURCE_MIMES.has(file.type)) {
@@ -474,16 +482,9 @@ export function StepDescription({
     }
   }, [values.videos, startVideoUpload]);
 
-  useEffect(() => {
-    return () => {
-      for (const controller of videoInFlight.current.values()) controller.abort();
-      for (const item of videosRef.current) {
-        if (item.previewUrl.startsWith("blob:")) {
-          URL.revokeObjectURL(item.previewUrl);
-        }
-      }
-    };
-  }, []);
+  // Same rationale as the gallery pipeline above: do not revoke blob URLs or
+  // abort uploads on step-navigation unmount — the videos live in parent state
+  // and must survive switching steps. Blobs are revoked only in `removeVideo`.
 
   function openVideoPicker() {
     if (values.videos.length >= 2) return;
@@ -722,7 +723,7 @@ export function StepDescription({
           <span className="text-[11px] text-[var(--color-text-subtle)]">
             {t(locale, "step.description.gallery.counter", {
               count: values.gallery.length,
-              max: galleryMax,
+              max: effectiveMax,
             })}
             {inFlightCount > 0
               ? " " +
@@ -766,11 +767,35 @@ export function StepDescription({
               : "outline-none"
           }`}
         >
-          <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 lg:grid-cols-6">
-            {values.gallery.map((item, index) => (
+          {/* Editorial layout: one large cover on the left and up to four
+              supporting thumbnails on the right. The cover is the photo
+              visitors see first, so it gets the spotlight (PORTADA ribbon +
+              brand ring). Adding/removing/reordering animates via framer-motion
+              layout + AnimatePresence; promoting another photo to cover glides
+              it into the big slot. */}
+          {(() => {
+            const items = values.gallery;
+            const cover = items[0];
+            const rest = items.slice(1);
+            const secondarySlots = effectiveMax - 1; // thumbnails beside cover
+            const canAddMore = items.length < effectiveMax;
+            const filledRest = rest.length;
+            // Ghost placeholders telegraph the remaining secondary capacity
+            // (after accounting for the visible add tile).
+            const ghostCount = Math.max(
+              0,
+              secondarySlots - filledRest - (canAddMore && items.length > 0 ? 1 : 0),
+            );
+
+            const renderCard = (
+              item: GalleryItem,
+              index: number,
+              featured: boolean,
+            ) => (
               <GalleryCard
                 key={item.id}
                 item={item}
+                featured={featured}
                 isCover={index === 0}
                 coverLabel={t(locale, "step.description.gallery.coverBadge")}
                 setCoverLabel={t(locale, "step.description.gallery.setCover")}
@@ -785,34 +810,94 @@ export function StepDescription({
                   setReorderId(null);
                 }}
               />
-            ))}
-            {values.gallery.length < galleryMax && (
-              <button
-                type="button"
-                onClick={openPicker}
-                className="flex aspect-[3/4] flex-col items-center justify-center gap-1.5 rounded-[var(--radius-md)] border border-dashed border-[var(--color-border)] bg-[var(--color-background-elevated)] text-[var(--color-text-muted)] transition-colors hover:border-[var(--color-brand-primary)] hover:text-[var(--color-brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-background)]"
-                aria-label={t(locale, "step.description.gallery.add.aria")}
-              >
-                <ImagePlus className="h-5 w-5" aria-hidden />
-                <span className="text-[11px] font-semibold uppercase tracking-[0.18em]">
-                  {t(locale, "step.description.gallery.add.label")}
-                </span>
-              </button>
-            )}
-            {/* Ghost slots telegraph remaining capacity (up to a sane 8). */}
-            {Array.from({
-              length: Math.max(
-                0,
-                Math.min(galleryMax, 8) - values.gallery.length - 1,
-              ),
-            }).map((_, i) => (
-              <div
-                key={`ghost-${i}`}
-                aria-hidden
-                className="aspect-[3/4] rounded-[var(--radius-md)] border border-dashed border-[var(--color-border)]/70 bg-[var(--color-background-elevated)]/40"
-              />
-            ))}
-          </div>
+            );
+
+            return (
+              <div className="flex flex-col gap-2.5 sm:flex-row">
+                {/* Cover / featured slot */}
+                <div className="sm:w-[42%] sm:max-w-[260px] sm:shrink-0">
+                  <AnimatePresence mode="popLayout" initial={false}>
+                    {cover ? (
+                      <motion.div
+                        key={cover.id}
+                        layout
+                        initial={{ opacity: 0, scale: 0.96 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.96 }}
+                        transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
+                      >
+                        {renderCard(cover, 0, true)}
+                      </motion.div>
+                    ) : (
+                      <button
+                        key="cover-empty"
+                        type="button"
+                        onClick={openPicker}
+                        className="flex aspect-[3/4] w-full flex-col items-center justify-center gap-2 rounded-[var(--radius-lg)] border-2 border-dashed border-[var(--color-brand-primary)]/40 bg-[var(--color-brand-primary)]/[0.04] text-[var(--color-brand-primary)] transition-colors hover:border-[var(--color-brand-primary)] hover:bg-[var(--color-brand-primary)]/[0.07] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-background)]"
+                        aria-label={t(locale, "step.description.gallery.add.aria")}
+                      >
+                        <ImagePlus className="h-7 w-7" aria-hidden />
+                        <span className="text-[11px] font-semibold uppercase tracking-[0.18em]">
+                          {t(locale, "step.description.gallery.coverCta")}
+                        </span>
+                      </button>
+                    )}
+                  </AnimatePresence>
+                </div>
+
+                {/* Supporting thumbnails + add tile + ghosts */}
+                <div className="grid flex-1 grid-cols-3 gap-2.5 sm:grid-cols-2 lg:grid-cols-4">
+                  <AnimatePresence mode="popLayout" initial={false}>
+                    {rest.map((item, i) => (
+                      <motion.div
+                        key={item.id}
+                        layout
+                        initial={{ opacity: 0, scale: 0.9 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.9 }}
+                        transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+                      >
+                        {renderCard(item, i + 1, false)}
+                      </motion.div>
+                    ))}
+
+                    {canAddMore && items.length > 0 && (
+                      <motion.button
+                        key="add-tile"
+                        layout
+                        type="button"
+                        onClick={openPicker}
+                        initial={{ opacity: 0, scale: 0.9 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.9 }}
+                        transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+                        className="flex aspect-[3/4] flex-col items-center justify-center gap-1.5 rounded-[var(--radius-md)] border border-dashed border-[var(--color-border)] bg-[var(--color-background-elevated)] text-[var(--color-text-muted)] transition-colors hover:border-[var(--color-brand-primary)] hover:text-[var(--color-brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-background)]"
+                        aria-label={t(locale, "step.description.gallery.add.aria")}
+                      >
+                        <ImagePlus className="h-5 w-5" aria-hidden />
+                        <span className="text-[10px] font-semibold uppercase tracking-[0.16em]">
+                          {t(locale, "step.description.gallery.add.label")}
+                        </span>
+                      </motion.button>
+                    )}
+
+                    {Array.from({ length: ghostCount }).map((_, i) => (
+                      <motion.div
+                        // biome-ignore lint/suspicious/noArrayIndexKey: positional ghost slots
+                        key={`ghost-${i}`}
+                        layout
+                        aria-hidden
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="aspect-[3/4] rounded-[var(--radius-md)] border border-dashed border-[var(--color-border)]/70 bg-[var(--color-background-elevated)]/40"
+                      />
+                    ))}
+                  </AnimatePresence>
+                </div>
+              </div>
+            );
+          })()}
         </div>
         <p className="text-[11px] text-[var(--color-text-subtle)]">
           {t(locale, "step.description.gallery.pasteHint")}
@@ -983,6 +1068,8 @@ function formatDuration(seconds: number): string {
 interface GalleryCardProps {
   item: GalleryItem;
   isCover: boolean;
+  /** When true the card renders larger as the spotlight cover tile. */
+  featured?: boolean;
   coverLabel: string;
   setCoverLabel: string;
   dragging: boolean;
@@ -999,6 +1086,7 @@ const REORDER_MIME = "text/x-gallery-id";
 function GalleryCard({
   item,
   isCover,
+  featured = false,
   coverLabel,
   setCoverLabel,
   dragging,
@@ -1031,9 +1119,11 @@ function GalleryCard({
         e.stopPropagation();
         onReorderDrop(fromId);
       }}
-      className={`group relative aspect-[3/4] cursor-grab overflow-hidden rounded-[var(--radius-md)] border bg-[var(--color-surface-muted)] transition-[opacity,box-shadow,border-color] active:cursor-grabbing ${
+      className={`group relative aspect-[3/4] cursor-grab overflow-hidden border bg-[var(--color-surface-muted)] transition-[opacity,box-shadow,border-color] active:cursor-grabbing ${
+        featured ? "rounded-[var(--radius-lg)]" : "rounded-[var(--radius-md)]"
+      } ${
         isCover
-          ? "border-[var(--color-brand-primary)] shadow-[var(--shadow-glow-primary)]"
+          ? "border-[var(--color-brand-primary)] shadow-[var(--shadow-glow-primary)] ring-2 ring-[var(--color-brand-primary)]/20"
           : "border-[var(--color-border)]"
       } ${dragging ? "opacity-40 ring-2 ring-[var(--color-brand-primary)]" : ""}`}
     >
@@ -1047,9 +1137,14 @@ function GalleryCard({
         }`}
       />
 
-      {/* Cover badge on the first photo. */}
+      {/* Cover badge on the first photo — larger ribbon on the featured tile. */}
       {isCover && (
-        <span className="pointer-events-none absolute left-1.5 top-1.5 inline-flex items-center gap-1 rounded-full bg-[var(--color-brand-primary)] px-2 py-0.5 text-[9px] font-bold uppercase tracking-[0.12em] text-[var(--color-surface)] shadow-[var(--shadow-sm)]">
+        <span
+          className={`pointer-events-none absolute left-2 top-2 inline-flex items-center gap-1 rounded-full bg-[var(--color-brand-primary)] font-bold uppercase tracking-[0.12em] text-[var(--color-surface)] shadow-[var(--shadow-sm)] ${
+            featured ? "px-2.5 py-1 text-[10px]" : "px-2 py-0.5 text-[9px]"
+          }`}
+        >
+          <Star className={featured ? "h-3 w-3 fill-current" : "h-2.5 w-2.5 fill-current"} aria-hidden />
           {coverLabel}
         </span>
       )}

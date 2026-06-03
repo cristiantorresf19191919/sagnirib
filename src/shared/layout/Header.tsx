@@ -10,6 +10,7 @@ import { Logo } from "@/shared/design-system/components/Logo";
 import { AuthBadge } from "@/features/auth/components/AuthBadge";
 import { readAccountTypeCookie } from "@/features/auth/lib/account-type-cookie";
 import { FavoritesNavLink } from "@/features/favorites/components/FavoritesNavLink";
+import { PanicButton } from "@/features/safety/components/PanicButton";
 import { getSession } from "@/server/auth";
 import { listMyDrafts } from "@/server/biringas";
 import {
@@ -130,14 +131,16 @@ export async function Header({ hideCatalogCta = false }: HeaderProps) {
       >
         <Logo size="md" />
 
-        {/* Mobile (< lg): hamburger → full-screen animated drawer. */}
-        <MobileNav
-          locale={locale}
-          hidePublishCta={hidePublishCta}
-          hideCatalogCta={hideCatalogCta}
-          reviewHref={reviewHref}
-          className="lg:hidden"
-        />
+        {/* Mobile (< lg): subtle quick-exit + hamburger → full-screen drawer. */}
+        <div className="flex items-center gap-0.5 lg:hidden">
+          <PanicButton />
+          <MobileNav
+            locale={locale}
+            hidePublishCta={hidePublishCta}
+            hideCatalogCta={hideCatalogCta}
+            reviewHref={reviewHref}
+          />
+        </div>
 
         <nav
           data-testid="header-nav"
@@ -185,6 +188,10 @@ export async function Header({ hideCatalogCta = false }: HeaderProps) {
               discovery. */}
           <ThemeToggle />
           <LocaleSwitcher current={locale} />
+          {/* Discreet quick-exit — paints a neutral news site over everything
+              (no header, no Biringas) to shield the screen from onlookers.
+              Restored with Escape or by clicking the news masthead. */}
+          <PanicButton />
 
           {/* 4. SECONDARY CTA — seller-side ask. Outline pill so it reads
               as the supporting action against the primary explore CTA.

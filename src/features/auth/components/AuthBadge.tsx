@@ -1,5 +1,6 @@
 "use client";
 
+import { motion } from "framer-motion";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useId, useRef, useState } from "react";
@@ -99,8 +100,22 @@ export function AuthBadge({ placement, isCommentator = false }: AuthBadgeProps) 
     };
   }, [open, close]);
 
-  if (status === "loading" || status === "disabled") {
+  if (status === "disabled") {
     return null;
+  }
+
+  // While the Firebase session resolves we don't yet know if the visitor is
+  // anonymous or signed in. Returning null here is what made the account
+  // avatar/name "pop in" with a jump once auth landed. Instead the far-right
+  // account slot holds a calm shimmering skeleton sized exactly like the real
+  // avatar pill, so the layout is reserved and the resolved state fades in
+  // place. The sign-in slot stays empty during loading (it only ever shows for
+  // confirmed-anonymous visitors, where a brief delay reads fine).
+  if (status === "loading") {
+    if (placement !== "account-menu") {
+      return null;
+    }
+    return <AccountSkeleton />;
   }
 
   if (status === "anonymous") {
@@ -142,7 +157,15 @@ export function AuthBadge({ placement, isCommentator = false }: AuthBadgeProps) 
   }
 
   return (
-    <div ref={containerRef} className="relative inline-flex">
+    <motion.div
+      ref={containerRef}
+      className="relative inline-flex"
+      // Fade + settle in once the session resolves so it replaces the
+      // skeleton in place instead of snapping (the reported "name jump").
+      initial={{ opacity: 0, x: 4 }}
+      animate={{ opacity: 1, x: 0 }}
+      transition={{ duration: 0.32, ease: [0.22, 1, 0.36, 1] }}
+    >
       {/* Avatar trigger — far-right entry point to the account menu. */}
       <button
         type="button"
@@ -223,6 +246,39 @@ export function AuthBadge({ placement, isCommentator = false }: AuthBadgeProps) 
           </button>
         </div>
       )}
+    </motion.div>
+  );
+}
+
+/**
+ * Placeholder for the account avatar while the auth session resolves. Matches
+ * the real pill's geometry (h-11, 7×7 avatar, name bar on lg) so swapping it
+ * for the resolved avatar causes zero layout shift. A slow sheen sweeps across
+ * it as a "loading" cue; it calms under reduced motion via framer-motion's
+ * global MotionConfig.
+ */
+function AccountSkeleton() {
+  return (
+    <div
+      aria-hidden
+      className="inline-flex h-11 items-center gap-1.5 rounded-full px-2.5 lg:px-3"
+    >
+      <span className="relative inline-flex h-7 w-7 overflow-hidden rounded-full bg-[var(--color-background-elevated)]">
+        <motion.span
+          className="absolute inset-0 bg-gradient-to-r from-transparent via-[var(--color-surface)] to-transparent"
+          initial={{ x: "-100%" }}
+          animate={{ x: "100%" }}
+          transition={{ duration: 1.1, ease: "easeInOut", repeat: Infinity, repeatDelay: 0.4 }}
+        />
+      </span>
+      <span className="relative hidden h-3 w-16 overflow-hidden rounded-full bg-[var(--color-background-elevated)] lg:inline-block">
+        <motion.span
+          className="absolute inset-0 bg-gradient-to-r from-transparent via-[var(--color-surface)] to-transparent"
+          initial={{ x: "-100%" }}
+          animate={{ x: "100%" }}
+          transition={{ duration: 1.1, ease: "easeInOut", repeat: Infinity, repeatDelay: 0.4 }}
+        />
+      </span>
     </div>
   );
 }

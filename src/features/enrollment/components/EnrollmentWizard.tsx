@@ -283,16 +283,19 @@ export function EnrollmentWizard({ catalogs, personId }: EnrollmentWizardProps) 
 
   return (
     <div ref={wizardTopRef} className="flex flex-col gap-8 scroll-mt-24">
-      {/* Floating global progress — a liquid orb pinned to the viewport corner,
-          always visible while the user scrolls the (long) form. Tapping it
+      {/* Floating global progress — a liquid orb pinned to the top-left corner
+          just under the sticky header, always visible while the user scrolls
+          the (long) form. Top-left keeps it out of the thumb zone and away
+          from the right-rail preview/CTA, reading as a quiet, persistent
+          status badge rather than a button fighting the content. Tapping it
           scrolls back up to the stepper overview. On the final "publish" step
           it dims out of the way so it never competes with the submit CTA. The
           wrapper is pointer-events-none; only the button itself is clickable,
           so it never blocks the fields beneath it. */}
       <motion.div
-        className="pointer-events-none fixed bottom-5 right-5 z-40 sm:bottom-6 sm:right-6"
-        initial={reduced ? false : { opacity: 0, scale: 0.8, y: 8 }}
-        animate={{ opacity: current === "publish" ? 0.45 : 1, scale: 1, y: 0 }}
+        className="pointer-events-none fixed left-3 top-[4.75rem] z-40 sm:left-5 sm:top-20"
+        initial={reduced ? false : { opacity: 0, scale: 0.8, y: -8 }}
+        animate={{ opacity: current === "publish" ? 0.4 : 1, scale: 1, y: 0 }}
         transition={
           reduced ? { duration: 0 } : { type: "spring", stiffness: 260, damping: 22 }
         }

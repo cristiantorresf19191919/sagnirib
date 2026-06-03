@@ -1,5 +1,6 @@
 "use client";
 
+import { motion } from "framer-motion";
 import { useState } from "react";
 
 import { t } from "@/core/i18n/messages";
@@ -9,6 +10,25 @@ import type { AppearanceCatalogs } from "../lib/catalogs";
 import type { AttributesValues } from "../lib/types";
 import { ChipChoice } from "./FormField";
 import { SectionShell } from "./SectionShell";
+
+/**
+ * Staggered reveal for each attribute block. They animate as the step enters
+ * (it mounts in view), cascading top-to-bottom so the long form feels like it
+ * "assembles" rather than dumping at once. Honors reduced motion via the
+ * app-wide MotionConfig. A re-usable container/item pair keyed off the index.
+ */
+const revealContainer = {
+  hidden: {},
+  show: { transition: { staggerChildren: 0.07, delayChildren: 0.04 } },
+};
+const revealItem = {
+  hidden: { opacity: 0, y: 16 },
+  show: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.4, ease: [0.22, 1, 0.36, 1] as const },
+  },
+};
 
 interface StepAttributesProps {
   values: AttributesValues;
@@ -107,59 +127,72 @@ export function StepAttributes({ values, catalogs, onChange, forceShowErrors }: 
       title={t(locale, "step.attributes.title")}
       description={t(locale, "step.attributes.description")}
     >
-      {/* Nationality leads full-width — it's the primary catalog filter. */}
-      {field("country")}
+      <motion.div
+        variants={revealContainer}
+        initial="hidden"
+        animate="show"
+        className="flex flex-col gap-6"
+      >
+        {/* Nationality leads full-width — it's the primary catalog filter. */}
+        <motion.div variants={revealItem}>{field("country")}</motion.div>
 
-      {/* Short single-select fields pair into two columns on desktop so the
-          step stays mostly above the fold instead of one tall column. */}
-      <div className="grid grid-cols-1 gap-x-6 gap-y-5 sm:grid-cols-2">
-        {field("ethnicity")}
-        {field("hair")}
-        {field("height")}
-        {field("body")}
-      </div>
+        {/* Short single-select fields pair into two columns on desktop so the
+            step stays mostly above the fold instead of one tall column. */}
+        <motion.div
+          variants={revealItem}
+          className="grid grid-cols-1 gap-x-6 gap-y-5 sm:grid-cols-2"
+        >
+          {field("ethnicity")}
+          {field("hair")}
+          {field("height")}
+          {field("body")}
+        </motion.div>
 
-      {/* Senos — size and type are INDEPENDENT dimensions (you can be
-          "Grandes" + "Naturales" at once). Wrapping them under one labelled
-          group makes that explicit so they never read as mutually exclusive. */}
-      <fieldset className="flex flex-col gap-4 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-background-elevated)]/40 p-4">
-        <legend className="px-1.5 text-[12px] font-semibold tracking-tight text-[var(--color-foreground)]">
-          {t(locale, "step.attributes.breasts.legend")}
-        </legend>
-        {field("breastSize")}
-        {field("breastType")}
-      </fieldset>
+        {/* Senos — size and type are INDEPENDENT dimensions (you can be
+            "Grandes" + "Naturales" at once). Wrapping them under one labelled
+            group makes that explicit so they never read as mutually exclusive. */}
+        <motion.fieldset
+          variants={revealItem}
+          className="flex flex-col gap-4 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-background-elevated)]/40 p-4"
+        >
+          <legend className="px-1.5 text-[12px] font-semibold tracking-tight text-[var(--color-foreground)]">
+            {t(locale, "step.attributes.breasts.legend")}
+          </legend>
+          {field("breastSize")}
+          {field("breastType")}
+        </motion.fieldset>
 
-      {/* Optional section — a labelled divider gives permission to skip the
-          rest of the step. Everything below is non-required. */}
-      <div className="flex items-center gap-3 pt-1">
-        <span className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[var(--color-text-subtle)]">
-          {t(locale, "step.attributes.optional.heading")}
-        </span>
-        <span aria-hidden className="h-px flex-1 bg-[var(--color-border)]" />
-      </div>
+        {/* Optional section — a labelled divider gives permission to skip the
+            rest of the step. Everything below is non-required. */}
+        <motion.div variants={revealItem} className="flex items-center gap-3 pt-1">
+          <span className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[var(--color-text-subtle)]">
+            {t(locale, "step.attributes.optional.heading")}
+          </span>
+          <span aria-hidden className="h-px flex-1 bg-[var(--color-border)]" />
+        </motion.div>
 
-      {field("pubis")}
+        <motion.div variants={revealItem}>{field("pubis")}</motion.div>
 
-      <fieldset className="flex flex-col gap-2">
-        <legend className="text-[12px] font-semibold tracking-tight text-[var(--color-foreground)]">
-          {t(locale, "step.attributes.languages.legend")}
-        </legend>
-        <p className="text-[11px] text-[var(--color-text-subtle)]">
-          {t(locale, "step.attributes.languages.hint")}
-        </p>
-        <div className="mt-1 flex flex-wrap gap-2">
-          {catalogs.languages.map((lang) => (
-            <ChipChoice
-              key={lang}
-              multi
-              label={lang}
-              active={values.languages.includes(lang)}
-              onClick={() => toggleLanguage(lang)}
-            />
-          ))}
-        </div>
-      </fieldset>
+        <motion.fieldset variants={revealItem} className="flex flex-col gap-2">
+          <legend className="text-[12px] font-semibold tracking-tight text-[var(--color-foreground)]">
+            {t(locale, "step.attributes.languages.legend")}
+          </legend>
+          <p className="text-[11px] text-[var(--color-text-subtle)]">
+            {t(locale, "step.attributes.languages.hint")}
+          </p>
+          <div className="mt-1 flex flex-wrap gap-2">
+            {catalogs.languages.map((lang) => (
+              <ChipChoice
+                key={lang}
+                multi
+                label={lang}
+                active={values.languages.includes(lang)}
+                onClick={() => toggleLanguage(lang)}
+              />
+            ))}
+          </div>
+        </motion.fieldset>
+      </motion.div>
     </SectionShell>
   );
 }

@@ -1,6 +1,7 @@
 import { MotionConfig } from "framer-motion";
 
 import { FavoritesProvider } from "@/features/favorites/store/use-favorites";
+import { PanicProvider } from "@/features/safety/components/PanicProvider";
 import { Toaster } from "@/shared/ui/toast";
 
 /**
@@ -9,6 +10,9 @@ import { Toaster } from "@/shared/ui/toast";
  *
  *  - `Toaster` — global notification stack; any client component can
  *    push via `import { toast } from "@/shared/ui/toast"`.
+ *  - `PanicProvider` — quick-exit safety layer; `usePanic().trigger()`
+ *    paints a neutral news-site decoy over the whole app (no Biringas
+ *    chrome) to shield the screen from onlookers. Restored with Escape.
  *
  * Safe Check-in (`SafeCheckinWatcher`) is intentionally NOT mounted for the
  * MVP. The feature lives under `src/features/safety/`; re-add the import +
@@ -33,8 +37,10 @@ export function Providers({
     // returns `null` on the server and a boolean on the client.
     <MotionConfig reducedMotion="user">
       <FavoritesProvider initialFavorites={initialFavorites}>
-        {children}
-        <Toaster />
+        <PanicProvider>
+          {children}
+          <Toaster />
+        </PanicProvider>
       </FavoritesProvider>
     </MotionConfig>
   );

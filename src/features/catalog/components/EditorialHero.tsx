@@ -12,6 +12,7 @@ import { UnderlineSweep } from "@/shared/motion/UnderlineSweep";
 import { EditorialHeroMosaicColumn } from "./EditorialHeroMosaicColumn";
 import { HeroCitySelect } from "./HeroCitySelect";
 import { LuckyButton } from "./LuckyButton";
+import { MosaicDragSurface } from "./MosaicDragSurface";
 
 interface CityOption {
   readonly value: string;
@@ -203,35 +204,38 @@ export async function EditorialHero({
         }}
       />
 
-      {/* Mosaic — desktop only, three vertical cinema strips on the right. */}
-      <div
-        data-testid="editorial-hero-mosaic-desktop"
-        aria-hidden="false"
+      {/* Mosaic — desktop only, three vertical cinema strips on the right.
+          Wrapped in a drag surface so a visitor can press-and-drag up/down to
+          fling through the cards faster (Web Animations API playbackRate), then
+          watch it ease back to its cruising pace. */}
+      <MosaicDragSurface
         className="absolute inset-y-0 right-0 hidden w-[62%] grid-cols-[28fr_36fr_28fr] gap-2.5 lg:grid"
       >
-        <EditorialHeroMosaicColumn
-          tiles={colA}
-          heights={TILE_HEIGHTS_A}
-          drift="up"
-          durationSeconds={34}
-          testIdSuffix="a"
-          interactive={false}
-        />
-        <EditorialHeroMosaicColumn
-          tiles={colB}
-          heights={TILE_HEIGHTS_B}
-          drift="down"
-          durationSeconds={42}
-          testIdSuffix="b"
-        />
-        <EditorialHeroMosaicColumn
-          tiles={colC}
-          heights={TILE_HEIGHTS_C}
-          drift="up"
-          durationSeconds={28}
-          testIdSuffix="c"
-        />
-      </div>
+        <div data-testid="editorial-hero-mosaic-desktop" aria-hidden="false" className="contents">
+          <EditorialHeroMosaicColumn
+            tiles={colA}
+            heights={TILE_HEIGHTS_A}
+            drift="up"
+            durationSeconds={34}
+            testIdSuffix="a"
+            interactive={false}
+          />
+          <EditorialHeroMosaicColumn
+            tiles={colB}
+            heights={TILE_HEIGHTS_B}
+            drift="down"
+            durationSeconds={42}
+            testIdSuffix="b"
+          />
+          <EditorialHeroMosaicColumn
+            tiles={colC}
+            heights={TILE_HEIGHTS_C}
+            drift="up"
+            durationSeconds={28}
+            testIdSuffix="c"
+          />
+        </div>
+      </MosaicDragSurface>
 
       {/* Left fade veil — softens the mosaic into the cream paper. */}
       <div

@@ -1,5 +1,6 @@
 "use client";
 
+import { motion } from "framer-motion";
 import { Fragment, type CSSProperties } from "react";
 import Link from "next/link";
 import {
@@ -257,14 +258,21 @@ function UpcomingDifferentials({ locale }: { locale: SupportedLocale }) {
         </p>
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-        {DIFFERENTIATORS.map((diff, index) => {
+      <motion.div
+        className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3"
+        variants={UPCOMING_CONTAINER}
+        initial="hidden"
+        whileInView="show"
+        viewport={{ once: true, amount: 0.25 }}
+      >
+        {DIFFERENTIATORS.map((diff) => {
           const Icon = diff.icon;
           return (
-            <article
+            <motion.article
               key={diff.key}
-              style={{ "--step-i": index } as CSSProperties}
-              className="motion-step-rise group/diff relative flex flex-col gap-3 overflow-hidden rounded-[var(--radius-xl)] border border-[var(--color-border)] bg-[var(--color-surface)] p-5 shadow-[var(--shadow-sm)] transition-[transform,box-shadow,border-color] duration-200 ease-[var(--ease-standard)] hover:-translate-y-1 hover:border-[var(--color-brand-primary-soft)] hover:shadow-[var(--shadow-md)]"
+              variants={UPCOMING_ITEM}
+              whileHover={{ y: -4 }}
+              className="group/diff relative flex flex-col gap-3 overflow-hidden rounded-[var(--radius-xl)] border border-[var(--color-border)] bg-[var(--color-surface)] p-5 shadow-[var(--shadow-sm)] transition-[box-shadow,border-color] duration-200 ease-[var(--ease-standard)] hover:border-[var(--color-brand-primary-soft)] hover:shadow-[var(--shadow-md)]"
             >
               {/* Soft brand wash in the corner — warms on hover. */}
               <span
@@ -308,13 +316,28 @@ function UpcomingDifferentials({ locale }: { locale: SupportedLocale }) {
                   {t(locale, `step.publish.upcoming.${diff.key}.body`)}
                 </p>
               </div>
-            </article>
+            </motion.article>
           );
         })}
-      </div>
+      </motion.div>
     </section>
   );
 }
+
+/** Cascading scroll reveal for the "Lo que viene" cards. */
+const UPCOMING_CONTAINER = {
+  hidden: {},
+  show: { transition: { staggerChildren: 0.09, delayChildren: 0.05 } },
+};
+const UPCOMING_ITEM = {
+  hidden: { opacity: 0, y: 28, scale: 0.97 },
+  show: {
+    opacity: 1,
+    y: 0,
+    scale: 1,
+    transition: { duration: 0.5, ease: [0.22, 1, 0.36, 1] as const },
+  },
+};
 
 interface BillingToggleProps {
   locale: SupportedLocale;

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Check, Sparkles, Video, Waves } from "lucide-react";
 
 import { formatPhoneCo, formatThousands } from "@/features/biringas/format";
 import { t } from "@/core/i18n/messages";
@@ -13,10 +14,16 @@ import { useSlugAvailability } from "../lib/use-slug-availability";
 import {
   ChipChoice,
   PillToggle,
-  SelectField,
   TextField,
 } from "./FormField";
+import { LocationCascadeField } from "./LocationCascadeField";
 import { SectionShell } from "./SectionShell";
+
+const CATEGORY_ICONS = {
+  prepagos: Sparkles,
+  masajes: Waves,
+  videollamadas: Video,
+} as const;
 
 interface StepDetailsProps {
   values: DetailsValues;
@@ -55,18 +62,6 @@ export function StepDetails({ values, catalogs, onChange, forceShowErrors, ownSl
   function patch(changes: Partial<DetailsValues>) {
     onChange({ ...values, ...changes });
   }
-
-  // Location cascade (Department → City → Locality). The department is local
-  // UI state only — derived from the stored city, never persisted.
-  const initialDepartment =
-    catalogs.locations.find((d) =>
-      d.cities.some((c) => c.name === values.city),
-    )?.name ?? "";
-  const [department, setDepartment] = useState(initialDepartment);
-  const departmentCities =
-    catalogs.locations.find((d) => d.name === department)?.cities ?? [];
-  const cityLocalities =
-    departmentCities.find((c) => c.name === values.city)?.localities ?? [];
 
   function toggleAttention(id: DetailsValues["attention"][number]) {
     const has = values.attention.includes(id);
@@ -198,89 +193,79 @@ export function StepDetails({ values, catalogs, onChange, forceShowErrors, ownSl
           error={show("age") ? errors.age : undefined}
         />
 
-        {/* Location cascade — Departamento → Ciudad → Localidad. The
-            department only narrows the city list; it is derived from the city
-            and never stored (the listing keeps just city + optional locality). */}
-        <SelectField
-          label={t(locale, "step.details.field.department")}
-          name="department"
-          required
-          value={department}
-          onChange={(e) => {
-            setDepartment(e.target.value);
-            patch({ city: "", locality: "" });
-          }}
-        >
-          <option value="">
-            {t(locale, "step.details.field.department.placeholder")}
-          </option>
-          {catalogs.locations.map((d) => (
-            <option key={d.name} value={d.name}>
-              {d.name}
-            </option>
-          ))}
-        </SelectField>
-
-        <SelectField
-          label={t(locale, "step.details.field.city")}
-          name="city"
-          required
-          value={values.city}
-          onChange={(e) => patch({ city: e.target.value, locality: "" })}
+        {/* Location cascade — one field that walks Departamento → Ciudad →
+            Localidad. The department is derived from the city and never
+            stored (the listing keeps just city + optional locality). */}
+        <LocationCascadeField
+          locations={catalogs.locations}
+          value={{ city: values.city, locality: values.locality }}
+          onChange={(next) => patch({ city: next.city, locality: next.locality })}
           onBlur={() => touch("city")}
-          error={show("city") ? errors.city : undefined}
-        >
-          <option value="">
-            {department
-              ? t(locale, "step.details.field.city.placeholder")
-              : t(locale, "step.details.field.city.placeholderNoDept")}
-          </option>
-          {departmentCities.map((c) => (
-            <option key={c.name} value={c.name}>
-              {c.name}
-            </option>
-          ))}
-        </SelectField>
-
-        {cityLocalities.length > 0 && (
-          <SelectField
-            label={t(locale, "step.details.field.locality")}
-            name="locality"
-            value={values.locality}
-            onChange={(e) => update("locality", e.target.value)}
-          >
-            <option value="">
-              {t(locale, "step.details.field.locality.placeholder")}
-            </option>
-            {cityLocalities.map((loc) => (
-              <option key={loc} value={loc}>
-                {loc}
-              </option>
-            ))}
-          </SelectField>
-        )}
-
-        <SelectField
-          label={t(locale, "step.details.field.category")}
-          name="category"
           required
-          value={values.category}
-          onChange={(e) =>
-            update("category", e.target.value as DetailsValues["category"])
-          }
-          onBlur={() => touch("category")}
-          hint={t(locale, "step.details.field.category.hint")}
-          error={show("category") ? errors.category : undefined}
-        >
-          <option value="">
-            {t(locale, "step.details.field.category.placeholder")}
-          </option>
-          {CATEGORY_IDS.map((id) => (
-            <option key={id} value={id}>
-              {t(locale, `step.details.category.${id}`)}
-            </option>
-          ))}
-        </SelectField>
+          error={show("city") ? errors.city : undefined}
+        />
+
+        {/* Categoría — selectable cards instead of a native dropdown. Three
+            mutually-exclusive options read at a glance and feel native to the
+            brand, and the choice drives where the profile lands in the
+            catalog. */}
+        <fieldset className="flex flex-col gap-2 md:col-span-2">
+          <legend className="text-[12px] font-semibold tracking-tight text-[var(--color-foreground)]">
+            {t(locale, "step.details.field.category")}
+          </legend>
+          <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-3">
+            {CATEGORY_IDS.map((id) => {
+              const Icon = CATEGORY_ICONS[id];
+              const active = values.category === id;
+              return (
+                <button
+                  key={id}
+                  type="button"
+                  onClick={() => {
+                    update("category", id as DetailsValues["category"]);
+                    touch("category");
+                  }}
+                  aria-pressed={active}
+                  className={`group relative flex items-center gap-3 overflow-hidden rounded-[var(--radius-md)] border p-3.5 text-left transition-[border-color,background,box-shadow,transform] duration-200 ease-[var(--ease-standard)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-background)] ${
+                    active
+                      ? "border-[var(--color-brand-primary)] bg-[var(--color-brand-primary)]/6 shadow-[var(--shadow-sm)]"
+                      : "border-[var(--color-border)] bg-[var(--color-surface)] hover:-translate-y-[1px] hover:border-[var(--color-brand-primary-soft)]"
+                  }`}
+                >
+                  <span
+                    aria-hidden
+                    className={`inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full transition-colors ${
+                      active
+                        ? "bg-[var(--color-brand-primary)] text-[var(--color-surface)]"
+                        : "bg-[var(--color-brand-primary)]/10 text-[var(--color-brand-primary)]"
+                    }`}
+                  >
+                    <Icon className="h-4 w-4" aria-hidden />
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-sm font-semibold text-[var(--color-foreground)]">
+                      {t(locale, `step.details.category.${id}`)}
+                    </span>
+                  </span>
+                  {active && (
+                    <Check
+                      className="h-4 w-4 shrink-0 text-[var(--color-brand-primary)]"
+                      aria-hidden
+                    />
+                  )}
+                </button>
+              );
+            })}
+          </div>
+          <p className="text-[11px] italic leading-relaxed text-[var(--color-text-subtle)]">
+            {t(locale, "step.details.field.category.hint")}
+          </p>
+          {show("category") && errors.category && (
+            <p role="alert" className="text-[11px] text-[var(--color-brand-highlight)]">
+              {errors.category}
+            </p>
+          )}
+        </fieldset>
 
         {/* Tarifa — stores raw digits in state, displays grouped with
             Colombian thousand separators (200000 → 200.000). */}
@@ -309,7 +294,6 @@ export function StepDetails({ values, catalogs, onChange, forceShowErrors, ownSl
           onBlur={() => touch("phone")}
           hint={t(locale, "step.details.field.phone.hint")}
           error={show("phone") ? errors.phone : undefined}
-          className="md:col-span-2"
         />
       </div>
 
