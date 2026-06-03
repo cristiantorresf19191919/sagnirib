@@ -97,16 +97,20 @@ export default async function RootLayout({
   const { lang } = await params;
   if (!isSupportedLocale(lang)) notFound();
 
-  const acknowledged = await readAgeAck();
-  // SSR hydration for the favorites provider (ADR-013). Anonymous
-  // sessions return an empty array — no auth error is thrown, so the
-  // layout stays a single trivial await for both states.
-  const initialFavorites = await listMyFavorites();
+  // Run the layout's data reads concurrently — they're independent, so this
+  // collapses three serial round-trips (age-ack cookie, favorites Firestore
+  // read, theme cookie) into one, shaving latency off every navigation.
+  // SSR hydration for the favorites provider (ADR-013): anonymous sessions
+  // return an empty array (no auth error), so it's safe for both states.
+  const [acknowledged, initialFavorites, cookieStore] = await Promise.all([
+    readAgeAck(),
+    listMyFavorites(),
+    cookies(),
+  ]);
 
   // SSR the theme attribute from the cookie so navigations that re-render
   // the layout (e.g. router.refresh() after the locale switcher) keep
   // the user's chosen mood instead of momentarily resetting to default.
-  const cookieStore = await cookies();
   const themeFromCookie = cookieStore.get(THEME_COOKIE)?.value;
   const activeTheme = isValidTheme(themeFromCookie)
     ? themeFromCookie

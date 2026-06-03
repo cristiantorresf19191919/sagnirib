@@ -163,6 +163,14 @@ export function useAuthSession(): UseAuthSession {
         }
         return;
       }
+      // Paint the signed-in avatar/name IMMEDIATELY from the client token —
+      // displayName/email are already on `u`, so there's no reason to block
+      // the UI on the server-cookie round-trip just to render the header. The
+      // server session then syncs in the background; SSR + gated actions read
+      // `serverSession` (which resolves a moment later), not `status`.
+      setUser(toSessionUser(u));
+      setStatus("authenticated");
+
       let next: ServerSessionState;
       try {
         next = await pushIdTokenToServer(u);
@@ -177,8 +185,6 @@ export function useAuthSession(): UseAuthSession {
         console.error("[auth] server session cookie unavailable:", next.error);
       }
       setServerSession(next);
-      setUser(toSessionUser(u));
-      setStatus("authenticated");
     });
 
     return () => {

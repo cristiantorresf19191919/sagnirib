@@ -91,11 +91,17 @@ async function resolveCtaState(): Promise<CtaState> {
   if (!session) {
     return { accountType: await readAccountTypeCookie(), pendingDraftId: null };
   }
-  const accountType = await getMyAccountType().catch(() => null);
+  // Run the two Firestore reads concurrently instead of serially — they're
+  // independent, so this halves the round-trip latency the Header adds to
+  // every navigation. (Commentators do one extra read they don't strictly
+  // need, but they're the minority and the common publisher path wins.)
+  const [accountType, drafts] = await Promise.all([
+    getMyAccountType().catch(() => null),
+    listMyDrafts().catch(() => []),
+  ]);
   if (accountType === ACCOUNT_TYPE_COMMENTATOR) {
     return { accountType, pendingDraftId: null };
   }
-  const drafts = await listMyDrafts().catch(() => []);
   const pendingDraftId =
     drafts.find((d) => d.status === "pending_review")?.id ?? null;
   return { accountType, pendingDraftId };
