@@ -4,6 +4,7 @@ import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import {
   Aperture,
   Cherry,
+  Contrast,
   Droplet,
   Flame,
   Flower,
@@ -19,7 +20,7 @@ import {
   Sunrise,
 } from "lucide-react";
 import { useEffect, useId, useRef, useState, useSyncExternalStore } from "react";
-import { flushSync } from "react-dom";
+import { createPortal, flushSync } from "react-dom";
 
 import {
   DEFAULT_THEME,
@@ -120,8 +121,14 @@ function getServerSnapshot(): Theme {
   return DEFAULT_THEME;
 }
 
+// SSR-safe "are we on the client yet?" flag with no setState-in-effect (the
+// portal target `document.body` only exists in the browser). Returns false
+// during SSR/first paint, true once hydrated.
+const NOOP_SUBSCRIBE = () => () => {};
+
 const THEME_NAME: Record<Theme, string> = {
   light: "Claro",
+  ink: "Tinta",
   amour: "Amour",
   scarlet: "Escarlata",
   rose: "Rosa",
@@ -141,6 +148,7 @@ const THEME_NAME: Record<Theme, string> = {
 /** Short mood descriptor shown under the active name in the hub. */
 const THEME_TAGLINE: Record<Theme, string> = {
   light: "Crema editorial",
+  ink: "Negro sobre blanco",
   amour: "Rojo pasión",
   scarlet: "Escarlata intenso",
   rose: "Magenta floral",
@@ -159,6 +167,7 @@ const THEME_TAGLINE: Record<Theme, string> = {
 
 const LIGHT_THEMES: ReadonlyArray<Theme> = [
   "light",
+  "ink",
   "amour",
   "scarlet",
   "rose",
@@ -181,6 +190,7 @@ const THEMES: ReadonlyArray<Theme> = [...LIGHT_THEMES, ...DARK_THEMES_ORDER];
 /** Signature swatch color per theme. */
 const ACCENT: Record<Theme, string> = {
   light: "#2F5D43",
+  ink: "#111114",
   amour: "#9A1F35",
   scarlet: "#D11A2A",
   rose: "#C81E6B",
@@ -200,6 +210,7 @@ const ACCENT: Record<Theme, string> = {
 /** A representative background per swatch so each dot previews its surface. */
 const SWATCH_BG: Record<Theme, string> = {
   light: "#F4EFE3",
+  ink: "#FFFFFF",
   amour: "#FBF1F0",
   scarlet: "#FFF1F0",
   rose: "#FBEFF5",
@@ -218,6 +229,7 @@ const SWATCH_BG: Record<Theme, string> = {
 
 const HALO: Record<Theme, string> = {
   light: "rgba(47,93,67,0)",
+  ink: "rgba(17,17,20,0.22)",
   amour: "rgba(154,31,53,0.30)",
   scarlet: "rgba(209,26,42,0.34)",
   rose: "rgba(200,30,107,0.34)",
@@ -236,6 +248,7 @@ const HALO: Record<Theme, string> = {
 
 const ICON: Record<Theme, typeof Sun> = {
   light: Sun,
+  ink: Contrast,
   amour: Cherry,
   scarlet: Gem,
   rose: Flower,
@@ -299,6 +312,13 @@ export function ThemeToggle() {
 
   const [open, setOpen] = useState(false);
   const [preview, setPreview] = useState<Theme | null>(null);
+  // Portal target only exists in the browser; gate the portal on this flag so
+  // we never call createPortal with a missing `document.body` during SSR.
+  const mounted = useSyncExternalStore(
+    NOOP_SUBSCRIBE,
+    () => true,
+    () => false,
+  );
   const triggerRef = useRef<HTMLButtonElement>(null);
   const dialogRef = useRef<HTMLDivElement>(null);
   const reduceMotion = useReducedMotion();
@@ -314,7 +334,9 @@ export function ThemeToggle() {
       '[role="menuitemradio"]',
     );
     const idx = THEMES.indexOf(theme);
-    (items[idx] ?? items[0])?.focus();
+    // `preventScroll` is essential: the dialog is position:fixed and centered,
+    // so a default focus scroll would yank the page behind it to the middle.
+    (items[idx] ?? items[0])?.focus({ preventScroll: true });
   }, [open, theme]);
 
   // Outside-click + Escape + arrow navigation around the wheel.
@@ -329,7 +351,7 @@ export function ThemeToggle() {
     function handleKey(event: KeyboardEvent) {
       if (event.key === "Escape") {
         setOpen(false);
-        triggerRef.current?.focus();
+        triggerRef.current?.focus({ preventScroll: true });
         return;
       }
       if (!dialogRef.current) return;
@@ -347,7 +369,7 @@ export function ThemeToggle() {
       else if (event.key === "End") nextIdx = items.length - 1;
       else return;
       event.preventDefault();
-      items[nextIdx]?.focus();
+      items[nextIdx]?.focus({ preventScroll: true });
       setPreview(THEMES[nextIdx] ?? null);
     }
     document.addEventListener("mousedown", handleClick);
@@ -367,7 +389,7 @@ export function ThemeToggle() {
       setOpen(false);
     });
     setPreview(null);
-    triggerRef.current?.focus();
+    triggerRef.current?.focus({ preventScroll: true });
   }
 
   const HubIcon = ICON[hub];
@@ -417,45 +439,43 @@ export function ThemeToggle() {
         />
       </button>
 
-      <AnimatePresence>
-        {open && (
-          <>
-            {/* Backdrop — inline position so it reliably covers regardless of
-                utility-layer resolution. */}
-            <motion.div
-              aria-hidden
-              className="bg-[var(--color-background)]/55 backdrop-blur-[3px]"
-              style={{ position: "fixed", inset: 0, zIndex: 60 }}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.2 }}
-              onClick={() => setOpen(false)}
-            />
+      {mounted &&
+        createPortal(
+          <AnimatePresence>
+            {open && (
+              // Single keyed overlay container so AnimatePresence can track
+              // enter/exit. Fixed + flex-centered → the dialog sits at true
+              // VIEWPORT center (portaled to <body>, escaping the header's
+              // transformed ancestor that otherwise made `fixed` resolve
+              // against the full document and scroll the page to mid-page).
+              <motion.div
+                key="theme-wheel"
+                style={{ position: "fixed", inset: 0, zIndex: 60 }}
+                className="flex items-center justify-center p-3"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.2 }}
+              >
+                {/* Backdrop */}
+                <div
+                  aria-hidden
+                  className="absolute inset-0 bg-[var(--color-background)]/55 backdrop-blur-[3px]"
+                  onClick={() => setOpen(false)}
+                />
 
-            {/* Centered mood-wheel dialog. Centering is done via framer's own
-                x/y (-50%) so it never fights the entrance scale transform, and
-                position is inline-fixed for reliability. */}
-            <motion.div
-              ref={dialogRef}
-              id={dialogId}
-              role="menu"
-              aria-label="Seleccionar tema"
-              style={{ position: "fixed", left: "50%", top: "50%", zIndex: 61 }}
-              initial={
-                reduceMotion
-                  ? { opacity: 0, x: "-50%", y: "-50%" }
-                  : { opacity: 0, scale: 0.92, x: "-50%", y: "-50%" }
-              }
-              animate={{ opacity: 1, scale: 1, x: "-50%", y: "-50%" }}
-              exit={
-                reduceMotion
-                  ? { opacity: 0, x: "-50%", y: "-50%" }
-                  : { opacity: 0, scale: 0.95, x: "-50%", y: "-50%" }
-              }
-              transition={reduceMotion ? { duration: 0.14 } : SPRING}
-              className="flex max-w-[calc(100vw-1.5rem)] flex-col items-center gap-4 rounded-[var(--radius-2xl)] border border-[var(--color-border)] bg-[var(--color-surface)]/95 p-4 shadow-[var(--shadow-lg)] backdrop-blur-md sm:p-6"
-            >
+                {/* Mood-wheel dialog — flex-centered, framer only scales it. */}
+                <motion.div
+                  ref={dialogRef}
+                  id={dialogId}
+                  role="menu"
+                  aria-label="Seleccionar tema"
+                  initial={reduceMotion ? { opacity: 0 } : { opacity: 0, scale: 0.92 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={reduceMotion ? { opacity: 0 } : { opacity: 0, scale: 0.95 }}
+                  transition={reduceMotion ? { duration: 0.14 } : SPRING}
+                  className="relative flex max-w-[calc(100vw-1.5rem)] flex-col items-center gap-4 rounded-[var(--radius-2xl)] border border-[var(--color-border)] bg-[var(--color-surface)]/95 p-4 shadow-[var(--shadow-lg)] backdrop-blur-md sm:p-6"
+                >
               <div className="flex flex-col items-center gap-0.5 text-center">
                 <span className="text-[10px] font-semibold uppercase tracking-[0.28em] text-[var(--color-text-subtle)]">
                   Elige tu ambiente
@@ -581,10 +601,12 @@ export function ThemeToggle() {
               <p className="max-w-[280px] text-center text-[11px] leading-relaxed text-[var(--color-text-subtle)]">
                 Anillo exterior: tonos claros · anillo interior: tonos oscuros.
               </p>
-            </motion.div>
-          </>
+                </motion.div>
+              </motion.div>
+            )}
+          </AnimatePresence>,
+          document.body,
         )}
-      </AnimatePresence>
     </span>
   );
 }

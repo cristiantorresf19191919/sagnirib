@@ -596,6 +596,64 @@ html[data-theme="aurora"] {
 }
 
 /*
+ * "Ink" theme — LIGHT — flipped via `data-theme="ink"` on <html>.
+ *
+ * Editorial monochrome: pure white paper with a true-black ("ink") primary.
+ * The elegant light twin of Onyx. CTAs are solid black with white text
+ * (brand-primary is dark, so `text-[var(--color-surface)]` = white stays
+ * white-on-black); body copy is near-black on white for maximum legibility.
+ * A graphite tone stands in for the gold leaf accent so the editorial
+ * flourishes read as refined charcoal rather than warm metal, and a single
+ * deep rose carries errors/urgency so the monochrome calm only breaks when it
+ * must. Gallery-grade, fashion-magazine restraint.
+ */
+html[data-theme="ink"] {
+  --color-background: #FAFAFA;
+  --color-background-elevated: #FFFFFF;
+  --color-surface: #FFFFFF;
+  --color-surface-muted: #F0F0F1;
+  --color-border: #E3E3E6;
+
+  --color-brand-primary: #111114;
+  --color-brand-primary-strong: #000000;
+  --color-brand-primary-soft: #C9C9CE;
+
+  --color-brand-secondary: #4A4A52;
+  --color-brand-secondary-strong: #2A2A30;
+
+  --color-brand-accent: #5C5C64;
+  --color-brand-accent-strong: #3A3A40;
+
+  --color-brand-highlight: #B3243B;
+  --color-brand-warn: #8A6D2E;
+
+  --color-foreground: #131316;
+  --color-text-muted: #56565E;
+  --color-text-subtle: #8A8A92;
+
+  --color-cream: #FAFAFA;
+  --color-cream-deep: #EFEFF0;
+  --color-cream-soft: #FFFFFF;
+  --color-ink: #131316;
+  --color-ink-soft: #3A3A40;
+  --color-forest: #111114;
+  --color-forest-deep: #000000;
+  --color-gold: #6B6B73;
+  --color-gold-deep: #4A4A52;
+  --color-line: rgba(17, 17, 20, 0.12);
+  --color-line-soft: rgba(17, 17, 20, 0.05);
+
+  --shadow-sm: 0 1px 2px rgba(17, 17, 20, 0.07);
+  --shadow-md: 0 12px 30px -14px rgba(17, 17, 20, 0.18);
+  --shadow-lg: 0 26px 56px -22px rgba(17, 17, 20, 0.22);
+  --shadow-glow-primary:
+    0 16px 40px -18px rgba(17, 17, 20, 0.30),
+    0 0 0 1px rgba(17, 17, 20, 0.07);
+  --shadow-glow-secondary: 0 14px 36px -18px rgba(74, 74, 82, 0.30);
+  --shadow-glow-accent: 0 14px 36px -18px rgba(92, 92, 100, 0.30);
+}
+
+/*
  * "Jade" theme — LIGHT — flipped via `data-theme="jade"` on <html>.
  *
  * Fresh mint — pale seafoam paper with a deep emerald-teal primary and a

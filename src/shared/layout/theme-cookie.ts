@@ -23,6 +23,7 @@ export const THEME_COOKIE = "biringas:theme";
 export type Theme =
   // Light moods
   | "light"
+  | "ink"
   | "amour"
   | "scarlet"
   | "rose"
@@ -41,6 +42,7 @@ export type Theme =
 
 export const VALID_THEMES: ReadonlySet<Theme> = new Set([
   "light",
+  "ink",
   "amour",
   "scarlet",
   "rose",
