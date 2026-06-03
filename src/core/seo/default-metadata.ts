@@ -16,6 +16,14 @@ export const defaultMetadata: Metadata = {
   },
   description: brandConfig.description,
   applicationName: brandConfig.name,
+  // RTA ("Restricted To Adults") label — the industry-standard signal that
+  // parental-control filters read to block age-restricted sites. Set once at
+  // the site level so every route inherits it; pages built via
+  // build-page-metadata never override `other`, so the tag survives. See
+  // /legal/control-parental for the full parental-control policy.
+  other: {
+    rating: "RTA-5042-1996-1400-1577-RTA",
+  },
   robots: seoConfig.indexingEnabled
     ? { index: true, follow: true }
     : { index: false, follow: false },

@@ -54,6 +54,7 @@ const es: MessageDict = {
   "footer.link.terms": "Términos y condiciones",
   "footer.link.privacy": "Política de privacidad",
   "footer.link.legalNotice": "Aviso legal",
+  "footer.link.parental": "Control parental",
   "footer.access.adults": "Sólo mayores de 18 años",
   "footer.access.country": "Servicio limitado a Colombia",
   "footer.badge.verified": "Perfiles verificados",
@@ -1448,6 +1449,9 @@ const es: MessageDict = {
   "legal.avisoLegal.metadata.title": "Aviso legal — {brand}",
   "legal.avisoLegal.metadata.description":
     "Identificación del titular del servicio, propiedad intelectual, mecanismos de reporte y régimen aplicable. Documento en revisión legal.",
+  "legal.controlParental.metadata.title": "Control parental — {brand}",
+  "legal.controlParental.metadata.description":
+    "Biringas es un sitio para adultos, etiquetado RTA. Cómo activar el control parental y los filtros para proteger a menores del acceso a contenido restringido.",
   "legal.jurisdictionalNotice":
     "Este documento se rige por la legislación colombiana y se publica en español como única versión auténtica.",
 
@@ -2376,6 +2380,7 @@ const en: MessageDict = {
   "footer.link.terms": "Terms & conditions",
   "footer.link.privacy": "Privacy policy",
   "footer.link.legalNotice": "Legal notice",
+  "footer.link.parental": "Parental controls",
   "footer.access.adults": "Adults only (18+)",
   "footer.access.country": "Service limited to Colombia",
   "footer.badge.verified": "Verified profiles",
@@ -3762,6 +3767,9 @@ const en: MessageDict = {
   "legal.avisoLegal.metadata.title": "Legal notice — {brand}",
   "legal.avisoLegal.metadata.description":
     "Service operator identification, intellectual property, reporting channels and applicable regime. Document under legal review.",
+  "legal.controlParental.metadata.title": "Parental controls — {brand}",
+  "legal.controlParental.metadata.description":
+    "Biringas is an adults-only, RTA-labelled site. How to enable parental controls and filters to keep minors away from age-restricted content.",
   "legal.jurisdictionalNotice":
     "This document is governed by Colombian law and published in Spanish as its sole authentic version.",
 
