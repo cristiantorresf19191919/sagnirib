@@ -3,10 +3,11 @@ import { Search, Sparkles } from "lucide-react";
 import { localizedHref } from "@/core/i18n/href";
 import { readLocale } from "@/core/i18n/locale";
 import { t } from "@/core/i18n/messages";
-import { SUPPORTED_CITIES, type ListingsFilters } from "@/server/biringas";
+import { COLOMBIA_LOCATIONS, type ListingsFilters } from "@/server/biringas";
 import { Container } from "@/shared/design-system/components/Container";
 
 import { DEFAULT_CATALOG_VIEW, type CatalogView } from "../lib/parse-filters";
+import { LocationFilter } from "./LocationFilter";
 
 interface SearchBarProps {
   filters: ListingsFilters;
@@ -33,30 +34,28 @@ export async function SearchBar({ filters, view }: SearchBarProps) {
           method="get"
           className="flex flex-col gap-2 md:flex-row md:items-stretch md:gap-2"
         >
-          {/* Preserve filters this form does not own. */}
-          <PreservedFilters filters={filters} view={view} omit={["q", "city"]} />
+          {/* Preserve filters this form does not own — including the location
+              (owned by the cascade below, which navigates on its own). */}
+          <PreservedFilters filters={filters} view={view} omit={["q"]} />
 
-          <label className="group relative md:w-[260px] md:shrink-0">
-            <span className="sr-only">{t(locale, "hero.field.city")}</span>
-            <span
-              aria-hidden
-              className="pointer-events-none absolute inset-0 rounded-full ring-0 ring-[var(--color-brand-primary)]/0 transition-[box-shadow] duration-300 ease-[var(--ease-standard)] group-focus-within:ring-4 group-focus-within:ring-[var(--color-brand-primary)]/15"
-            />
-            <select
-              data-testid="search-bar-city"
-              name="city"
-              defaultValue={filters.city ?? ""}
-              className="relative h-12 w-full appearance-none rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] pl-5 pr-10 text-sm text-[var(--color-foreground)] transition-colors duration-200 hover:border-[var(--color-brand-primary-soft)] focus:border-[var(--color-brand-primary)] focus:outline-none"
-            >
-              <option value="">{t(locale, "explorar.toolbar.cityAll")}</option>
-              {SUPPORTED_CITIES.map((city) => (
-                <option key={city} value={city}>
-                  {city}
-                </option>
-              ))}
-            </select>
-            <ChevronTrailing />
-          </label>
+          {/* Cascading Department → City → Locality. A client island that
+              navigates on change; its selects have no `name` so they never
+              participate in this form's GET submit. */}
+          <LocationFilter
+            filters={filters}
+            locations={COLOMBIA_LOCATIONS}
+            basePath={localizedHref(locale, "/explorar")}
+            view={view}
+            defaultView={DEFAULT_CATALOG_VIEW}
+            labels={{
+              department: t(locale, "step.details.field.department"),
+              city: t(locale, "hero.field.city"),
+              locality: t(locale, "step.details.field.locality"),
+              departmentAll: t(locale, "explorar.toolbar.departmentAll"),
+              cityAll: t(locale, "explorar.toolbar.cityAllInDept"),
+              localityAll: t(locale, "explorar.toolbar.localityAll"),
+            }}
+          />
 
           <label className="group relative flex-1">
             <span className="sr-only">{t(locale, "explorar.search.label")}</span>
@@ -102,17 +101,6 @@ export async function SearchBar({ filters, view }: SearchBarProps) {
   );
 }
 
-function ChevronTrailing() {
-  return (
-    <span
-      aria-hidden
-      className="pointer-events-none absolute right-5 top-1/2 -translate-y-1/2 text-[var(--color-text-subtle)]"
-    >
-      ▾
-    </span>
-  );
-}
-
 interface PreservedFiltersProps {
   filters: ListingsFilters;
   omit: ReadonlyArray<string>;
@@ -132,7 +120,9 @@ function PreservedFilters({ filters, omit, view }: PreservedFiltersProps) {
   const single: Array<[string, string | number | undefined]> = [
     ["category", filters.category],
     ["sex", filters.sex],
+    ["department", filters.department],
     ["city", filters.city],
+    ["locality", filters.locality],
     ["q", filters.search],
     ["priceMin", filters.priceMin],
     ["priceMax", filters.priceMax],

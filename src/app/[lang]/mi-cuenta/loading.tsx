@@ -1,6 +1,5 @@
 import { readLocale } from "@/core/i18n/locale";
-import { t } from "@/core/i18n/messages";
-import { RouteSpinner } from "@/shared/layout/RouteSpinner";
+import { AccountLoadingScreen } from "@/shared/layout/AccountLoadingScreen";
 
 /**
  * Route-level loading fallback for the account area (`/mi-cuenta` and its
@@ -19,7 +18,7 @@ export default async function Loading() {
       data-testid="mi-cuenta-loading"
       className="flex min-h-[60vh] flex-col bg-[var(--color-background)]"
     >
-      <RouteSpinner label={t(locale, "loading.session")} />
+      <AccountLoadingScreen locale={locale} />
     </main>
   );
 }

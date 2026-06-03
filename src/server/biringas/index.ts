@@ -77,6 +77,22 @@ export {
   SUPPORTED_CITIES,
 } from "@/server/mocks/biringas/data";
 
+// Hardcoded Colombia location taxonomy (Department → City → Locality) + the
+// derivation helpers. Pure data — passed server→props to the client
+// cascade/combobox; the department is derived, never stored.
+export {
+  citiesForDepartment,
+  cityHasLocalities,
+  COLOMBIA_LOCATIONS,
+  DEPARTMENT_NAMES,
+  getDepartmentForCity,
+  localitiesForCity,
+} from "@/server/mocks/biringas/colombia-locations";
+export type {
+  ColombiaCity,
+  ColombiaDepartment,
+} from "@/server/mocks/biringas/colombia-locations";
+
 // Dynamic data access — routed to Firestore or mock at module load.
 const adapter = isFirebaseConfigured()
   ? await import("@/server/adapters/firebase/biringas")

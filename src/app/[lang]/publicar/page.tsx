@@ -14,6 +14,7 @@ import { ACCOUNT_TYPE_COMMENTATOR, getMyAccountType } from "@/server/users";
 import {
   APPEARANCE_CATALOG,
   ATTENTION_CATALOG,
+  COLOMBIA_LOCATIONS,
   CONTACT_CATALOG,
   LANGUAGE_CATALOG,
   MEETING_CONTEXT_CATALOG,
@@ -90,6 +91,7 @@ export default async function PublicarPage({
 
   const catalogs: EnrollmentCatalogs = {
     cities: SUPPORTED_CITIES,
+    locations: COLOMBIA_LOCATIONS,
     services: SERVICE_CATALOG,
     meetingContexts: MEETING_CONTEXT_CATALOG,
     attention: ATTENTION_CATALOG,
@@ -103,29 +105,31 @@ export default async function PublicarPage({
       <Header />
       <main className="bg-[var(--color-background)] pb-20 pt-8 sm:pt-10">
         <Container width="wide" className="flex flex-col gap-8">
-          <header className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
-            <div className="flex flex-col gap-2">
-              <Link
-                href={localizedHref(lang, "/explorar")}
-                className="inline-flex w-fit items-center gap-1.5 text-[12px] font-semibold uppercase tracking-[0.22em] text-[var(--color-brand-primary)] transition-colors hover:text-[var(--color-brand-primary-strong)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-background)]"
-              >
-                <ArrowLeft className="h-3.5 w-3.5" aria-hidden />
-                {t(lang, "publicar.back")}
-              </Link>
-              <h1 className="text-3xl font-bold leading-[1.05] tracking-tight text-[var(--color-foreground)] sm:text-4xl">
-                {t(lang, "publicar.title")}
-              </h1>
-              <p className="max-w-2xl text-sm leading-relaxed text-[var(--color-text-muted)] sm:text-base">
-                {t(lang, "publicar.subtitle")}
-              </p>
-            </div>
-            <span className="inline-flex w-fit items-center gap-2 rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.2em] text-[var(--color-text-muted)]">
-              <span
-                aria-hidden
-                className="h-1.5 w-1.5 rounded-full bg-[var(--color-brand-primary)]"
-              />
-              {t(lang, "publicar.badge.verification")}
-            </span>
+          <header className="flex flex-col gap-2">
+            <Link
+              href={localizedHref(lang, "/explorar")}
+              className="inline-flex w-fit items-center gap-1.5 text-[12px] font-semibold uppercase tracking-[0.22em] text-[var(--color-brand-primary)] transition-colors hover:text-[var(--color-brand-primary-strong)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-background)]"
+            >
+              <ArrowLeft className="h-3.5 w-3.5" aria-hidden />
+              {t(lang, "publicar.back")}
+            </Link>
+            <h1 className="text-3xl font-bold leading-[1.05] tracking-tight text-[var(--color-foreground)] sm:text-4xl">
+              {t(lang, "publicar.title")}
+            </h1>
+            {/* Trust badge integrated inline into the sentence that explains
+                the onboarding, so it reads as part of the promise rather than
+                a floating, step-card-like pill. */}
+            <p className="max-w-2xl text-sm leading-relaxed text-[var(--color-text-muted)] sm:text-base">
+              {t(lang, "publicar.subtitle.pre")}
+              <span className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border border-[var(--color-brand-primary)]/30 bg-[var(--color-surface)] px-2 py-0.5 align-baseline text-[11px] font-semibold uppercase tracking-[0.16em] text-[var(--color-brand-primary)]">
+                <span
+                  aria-hidden
+                  className="h-1.5 w-1.5 rounded-full bg-[var(--color-brand-primary)]"
+                />
+                {t(lang, "publicar.badge.verification")}
+              </span>
+              {t(lang, "publicar.subtitle.post")}
+            </p>
           </header>
 
           <EnrollmentWizard catalogs={catalogs} personId={targetPersonId} />

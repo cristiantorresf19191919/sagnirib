@@ -14,6 +14,7 @@ import { getSession } from "@/server/auth";
 import {
   APPEARANCE_CATALOG,
   ATTENTION_CATALOG,
+  COLOMBIA_LOCATIONS,
   CONTACT_CATALOG,
   getMyDraft,
   LANGUAGE_CATALOG,
@@ -66,6 +67,7 @@ export default async function EditarBorradorPage({ params }: PageProps) {
 
   const catalogs: EnrollmentCatalogs = {
     cities: SUPPORTED_CITIES,
+    locations: COLOMBIA_LOCATIONS,
     services: SERVICE_CATALOG,
     meetingContexts: MEETING_CONTEXT_CATALOG,
     attention: ATTENTION_CATALOG,

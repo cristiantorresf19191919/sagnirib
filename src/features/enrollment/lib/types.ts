@@ -6,6 +6,9 @@ export interface DetailsValues {
   displayName: string;
   age: string;
   city: string;
+  /** Optional locality/zone within the city (the cascade's 3rd level). The
+   *  department is derived from `city`, never stored. */
+  locality: string;
   category: "prepagos" | "masajes" | "videollamadas" | "";
   phone: string;
   preferredSlug: string;
@@ -121,6 +124,7 @@ export const INITIAL_DRAFT: EnrollmentDraft = {
     displayName: "",
     age: "",
     city: "",
+    locality: "",
     category: "",
     phone: "",
     preferredSlug: "",

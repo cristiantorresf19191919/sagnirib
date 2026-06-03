@@ -24,6 +24,7 @@ import {
   galleryMaxFor,
   PLANS_ENABLED,
 } from "../lib/pricing";
+import { computeCompletion, computeStepFractions } from "../lib/progress";
 import { humanizeDraftError, toServerPayload } from "../lib/to-server-payload";
 import {
   type AttributesValues,
@@ -34,6 +35,7 @@ import {
   type PublishValues,
   type StepId,
 } from "../lib/types";
+import { LiquidProgressOrb } from "./LiquidProgressOrb";
 import { LivePreviewCard } from "./LivePreviewCard";
 import { OrderSummary } from "./OrderSummary";
 import { StepAttributes } from "./StepAttributes";
@@ -272,17 +274,60 @@ export function EnrollmentWizard({ catalogs, personId }: EnrollmentWizardProps) 
     return <SubmittedScreen draft={draft} draftId={submittedDraftId} />;
   }
 
+  // Live, field-level completion across all 21 required fields — drives the
+  // floating liquid orb so progress is always visible, not only per step.
+  const completion = computeCompletion(draft);
+  const completionPct = Math.round(completion.fraction * 100);
+  // Per-step fractions drive each step's ring fill (and the "next step" pulse).
+  const stepFractions = computeStepFractions(draft);
+
   return (
     <div ref={wizardTopRef} className="flex flex-col gap-8 scroll-mt-24">
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,260px)]">
-        <Stepper
-          steps={STEPS}
-          current={current}
-          completed={completed}
-          onJump={jump}
-        />
-        <UsefulTip title={tip.title}>{tip.body}</UsefulTip>
-      </div>
+      {/* Floating global progress — a liquid orb pinned to the viewport corner,
+          always visible while the user scrolls the (long) form. Tapping it
+          scrolls back up to the stepper overview. On the final "publish" step
+          it dims out of the way so it never competes with the submit CTA. The
+          wrapper is pointer-events-none; only the button itself is clickable,
+          so it never blocks the fields beneath it. */}
+      <motion.div
+        className="pointer-events-none fixed bottom-5 right-5 z-40 sm:bottom-6 sm:right-6"
+        initial={reduced ? false : { opacity: 0, scale: 0.8, y: 8 }}
+        animate={{ opacity: current === "publish" ? 0.45 : 1, scale: 1, y: 0 }}
+        transition={
+          reduced ? { duration: 0 } : { type: "spring", stiffness: 260, damping: 22 }
+        }
+      >
+        <button
+          type="button"
+          onClick={() =>
+            wizardTopRef.current?.scrollIntoView({
+              behavior: reduced ? "auto" : "smooth",
+              block: "start",
+            })
+          }
+          aria-label={t(locale, "publicar.progress.jump", {
+            percent: String(completionPct),
+          })}
+          className="pointer-events-auto rounded-full shadow-[var(--shadow-glow-primary)] transition-transform duration-200 ease-[var(--ease-standard)] hover:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-background)]"
+        >
+          <LiquidProgressOrb
+            fraction={completion.fraction}
+            ariaLabel={t(locale, "publicar.progress.aria", {
+              percent: String(completionPct),
+            })}
+          />
+        </button>
+      </motion.div>
+
+      {/* Stepper now spans the full width — the tip moved out of this row so it
+          no longer reads as a phantom 5th step. */}
+      <Stepper
+        steps={STEPS}
+        current={current}
+        completed={completed}
+        onJump={jump}
+        stepProgress={stepFractions}
+      />
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,320px)]">
         <div className="flex flex-col gap-6">
@@ -391,6 +436,14 @@ export function EnrollmentWizard({ catalogs, personId }: EnrollmentWizardProps) 
             <ProgressRail current={current} draft={draft} catalogs={catalogs} />
           )}
         </div>
+      </div>
+
+      {/* Contextual tip — a dedicated strip below the wizard, clearly separated
+          by a hairline so it reads as advice, never as another step. It swaps
+          its content (keyed on the step's title inside UsefulTip) as the user
+          moves through the flow. */}
+      <div className="border-t border-[var(--color-border)] pt-6">
+        <UsefulTip title={tip.title}>{tip.body}</UsefulTip>
       </div>
     </div>
   );

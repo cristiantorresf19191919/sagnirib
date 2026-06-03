@@ -111,17 +111,24 @@ export function StepAttributes({ values, catalogs, onChange, forceShowErrors }: 
       {field("country")}
 
       {/* Short single-select fields pair into two columns on desktop so the
-          step stays mostly above the fold instead of one tall column. The
-          source order lands the logical pairs together: Etnia·Cabello,
-          Estatura·Cuerpo, Tamaño·Tipo de senos. */}
+          step stays mostly above the fold instead of one tall column. */}
       <div className="grid grid-cols-1 gap-x-6 gap-y-5 sm:grid-cols-2">
         {field("ethnicity")}
         {field("hair")}
         {field("height")}
         {field("body")}
+      </div>
+
+      {/* Senos — size and type are INDEPENDENT dimensions (you can be
+          "Grandes" + "Naturales" at once). Wrapping them under one labelled
+          group makes that explicit so they never read as mutually exclusive. */}
+      <fieldset className="flex flex-col gap-4 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-background-elevated)]/40 p-4">
+        <legend className="px-1.5 text-[12px] font-semibold tracking-tight text-[var(--color-foreground)]">
+          {t(locale, "step.attributes.breasts.legend")}
+        </legend>
         {field("breastSize")}
         {field("breastType")}
-      </div>
+      </fieldset>
 
       {/* Optional section — a labelled divider gives permission to skip the
           rest of the step. Everything below is non-required. */}

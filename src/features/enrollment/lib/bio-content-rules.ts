@@ -43,3 +43,21 @@ export function containsPhone(value: string): boolean {
 export function hasContactLeak(value: string): boolean {
   return containsUrl(value) || containsPhone(value);
 }
+
+// Whole-token matcher for stripping: protocol/www links plus bare platform
+// hostnames and whatever trails them (handle, path), globally.
+const URL_TOKEN =
+  /(?:https?:\/\/|ftp:\/\/|www\.)\S+|(?:t\.me|wa\.me|instagram\.com|onlyfans\.com|twitter\.com|x\.com|tiktok\.com|facebook\.com|telegram\.me|snapchat\.com|linkedin\.com|youtube\.com|youtu\.be)\S*/gi;
+
+/**
+ * Sanitisation net for free-text bio fields: removes off-platform links and
+ * tidies the whitespace left behind, then trims. The wizard already blocks
+ * submission when a URL is detected and the server schema re-validates — this
+ * is defense-in-depth so nothing link-shaped is ever persisted/rendered.
+ */
+export function sanitizeBioText(value: string): string {
+  return value
+    .replace(URL_TOKEN, "")
+    .replace(/[ \t]{2,}/g, " ")
+    .trim();
+}

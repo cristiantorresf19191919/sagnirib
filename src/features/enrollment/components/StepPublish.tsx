@@ -4,6 +4,7 @@ import { Fragment, type CSSProperties } from "react";
 import Link from "next/link";
 import {
   Check,
+  ChevronDown,
   Coffee,
   Gift,
   Lock,
@@ -162,6 +163,26 @@ export function StepPublish({ values, onChange, forceShowErrors, submitError }: 
           )}
         </div>
       </fieldset>
+
+      {/* Data-treatment disclaimer (LSSI) — collapsible, alongside the legal
+          consent so it's available before submitting without crowding it. */}
+      <details className="group/disc rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-background-elevated)]/50 px-4 py-3">
+        <summary className="flex cursor-pointer list-none items-center justify-between gap-2 text-[13px] font-semibold text-[var(--color-foreground)] [&::-webkit-details-marker]:hidden">
+          {t(locale, "step.publish.dataTreatment.title")}
+          <ChevronDown
+            className="h-4 w-4 shrink-0 text-[var(--color-text-muted)] transition-transform duration-200 group-open/disc:rotate-180"
+            aria-hidden
+          />
+        </summary>
+        <ul className="mt-3 flex list-disc flex-col gap-2 pl-5 text-[12.5px] leading-relaxed text-[var(--color-text-muted)] marker:text-[var(--color-brand-primary)]">
+          <li>{t(locale, "step.publish.dataTreatment.b1")}</li>
+          <li>{t(locale, "step.publish.dataTreatment.b2")}</li>
+          <li>{t(locale, "step.publish.dataTreatment.b3")}</li>
+          <li>{t(locale, "step.publish.dataTreatment.b4")}</li>
+          <li>{t(locale, "step.publish.dataTreatment.b5")}</li>
+          <li>{t(locale, "step.publish.dataTreatment.b6")}</li>
+        </ul>
+      </details>
 
       {submitError && (
         <div

@@ -30,8 +30,24 @@ export interface AppearanceCatalogs {
   pubis: ReadonlyArray<string>;
 }
 
+/**
+ * Colombia location taxonomy (Department → City → Locality), passed from the
+ * server as plain data. Structural shape (mirrors `ColombiaDepartment`) so this
+ * client-facing module stays free of server imports.
+ */
+export interface LocationCity {
+  name: string;
+  localities: ReadonlyArray<string>;
+}
+export interface LocationDepartment {
+  name: string;
+  cities: ReadonlyArray<LocationCity>;
+}
+
 export interface EnrollmentCatalogs {
   cities: ReadonlyArray<string>;
+  /** Department → City → Locality, for the cascading location picker. */
+  locations: ReadonlyArray<LocationDepartment>;
   services: ReadonlyArray<string>;
   meetingContexts: ReadonlyArray<string>;
   attention: ReadonlyArray<AttentionItem>;

@@ -381,6 +381,33 @@ body > *:not([role="dialog"]) {
   to { transform: rotate(360deg); }
 }
 
+/* Route-loader spin — compositor-driven so it animates straight from the
+ * streamed `loading.tsx` HTML, with no dependency on React hydration (the
+ * fallback shows precisely while the destination segment is still loading). */
+@keyframes route-spinner-spin {
+  to { transform: rotate(360deg); }
+}
+@keyframes route-spinner-spin-reverse {
+  to { transform: rotate(-360deg); }
+}
+
+/* Liquid-fill orb — horizontal drift of the wave surface. One wavelength
+ * (40 user units) per cycle so the loop is seamless. On an SVG <g>, CSS px
+ * map 1:1 to user units, so translateX(-40px) == one wavelength. */
+@keyframes liquid-wave-drift {
+  to { transform: translateX(-40px); }
+}
+
+/* Stepper "completion high" — the next step gives a gentle lift+scale pulse
+ * once the current step is full, inviting the user forward. */
+@keyframes step-invite {
+  0%, 100% { transform: translateY(0) scale(1); }
+  50%      { transform: translateY(-2px) scale(1.02); }
+}
+.step-invite {
+  animation: step-invite 1.8s ease-in-out infinite;
+}
+
 /* Soft scroll-in fade-up for any element that crosses the viewport.
  * Used as `animation-timeline: view()` in supporting browsers. */
 @keyframes view-rise {
@@ -513,6 +540,48 @@ body > *:not([role="dialog"]) {
   animation: ornament-spin 32s linear infinite;
 }
 
+/* Route-loader spin — plain global classes (not Tailwind `@utility`) so they
+ * are always emitted regardless of usage-scanning, and animate straight from
+ * the streamed `loading.tsx` HTML with no hydration dependency. */
+.route-spinner-outer {
+  animation: route-spinner-spin 1.6s linear infinite;
+}
+
+.route-spinner-inner {
+  animation: route-spinner-spin-reverse 2.6s linear infinite;
+}
+
+/* Liquid-fill orb wave surface. Two layers drifting in opposite directions
+ * at different speeds for an organic ripple. Like the loader, the wave is the
+ * effect the user came to see, so it is exempt from the blanket freeze and
+ * merely calmed (not stopped) under reduced motion. The fill *level* itself is
+ * driven by framer-motion, not CSS, so progress feedback always animates. */
+.liquid-wave-a {
+  animation: liquid-wave-drift 2.6s linear infinite;
+}
+.liquid-wave-b {
+  animation: liquid-wave-drift 3.8s linear infinite reverse;
+}
+
+/* Deliberately NOT frozen under reduced motion: the route loader is a busy
+ * indicator (essential "we're working" feedback), and a small centred spin is
+ * the least vestibular-triggering motion. We still respect the preference by
+ * slowing it to a calmer pace rather than stopping it dead. */
+@media (prefers-reduced-motion: reduce) {
+  .route-spinner-outer {
+    animation-duration: 2.6s;
+  }
+  .route-spinner-inner {
+    animation-duration: 4s;
+  }
+  .liquid-wave-a {
+    animation-duration: 5.5s;
+  }
+  .liquid-wave-b {
+    animation-duration: 7.5s;
+  }
+}
+
 @utility motion-view-rise {
   animation: view-rise 0.9s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
@@ -600,6 +669,7 @@ body > *:not([role="dialog"]) {
   .motion-mask-sweep,
   .motion-step-rise,
   .motion-tip-swap,
+  .step-invite,
   [data-rise] {
     animation: none !important;
   }

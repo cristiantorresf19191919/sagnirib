@@ -579,7 +579,13 @@ export function StepDescription({
             ? t(locale, "step.description.contactLeak")
             : undefined
         }
-        error={show("shortBio") ? errors.shortBio : undefined}
+        // URL errors surface in real time (a link is never valid here); the
+        // empty/length errors still wait for blur or the "next" attempt.
+        error={
+          containsUrl(values.shortBio) || show("shortBio")
+            ? errors.shortBio
+            : undefined
+        }
       />
 
       <div className="flex flex-col gap-2">
@@ -600,7 +606,10 @@ export function StepDescription({
               ? t(locale, "step.description.contactLeak")
               : undefined
           }
-          error={show("bio") ? errors.bio : undefined}
+          // URL errors surface in real time; length error waits for blur/next.
+          error={
+            containsUrl(values.bio) || show("bio") ? errors.bio : undefined
+          }
         />
 
         {/* Quality nudge — once they've started but are still short, point

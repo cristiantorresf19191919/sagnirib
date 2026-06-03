@@ -2,7 +2,9 @@ import {
   APPEARANCE_CATALOG,
   ATTENTION_CATALOG,
   CATEGORIES,
+  COLOMBIA_LOCATIONS,
   CONTACT_CATALOG,
+  DEPARTMENT_NAMES,
   MEETING_CONTEXT_CATALOG,
   SERVICE_CATALOG,
   SPECIAL_SERVICE_CATALOG,
@@ -49,6 +51,10 @@ const CATEGORY_IDS = new Set(CATEGORIES.map((c) => c.id));
 const ATTENTION_IDS = new Set(ATTENTION_CATALOG.map((a) => a.id));
 const CONTACT_IDS = new Set(CONTACT_CATALOG.map((c) => c.id));
 const CITY_SET = new Set(SUPPORTED_CITIES);
+const DEPARTMENT_SET = new Set(DEPARTMENT_NAMES);
+const LOCALITY_SET = new Set(
+  COLOMBIA_LOCATIONS.flatMap((d) => d.cities.flatMap((c) => c.localities)),
+);
 const SERVICE_SET = new Set(SERVICE_CATALOG);
 const SPECIAL_SET = new Set(SPECIAL_SERVICE_CATALOG);
 const MEETING_SET = new Set(MEETING_CONTEXT_CATALOG);
@@ -135,8 +141,14 @@ export function parseFilters(params: RawSearchParams): ListingsFilters {
   const sex = pickOne<Sex>(single(params.sex), new Set(["mujeres"]));
   if (sex) filters.sex = sex;
 
+  const department = single(params.department);
+  if (department && DEPARTMENT_SET.has(department)) filters.department = department;
+
   const city = single(params.city);
   if (city && CITY_SET.has(city)) filters.city = city;
+
+  const locality = single(params.locality);
+  if (locality && LOCALITY_SET.has(locality)) filters.locality = locality;
 
   const search = single(params.q)?.trim();
   if (search) filters.search = search;

@@ -85,6 +85,16 @@ export function parseDetails(raw: unknown): ListingDraftPayloadDetails {
     DRAFT_LIMITS.ageMax,
   );
   const city = expectString(d.city, "details.city", 1, DRAFT_LIMITS.cityMax);
+  // Optional locality/zone — accept undefined / "" / omitted.
+  let locality: string | undefined;
+  if (d.locality !== undefined && d.locality !== null && d.locality !== "") {
+    locality = expectString(
+      d.locality,
+      "details.locality",
+      1,
+      DRAFT_LIMITS.localityMax,
+    );
+  }
   const category = expectEnum(d.category, "details.category", [
     "prepagos",
     "masajes",
@@ -120,6 +130,7 @@ export function parseDetails(raw: unknown): ListingDraftPayloadDetails {
     displayName,
     age,
     city,
+    ...(locality ? { locality } : {}),
     category,
     phone,
     preferredSlug,

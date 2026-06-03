@@ -5,6 +5,8 @@ import type {
   ListingsFilters,
 } from "@/server/biringas/types";
 
+import { getDepartmentForCity } from "@/server/mocks/biringas/colombia-locations";
+
 /**
  * Filters that we DO NOT push to Firestore (full-text, nested attribute maps,
  * multi-value array containment). They run in memory after the initial fetch.
@@ -33,6 +35,19 @@ export function applyMemoryFilters(
 
   if (filters.sex) {
     results = results.filter((ad) => ad.sex === filters.sex);
+  }
+  // Department is derived from the city (never stored); locality matches the
+  // listing's neighborhood. City itself is pushed down to Firestore.
+  if (filters.department) {
+    results = results.filter(
+      (ad) => getDepartmentForCity(ad.city) === filters.department,
+    );
+  }
+  if (filters.locality) {
+    const needle = filters.locality.toLowerCase();
+    results = results.filter(
+      (ad) => (ad.neighborhood ?? "").toLowerCase() === needle,
+    );
   }
   if (filters.search) {
     const needle = filters.search.toLowerCase();
