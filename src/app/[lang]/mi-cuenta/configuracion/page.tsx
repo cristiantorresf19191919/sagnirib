@@ -17,7 +17,7 @@ import { localizedHref } from "@/core/i18n/href";
 import { LOCALE_LABELS } from "@/core/i18n/messages";
 import { t } from "@/core/i18n/messages";
 import { buildPageMetadata } from "@/core/seo/build-page-metadata";
-import { getSession } from "@/server/auth";
+import { getSession, Role } from "@/server/auth";
 import { Footer } from "@/shared/layout/Footer";
 import { Header } from "@/shared/layout/Header";
 
@@ -63,6 +63,13 @@ export default async function ConfiguracionPage({
     redirect(`${localizedHref(lang, "/ingresar")}?next=${encodeURIComponent(next)}`);
   }
 
+  // Account type follows the real role claim, not a hardcoded label.
+  // Model ↔ Commentator are mutually exclusive (ADR-019); a user without
+  // the Model role (commentators and plain authenticated users) is a
+  // "Cliente". The review/tips notifications below are publisher-only copy,
+  // so they render exclusively for models.
+  const isModel = session.roles.includes(Role.Model);
+
   return (
     <>
       <Header hideCatalogCta />
@@ -85,22 +92,29 @@ export default async function ConfiguracionPage({
           <SettingRow
             icon={Sparkles}
             label={t(locale, "account.config.account.type")}
-            value={t(locale, "account.config.account.type.value")}
+            value={t(
+              locale,
+              isModel
+                ? "account.config.account.type.model"
+                : "account.config.account.type.commentator",
+            )}
           />
         </AccountSectionCard>
 
-        <AccountSectionCard icon={Bell} title={t(locale, "account.config.notifications.title")}>
-          <SettingRow
-            label={t(locale, "account.config.notifications.reviews")}
-            hint={t(locale, "account.config.notifications.reviews.hint")}
-            control={<ExampleToggle on />}
-          />
-          <SettingRow
-            label={t(locale, "account.config.notifications.tips")}
-            hint={t(locale, "account.config.notifications.tips.hint")}
-            control={<ExampleToggle />}
-          />
-        </AccountSectionCard>
+        {isModel ? (
+          <AccountSectionCard icon={Bell} title={t(locale, "account.config.notifications.title")}>
+            <SettingRow
+              label={t(locale, "account.config.notifications.reviews")}
+              hint={t(locale, "account.config.notifications.reviews.hint")}
+              control={<ExampleToggle on />}
+            />
+            <SettingRow
+              label={t(locale, "account.config.notifications.tips")}
+              hint={t(locale, "account.config.notifications.tips.hint")}
+              control={<ExampleToggle />}
+            />
+          </AccountSectionCard>
+        ) : null}
 
         <AccountSectionCard icon={ShieldCheck} title={t(locale, "account.config.security.title")}>
           <SettingRow

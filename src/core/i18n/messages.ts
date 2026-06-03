@@ -656,7 +656,8 @@ const es: MessageDict = {
   "account.config.account.email": "Correo electrónico",
   "account.config.account.language": "Idioma",
   "account.config.account.type": "Tipo de cuenta",
-  "account.config.account.type.value": "Modelo",
+  "account.config.account.type.model": "Modelo",
+  "account.config.account.type.commentator": "Cliente",
   "account.config.notifications.title": "Notificaciones",
   "account.config.notifications.reviews": "Avisos de revisión",
   "account.config.notifications.reviews.hint":
@@ -2985,7 +2986,8 @@ const en: MessageDict = {
   "account.config.account.email": "Email",
   "account.config.account.language": "Language",
   "account.config.account.type": "Account type",
-  "account.config.account.type.value": "Model",
+  "account.config.account.type.model": "Model",
+  "account.config.account.type.commentator": "Client",
   "account.config.notifications.title": "Notifications",
   "account.config.notifications.reviews": "Review alerts",
   "account.config.notifications.reviews.hint":
