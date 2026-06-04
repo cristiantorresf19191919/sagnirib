@@ -14,6 +14,7 @@ import {
   KeyRound,
   Mail,
   Phone,
+  Search,
   ShieldCheck,
   UserCheck,
 } from "lucide-react";
@@ -476,15 +477,18 @@ export function PublisherSignUpWizard() {
         </button>
       </div>
 
-      <p className="text-center text-[11px] text-[var(--color-text-muted)]">
-        {t(locale, "rbac.publisher.changeAccountType")}{" "}
+      <div className="flex flex-col items-center gap-2">
+        <span className="text-xs text-[var(--color-text-subtle)]">
+          {t(locale, "rbac.publisher.changeAccountType")}
+        </span>
         <Link
           href={switchToCommentatorHref}
-          className="font-semibold text-[var(--color-brand-primary)] underline-offset-2 hover:underline"
+          className="inline-flex h-9 items-center gap-2 rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] px-4 text-sm font-semibold text-[var(--color-foreground)] transition-colors hover:border-[var(--color-brand-primary-soft)] hover:bg-[var(--color-background-elevated)]"
         >
+          <Search className="h-3.5 w-3.5 text-[var(--color-brand-primary)]" aria-hidden />
           {t(locale, "rbac.publisher.changeAccountType.cta")}
         </Link>
-      </p>
+      </div>
     </motion.form>
   );
 }

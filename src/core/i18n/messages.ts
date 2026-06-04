@@ -837,8 +837,8 @@ const es: MessageDict = {
   "rbac.publisher.back": "Atrás",
   "rbac.publisher.next": "Continuar",
   "rbac.publisher.submitting": "Procesando…",
-  "rbac.publisher.changeAccountType": "¿Querés solo comentar?",
-  "rbac.publisher.changeAccountType.cta": "Cambiá a cuenta de comentarios",
+  "rbac.publisher.changeAccountType": "¿Preferís explorar sin publicar?",
+  "rbac.publisher.changeAccountType.cta": "Registrate como visitante",
 
   /* Publisher — phone step */
   "rbac.publisher.phone.title": "Tu teléfono y email",
@@ -3183,8 +3183,8 @@ const en: MessageDict = {
   "rbac.publisher.back": "Back",
   "rbac.publisher.next": "Continue",
   "rbac.publisher.submitting": "Working…",
-  "rbac.publisher.changeAccountType": "Just want to comment?",
-  "rbac.publisher.changeAccountType.cta": "Switch to a comments-only account",
+  "rbac.publisher.changeAccountType": "Prefer to browse & review instead?",
+  "rbac.publisher.changeAccountType.cta": "Sign up as visitor",
 
   "rbac.publisher.phone.title": "Phone and email",
   "rbac.publisher.phone.subtitle":

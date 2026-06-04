@@ -47,10 +47,6 @@ function buildChips(
       href: localizedHref(locale, "/explorar?city=Bogot%C3%A1"),
     },
     {
-      label: t(locale, "editorialHero.chip.weekendCartagena"),
-      href: localizedHref(locale, "/explorar?city=Cartagena"),
-    },
-    {
       label: t(locale, "editorialHero.chip.topRated"),
       href: localizedHref(locale, "/explorar?sort=rating"),
     },
@@ -408,7 +404,7 @@ export async function EditorialHero({
                   taxonomy filters. */}
               <LuckyButton
                 slugs={mosaic.map((listing) => listing.slug)}
-                className="group/lucky relative ml-1 inline-flex h-8 items-center gap-1.5 overflow-hidden rounded-full border border-[var(--color-gold)]/55 bg-[var(--color-cream-soft)]/80 px-3 text-xs font-semibold text-[var(--color-ink)] shadow-[inset_0_1px_0_rgba(255,255,255,0.5),0_4px_14px_-6px_rgba(31,61,46,0.18)] transition-[transform,border-color,box-shadow,background-color] duration-200 ease-[var(--ease-standard)] hover:-translate-y-[1px] hover:border-[var(--color-gold)] hover:bg-[var(--color-cream)] hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.6),0_8px_20px_-8px_rgba(31,61,46,0.24)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-gold)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-cream)] disabled:cursor-not-allowed disabled:opacity-60"
+                className="group/lucky relative ml-1 inline-flex items-center gap-1.5 overflow-hidden rounded-full border border-[var(--color-gold)]/55 bg-[var(--color-cream-soft)]/80 px-3.5 py-2 text-[12.5px] font-semibold text-[var(--color-ink)] shadow-[inset_0_1px_0_rgba(255,255,255,0.5),0_4px_14px_-6px_rgba(31,61,46,0.18)] transition-[transform,border-color,box-shadow,background-color] duration-200 ease-[var(--ease-standard)] hover:-translate-y-[1px] hover:border-[var(--color-gold)] hover:bg-[var(--color-cream)] hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.6),0_8px_20px_-8px_rgba(31,61,46,0.24)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-gold)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-cream)] disabled:cursor-not-allowed disabled:opacity-60"
               />
             </div>
 
