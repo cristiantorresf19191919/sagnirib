@@ -34,6 +34,14 @@ interface EditorialHeroProps {
   location?: string;
 }
 
+/**
+ * Shared geometry/typography/focus for every hero chip (active, outline, and
+ * the "Me siento con suerte" lucky pill) so they keep an identical height and
+ * shape. Each chip appends only its own colour/border treatment on top.
+ */
+const CHIP_BASE =
+  "inline-flex items-center rounded-full py-2 text-[12.5px] font-semibold transition-[transform,background,border-color,box-shadow,color] duration-200 ease-[var(--ease-standard)] hover:-translate-y-[1px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-cream)]";
+
 /** Quick-prompt chips — V5 keeps four mutually scannable categories.
  *  The first chip is the hero's "default action" highlighted in forest
  *  (mint in dark mode); the rest are outline pills. No icons — V5's
@@ -45,10 +53,6 @@ function buildChips(
     {
       label: t(locale, "editorialHero.chip.dinnerBogota"),
       href: localizedHref(locale, "/explorar?city=Bogot%C3%A1"),
-    },
-    {
-      label: t(locale, "editorialHero.chip.weekendCartagena"),
-      href: localizedHref(locale, "/explorar?city=Cartagena"),
     },
     {
       label: t(locale, "editorialHero.chip.topRated"),
@@ -388,8 +392,8 @@ export async function EditorialHero({
               {chips.map((chip, i) => {
                 const isActive = i === 0;
                 const cls = isActive
-                  ? "inline-flex items-center rounded-full bg-[var(--color-forest)] px-4 py-2 text-[12.5px] font-semibold text-[var(--color-cream)] shadow-[0_4px_14px_-4px_rgba(31,61,46,0.45)] transition-[background,box-shadow,transform] duration-200 hover:-translate-y-[1px] hover:bg-[var(--color-forest-deep)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-forest)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-cream)]"
-                  : "inline-flex items-center rounded-full border border-[var(--color-line)] bg-transparent px-3.5 py-2 text-[12.5px] font-medium text-[var(--color-ink-soft)] transition-[background,border-color,color,transform] duration-200 hover:-translate-y-[1px] hover:border-[var(--color-ink)]/35 hover:text-[var(--color-ink)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-forest)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-cream)]";
+                  ? `${CHIP_BASE} bg-[var(--color-forest)] px-4 text-[var(--color-cream)] shadow-[0_4px_14px_-4px_rgba(31,61,46,0.45)] hover:bg-[var(--color-forest-deep)] focus-visible:ring-[var(--color-forest)]`
+                  : `${CHIP_BASE} border border-[var(--color-line)] bg-transparent px-3.5 font-medium text-[var(--color-ink-soft)] hover:border-[var(--color-ink)]/35 hover:text-[var(--color-ink)] focus-visible:ring-[var(--color-forest)]`;
                 return (
                   <Link
                     key={chip.label}
@@ -408,7 +412,7 @@ export async function EditorialHero({
                   taxonomy filters. */}
               <LuckyButton
                 slugs={mosaic.map((listing) => listing.slug)}
-                className="group/lucky relative ml-1 inline-flex h-8 items-center gap-1.5 overflow-hidden rounded-full border border-[var(--color-gold)]/55 bg-[var(--color-cream-soft)]/80 px-3 text-xs font-semibold text-[var(--color-ink)] shadow-[inset_0_1px_0_rgba(255,255,255,0.5),0_4px_14px_-6px_rgba(31,61,46,0.18)] transition-[transform,border-color,box-shadow,background-color] duration-200 ease-[var(--ease-standard)] hover:-translate-y-[1px] hover:border-[var(--color-gold)] hover:bg-[var(--color-cream)] hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.6),0_8px_20px_-8px_rgba(31,61,46,0.24)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-gold)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-cream)] disabled:cursor-not-allowed disabled:opacity-60"
+                className={`${CHIP_BASE} group/lucky relative ml-1 gap-1.5 overflow-hidden border border-[var(--color-gold)]/55 bg-[var(--color-cream-soft)]/80 px-3.5 text-[var(--color-ink)] shadow-[inset_0_1px_0_rgba(255,255,255,0.5),0_4px_14px_-6px_rgba(31,61,46,0.18)] hover:border-[var(--color-gold)] hover:bg-[var(--color-cream)] hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.6),0_8px_20px_-8px_rgba(31,61,46,0.24)] focus-visible:ring-[var(--color-gold)] disabled:cursor-not-allowed disabled:opacity-60`}
               />
             </div>
 

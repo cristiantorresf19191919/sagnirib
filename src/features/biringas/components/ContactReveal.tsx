@@ -1,9 +1,9 @@
 "use client";
 
-import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
-import { Loader2, Lock, MessageCircle, Phone, Send } from "lucide-react";
+import { motion, useReducedMotion } from "framer-motion";
+import { Loader2, MessageCircle, Send } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import type { SupportedLocale } from "@/core/branding/brand-config";
 import { localizedHref } from "@/core/i18n/href";
@@ -26,7 +26,6 @@ interface ContactRevealProps {
 }
 
 type RevealState =
-  | { kind: "idle" }
   | { kind: "loading" }
   | { kind: "revealed"; data: PrivateContact }
   | { kind: "error"; message: string };
@@ -37,7 +36,7 @@ export function ContactReveal({
   contactChannels,
 }: Readonly<ContactRevealProps>) {
   const locale = useActiveLocale();
-  const [state, setState] = useState<RevealState>({ kind: "idle" });
+  const [state, setState] = useState<RevealState>({ kind: "loading" });
   const { status } = useAuthSession();
   const router = useRouter();
 
@@ -45,117 +44,68 @@ export function ContactReveal({
     localizedHref(locale, `/p/${slug}`),
   )}`;
 
-  async function handleReveal() {
-    if (status === "anonymous" || status === "disabled") {
-      router.push(nextHref);
-      return;
-    }
-    if (status === "loading") return;
-
-    setState({ kind: "loading" });
-    const result = await revealContact(slug);
-    if (!result.ok) {
-      if (result.error?.kind === "no-session") {
-        router.push(nextHref);
-        return;
-      }
-      setState({
-        kind: "error",
-        message: t(locale, "contact.reveal.error"),
+  useEffect(() => {
+    if (status === "loading" || status === "anonymous" || status === "disabled") return;
+    let cancelled = false;
+    void revealContact(slug)
+      .then((result) => {
+        if (cancelled) return;
+        if (!result.ok) {
+          if (result.error?.kind === "no-session") {
+            router.push(nextHref);
+            return;
+          }
+          setState({ kind: "error", message: t(locale, "contact.reveal.error") });
+          return;
+        }
+        setState({ kind: "revealed", data: result.data ?? {} });
+      })
+      .catch(() => {
+        // The action returns `{ ok: false }` for handled errors; a rejection
+        // here is an unexpected throw. Surface it instead of leaving the user
+        // stuck on the loading state (no silent failures).
+        if (!cancelled) {
+          setState({ kind: "error", message: t(locale, "contact.reveal.error") });
+        }
       });
-      return;
-    }
-    setState({ kind: "revealed", data: result.data ?? {} });
+    return () => {
+      cancelled = true;
+    };
+  }, [status, slug, locale, nextHref, router]);
+
+  if (status === "anonymous" || status === "disabled") {
+    return (
+      <Button id="contacto" href={nextHref} variant="primary" size="lg" glow block>
+        {t(locale, "contact.reveal.cta")}
+      </Button>
+    );
   }
 
-  const isLoading = state.kind === "loading" || status === "loading";
+  if (state.kind === "loading") {
+    return (
+      <div id="contacto" className="flex items-center gap-2 text-sm text-[var(--color-text-subtle)]">
+        <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+        {t(locale, "contact.reveal.revealing")}
+      </div>
+    );
+  }
+
+  if (state.kind === "error") {
+    return (
+      <p id="contacto" role="alert" className="text-xs text-[var(--color-brand-highlight)]">
+        {state.message}
+      </p>
+    );
+  }
 
   return (
     <div id="contacto" className="flex flex-col gap-3">
-      <AnimatePresence mode="wait" initial={false}>
-        {state.kind === "revealed" ? (
-          <motion.div
-            key="revealed"
-            initial={{ opacity: 0, y: 6 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -4 }}
-            transition={{ duration: 0.32, ease: [0.22, 1, 0.36, 1] }}
-          >
-            <RevealedChannels
-              locale={locale}
-              listingName={listingName}
-              contactChannels={contactChannels}
-              contact={state.data}
-            />
-          </motion.div>
-        ) : (
-          <motion.div
-            key="idle"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0, y: -4 }}
-            transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
-            className="flex flex-col gap-3"
-          >
-            <BlurredPreview locale={locale} />
-            <Button
-              onClick={handleReveal}
-              variant="primary"
-              size="lg"
-              glow
-              disabled={isLoading}
-              aria-label={t(locale, "contact.reveal.ariaLabel", {
-                name: listingName,
-              })}
-              className="w-full"
-            >
-              {isLoading ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
-                  {t(locale, "contact.reveal.revealing")}
-                </>
-              ) : (
-                <>
-                  <Lock className="h-4 w-4" aria-hidden />
-                  {t(locale, "contact.reveal.cta")}
-                </>
-              )}
-            </Button>
-            <p className="text-xs text-[var(--color-text-subtle)]">
-              {status === "authenticated"
-                ? t(locale, "contact.reveal.hint.authenticated")
-                : t(locale, "contact.reveal.hint.anonymous")}
-            </p>
-            {state.kind === "error" && (
-              <p
-                role="alert"
-                className="text-xs text-[var(--color-brand-highlight)]"
-              >
-                {state.message}
-              </p>
-            )}
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
-  );
-}
-
-function BlurredPreview({ locale }: { locale: SupportedLocale }) {
-  return (
-    <div
-      aria-hidden
-      className="select-none rounded-[var(--radius-lg)] bg-[var(--color-surface-muted)] px-4 py-3 ring-1 ring-[var(--color-border)]"
-    >
-      <div className="flex items-center justify-between">
-        <span className="text-[10px] uppercase tracking-[0.22em] text-[var(--color-text-subtle)]">
-          {t(locale, "contact.reveal.previewLabel")}
-        </span>
-        <Lock className="h-3.5 w-3.5 text-[var(--color-text-subtle)]" />
-      </div>
-      <p className="mt-2 select-none font-mono text-base tracking-[0.2em] text-[var(--color-text-muted)] blur-[5px]">
-        +57 300 000 0000
-      </p>
+      <RevealedChannels
+        locale={locale}
+        listingName={listingName}
+        contactChannels={contactChannels}
+        contact={state.data}
+      />
     </div>
   );
 }
@@ -195,14 +145,6 @@ function RevealedChannels({
       Icon: MessageCircle,
     });
   }
-  if (accepts.has("llamada") && phoneDigits) {
-    buttons.push({
-      key: "llamada",
-      href: `tel:+${phoneDigits}`,
-      label: t(locale, "contact.reveal.channel.llamada"),
-      Icon: Phone,
-    });
-  }
   if (accepts.has("telegram") && phoneDigits) {
     buttons.push({
       key: "telegram",
@@ -215,7 +157,6 @@ function RevealedChannels({
   if (buttons.length === 0) {
     return (
       <div
-        id="contacto"
         role="status"
         className="rounded-[var(--radius-lg)] bg-[var(--color-surface-muted)] px-4 py-3 text-sm text-[var(--color-text-muted)] ring-1 ring-[var(--color-border)]"
       >
@@ -243,7 +184,7 @@ function RevealedChannelsView({
   const stagger = reduced ? 0 : 0.06;
 
   return (
-    <div id="contacto" className="flex flex-col gap-3">
+    <div className="flex flex-col gap-3">
       <span className="text-[10px] uppercase tracking-[0.22em] text-[var(--color-text-subtle)]">
         {t(locale, "contact.reveal.title")}
       </span>
@@ -260,8 +201,8 @@ function RevealedChannelsView({
           <motion.a
             key={key}
             href={href}
-            target={key === "llamada" ? undefined : "_blank"}
-            rel={key === "llamada" ? undefined : "noopener noreferrer"}
+            target="_blank"
+            rel="noopener noreferrer"
             data-testid={`contact-reveal-${key}`}
             variants={{
               hidden: { opacity: 0, y: 6 },

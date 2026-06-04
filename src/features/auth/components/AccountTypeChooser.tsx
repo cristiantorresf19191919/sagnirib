@@ -15,7 +15,7 @@ import {
   ArrowRight,
   Check,
   Lock,
-  MessageSquare,
+  Search,
   ShieldCheck,
   Sparkles,
   UserCheck,
@@ -125,13 +125,34 @@ export function AccountTypeChooser() {
             pick(ACCOUNT_TYPE_PUBLISHER, "/registrarse/publicador")
           }
         />
+        <motion.div
+          variants={REVEAL}
+          className="flex items-center gap-3 md:hidden"
+          aria-hidden
+        >
+          <span className="h-px flex-1 bg-[var(--color-border)]" />
+          <span className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--color-text-subtle)]">
+            {t(locale, "rbac.chooser.divider")}
+          </span>
+          <span className="h-px flex-1 bg-[var(--color-border)]" />
+        </motion.div>
+
+        {/*
+         * NOTE: the "visitor" account is the SAME role internally known as
+         * `commentator` (ACCOUNT_TYPE_COMMENTATOR, route /registrarse/comentarios,
+         * `rbac.chooser.commentator.*` keys). Only the user-facing copy was
+         * rebranded to "Visitante/Visitor"; the domain term stays `commentator`.
+         * A full rename touches the constant, routes, cookies and several pages,
+         * so it's intentionally deferred to its own change. If you rename, do it
+         * end-to-end (constant + routes + keys) to avoid drift.
+         */}
         <ChooserCard
           variants={REVEAL}
           tone="muted"
           eyebrow={t(locale, "rbac.chooser.commentator.eyebrow")}
           title={t(locale, "rbac.chooser.commentator.title")}
           body={t(locale, "rbac.chooser.commentator.body")}
-          icon={<MessageSquare className="h-5 w-5" aria-hidden />}
+          icon={<Search className="h-5 w-5" aria-hidden />}
           bullets={[
             t(locale, "rbac.chooser.commentator.bullet.1"),
             t(locale, "rbac.chooser.commentator.bullet.2"),

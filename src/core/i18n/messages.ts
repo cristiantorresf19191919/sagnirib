@@ -808,19 +808,20 @@ const es: MessageDict = {
     "Creá un anuncio público, gestioná tus fotos verificadas y recibí solicitudes de reserva.",
   "rbac.chooser.publisher.bullet.1": "Verificación de teléfono y email",
   "rbac.chooser.publisher.bullet.2": "Subida de fotos, documento y video",
-  "rbac.chooser.publisher.bullet.3": "Moderación previa a publicación",
+  "rbac.chooser.publisher.bullet.3": "Publicación revisada y segura",
   "rbac.chooser.publisher.cta": "Continuar como publicador",
-  "rbac.chooser.commentator.eyebrow": "Cuenta solo para comentarios",
-  "rbac.chooser.commentator.title": "Solo comentarios",
+  "rbac.chooser.commentator.eyebrow": "Visitante",
+  "rbac.chooser.commentator.title": "Explorar y reseñar",
   "rbac.chooser.commentator.body":
-    "Dejá reseñas en perfiles existentes y guardá favoritos. Sin teléfono, sin fotos, sin moderación.",
-  "rbac.chooser.commentator.bullet.1": "Solo email + nickname",
-  "rbac.chooser.commentator.bullet.2": "Panel limitado y discreto",
-  "rbac.chooser.commentator.bullet.3": "No podés publicar anuncios",
-  "rbac.chooser.commentator.cta": "Continuar como comentarista",
+    "Explorá perfiles, dejá reseñas y guardá favoritos. Configuración en minutos, sin verificaciones.",
+  "rbac.chooser.commentator.bullet.1": "Solo tu email y un apodo",
+  "rbac.chooser.commentator.bullet.2": "Perfil anónimo y privado",
+  "rbac.chooser.commentator.bullet.3": "Sin verificación de identidad",
+  "rbac.chooser.commentator.cta": "Continuar como visitante",
   "rbac.chooser.alreadyAccount": "¿Ya tenés cuenta?",
   "rbac.chooser.signIn": "Ingresá",
   "rbac.chooser.recommended": "Recomendado",
+  "rbac.chooser.divider": "o",
 
   /* Publisher wizard — chrome */
   "rbac.publisher.metadata.title": "Registrate como publicador — Biringas",
@@ -837,8 +838,8 @@ const es: MessageDict = {
   "rbac.publisher.back": "Atrás",
   "rbac.publisher.next": "Continuar",
   "rbac.publisher.submitting": "Procesando…",
-  "rbac.publisher.changeAccountType": "¿Querés solo comentar?",
-  "rbac.publisher.changeAccountType.cta": "Cambiá a cuenta de comentarios",
+  "rbac.publisher.changeAccountType": "¿Preferís explorar sin publicar?",
+  "rbac.publisher.changeAccountType.cta": "Registrate como visitante",
 
   /* Publisher — phone step */
   "rbac.publisher.phone.title": "Tu teléfono y email",
@@ -1665,11 +1666,6 @@ const es: MessageDict = {
   "contact.reveal.cta": "Revelar contacto",
   "contact.reveal.revealing": "Revelando…",
   "contact.reveal.ariaLabel": "Revelar contacto de {name}",
-  "contact.reveal.previewLabel": "Canales privados",
-  "contact.reveal.hint.authenticated":
-    "Toca para mostrar los canales privados de este perfil.",
-  "contact.reveal.hint.anonymous":
-    "Inicia sesión para ver los canales privados de este perfil.",
   "contact.reveal.error": "No pudimos revelar el contacto. Intenta de nuevo.",
   "contact.reveal.empty":
     "Este perfil no tiene canales públicos disponibles ahora.",
@@ -1678,7 +1674,6 @@ const es: MessageDict = {
     "Saluda con respeto. Toda interacción queda registrada.",
   "contact.reveal.whatsappGreeting": "Hola {name}, vi tu perfil en Biringas.",
   "contact.reveal.channel.whatsapp": "WhatsApp",
-  "contact.reveal.channel.llamada": "Llamar",
   "contact.reveal.channel.telegram": "Telegram",
 
   /* ReviewsSection */
@@ -2101,7 +2096,6 @@ const es: MessageDict = {
   "editorialHero.marquee.aria": "Ver {label}",
   "editorialHero.chip.availableNow": "Disponibles ahora",
   "editorialHero.chip.dinnerBogota": "Cena Bogotá",
-  "editorialHero.chip.weekendCartagena": "Fin de semana Cartagena",
   "editorialHero.chip.topRated": "Top rated",
   "editorialHero.marquee.bogota": "Bogotá · 142 activas",
   "editorialHero.marquee.medellin": "Medellín · 88 activas",
@@ -3154,19 +3148,20 @@ const en: MessageDict = {
     "Create a public listing, manage your verified photos and receive booking requests.",
   "rbac.chooser.publisher.bullet.1": "Phone and email verification",
   "rbac.chooser.publisher.bullet.2": "Photo, ID and short-video upload",
-  "rbac.chooser.publisher.bullet.3": "Moderation before publication",
+  "rbac.chooser.publisher.bullet.3": "Reviewed, safe publication",
   "rbac.chooser.publisher.cta": "Continue as publisher",
-  "rbac.chooser.commentator.eyebrow": "Comments-only account",
-  "rbac.chooser.commentator.title": "Just comments",
+  "rbac.chooser.commentator.eyebrow": "Visitor",
+  "rbac.chooser.commentator.title": "Browse & Review",
   "rbac.chooser.commentator.body":
-    "Leave reviews on existing profiles and save favorites. No phone, no photos, no moderation.",
-  "rbac.chooser.commentator.bullet.1": "Email + nickname only",
-  "rbac.chooser.commentator.bullet.2": "Limited, discreet panel",
-  "rbac.chooser.commentator.bullet.3": "Cannot publish listings",
-  "rbac.chooser.commentator.cta": "Continue as commentator",
+    "Explore profiles, leave reviews and save favorites. Quick setup, no verifications required.",
+  "rbac.chooser.commentator.bullet.1": "Just your email and a nickname",
+  "rbac.chooser.commentator.bullet.2": "Anonymous, private profile",
+  "rbac.chooser.commentator.bullet.3": "No identity verification needed",
+  "rbac.chooser.commentator.cta": "Continue as visitor",
   "rbac.chooser.alreadyAccount": "Already have an account?",
   "rbac.chooser.signIn": "Sign in",
   "rbac.chooser.recommended": "Recommended",
+  "rbac.chooser.divider": "or",
 
   /* Publisher wizard */
   "rbac.publisher.metadata.title": "Sign up as publisher — Biringas",
@@ -3183,8 +3178,8 @@ const en: MessageDict = {
   "rbac.publisher.back": "Back",
   "rbac.publisher.next": "Continue",
   "rbac.publisher.submitting": "Working…",
-  "rbac.publisher.changeAccountType": "Just want to comment?",
-  "rbac.publisher.changeAccountType.cta": "Switch to a comments-only account",
+  "rbac.publisher.changeAccountType": "Prefer to browse & review instead?",
+  "rbac.publisher.changeAccountType.cta": "Sign up as visitor",
 
   "rbac.publisher.phone.title": "Phone and email",
   "rbac.publisher.phone.subtitle":
@@ -4004,11 +3999,6 @@ const en: MessageDict = {
   "contact.reveal.cta": "Reveal contact",
   "contact.reveal.revealing": "Revealing…",
   "contact.reveal.ariaLabel": "Reveal {name}'s contact",
-  "contact.reveal.previewLabel": "Private channels",
-  "contact.reveal.hint.authenticated":
-    "Tap to show this profile's private channels.",
-  "contact.reveal.hint.anonymous":
-    "Sign in to see this profile's private channels.",
   "contact.reveal.error": "We couldn't reveal the contact. Try again.",
   "contact.reveal.empty":
     "This profile has no public channels available right now.",
@@ -4017,7 +4007,6 @@ const en: MessageDict = {
     "Greet with respect. Every interaction is logged.",
   "contact.reveal.whatsappGreeting": "Hi {name}, I saw your profile on Biringas.",
   "contact.reveal.channel.whatsapp": "WhatsApp",
-  "contact.reveal.channel.llamada": "Call",
   "contact.reveal.channel.telegram": "Telegram",
 
   /* ReviewsSection */
@@ -4439,7 +4428,6 @@ const en: MessageDict = {
   "editorialHero.marquee.aria": "Browse {label}",
   "editorialHero.chip.availableNow": "Available now",
   "editorialHero.chip.dinnerBogota": "Dinner in Bogota",
-  "editorialHero.chip.weekendCartagena": "Weekend in Cartagena",
   "editorialHero.chip.topRated": "Top rated",
   "editorialHero.marquee.bogota": "Bogota . 142 live",
   "editorialHero.marquee.medellin": "Medellin . 88 live",
