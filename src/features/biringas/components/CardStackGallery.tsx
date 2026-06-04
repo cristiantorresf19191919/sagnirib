@@ -80,8 +80,8 @@ const FAN_TRANSITION = {
  * Card-stack gallery with an "abanico" (hand-fan) swing on photo change.
  *
  * Visual structure:
- *  - Back peek cards fan to one side behind the front card (a hand of cards),
- *    pivoting at their bottom edge; clicking one brings it forward.
+ *  - Back peek cards sit just behind the front card, slightly rotated and
+ *    alternating side with a low-opacity tease; clicking one brings it forward.
  *  - The front layer holds the active CARD — its own rounded/bordered/shadowed
  *    frame with the photo inside. On change the whole card SWINGS on a
  *    bottom-edge pivot: the outgoing card fans away to one side while the
@@ -188,13 +188,15 @@ export function CardStackGallery({ images, altBase }: Readonly<CardStackGalleryP
           const offset = (i - activeIndex + total) % total;
           if (offset > 3) return null;
           const depth = Math.min(offset, 3);
-          // Fan the upcoming cards to ONE side (abanico) instead of an
-          // alternating shuffle, pivoting at the bottom so they spread like a
-          // hand of cards — the same direction the next card swings in from.
-          const rotate = 3 + depth * 4.5;
-          const translateX = depth * 17;
-          const translateY = depth * 6;
-          const scale = 1 - depth * 0.05;
+          // Subtle peek stack (original look): cards alternate side and sit
+          // just behind with a low-opacity tease. We keep this restrained
+          // geometry — the FAN swing happens on the FRONT card transition, not
+          // by spreading the deck open.
+          const stackDir = i % 2 === 0 ? -1 : 1;
+          const rotate = stackDir * (4 + depth * 1.5);
+          const translateX = stackDir * (depth * 14);
+          const translateY = depth * 10;
+          const scale = 1 - depth * 0.04;
 
           return (
             <button
@@ -204,9 +206,8 @@ export function CardStackGallery({ images, altBase }: Readonly<CardStackGalleryP
                 index: i + 1,
               })}
               onClick={() => goTo(i)}
-              className="absolute inset-0 cursor-pointer rounded-[var(--radius-2xl)] border border-[var(--color-border)] bg-[var(--color-surface)] shadow-[var(--shadow-lg)] transition-[transform,opacity,box-shadow,border-color] duration-700 ease-[var(--ease-standard)] focus:outline-none focus-visible:border-[var(--color-brand-primary)] focus-visible:shadow-[var(--shadow-glow-primary)]"
+              className="absolute inset-0 origin-center cursor-pointer rounded-[var(--radius-2xl)] border border-[var(--color-border)] bg-[var(--color-surface)] shadow-[var(--shadow-lg)] transition-[transform,opacity,box-shadow,border-color] duration-700 ease-[var(--ease-standard)] focus:outline-none focus-visible:border-[var(--color-brand-primary)] focus-visible:shadow-[var(--shadow-glow-primary)]"
               style={{
-                transformOrigin: "bottom center",
                 transform: `translate3d(${translateX}px, ${translateY}px, ${
                   -depth * 40
                 }px) rotate(${rotate}deg) scale(${scale})`,
