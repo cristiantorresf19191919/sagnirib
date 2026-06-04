@@ -821,6 +821,7 @@ const es: MessageDict = {
   "rbac.chooser.alreadyAccount": "¿Ya tenés cuenta?",
   "rbac.chooser.signIn": "Ingresá",
   "rbac.chooser.recommended": "Recomendado",
+  "rbac.chooser.divider": "o",
 
   /* Publisher wizard — chrome */
   "rbac.publisher.metadata.title": "Registrate como publicador — Biringas",
@@ -1665,11 +1666,6 @@ const es: MessageDict = {
   "contact.reveal.cta": "Revelar contacto",
   "contact.reveal.revealing": "Revelando…",
   "contact.reveal.ariaLabel": "Revelar contacto de {name}",
-  "contact.reveal.previewLabel": "Canales privados",
-  "contact.reveal.hint.authenticated":
-    "Toca para mostrar los canales privados de este perfil.",
-  "contact.reveal.hint.anonymous":
-    "Inicia sesión para ver los canales privados de este perfil.",
   "contact.reveal.error": "No pudimos revelar el contacto. Intenta de nuevo.",
   "contact.reveal.empty":
     "Este perfil no tiene canales públicos disponibles ahora.",
@@ -1678,7 +1674,6 @@ const es: MessageDict = {
     "Saluda con respeto. Toda interacción queda registrada.",
   "contact.reveal.whatsappGreeting": "Hola {name}, vi tu perfil en Biringas.",
   "contact.reveal.channel.whatsapp": "WhatsApp",
-  "contact.reveal.channel.llamada": "Llamar",
   "contact.reveal.channel.telegram": "Telegram",
 
   /* ReviewsSection */
@@ -2101,7 +2096,6 @@ const es: MessageDict = {
   "editorialHero.marquee.aria": "Ver {label}",
   "editorialHero.chip.availableNow": "Disponibles ahora",
   "editorialHero.chip.dinnerBogota": "Cena Bogotá",
-  "editorialHero.chip.weekendCartagena": "Fin de semana Cartagena",
   "editorialHero.chip.topRated": "Top rated",
   "editorialHero.marquee.bogota": "Bogotá · 142 activas",
   "editorialHero.marquee.medellin": "Medellín · 88 activas",
@@ -3167,6 +3161,7 @@ const en: MessageDict = {
   "rbac.chooser.alreadyAccount": "Already have an account?",
   "rbac.chooser.signIn": "Sign in",
   "rbac.chooser.recommended": "Recommended",
+  "rbac.chooser.divider": "or",
 
   /* Publisher wizard */
   "rbac.publisher.metadata.title": "Sign up as publisher — Biringas",
@@ -4004,11 +3999,6 @@ const en: MessageDict = {
   "contact.reveal.cta": "Reveal contact",
   "contact.reveal.revealing": "Revealing…",
   "contact.reveal.ariaLabel": "Reveal {name}'s contact",
-  "contact.reveal.previewLabel": "Private channels",
-  "contact.reveal.hint.authenticated":
-    "Tap to show this profile's private channels.",
-  "contact.reveal.hint.anonymous":
-    "Sign in to see this profile's private channels.",
   "contact.reveal.error": "We couldn't reveal the contact. Try again.",
   "contact.reveal.empty":
     "This profile has no public channels available right now.",
@@ -4017,7 +4007,6 @@ const en: MessageDict = {
     "Greet with respect. Every interaction is logged.",
   "contact.reveal.whatsappGreeting": "Hi {name}, I saw your profile on Biringas.",
   "contact.reveal.channel.whatsapp": "WhatsApp",
-  "contact.reveal.channel.llamada": "Call",
   "contact.reveal.channel.telegram": "Telegram",
 
   /* ReviewsSection */
@@ -4439,7 +4428,6 @@ const en: MessageDict = {
   "editorialHero.marquee.aria": "Browse {label}",
   "editorialHero.chip.availableNow": "Available now",
   "editorialHero.chip.dinnerBogota": "Dinner in Bogota",
-  "editorialHero.chip.weekendCartagena": "Weekend in Cartagena",
   "editorialHero.chip.topRated": "Top rated",
   "editorialHero.marquee.bogota": "Bogota . 142 live",
   "editorialHero.marquee.medellin": "Medellin . 88 live",

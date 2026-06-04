@@ -1,7 +1,6 @@
 "use client";
 
 import { motion, AnimatePresence, type Variants } from "framer-motion";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   ArrowLeft,
@@ -30,6 +29,7 @@ import {
   ACCOUNT_TYPE_PUBLISHER,
   PHONE_AUTH_ENABLED,
 } from "@/features/auth/lib/rbac";
+import { Button } from "@/shared/design-system/components/Button";
 import {
   ValidatedField,
   type ValidatedFieldHandle,
@@ -481,13 +481,10 @@ export function PublisherSignUpWizard() {
         <span className="text-xs text-[var(--color-text-subtle)]">
           {t(locale, "rbac.publisher.changeAccountType")}
         </span>
-        <Link
-          href={switchToCommentatorHref}
-          className="inline-flex h-9 items-center gap-2 rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] px-4 text-sm font-semibold text-[var(--color-foreground)] transition-colors hover:border-[var(--color-brand-primary-soft)] hover:bg-[var(--color-background-elevated)]"
-        >
+        <Button href={switchToCommentatorHref} variant="outline" size="sm">
           <Search className="h-3.5 w-3.5 text-[var(--color-brand-primary)]" aria-hidden />
           {t(locale, "rbac.publisher.changeAccountType.cta")}
-        </Link>
+        </Button>
       </div>
     </motion.form>
   );

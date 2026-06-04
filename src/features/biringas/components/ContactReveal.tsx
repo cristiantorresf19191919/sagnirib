@@ -1,7 +1,7 @@
 "use client";
 
 import { motion, useReducedMotion } from "framer-motion";
-import { Loader2, MessageCircle, Phone, Send } from "lucide-react";
+import { Loader2, MessageCircle, Send } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
@@ -12,6 +12,7 @@ import { useActiveLocale } from "@/core/i18n/use-active-locale";
 import { useAuthSession } from "@/features/auth/lib/use-auth-session";
 import { revealContact } from "@/features/biringas/actions/reveal-contact";
 import type { ContactChannel } from "@/server/biringas";
+import { Button } from "@/shared/design-system/components/Button";
 
 interface PrivateContact {
   privatePhone?: string;
@@ -46,30 +47,37 @@ export function ContactReveal({
   useEffect(() => {
     if (status === "loading" || status === "anonymous" || status === "disabled") return;
     let cancelled = false;
-    void revealContact(slug).then((result) => {
-      if (cancelled) return;
-      if (!result.ok) {
-        if (result.error?.kind === "no-session") {
-          router.push(nextHref);
+    void revealContact(slug)
+      .then((result) => {
+        if (cancelled) return;
+        if (!result.ok) {
+          if (result.error?.kind === "no-session") {
+            router.push(nextHref);
+            return;
+          }
+          setState({ kind: "error", message: t(locale, "contact.reveal.error") });
           return;
         }
-        setState({ kind: "error", message: t(locale, "contact.reveal.error") });
-        return;
-      }
-      setState({ kind: "revealed", data: result.data ?? {} });
-    });
-    return () => { cancelled = true; };
+        setState({ kind: "revealed", data: result.data ?? {} });
+      })
+      .catch(() => {
+        // The action returns `{ ok: false }` for handled errors; a rejection
+        // here is an unexpected throw. Surface it instead of leaving the user
+        // stuck on the loading state (no silent failures).
+        if (!cancelled) {
+          setState({ kind: "error", message: t(locale, "contact.reveal.error") });
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
   }, [status, slug, locale, nextHref, router]);
 
   if (status === "anonymous" || status === "disabled") {
     return (
-      <a
-        id="contacto"
-        href={nextHref}
-        className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-full bg-[var(--color-brand-primary)] px-5 text-sm font-semibold text-[var(--color-surface)] shadow-[var(--shadow-sm)] transition-[background,transform] duration-200 ease-[var(--ease-standard)] hover:bg-[var(--color-brand-primary-strong)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-background)]"
-      >
+      <Button id="contacto" href={nextHref} variant="primary" size="lg" glow block>
         {t(locale, "contact.reveal.cta")}
-      </a>
+      </Button>
     );
   }
 
@@ -100,11 +108,6 @@ export function ContactReveal({
       />
     </div>
   );
-}
-
-interface PrivateContact {
-  privatePhone?: string;
-  privateWhatsapp?: string;
 }
 
 interface RevealedChannelsProps {
@@ -154,7 +157,6 @@ function RevealedChannels({
   if (buttons.length === 0) {
     return (
       <div
-        id="contacto"
         role="status"
         className="rounded-[var(--radius-lg)] bg-[var(--color-surface-muted)] px-4 py-3 text-sm text-[var(--color-text-muted)] ring-1 ring-[var(--color-border)]"
       >
@@ -182,7 +184,7 @@ function RevealedChannelsView({
   const stagger = reduced ? 0 : 0.06;
 
   return (
-    <div id="contacto" className="flex flex-col gap-3">
+    <div className="flex flex-col gap-3">
       <span className="text-[10px] uppercase tracking-[0.22em] text-[var(--color-text-subtle)]">
         {t(locale, "contact.reveal.title")}
       </span>
@@ -199,8 +201,8 @@ function RevealedChannelsView({
           <motion.a
             key={key}
             href={href}
-            target={key === "llamada" ? undefined : "_blank"}
-            rel={key === "llamada" ? undefined : "noopener noreferrer"}
+            target="_blank"
+            rel="noopener noreferrer"
             data-testid={`contact-reveal-${key}`}
             variants={{
               hidden: { opacity: 0, y: 6 },
