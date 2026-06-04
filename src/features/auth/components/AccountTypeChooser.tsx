@@ -15,7 +15,7 @@ import {
   ArrowRight,
   Check,
   Lock,
-  MessageSquare,
+  Search,
   ShieldCheck,
   Sparkles,
   UserCheck,
@@ -125,13 +125,25 @@ export function AccountTypeChooser() {
             pick(ACCOUNT_TYPE_PUBLISHER, "/registrarse/publicador")
           }
         />
+        <motion.div
+          variants={REVEAL}
+          className="flex items-center gap-3 md:hidden"
+          aria-hidden
+        >
+          <span className="h-px flex-1 bg-[var(--color-border)]" />
+          <span className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--color-text-subtle)]">
+            {t(locale, "auth.signin.divider")}
+          </span>
+          <span className="h-px flex-1 bg-[var(--color-border)]" />
+        </motion.div>
+
         <ChooserCard
           variants={REVEAL}
           tone="muted"
           eyebrow={t(locale, "rbac.chooser.commentator.eyebrow")}
           title={t(locale, "rbac.chooser.commentator.title")}
           body={t(locale, "rbac.chooser.commentator.body")}
-          icon={<MessageSquare className="h-5 w-5" aria-hidden />}
+          icon={<Search className="h-5 w-5" aria-hidden />}
           bullets={[
             t(locale, "rbac.chooser.commentator.bullet.1"),
             t(locale, "rbac.chooser.commentator.bullet.2"),
