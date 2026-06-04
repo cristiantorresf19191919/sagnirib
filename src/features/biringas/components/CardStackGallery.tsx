@@ -23,64 +23,79 @@ interface CardStackGalleryProps {
 const AUTO_ADVANCE_MS = 12_000;
 
 /**
- * Slide variants for the active image. `direction` is +1 for "next"
- * (the new image enters from the right) and -1 for "prev". Easing is
- * deliberately soft so the swap feels like a slow magazine page-turn
- * rather than a UI carousel.
+ * "Abanico" (hand-fan) variants for the active card. Instead of sliding a
+ * photo through a static window, the whole framed card SWINGS on a pivot at
+ * its bottom edge — like a fan blade / a card being dealt off a deck. The
+ * outgoing card fans away to one side while the incoming card swings up into
+ * place from the opposite side, so the rotation we already show on the
+ * stacked peek cards becomes the transition itself.
+ *
+ * `direction` is +1 for "next" and -1 for "prev". Paired with
+ * `transform-origin: bottom center` on the card and the container's
+ * perspective so the swing reads with a touch of depth.
  */
-const SLIDE_VARIANTS: Variants = {
+const FAN_VARIANTS: Variants = {
   enter: (direction: number) => ({
-    x: direction > 0 ? "62%" : "-62%",
+    rotate: direction > 0 ? 17 : -17,
+    x: direction > 0 ? "26%" : "-26%",
+    y: "6%",
+    scale: 0.85,
     opacity: 0,
-    scale: 0.97,
-    filter: "blur(6px)",
   }),
   center: {
+    rotate: 0,
     x: "0%",
-    opacity: 1,
+    y: "0%",
     scale: 1,
-    filter: "blur(0px)",
+    opacity: 1,
   },
   exit: (direction: number) => ({
-    x: direction > 0 ? "-62%" : "62%",
+    rotate: direction > 0 ? -19 : 19,
+    x: direction > 0 ? "-22%" : "22%",
+    y: "5%",
+    scale: 0.86,
     opacity: 0,
-    scale: 0.97,
-    filter: "blur(6px)",
+    transition: {
+      rotate: { duration: 0.5, ease: [0.4, 0, 0.2, 1] as const },
+      x: { duration: 0.5, ease: [0.4, 0, 0.2, 1] as const },
+      y: { duration: 0.5, ease: [0.4, 0, 0.2, 1] as const },
+      scale: { duration: 0.5, ease: [0.4, 0, 0.2, 1] as const },
+      opacity: { duration: 0.42, ease: "easeIn" as const },
+    },
   }),
 };
 
-const SLIDE_TRANSITION = {
-  // Unhurried — the slide takes ~1.6s with a soft blur-and-settle
-  // ease so the swap feels like a magazine page-turn rather than a
-  // UI carousel. Opacity peaks faster than the slide finishes so the
-  // overlap reads as a fluid fade between two pages.
-  x: { duration: 1.6, ease: [0.22, 1, 0.36, 1] as const },
-  opacity: { duration: 1.1, ease: [0.22, 1, 0.36, 1] as const },
-  scale: { duration: 1.6, ease: [0.22, 1, 0.36, 1] as const },
-  filter: { duration: 0.9, ease: [0.22, 1, 0.36, 1] as const },
-};
+const FAN_TRANSITION = {
+  // Spring on the geometry so the incoming card settles with a soft, tactile
+  // "snap" home (the satisfying bit of a fan opening); opacity is a plain
+  // fade so the card is solid well before it finishes settling.
+  rotate: { type: "spring", stiffness: 150, damping: 19, mass: 0.9 },
+  x: { type: "spring", stiffness: 150, damping: 19, mass: 0.9 },
+  y: { type: "spring", stiffness: 150, damping: 19, mass: 0.9 },
+  scale: { type: "spring", stiffness: 150, damping: 19, mass: 0.9 },
+  opacity: { duration: 0.45, ease: [0.22, 1, 0.36, 1] as const },
+} as const;
 
 /**
- * Card-stack gallery with a seamless right-to-left slide on the active
- * image.
+ * Card-stack gallery with an "abanico" (hand-fan) swing on photo change.
  *
  * Visual structure:
- *  - Back peek cards (decorative naipe stack) sit behind, slightly
- *    rotated; clicking one brings it forward.
- *  - A static "frame" (rounded, bordered, shadowed) sits on top of the
- *    stack. The active image lives INSIDE the frame, animated through
- *    Framer Motion `AnimatePresence`. The frame stays put while the
- *    image slides across it — the visual is "window onto a continuous
- *    reel of photos", not "shuffling cards on a table".
+ *  - Back peek cards fan to one side behind the front card (a hand of cards),
+ *    pivoting at their bottom edge; clicking one brings it forward.
+ *  - The front layer holds the active CARD — its own rounded/bordered/shadowed
+ *    frame with the photo inside. On change the whole card SWINGS on a
+ *    bottom-edge pivot: the outgoing card fans away to one side while the
+ *    incoming card swings up into place from the other (Framer Motion
+ *    `AnimatePresence`, `mode="sync"` so the two overlap mid-swing).
  *
  * Direction is tracked in state so:
- *  - Arrow ► / auto-advance → new image enters from the RIGHT.
- *  - Arrow ◄ → new image enters from the LEFT.
+ *  - Arrow ► / auto-advance → card swings in from the RIGHT.
+ *  - Arrow ◄ → card swings in from the LEFT.
  * Dot-tab navigation picks the shorter rotation distance.
  *
- * Slow, subtle: ~1.2s slide with a soft blur-out / blur-in, opacity
- * fade peaking faster than the slide so the overlap reads as a fluid
- * page-turn instead of a hard swap.
+ * The geometry springs home for a tactile fan "snap"; opacity is a plain fade
+ * so the card is solid before it settles. Honors `prefers-reduced-motion`
+ * (the app-wide MotionConfig reduces the transforms).
  */
 export function CardStackGallery({ images, altBase }: Readonly<CardStackGalleryProps>) {
   const locale = useActiveLocale();
@@ -173,11 +188,13 @@ export function CardStackGallery({ images, altBase }: Readonly<CardStackGalleryP
           const offset = (i - activeIndex + total) % total;
           if (offset > 3) return null;
           const depth = Math.min(offset, 3);
-          const stackDir = i % 2 === 0 ? -1 : 1;
-          const rotate = stackDir * (4 + depth * 1.5);
-          const translateX = stackDir * (depth * 14);
-          const translateY = depth * 10;
-          const scale = 1 - depth * 0.04;
+          // Fan the upcoming cards to ONE side (abanico) instead of an
+          // alternating shuffle, pivoting at the bottom so they spread like a
+          // hand of cards — the same direction the next card swings in from.
+          const rotate = 3 + depth * 4.5;
+          const translateX = depth * 17;
+          const translateY = depth * 6;
+          const scale = 1 - depth * 0.05;
 
           return (
             <button
@@ -187,8 +204,9 @@ export function CardStackGallery({ images, altBase }: Readonly<CardStackGalleryP
                 index: i + 1,
               })}
               onClick={() => goTo(i)}
-              className="absolute inset-0 origin-center cursor-pointer rounded-[var(--radius-2xl)] border border-[var(--color-border)] bg-[var(--color-surface)] shadow-[var(--shadow-lg)] transition-[transform,opacity,box-shadow,border-color] duration-700 ease-[var(--ease-standard)] focus:outline-none focus-visible:border-[var(--color-brand-primary)] focus-visible:shadow-[var(--shadow-glow-primary)]"
+              className="absolute inset-0 cursor-pointer rounded-[var(--radius-2xl)] border border-[var(--color-border)] bg-[var(--color-surface)] shadow-[var(--shadow-lg)] transition-[transform,opacity,box-shadow,border-color] duration-700 ease-[var(--ease-standard)] focus:outline-none focus-visible:border-[var(--color-brand-primary)] focus-visible:shadow-[var(--shadow-glow-primary)]"
               style={{
+                transformOrigin: "bottom center",
                 transform: `translate3d(${translateX}px, ${translateY}px, ${
                   -depth * 40
                 }px) rotate(${rotate}deg) scale(${scale})`,
@@ -209,27 +227,28 @@ export function CardStackGallery({ images, altBase }: Readonly<CardStackGalleryP
           );
         })}
 
-        {/* Static front frame — the slide container. `overflow-hidden`
-            clips the sliding image so it appears to move through a
-            window. The bordered/shadowed shell stays fixed in place. */}
+        {/* Front layer — the whole framed CARD swings (abanico), so each
+            card carries its own border/shadow/clip and pivots at its bottom
+            edge. `preserve-3d` + the container perspective give the swing a
+            hint of depth. Two cards co-exist mid-transition (one fanning out,
+            one swinging in) — that overlap IS the fan. */}
         <div
-          aria-hidden={false}
-          className="absolute inset-0 z-20 overflow-hidden rounded-[var(--radius-2xl)] border border-[var(--color-border)] bg-[var(--color-surface)] shadow-[var(--shadow-lg)]"
+          className="absolute inset-0 z-20 [transform-style:preserve-3d]"
         >
           <AnimatePresence custom={direction} initial={false} mode="sync">
             <motion.div
               key={activeIndex}
               custom={direction}
-              variants={SLIDE_VARIANTS}
+              variants={FAN_VARIANTS}
               initial="enter"
               animate="center"
               exit="exit"
-              transition={SLIDE_TRANSITION}
-              // Touch-swipe: drag horizontally past 22% of the frame
-              // width OR with enough velocity → advance / rewind. Below
-              // the threshold the spring snaps back. Vertical drag is
-              // disabled so the page can still scroll through the
-              // gallery comfortably.
+              transition={FAN_TRANSITION}
+              // Pivot at the bottom edge so the card swings like a fan blade.
+              style={{ transformOrigin: "bottom center" }}
+              // Touch-swipe: drag horizontally past a threshold OR with enough
+              // velocity → advance / rewind. Below it the spring snaps back.
+              // Vertical drag is disabled so the page still scrolls.
               drag={total > 1 ? "x" : false}
               dragConstraints={{ left: 0, right: 0 }}
               dragElastic={0.35}
@@ -254,7 +273,7 @@ export function CardStackGallery({ images, altBase }: Readonly<CardStackGalleryP
                   goPrev();
                 }
               }}
-              className="absolute inset-0 cursor-grab touch-pan-y will-change-[transform,opacity,filter] [backface-visibility:hidden] active:cursor-grabbing"
+              className="absolute inset-0 cursor-grab touch-pan-y overflow-hidden rounded-[var(--radius-2xl)] border border-[var(--color-border)] bg-[var(--color-surface)] shadow-[var(--shadow-lg)] will-change-[transform,opacity] [backface-visibility:hidden] active:cursor-grabbing"
             >
               <Image
                 src={activeSrc}
@@ -266,37 +285,36 @@ export function CardStackGallery({ images, altBase }: Readonly<CardStackGalleryP
                 sizes="(max-width: 768px) 90vw, 440px"
                 priority
                 draggable={false}
-                // Ken-burns pan rides on top of the slide so once the
-                // image has settled at center, it continues to drift
-                // slightly to the right until the next swap. Two
-                // transforms on separate elements never conflict.
+                // Ken-burns pan rides on the image element; the card element
+                // owns the fan transform — two transforms on separate
+                // elements never conflict.
                 className="select-none object-cover motion-safe:motion-gallery-pan-right"
               />
+
+              {/* Inner ring — travels with the card so the frame stays
+                  premium throughout the swing. */}
+              <span
+                aria-hidden
+                className="pointer-events-none absolute inset-0 rounded-[var(--radius-2xl)] ring-1 ring-inset ring-[var(--color-brand-primary)]/30"
+              />
+
+              {/* Hover affordance gradient. */}
+              <span
+                aria-hidden
+                className="pointer-events-none absolute inset-x-0 bottom-0 z-[5] h-20 bg-gradient-to-t from-[rgba(20,28,24,0.45)] via-[rgba(20,28,24,0.18)] to-transparent opacity-0 transition-opacity duration-500 ease-[var(--ease-standard)] group-hover/gallery:opacity-100"
+              />
+
               <span
                 aria-label={t(locale, "cardStackGallery.indicator", {
                   index: activeIndex + 1,
                   total,
                 })}
-                className="pointer-events-none absolute left-3 top-3 inline-flex h-7 min-w-7 items-center justify-center rounded-full bg-[var(--color-surface)]/95 px-2 text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--color-brand-primary)] shadow-[var(--shadow-sm)] backdrop-blur-sm"
+                className="pointer-events-none absolute left-3 top-3 z-[6] inline-flex h-7 min-w-7 items-center justify-center rounded-full bg-[var(--color-surface)]/95 px-2 text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--color-brand-primary)] shadow-[var(--shadow-sm)] backdrop-blur-sm"
               >
                 {activeIndex + 1}/{total}
               </span>
             </motion.div>
           </AnimatePresence>
-
-          {/* Static inner ring overlay — gives the frame its premium
-              feel without re-rendering on swap. */}
-          <span
-            aria-hidden
-            className="pointer-events-none absolute inset-0 rounded-[var(--radius-2xl)] ring-1 ring-inset ring-[var(--color-brand-primary)]/30"
-          />
-
-          {/* Hover affordance — surfaces "Click to navigate" hint when
-              the user mouses over the frame. Subtle; only on pointer. */}
-          <span
-            aria-hidden
-            className="pointer-events-none absolute inset-x-0 bottom-0 z-[5] h-20 bg-gradient-to-t from-[rgba(20,28,24,0.45)] via-[rgba(20,28,24,0.18)] to-transparent opacity-0 transition-opacity duration-500 ease-[var(--ease-standard)] group-hover/gallery:opacity-100"
-          />
         </div>
 
         {/* Ambient auto-advance progress hairline. Re-keys on every
