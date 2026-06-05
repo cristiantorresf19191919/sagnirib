@@ -3,6 +3,8 @@
 import { useId } from "react";
 import { motion } from "framer-motion";
 
+import { LIQUID_SPRING } from "../lib/liquid-motion";
+
 /**
  * Global liquid-fill progress orb for the enrollment wizard.
  *
@@ -55,14 +57,8 @@ function surfaceY(fraction: number): number {
   return -6 + (1 - clamped) * 112;
 }
 
-// Liquid settle — a touch of overshoot so a rising/falling level visibly
-// "sloshes" home (the little impact that makes completing a field feel good).
-const LIQUID_SPRING = {
-  type: "spring",
-  stiffness: 90,
-  damping: 12,
-  mass: 1,
-} as const;
+// Liquid settle (`LIQUID_SPRING`) is shared with the gallery "Sello Biringas"
+// stamp — see ../lib/liquid-motion so both read as the same brand material.
 
 interface LiquidProgressOrbProps {
   /** Completion in [0, 1]. */
