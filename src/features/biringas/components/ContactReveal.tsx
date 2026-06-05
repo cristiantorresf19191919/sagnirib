@@ -3,7 +3,7 @@
 import { motion, useReducedMotion } from "framer-motion";
 import { Loader2, MessageCircle, Send } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useState, type CSSProperties } from "react";
 
 import type { SupportedLocale } from "@/core/branding/brand-config";
 import { localizedHref } from "@/core/i18n/href";
@@ -168,6 +168,31 @@ function RevealedChannels({
   return <RevealedChannelsView locale={locale} buttons={buttons} />;
 }
 
+/**
+ * Per-channel brand colours so both CTAs read as equal-weight, premium pills
+ * (WhatsApp emerald, Telegram slate-blue) instead of one filled + one outline.
+ * Channel brand colours intentionally sit outside the design tokens — they
+ * belong to WhatsApp/Telegram, not Biringas, and must stay constant in every
+ * theme. `--ch-shadow` tints the drop shadow; `--tw-ring-color` the focus ring.
+ */
+const CHANNEL_STYLE: Record<string, CSSProperties> = {
+  whatsapp: {
+    backgroundColor: "#0E7A52",
+    ["--ch-shadow" as string]: "rgba(14,122,82,0.85)",
+    ["--tw-ring-color" as string]: "#0E7A52",
+  },
+  telegram: {
+    backgroundColor: "#2A6F9E",
+    ["--ch-shadow" as string]: "rgba(42,111,158,0.85)",
+    ["--tw-ring-color" as string]: "#2A6F9E",
+  },
+  default: {
+    backgroundColor: "var(--color-brand-primary)",
+    ["--ch-shadow" as string]: "rgba(0,0,0,0.4)",
+    ["--tw-ring-color" as string]: "var(--color-brand-primary)",
+  },
+};
+
 function RevealedChannelsView({
   locale,
   buttons,
@@ -189,7 +214,7 @@ function RevealedChannelsView({
         {t(locale, "contact.reveal.title")}
       </span>
       <motion.div
-        className="grid grid-cols-1 gap-2 sm:grid-cols-2"
+        className="grid grid-cols-1 gap-2.5 sm:grid-cols-2"
         initial="hidden"
         animate="visible"
         variants={{
@@ -197,7 +222,7 @@ function RevealedChannelsView({
           visible: { transition: { staggerChildren: stagger, delayChildren: 0.05 } },
         }}
       >
-        {buttons.map(({ key, href, label, Icon }, idx) => (
+        {buttons.map(({ key, href, label, Icon }) => (
           <motion.a
             key={key}
             href={href}
@@ -209,18 +234,17 @@ function RevealedChannelsView({
               visible: { opacity: 1, y: 0 },
             }}
             transition={{ duration: 0.26, ease: [0.22, 1, 0.36, 1] }}
-            className={
-              idx === 0
-                ? "inline-flex h-12 items-center justify-center gap-2 rounded-full bg-[var(--color-brand-primary)] px-5 text-sm font-semibold text-[var(--color-surface)] shadow-[var(--shadow-sm)] transition-[background,transform] duration-200 ease-[var(--ease-standard)] hover:bg-[var(--color-brand-primary-strong)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-background)] active:translate-y-px"
-                : "inline-flex h-12 items-center justify-center gap-2 rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] px-5 text-sm font-semibold text-[var(--color-foreground)] transition-[background,border-color] duration-200 ease-[var(--ease-standard)] hover:border-[var(--color-brand-primary-soft)] hover:bg-[var(--color-background-elevated)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-background)]"
-            }
+            style={CHANNEL_STYLE[key] ?? CHANNEL_STYLE.default}
+            className="inline-flex h-12 items-center justify-center gap-2 rounded-full px-5 text-sm font-semibold text-white shadow-[0_10px_24px_-12px_var(--ch-shadow)] transition-[transform,filter] duration-200 ease-[var(--ease-standard)] hover:-translate-y-[1px] hover:brightness-110 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-background)] active:translate-y-px"
           >
             <Icon className="h-4 w-4" aria-hidden />
             {label}
           </motion.a>
         ))}
       </motion.div>
-      <p className="text-xs text-[var(--color-text-subtle)]">
+      {/* Disclaimer — centered in its own quiet panel so it reads as a polished
+          house rule, not stranded fine print. */}
+      <p className="rounded-[var(--radius-md)] bg-[var(--color-surface-muted)]/60 px-3 py-2 text-center text-[11px] leading-relaxed text-[var(--color-text-subtle)]">
         {t(locale, "contact.reveal.footer")}
       </p>
     </div>

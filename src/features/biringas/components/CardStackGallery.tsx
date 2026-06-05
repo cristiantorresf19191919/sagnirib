@@ -317,26 +317,6 @@ export function CardStackGallery({ images, altBase }: Readonly<CardStackGalleryP
             </motion.div>
           </AnimatePresence>
         </div>
-
-        {/* Ambient auto-advance progress hairline. Re-keys on every
-            nav (manual or auto) so the fill restarts cleanly with the
-            new slide. Hidden under prefers-reduced-motion. */}
-        {total > 1 && (
-          <span
-            key={`auto-${activeIndex}`}
-            aria-hidden
-            data-paused={paused ? "true" : "false"}
-            className="pointer-events-none absolute inset-x-6 bottom-3 z-[30] block h-px overflow-hidden rounded-full bg-[var(--color-surface)]/40 motion-reduce:hidden"
-          >
-            <span
-              className="block h-full origin-left bg-gradient-to-r from-[var(--color-brand-primary)] via-[var(--color-gold)] to-[var(--color-brand-primary)]"
-              style={{
-                animation: `gallery-progress ${AUTO_ADVANCE_MS}ms linear forwards`,
-                animationPlayState: paused ? "paused" : "running",
-              }}
-            />
-          </span>
-        )}
       </div>
 
       <div className="flex items-center justify-center gap-3">

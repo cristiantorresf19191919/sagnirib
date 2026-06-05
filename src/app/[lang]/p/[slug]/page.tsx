@@ -99,19 +99,21 @@ export default async function ProfilePage({ params }: Readonly<ProfilePageProps>
 
   const galleryImages =
     listing.gallery.length > 0 ? listing.gallery : [listing.mainImage];
-  const empty = t(lang, "profile.attributes.empty");
-  const attributeEntries: Array<[label: string, value: string]> = [
+  // Hide empty attributes entirely (no em-dash placeholders) so the dossier
+  // never reads as half-filled — only attributes with real data render.
+  const attributeEntries = (
     [
-      t(lang, "profile.attributes.ethnicity"),
-      listing.attributes.ethnicity ?? empty,
-    ],
-    [t(lang, "profile.attributes.hair"), listing.attributes.hair ?? empty],
-    [t(lang, "profile.attributes.height"), listing.attributes.height ?? empty],
-    [t(lang, "profile.attributes.body"), listing.attributes.body ?? empty],
-    [t(lang, "profile.attributes.breastSize"), listing.attributes.breastSize ?? empty],
-    [t(lang, "profile.attributes.breastType"), listing.attributes.breastType ?? empty],
-    [t(lang, "profile.attributes.country"), listing.attributes.country ?? empty],
-  ];
+      [t(lang, "profile.attributes.ethnicity"), listing.attributes.ethnicity],
+      [t(lang, "profile.attributes.hair"), listing.attributes.hair],
+      [t(lang, "profile.attributes.height"), listing.attributes.height],
+      [t(lang, "profile.attributes.body"), listing.attributes.body],
+      [t(lang, "profile.attributes.breastSize"), listing.attributes.breastSize],
+      [t(lang, "profile.attributes.breastType"), listing.attributes.breastType],
+      [t(lang, "profile.attributes.country"), listing.attributes.country],
+    ] as Array<[string, string | null | undefined]>
+  ).filter((entry): entry is [string, string] =>
+    Boolean(entry[1] && String(entry[1]).trim()),
+  );
   const languages = listing.attributes.languages ?? [];
 
   // Build the Person schema once; only emit `aggregateRating` when there
@@ -233,16 +235,15 @@ export default async function ProfilePage({ params }: Readonly<ProfilePageProps>
               </div>
             )}
 
-            {/* Photo-verification timestamp — anchors the trust promise
-                of the verified shield with a concrete date. Pulled from
-                `daysSinceVerification` so it stays accurate without an
-                extra Firestore field. Hidden when the listing isn't
-                verified (no shield, no timestamp). */}
-            {listing.verified && (
-              <div className="mt-4 flex items-center justify-center">
+            {/* Unified trust/media badge row — one clean, centered cluster
+                directly under the gallery (verified-photos date, video, audio,
+                stories) instead of separate floating groups. The verified
+                shield keeps its gold accent so the trust signal still leads. */}
+            <div className="mt-5 flex flex-wrap items-center justify-center gap-2.5 text-xs text-[var(--color-text-muted)]">
+              {listing.verified && (
                 <Link
                   href={localizedHref(lang, "/verificacion")}
-                  className="inline-flex items-center gap-2 rounded-full border border-[var(--color-gold)]/45 bg-[var(--color-cream-soft)]/80 px-3.5 py-1.5 text-[11px] font-semibold text-[var(--color-foreground)] shadow-[inset_0_1px_0_rgba(255,255,255,0.6)] transition-colors duration-200 ease-[var(--ease-standard)] hover:border-[var(--color-gold)] hover:bg-[var(--color-cream)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-gold)]"
+                  className="inline-flex items-center gap-1.5 rounded-full border border-[var(--color-gold)]/45 bg-[var(--color-cream-soft)]/80 px-3 py-1.5 font-semibold text-[var(--color-foreground)] shadow-[inset_0_1px_0_rgba(255,255,255,0.6)] transition-colors duration-200 ease-[var(--ease-standard)] hover:border-[var(--color-gold)] hover:bg-[var(--color-cream)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-gold)]"
                   title={t(lang, "profile.verifiedShield.title")}
                 >
                   <ShieldCheck
@@ -257,10 +258,7 @@ export default async function ProfilePage({ params }: Readonly<ProfilePageProps>
                         ),
                       })}
                 </Link>
-              </div>
-            )}
-
-            <div className="mt-6 flex flex-wrap items-center justify-center gap-3 text-xs text-[var(--color-text-muted)]">
+              )}
               {/* Stricter than `hasVideo` (the cached query flag): show
                   only when there's at least one actual clip attached
                   (ADR-015). Keeps the chip honest if the flag and the
@@ -339,32 +337,34 @@ export default async function ProfilePage({ params }: Readonly<ProfilePageProps>
                 </p>
               </RevealItem>
 
-              {/* Stats grid */}
+              {/* Stats banner — one sleek horizontal row (divided segments)
+                  instead of three separate cards, so it reads as a quiet
+                  metadata strip and doesn't compete with the price card. */}
               <RevealItem as="div">
-                <dl className="grid grid-cols-3 gap-3">
-                <StatTile
-                  label={t(lang, "profile.stat.views")}
-                  value={formatViews(listing.reputation.totalViews)}
-                  icon={<Eye className="h-3.5 w-3.5" aria-hidden />}
-                />
-                <StatTile
-                  label={t(lang, "profile.stat.daysActive")}
-                  value={NUMBER_FORMAT.format(
-                    listing.reputation.daysAdvertised,
-                  )}
-                />
-                <StatTile
-                  label={t(lang, "profile.stat.verified")}
-                  value={t(lang, "profile.stat.verifiedAgo", {
-                    days: listing.reputation.daysSinceVerification,
-                  })}
-                  icon={
-                    <ShieldCheck
-                      className="h-3.5 w-3.5 text-[var(--color-brand-primary)]"
-                      aria-hidden
-                    />
-                  }
-                />
+                <dl className="flex items-stretch divide-x divide-[var(--color-border)] overflow-hidden rounded-[var(--radius-lg)] bg-[var(--color-surface)] shadow-[var(--shadow-sm)] ring-1 ring-[var(--color-border)]">
+                  <StatTile
+                    label={t(lang, "profile.stat.views")}
+                    value={formatViews(listing.reputation.totalViews)}
+                    icon={<Eye className="h-3.5 w-3.5" aria-hidden />}
+                  />
+                  <StatTile
+                    label={t(lang, "profile.stat.daysActive")}
+                    value={NUMBER_FORMAT.format(
+                      listing.reputation.daysAdvertised,
+                    )}
+                  />
+                  <StatTile
+                    label={t(lang, "profile.stat.verified")}
+                    value={t(lang, "profile.stat.verifiedAgo", {
+                      days: listing.reputation.daysSinceVerification,
+                    })}
+                    icon={
+                      <ShieldCheck
+                        className="h-3.5 w-3.5 text-[var(--color-brand-primary)]"
+                        aria-hidden
+                      />
+                    }
+                  />
                 </dl>
               </RevealItem>
 
@@ -394,35 +394,38 @@ export default async function ProfilePage({ params }: Readonly<ProfilePageProps>
                 </Card>
               </RevealItem>
 
-              {/* Attributes */}
-              <RevealItem>
-                <Section title={t(lang, "profile.section.attributes")}>
-                <dl className="grid grid-cols-2 gap-x-6 gap-y-3 text-sm">
-                  {attributeEntries.map(([label, value]) => (
-                    <div key={label} className="flex flex-col">
-                      <dt className="text-[11px] uppercase tracking-[0.18em] text-[var(--color-text-subtle)]">
-                        {label}
-                      </dt>
-                      <dd className="text-[var(--color-foreground)]">
-                        {value}
-                      </dd>
-                    </div>
-                  ))}
-                </dl>
-                {languages.length > 0 && (
-                  <div className="mt-4 flex flex-wrap items-center gap-2">
-                    <span className="text-[11px] uppercase tracking-[0.18em] text-[var(--color-text-subtle)]">
-                      {t(lang, "profile.attributes.languages")}
-                    </span>
-                    {languages.map((language) => (
-                      <Tag key={language} tone="accent">
-                        {language}
-                      </Tag>
+              {/* Attributes — only render the whole section when there's at
+                  least one filled attribute or a language to show. */}
+              {(attributeEntries.length > 0 || languages.length > 0) && (
+                <RevealItem>
+                  <Section title={t(lang, "profile.section.attributes")}>
+                  <dl className="grid grid-cols-2 gap-x-6 gap-y-3 text-sm">
+                    {attributeEntries.map(([label, value]) => (
+                      <div key={label} className="flex flex-col">
+                        <dt className="text-[11px] uppercase tracking-[0.18em] text-[var(--color-text-subtle)]">
+                          {label}
+                        </dt>
+                        <dd className="text-[var(--color-foreground)]">
+                          {value}
+                        </dd>
+                      </div>
                     ))}
-                  </div>
-                )}
-                </Section>
-              </RevealItem>
+                  </dl>
+                  {languages.length > 0 && (
+                    <div className="mt-4 flex flex-wrap items-center gap-2">
+                      <span className="text-[11px] uppercase tracking-[0.18em] text-[var(--color-text-subtle)]">
+                        {t(lang, "profile.attributes.languages")}
+                      </span>
+                      {languages.map((language) => (
+                        <Tag key={language} tone="accent">
+                          {language}
+                        </Tag>
+                      ))}
+                    </div>
+                  )}
+                  </Section>
+                </RevealItem>
+              )}
 
               <RevealItem>
                 <Section title={t(lang, "profile.section.services")}>
@@ -500,17 +503,8 @@ interface StatTileProps {
 
 function StatTile({ label, value, icon }: Readonly<StatTileProps>) {
   return (
-    <div className="group/stat relative overflow-hidden rounded-[var(--radius-lg)] bg-[var(--color-surface)] px-3 py-3 ring-1 ring-[var(--color-border)] transition-[transform,box-shadow,border-color] duration-300 ease-[var(--ease-standard)] hover:-translate-y-0.5 hover:shadow-[var(--shadow-sm)] hover:ring-[var(--color-brand-primary-soft)]">
-      {/* Hover sheen — gold-tinted radial wash from the icon corner. */}
-      <span
-        aria-hidden
-        className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-300 ease-[var(--ease-standard)] group-hover/stat:opacity-100"
-        style={{
-          backgroundImage:
-            "radial-gradient(circle at top left, rgba(200, 166, 118, 0.12), transparent 60%)",
-        }}
-      />
-      <dt className="relative flex items-center gap-1.5 text-[10px] uppercase tracking-[0.18em] text-[var(--color-text-subtle)]">
+    <div className="group/stat relative flex flex-1 flex-col items-center justify-center gap-0.5 px-3 py-3 text-center transition-colors duration-300 ease-[var(--ease-standard)] hover:bg-[var(--color-background-elevated)]">
+      <dt className="flex items-center gap-1.5 text-[10px] uppercase tracking-[0.16em] text-[var(--color-text-subtle)]">
         {icon && (
           <span className="inline-flex transition-transform duration-300 ease-[var(--ease-standard)] group-hover/stat:scale-110">
             {icon}
@@ -518,7 +512,7 @@ function StatTile({ label, value, icon }: Readonly<StatTileProps>) {
         )}
         {label}
       </dt>
-      <dd className="relative mt-1 text-base font-semibold text-[var(--color-foreground)] tabular-nums">
+      <dd className="text-base font-semibold tabular-nums text-[var(--color-foreground)]">
         {value}
       </dd>
     </div>
@@ -533,16 +527,16 @@ interface SectionProps {
 function Section({ title, children }: Readonly<SectionProps>) {
   return (
     <section>
+      {/* Razor-thin accent rule that runs across the column after the label —
+          a sharper, more editorial divider than the old leader dash. */}
       <h2 className="flex items-center gap-3 text-xs font-semibold uppercase tracking-[0.22em] text-[var(--color-brand-primary)]">
-        {/* Gold leader dash — editorial structural cue, picks up the
-            same gold accent used in the hero. */}
+        <span className="whitespace-nowrap">{title}</span>
         <span
           aria-hidden
-          className="inline-block h-px w-8 bg-gradient-to-r from-[var(--color-gold)] to-transparent"
+          className="h-px flex-1 bg-[var(--color-brand-primary)]/20"
         />
-        {title}
       </h2>
-      <div className="mt-3">{children}</div>
+      <div className="mt-4">{children}</div>
     </section>
   );
 }
