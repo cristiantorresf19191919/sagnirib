@@ -2,6 +2,8 @@
 
 import imageCompression from "browser-image-compression";
 
+import { brandConfig } from "@/core/branding/brand-config";
+
 /**
  * Client-side image compression for the `/publicar` wizard (ADR-012).
  *
@@ -115,11 +117,12 @@ export async function compressImage(
   };
 }
 
-/** The brand mark tiled across protected photos. */
-const WATERMARK_TEXT = "Biringas";
+/** The brand mark tiled across protected photos — sourced from the brand
+ *  config so a future rebrand updates the watermark too (no magic string). */
+const WATERMARK_TEXT = brandConfig.name;
 
 /**
- * Bake a repeating, diagonal "Biringas" watermark into a JPEG, client-side.
+ * Bake a repeating, diagonal brand watermark into a JPEG, client-side.
  *
  * Draws the image to a canvas, then tiles the brand text across it at a low
  * opacity and a slight rotation — the classic anti-theft pattern (think the
@@ -130,6 +133,14 @@ const WATERMARK_TEXT = "Biringas";
  *
  * Runs only in the browser (Canvas). Any failure rejects so the caller can
  * fall back to the original file — the upload must never break over a mark.
+ *
+ * SCOPE / KNOWN LIMITATION: this is client-side, so it deters casual theft
+ * (right-click-save, screenshots of the served image) but a technical user who
+ * drives the signed PUT directly could store an un-marked photo. The robust
+ * fix is to ALSO stamp the mark server-side on the staging→published copy
+ * (e.g. a Storage trigger / `sharp` in the confirm step). Tracked as a
+ * follow-up — see the PR discussion. Keep this client mark regardless: it
+ * covers the overwhelming-common theft path at zero infra cost.
  */
 async function watermarkImage(file: File): Promise<File> {
   const url = URL.createObjectURL(file);
