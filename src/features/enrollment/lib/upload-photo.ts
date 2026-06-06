@@ -81,7 +81,8 @@ export async function uploadPhoto(
   options.onPhase?.("compressing");
   let compressed: CompressionResult;
   try {
-    compressed = await compressImage(input);
+    // Public gallery photo → bake the anti-theft "Biringas" watermark in.
+    compressed = await compressImage(input, { watermark: true });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Error al comprimir.";
     throw new UploadError("compression", message, err);

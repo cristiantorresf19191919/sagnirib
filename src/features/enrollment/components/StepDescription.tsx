@@ -1,6 +1,6 @@
 "use client";
 
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import {
   AlertCircle,
   Film,
@@ -9,6 +9,7 @@ import {
   Lightbulb,
   Play,
   RotateCw,
+  ShieldCheck,
   Star,
   X,
 } from "lucide-react";
@@ -16,6 +17,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 import { t } from "@/core/i18n/messages";
 import { useActiveLocale } from "@/core/i18n/use-active-locale";
+import { brandConfig } from "@/core/branding/brand-config";
+import { motionFM } from "@/shared/design-system/tokens/motion";
 import type { EnrollmentCatalogs } from "../lib/catalogs";
 import { containsUrl, hasContactLeak } from "../lib/bio-content-rules";
 import type {
@@ -25,6 +28,7 @@ import type {
 } from "../lib/types";
 import { uploadPhoto, UploadError } from "../lib/upload-photo";
 import { CompressionError } from "../lib/compress-image";
+import { LIQUID_SPRING } from "../lib/liquid-motion";
 import {
   uploadVideo,
   UploadVideoError,
@@ -1099,6 +1103,22 @@ function GalleryCard({
 }: GalleryCardProps) {
   const isBusy = item.status === "compressing" || item.status === "uploading";
   const isError = item.status === "error";
+  const prefersReduced = useReducedMotion();
+  // "Sello Biringas": the watermark is baked during `compressing`, so we treat
+  // that phase as the visible "sealing" moment and name it "Protegiendo".
+  const isSealing = item.status === "compressing";
+  const busyLabel = isSealing ? "Protegiendo" : "Subiendo";
+  // Read the mark from the single source of truth — never the literal string —
+  // so a rebrand updates the stamp AND the baked watermark together.
+  const markText = brandConfig.name;
+  // Scale the type to the tile so the mosaic reads on small (non-featured)
+  // cards instead of turning into noise.
+  const markFontSize = featured ? 11 : 8;
+  const markTileW = Math.round(markFontSize * 6.4);
+  const markTileH = Math.round(markFontSize * 2.8);
+  // Per-card ids so the SVG <defs> never collide across cards (orb pattern).
+  const patternId = `wm-${item.id}`;
+  const shineId = `shine-${item.id}`;
 
   return (
     <div
@@ -1165,9 +1185,115 @@ function GalleryCard({
           aria-live="polite"
           className="absolute inset-0 flex flex-col items-center justify-center gap-1 bg-[var(--color-foreground)]/30 text-[var(--color-surface)]"
         >
-          <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
-          <span className="text-[10px] font-semibold uppercase tracking-[0.18em]">
-            {item.status === "compressing" ? "Comprimiendo" : "Subiendo"}
+          {/* "Sello Biringas": the brand mark stamps onto the photo during the
+              watermarking step (baked inside `compressing`), so the anti-theft
+              moment is finally visible. The stamp unmounts before the long,
+              concurrent upload phase to protect the mobile frame budget. */}
+          <AnimatePresence>
+            {isSealing && (
+              <motion.svg
+                key="stamp"
+                viewBox="0 0 100 133"
+                preserveAspectRatio="xMidYMid slice"
+                className="pointer-events-none absolute inset-0 h-full w-full"
+                aria-hidden
+                initial={prefersReduced ? { opacity: 0 } : { opacity: 0, scale: 1.35 }}
+                animate={prefersReduced ? { opacity: 0.45 } : { opacity: 0.45, scale: 1 }}
+                exit={{ opacity: 0, transition: { duration: motionFM.fast } }}
+                transition={
+                  prefersReduced
+                    ? { duration: motionFM.base, ease: motionFM.standardEase }
+                    : {
+                        // Slosh-settle from the shared brand spring; opacity is a
+                        // plain fade so the keyframe never fights the spring.
+                        scale: LIQUID_SPRING,
+                        opacity: { duration: motionFM.base, ease: motionFM.standardEase },
+                      }
+                }
+              >
+                <defs>
+                  {/* -24° mirrors the canvas watermark angle. Fixed white fill +
+                      dark stroke (not tokens) so the stamp reads the same in
+                      light AND dark themes, matching the baked mark — a
+                      documented SVG geometry exception, like the canvas draw. */}
+                  <pattern
+                    id={patternId}
+                    width={markTileW}
+                    height={markTileH}
+                    patternUnits="userSpaceOnUse"
+                    patternTransform="rotate(-24)"
+                  >
+                    <text
+                      x="2"
+                      y={Math.round(markFontSize * 1.2)}
+                      fill="#ffffff"
+                      stroke="rgba(0, 0, 0, 0.5)"
+                      strokeWidth="0.4"
+                      style={{ fontSize: markFontSize, fontWeight: 700, letterSpacing: 0.4 }}
+                    >
+                      {markText}
+                    </text>
+                  </pattern>
+                  <linearGradient id={shineId} x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0.35" stopColor="var(--color-gold)" stopOpacity="0" />
+                    <stop offset="0.5" stopColor="var(--color-gold)" stopOpacity="0.55" />
+                    <stop offset="0.65" stopColor="var(--color-gold)" stopOpacity="0" />
+                  </linearGradient>
+                </defs>
+                <rect width="100" height="133" fill={`url(#${patternId})`} />
+                {/* Gold shine sweeps the letters once — directional reveal, pure
+                    transform (x), no mask-image (Safari-safe). Decorative, so
+                    it is skipped under reduced motion. */}
+                {!prefersReduced && (
+                  <motion.rect
+                    width="100"
+                    height="133"
+                    fill={`url(#${shineId})`}
+                    initial={{ x: -100 }}
+                    animate={{ x: 100 }}
+                    transition={{
+                      duration: motionFM.slow,
+                      ease: motionFM.standardEase,
+                      delay: 0.12,
+                    }}
+                  />
+                )}
+              </motion.svg>
+            )}
+          </AnimatePresence>
+
+          {/* Protection pin — pops in while sealing (fade only when reduced). */}
+          {isSealing && (
+            <motion.span
+              className="absolute right-1.5 top-1.5 inline-flex h-6 w-6 items-center justify-center rounded-full bg-[var(--color-gold)] text-[var(--color-foreground)]"
+              initial={prefersReduced ? { opacity: 0 } : { opacity: 0, scale: 0 }}
+              animate={prefersReduced ? { opacity: 1 } : { opacity: 1, scale: 1 }}
+              transition={
+                prefersReduced
+                  ? { duration: motionFM.fast }
+                  : { type: "spring", stiffness: 420, damping: 16, delay: 0.1 }
+              }
+            >
+              <ShieldCheck className="h-3.5 w-3.5" aria-hidden />
+            </motion.span>
+          )}
+
+          {/* Phase label crossfades Protegiendo → Subiendo (not a hard swap).
+              The spinner returns for the upload phase. */}
+          <span className="z-10 flex flex-col items-center gap-1">
+            {!isSealing && <Loader2 className="h-4 w-4 animate-spin" aria-hidden />}
+            <AnimatePresence mode="wait" initial={false}>
+              <motion.span
+                key={busyLabel}
+                initial={prefersReduced ? false : { opacity: 0, y: 4 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={prefersReduced ? { opacity: 0 } : { opacity: 0, y: -4 }}
+                transition={{ duration: motionFM.fast, ease: motionFM.standardEase }}
+                className="text-[10px] font-semibold uppercase tracking-[0.18em]"
+              >
+                {busyLabel}
+              </motion.span>
+            </AnimatePresence>
           </span>
         </span>
       )}
